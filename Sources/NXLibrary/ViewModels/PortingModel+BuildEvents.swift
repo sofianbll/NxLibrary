@@ -138,7 +138,7 @@ extension PortingModel {
     }
 
     func finishBuild(_ result: BuildResult, gameID: UUID,
-                             finalApp: URL, tempDir: URL) {
+                     finalApp: URL, tempDir: URL, nextendoRequested: Bool) {
         stopStageElapsedTimer()
         currentBuildCacheURL = nil
         app.portingProgress?.finish(success: result.success)
@@ -163,6 +163,7 @@ extension PortingModel {
                 metalVersion: toolchain.metalVersion,
                 xcodeVersion: toolchain.xcodeVersion,
                 toolchainVerified: verified,
+                nextendoRequested: nextendoRequested ? true : nil,
                 cancelled: result.cancelled
             )
 

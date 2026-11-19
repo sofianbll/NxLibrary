@@ -21,10 +21,17 @@ public enum NextendoLaunch {
         return [clientIDKey: clientID]
     }
 
-    public static func engineSupportsSignIn(at repo: URL) -> Bool {
+    static let buildFlag = "--nextendo"
+
+    static func engineSupportsBuild(at repo: URL) -> Bool {
         // Like EngineSourceCapabilities, inspect the selected checkout without executing it.
-        guard let cli = try? String(contentsOf: repo.appendingPathComponent("scripts/build_ipa_from_nsp.py"), encoding: .utf8),
-              cli.contains("'--nextendo'") || cli.contains("\"--nextendo\""),
+        guard let cli = try? String(contentsOf: repo.appendingPathComponent("scripts/build_ipa_from_nsp.py"), encoding: .utf8)
+        else { return false }
+        return cli.contains("'\(buildFlag)'") || cli.contains("\"\(buildFlag)\"")
+    }
+
+    public static func engineSupportsSignIn(at repo: URL) -> Bool {
+        guard engineSupportsBuild(at: repo),
               let table = try? String(contentsOf: repo.appendingPathComponent("dm/games/settings.tsv"), encoding: .utf8)
         else { return false }
         return table.split(whereSeparator: \.isNewline).contains { line in

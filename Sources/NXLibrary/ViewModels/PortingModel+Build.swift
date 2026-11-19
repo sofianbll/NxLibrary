@@ -60,7 +60,7 @@ extension PortingModel {
         let start = size > UInt64(maxBytes) ? size - UInt64(maxBytes) : 0
         try? handle.seek(toOffset: start)
         guard let data = try? handle.readToEnd() else { return "" }
-        return String(data: data, encoding: .utf8) ?? ""
+        return String(decoding: data, as: UTF8.self)
     }
 
     #if DEBUG
@@ -367,9 +367,11 @@ extension PortingModel {
             packageVersion: app.setup.engineSourceCapabilities.titleSelection
                 ? SourceSelection.packageVersion(for: target.sources, stagedSelection: !workspace.links.isEmpty) : nil,
             allowUntestedToolchain: app.setup.allowUntestedToolchain,
+            nextendoClientID: app.settingsStore?.settings.nextendoClientID ?? NextendoLaunch.buildClientID,
             extraArguments: extraArguments
         )
         lastPortingCommand = [command.executable.path] + command.arguments
+        let nextendoRequested = command.environment[NextendoLaunch.clientIDKey] != nil
 
         stopStageElapsedTimer()
         buildStartedAt = Date()
@@ -424,7 +426,8 @@ extension PortingModel {
             completion: { [weak self] result in
                 DispatchQueue.main.async {
                     self?.finishBuild(result, gameID: target.id,
-                                      finalApp: finalApp, tempDir: tempRoot)
+                                      finalApp: finalApp, tempDir: tempRoot,
+                                      nextendoRequested: nextendoRequested)
                 }
             }
         )

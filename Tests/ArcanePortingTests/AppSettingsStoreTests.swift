@@ -181,7 +181,7 @@ final class AppSettingsStoreTests: XCTestCase {
         let kept = #"""
         {"gameDefaults":{"fullscreen":true,"language":"it","renderScale":0.75,"rumbleGain":2},
          "cloudSaves":{"folder":{"_0":"/x"}},"cloudSavesPickedFolder":"/x",
-         "future":{"n":1},"showClock":false}
+         "nextendoClientID":"sample-client","future":{"n":1},"showClock":false}
         """#
         let settings = try JSONDecoder().decode(AppSettings.self, from: Data(kept.utf8))
         XCTAssertEqual(Set(settings.moduleValues.keys), AppSettings.moduleKeys)
@@ -194,6 +194,7 @@ final class AppSettingsStoreTests: XCTestCase {
         XCTAssertNil(output["future"], "a key nobody reads is dropped, as before")
         XCTAssertEqual(settings.cloudSaves, .folder("/x"))
         XCTAssertEqual(settings.gameDefaults.renderScale, 0.75)
+        XCTAssertEqual(settings.nextendoClientID, "sample-client")
     }
 
     func testEveryBaseKeyIsWritten() throws {
