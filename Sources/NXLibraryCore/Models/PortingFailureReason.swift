@@ -22,6 +22,7 @@ public struct PortingFailureReason: Codable, Equatable, Sendable {
     private var isUnreadableDamage: Bool { kind == .damagedNSP && detail == Self.unreadableDamageDetail }
     /// The game lacks the language its Game options ask for; the detail names it ("missing-language:Japanese").
     static let missingLanguagePrefix = "missing-language:"
+    static let nextendoFailurePrefix = "nextendo:"
     private var missingLanguage: String? {
         guard kind == .unknown, let detail, detail.hasPrefix(Self.missingLanguagePrefix) else { return nil }
         return String(detail.dropFirst(Self.missingLanguagePrefix.count))
@@ -97,6 +98,9 @@ public struct PortingFailureReason: Codable, Equatable, Sendable {
             return L10n.format("%@ has no verified nxnative game profile%@; the pinned engine does not support it yet.", [String(describing: (game)), String(describing: (at))])
         case .unknown:
             if let language = missingLanguage { return L10n.format("%@ has no %@, the language set in its Game options.", [String(describing: (game)), String(describing: (language))]) }
+            if let detail, detail.hasPrefix(Self.nextendoFailurePrefix) {
+                return String(detail.dropFirst(Self.nextendoFailurePrefix.count))
+            }
             return L10n.text("The engine stopped without a message Arcane recognises.")
         }
     }
@@ -194,7 +198,7 @@ public enum PortingFailureClassifier {
         ("icloud.detritus", .cloudFolder, "resource fork, Finder information, or similar detritus not allowed", nil),
     ]
 
-    /// Inputs first (a drive that is gone makes every later message a consequence), then the table,
+    /// Inputs first (a drive that is gone makes every later message a consequence), then Nextendo and the table,
     /// then unreadable keys, then the provisional-profile markers (a warning that also precedes real
     /// stops, so it is matched last), else `unknown`.
     public static func classify(log: String, keysPath: String, sourcePaths: [String],
@@ -207,6 +211,9 @@ public enum PortingFailureClassifier {
             guard let name = path.dropFirst(prefix.count).split(separator: "/").first.map(String.init) else { continue }
             if !isMounted(prefix + name) { return PortingFailureReason(kind: .driveMissing, detail: name) }
         }
+        if let message = nextendoFailure(in: log) {
+            return PortingFailureReason(kind: .unknown, detail: PortingFailureReason.nextendoFailurePrefix + message)
+        }
         for row in table where log.range(of: row.pattern, options: .regularExpression) != nil {
             return PortingFailureReason(kind: row.kind, detail: detail(of: row.kind, in: log))
         }
@@ -215,6 +222,28 @@ public enum PortingFailureClassifier {
             return PortingFailureReason(kind: .noProfile, detail: jumpTableAddress(in: log))
         }
         return PortingFailureReason(kind: .unknown)
+    }
+
+    private static func nextendoFailure(in log: String) -> String? {
+        let errorPrefix = "[RED] "
+        var lastError: String?
+        for line in log.split(whereSeparator: \.isNewline).reversed()
+        where line.contains(errorPrefix) || line.contains("\"stage_end\"") {
+            switch BuildEventParser.parse(String(line)) {
+            case .say(let message), .log(let message):
+                guard message.hasPrefix(errorPrefix) else { continue }
+                let error = String(message.dropFirst(errorPrefix.count))
+                if error.hasPrefix("Nextendo game patch could not be verified")
+                    || error.hasPrefix("Nextendo service profile could not be prepared:")
+                    || error.hasPrefix("--nextendo with --platform ") { return error }
+                if lastError == nil { lastError = error }
+            case .stageEnd(let name, let ok, _, _, _):
+                // Only the terminal stage can own the error that follows it.
+                return !ok && name.hasPrefix("Nextendo ") ? lastError : nil
+            default: continue
+            }
+        }
+        return nil
     }
 
     /// The porting's extra arguments with a one-off override: every `--allow-*` except the Metal

@@ -7,6 +7,7 @@ User-visible changes to Arcane (formerly NX Library) are recorded here. Entries 
 ### Added
 
 - **Nextendo sign-in** in **Settings → General → Online services** when the selected nxnative checkout supports it. Compatible game apps expose their own **Network** choice in **Game Options → More settings**. Offline and local play do not require an account.
+- **Nextendo-enabled game builds** when the selected engine supports `--nextendo` and a public client ID is configured. Building does not require signing in; if the engine cannot prepare Nextendo, Arcane shows the error instead of retrying offline.
 
 ## 0.2.0 — 2026-11-18
 

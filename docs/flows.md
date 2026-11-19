@@ -120,11 +120,14 @@ flowchart TD
     G --> N["Porting accettato: richiesta permesso notifiche"]
     N --> H["BuildCommandBuilder → BuildService<br/>processo dell'engine nxnative"]
     H --> I["BuildEventParser → PortingProgress<br/>tile, percentuale, ETA<br/>prewarm senza conteggio: attività e tempo trascorso"]
+    H -->|"errore Nextendo"| X["Messaggio del motore; nessun tentativo offline"]
     I --> J["BuildOutputInstaller: scambio atomico"]
     J -->|"gioco aperto o installazione fallita"| K["PendingInstall: Retry più tardi"]
     J --> L["CatalogRepository: BuildRecord, toolchain"]
     L --> M["AppIconWriter (se c'è un'icona scelta) · notifica"]
 ```
+
+`BuildCommandBuilder` aggiunge `--nextendo` e l'ID pubblico all'ambiente solo se il checkout dichiara il flag e l'ID è configurato. La sessione serve al Play online, non al porting.
 
 ## 6. Importare o ripristinare un salvataggio
 
