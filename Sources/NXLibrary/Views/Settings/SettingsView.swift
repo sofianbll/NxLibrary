@@ -238,14 +238,15 @@ struct SettingsView: View {
     }
 
     private func updateActions(_ actions: [SettingsRowAction]) {
-        // One focus slot per visible row; Left and Right move between a row's two buttons (rowButton).
+        // One focus slot per visible row; reset the button when an action appears or disappears.
         let focusedID = focusedRow?.id
+        let focusedButtonCount = focusedRow?.buttonCount
         rowActions = SettingsRowAction.primaryActions(actions)
         if let focusedID, let index = rowActions.firstIndex(where: { $0.id == focusedID }) {
             rowFocus.index = index
         }
         rowFocus.move(by: 0, count: rowActions.count)
-        if rowButton >= (focusedRow?.buttonCount ?? 1) { rowButton = 0 }
+        if focusedButtonCount != focusedRow?.buttonCount { rowButton = 0 }
         if rowActions.isEmpty, focusArea == .rows { focusArea = .sidebar }
     }
 

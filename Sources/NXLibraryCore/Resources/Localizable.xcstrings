@@ -7006,6 +7006,16 @@
         }
       }
     },
+    "Add a friend": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Freund hinzufügen" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Add a friend" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Añadir un amigo" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Ajouter un ami" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Aggiungi un amico" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Adicionar um amigo" } }
+      }
+    },
     "Add a game": {
       "comment": "SpotlightCardInfoView.swift:52",
       "localizations": {
@@ -7145,6 +7155,16 @@
             "value": "添加一个游戏，开始你的收藏。"
           }
         }
+      }
+    },
+    "Advanced": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Erweitert" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Advanced" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Avanzado" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Avancé" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Avanzate" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Avançado" } }
       }
     },
     "Add and port": {
@@ -19593,6 +19613,16 @@
             "value": "复制一份已清除敏感信息的支持报告。"
           }
         }
+      }
+    },
+    "Copy code": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Code kopieren" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Copy code" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Copiar el código" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Copier le code" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Copia il codice" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Copiar código" } }
       }
     },
     "Copy current defaults": {
@@ -43143,6 +43173,66 @@
         }
       }
     },
+    "Built-in value": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Integrierter Wert" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Built-in value" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Valor integrado" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Valeur intégrée" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Valore integrato" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Valor integrado" } }
+      }
+    },
+    "Collapsed": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Eingeklappt" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Collapsed" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Contraído" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Repliée" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Chiusa" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Recolhida" } }
+      }
+    },
+    "Expanded": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Ausgeklappt" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Expanded" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Expandido" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Dépliée" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Aperta" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Expandida" } }
+      }
+    },
+    "Friends": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Freunde" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Friends" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Amigos" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Amis" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Amici" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Amigos" } }
+      }
+    },
+    "Friends unavailable": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Freundesliste nicht verfügbar" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Friends unavailable" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Lista de amigos no disponible" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Liste d’amis indisponible" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Elenco amici non disponibile" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Lista de amigos indisponível" } }
+      }
+    },
+    "Friends · %lld online out of %lld": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Freunde · %lld von %lld online" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Friends · %lld online out of %lld" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Amigos · %lld en línea de %lld" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Amis · %lld en ligne sur %lld" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Amici · %lld online su %lld" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Amigos · %lld online de %lld" } }
+      }
+    },
     "Nextendo": {
       "comment": "Nextendo sign-in",
       "localizations": {
@@ -43266,6 +43356,16 @@
         }
       }
     },
+    "Nextendo connected": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Verbunden" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Connected" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Conectado" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Connecté" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Connesso" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Conectado" } }
+      }
+    },
     "Nextendo did not authorize sign-in. Check the client ID and its permissions.": {
       "comment": "Nextendo sign-in",
       "localizations": {
@@ -43305,6 +43405,16 @@
             "value": "O Nextendo não autorizou a entrada. Verifique o identificador de cliente e as permissões dele."
           }
         }
+      }
+    },
+    "Nextendo does not allow online play for this account. Check your profile on the website.": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Nextendo erlaubt für dieses Konto kein Online-Spiel. Prüfe dein Profil auf der Website." } },
+        "en": { "stringUnit": { "state": "translated", "value": "Nextendo does not allow online play for this account. Check your profile on the website." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Nextendo no permite jugar en línea con esta cuenta. Revisa tu perfil en el sitio web." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Nextendo n’autorise pas le jeu en ligne pour ce compte. Vérifiez votre profil sur le site." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Nextendo non consente il gioco online per questo account. Controlla il profilo sul sito." } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "A Nextendo não permite jogar online com esta conta. Confira seu perfil no site." } }
       }
     },
     "Nextendo sign-in expired. Sign in again.": {
@@ -47417,6 +47527,36 @@
             "value": "一次一个更新；捆绑的 DLC 保持在一起。"
           }
         }
+      }
+    },
+    "No friends yet.": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Noch keine Freunde." } },
+        "en": { "stringUnit": { "state": "translated", "value": "No friends yet." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Aún no tienes amigos." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Pas encore d’amis." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Non ci sono ancora amici." } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Nenhum amigo ainda." } }
+      }
+    },
+    "Open my profile": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Mein Profil öffnen" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Open my profile" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Abrir mi perfil" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Ouvrir mon profil" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Apri il mio profilo" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Abrir meu perfil" } }
+      }
+    },
+    "Online": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Online" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Online" } },
+        "es": { "stringUnit": { "state": "translated", "value": "En línea" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "En ligne" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Online" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Online" } }
       }
     },
     "Online play": {
@@ -51733,6 +51873,16 @@
             "value": "上一个%@"
           }
         }
+      }
+    },
+    "Public client ID": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Öffentliche Client-ID" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Public client ID" } },
+        "es": { "stringUnit": { "state": "translated", "value": "ID de cliente público" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Identifiant client public" } },
+        "it": { "stringUnit": { "state": "translated", "value": "ID client pubblico" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "ID público do cliente" } }
       }
     },
     "Public OAuth client ID for sign-in and online play. Clear the field to use the build default.": {
@@ -58719,6 +58869,16 @@
             "value": "用逗号分隔。"
           }
         }
+      }
+    },
+    "Session expired": {
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Sitzung abgelaufen" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Session expired" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Sesión caducada" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Session expirée" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Sessione scaduta" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Sessão expirada" } }
       }
     },
     "Session card": {

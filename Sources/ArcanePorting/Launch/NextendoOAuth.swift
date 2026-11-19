@@ -4,7 +4,7 @@ import NXLibraryCore
 import Security
 
 public enum NextendoError: LocalizedError, Equatable {
-    case clientID, browser, timeout, authorization, service, expired, storage, signedOut
+    case clientID, browser, timeout, authorization, service, expired, storage, signedOut, onlinePlayUnavailable
 
     public var errorDescription: String? {
         switch self {
@@ -16,6 +16,7 @@ public enum NextendoError: LocalizedError, Equatable {
         case .expired: return L10n.text("Nextendo sign-in expired. Sign in again.")
         case .storage: return L10n.text("Could not access the shared Nextendo sign-in. Close any running games and try again.")
         case .signedOut: return L10n.text("Sign in to Nextendo in Online services before playing online.")
+        case .onlinePlayUnavailable: return L10n.text("Nextendo does not allow online play for this account. Check your profile on the website.")
         }
     }
 }
@@ -90,17 +91,22 @@ public struct NextendoAuthorization: Sendable {
 public struct NextendoOAuth {
     // Use the same endpoint as nxnative for both authorization-code and refresh grants.
     private static let tokenEndpoint = URL(string: "https://nextendo.network/api/oauth/token")!
-    private static let userInfoEndpoint = URL(string: "https://nextendo.network/api/oauth/userinfo")!
     public let store: NextendoTokenStore
     private let send: (URLRequest) async throws -> (Data, URLResponse)
 
+    private static let session: URLSession = {
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForResource = 12
+        config.httpShouldSetCookies = false
+        config.urlCredentialStorage = nil
+        config.httpMaximumConnectionsPerHost = 4
+        return URLSession(configuration: config)
+    }()
+
     public init(store: NextendoTokenStore = NextendoTokenStore()) {
         self.init(store: store) { request in
-            let config = URLSessionConfiguration.ephemeral
-            config.timeoutIntervalForResource = 12
-            let session = URLSession(configuration: config)
-            defer { session.finishTasksAndInvalidate() }
-            return try await BoundedDownload.data(for: request, session: session, limit: 65_536)
+            let limit = ["/api/friends", "/api/profile", "/api/avatar"].contains(request.url?.path ?? "") ? 1_048_576 : 65_536
+            return try await BoundedDownload.data(for: request, session: Self.session, limit: limit)
         }
     }
 
@@ -110,28 +116,41 @@ public struct NextendoOAuth {
     }
 
     public func signIn(_ attempt: NextendoAuthorization, code: String) async throws -> String {
-        guard let name = try await store.withLock({ file in
+        try await signInSession(attempt, code: code).user.username
+    }
+
+    func signInSession(_ attempt: NextendoAuthorization, code: String) async throws -> (user: UserInfo, access: String) {
+        guard let session = try await store.withLock({ file in
             let token = try await exchange(clientID: attempt.clientID, grant: "authorization_code", [
                 "code": code, "redirect_uri": attempt.redirect.absoluteString, "code_verifier": attempt.verifier,
             ])
-            let name = try await userName(clientID: attempt.clientID, access: token.access)
+            let user: UserInfo
+            do { user = try await userInfo(clientID: attempt.clientID, access: token.access) }
+            catch NextendoHTTPError.unauthorized { throw NextendoError.service }
             try file.write(token.refresh)
-            return name
+            return (user, token.access)
         }) else { throw NextendoError.storage }
-        return name
+        return session
     }
 
     /// Checking an account rotates the token under the same lock the engine takes.
     public func accountName(clientID: String) async throws -> String? {
+        guard let access = try await refreshAccess(clientID: clientID) else { return nil }
+        do { return try await userInfo(clientID: clientID, access: access).username }
+        catch NextendoHTTPError.unauthorized { throw NextendoError.service }
+    }
+
+    func refreshAccess(clientID: String) async throws -> String? {
         guard try store.hasToken() else { return nil }
-        let access = try await store.withLock(create: false) { file -> String? in
+        return try await store.withLock(create: false) { file -> String? in
             guard let refresh = try file.read() else { return nil }
-            let token = try await exchange(clientID: clientID, grant: "refresh_token", ["refresh_token": refresh])
+            // Once sent, finish the rotation even if the UI leaves; the old token may already be invalid.
+            let token = try await Task.detached {
+                try await exchange(clientID: clientID, grant: "refresh_token", ["refresh_token": refresh])
+            }.value
             try file.write(token.refresh)
             return token.access
-        }
-        guard let access = access ?? nil else { return nil }
-        return try await userName(clientID: clientID, access: access)
+        } ?? nil
     }
 
     public func signOut() async throws {
@@ -163,38 +182,56 @@ public struct NextendoOAuth {
         }
         if [400, 401, 403].contains(status) { throw NextendoError.authorization }
         guard status == 200, let token = try? JSONDecoder().decode(Token.self, from: body),
-              !token.access.isEmpty, token.access.utf8.count <= 8192,
-              token.access.utf8.allSatisfy({ (33...126).contains($0) }),
+              Self.validBearer(token.access),
               NextendoTokenStore.valid(token.refresh) else { throw NextendoError.service }
         return token
     }
 
     private struct Refusal: Decodable { let error: String }
-    private struct Account: Decodable {
-        struct Identity: Decodable { let username: String }
-        let username: String?
-        let account: Identity?
-        let identity: Identity?
+    static func validBearer(_ token: String) -> Bool {
+        (1...8192).contains(token.utf8.count) && token.utf8.allSatisfy { (33...126).contains($0) }
     }
 
-    private func userName(clientID: String, access: String) async throws -> String {
-        var request = try request(Self.userInfoEndpoint, clientID: clientID)
-        request.setValue("Bearer \(access)", forHTTPHeaderField: "Authorization")
-        let (body, status) = try await response(request)
-        guard status == 200, let account = try? JSONDecoder().decode(Account.self, from: body) else {
-            throw NextendoError.service
-        }
-        let names = [account.username, account.account?.username, account.identity?.username].compactMap { $0 }
-        guard let name = names.first, !name.isEmpty, name.count <= 128,
-              name.rangeOfCharacter(from: .controlCharacters) == nil,
-              names.allSatisfy({ $0 == name }) else { throw NextendoError.service }
-        return name
+    struct UserInfo {
+        let username: String
+        let displayName: String?
+        let pid: UInt64?
+        let friendCode: String?
     }
 
-    private func request(_ endpoint: URL, clientID: String) throws -> URLRequest {
-        guard NextendoAuthorization.validClientID(clientID) else { throw NextendoError.clientID }
+    func userInfo(clientID: String, access: String) async throws -> UserInfo {
+        let (body, status) = try await get("/api/oauth/userinfo", clientID: clientID, access: access)
+        if status == 401 { throw NextendoHTTPError.unauthorized }
+        guard status == 200, let account = try? NextendoDocument(data: body) else { throw NextendoError.service }
+        let fields = [account, account.object("account"), account.object("identity")].compactMap { $0 }
+        let names = fields.compactMap { $0.text("username") }
+        let pids = fields.compactMap { $0.pid }
+        guard let username = names.first, names.allSatisfy({ $0 == username }),
+              pids.allSatisfy({ $0 == pids.first }) else { throw NextendoError.service }
+        return UserInfo(username: username, displayName: fields.lazy.compactMap { $0.text("display_name") }.first,
+                        pid: pids.first, friendCode: fields.lazy.compactMap { $0.text("friend_code") }.first)
+    }
+
+    func get(_ path: String, query: [URLQueryItem] = [], clientID: String?, access: String?) async throws -> (Data, Int) {
+        var url = URLComponents()
+        url.scheme = "https"
+        url.host = "nextendo.network"
+        url.path = path
+        if !query.isEmpty { url.queryItems = query }
+        guard let endpoint = url.url else { throw NextendoError.service }
+        var request = try request(endpoint, clientID: clientID)
+        if let access { request.setValue("Bearer \(access)", forHTTPHeaderField: "Authorization") }
+        let result = try await response(request)
+        try Task.checkCancellation()
+        return result
+    }
+
+    private func request(_ endpoint: URL, clientID: String?) throws -> URLRequest {
         var request = URLRequest(url: endpoint, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 12)
-        request.setValue(clientID, forHTTPHeaderField: "X-Nextendo-Client-Id")
+        if let clientID {
+            guard NextendoAuthorization.validClientID(clientID) else { throw NextendoError.clientID }
+            request.setValue(clientID, forHTTPHeaderField: "X-Nextendo-Client-Id")
+        }
         return request
     }
 
@@ -210,3 +247,5 @@ public struct NextendoOAuth {
         }
     }
 }
+
+enum NextendoHTTPError: Error { case unauthorized }
