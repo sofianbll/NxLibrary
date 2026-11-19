@@ -290,7 +290,7 @@ In fullscreen, the pointer hides after three seconds without movement. Moving th
 | Switch library view | Tab | View |
 | Switch tabs / filters | Q / E where shown | LB / RB |
 
-Prompts follow the connected controller and supported system remapping. **Settings → Controllers → Button layout** separates **Library** navigation from **In game** defaults. Game inputs are handled by the engine and can differ in older builds.
+Prompts follow the connected controller and supported system remapping. The PowerA **Lic Pro Controller** can use a direct HID fallback with Nintendo prompts when it isn't available through GameController. **Settings → Controllers → Button layout** separates **Library** navigation from **In game** defaults. Game inputs are handled by the engine and can differ in older builds.
 
 ## Troubleshooting
 

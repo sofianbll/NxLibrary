@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 18 novembre 2026. Copertura di **714 file** del progetto, compresi i controlli di pubblicazione, la CI con regressioni app senza UI, il master dell’icona, le guide per sviluppo e media, gli screenshot del README, l'integrazione di nxnative, il canale di aggiornamento e il primo avvio che parte da ciò che è già sul Mac, il setup del porting con cartella unica per scoperta e installazione dei giochi. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 19 novembre 2026. Copertura di **719 file** del progetto, compresi i controlli di pubblicazione, la CI con regressioni app senza UI, il master dell’icona, le guide per sviluppo e media, gli screenshot del README, l'integrazione di nxnative, il canale di aggiornamento e il primo avvio che parte da ciò che è già sul Mac, il setup del porting con cartella unica per scoperta e installazione dei giochi. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le funzionalità, quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -115,7 +115,10 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../CONTRIBUTING.md), [SECURIT
 |---|---|
 | [Sources/NXLibrary/Services/AppUpdater.swift](../Sources/NXLibrary/Services/AppUpdater.swift) | Coordina controllo release, download, verifica, installazione e riavvio di Arcane. |
 | [Sources/NXLibrary/Services/NativeMenuCommands.swift](../Sources/NXLibrary/Services/NativeMenuCommands.swift) | Coordina tracking, disponibilità nella scena e passaggio differito dai menu macOS alle azioni del launcher. |
-| [Sources/NXLibrary/Services/GameControllerService.swift](../Sources/NXLibrary/Services/GameControllerService.swift) | Rileva controller e rimappature, gestisce tap e hold e produce azioni e simboli dei pulsanti. |
+| [Sources/NXLibrary/Services/ControllerSource.swift](../Sources/NXLibrary/Services/ControllerSource.swift) | Contratto di connessione, identità e transizioni normalizzate per le sorgenti di input. |
+| [Sources/NXLibrary/Services/GameControllerService.swift](../Sources/NXLibrary/Services/GameControllerService.swift) | Sceglie il pad attivo, gestisce tap, hold e navigazione, pubblica azioni e simboli. |
+| [Sources/NXLibrary/Services/GCControllerSource.swift](../Sources/NXLibrary/Services/GCControllerSource.swift) | Legge il profilo esteso di GameController, lo schema dei tasti e i simboli di sistema. |
+| [Sources/NXLibrary/Services/HIDControllerSource.swift](../Sources/NXLibrary/Services/HIDControllerSource.swift) | Scopre i pad HID Nintendo fisici e legge il report `0x3F` del pad selezionato in modalità condivisa. |
 | [Sources/NXLibrary/Services/LaunchReadinessProbe.swift](../Sources/NXLibrary/Services/LaunchReadinessProbe.swift) | Attende una finestra visibile del gioco (per bundle o, per Steam, per pid) per terminare la schermata di lancio. |
 | [Sources/NXLibrary/Services/NotificationService.swift](../Sources/NXLibrary/Services/NotificationService.swift) | Invia notifiche dei porting e instrada i clic verso il titolo o l’errore interessato. |
 | [Sources/NXLibrary/Services/OnlineBackgroundService.swift](../Sources/NXLibrary/Services/OnlineBackgroundService.swift) | Carica pagine e miniature e scarica wallpaper o video conservando progressi e crediti. |
@@ -299,6 +302,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../CONTRIBUTING.md), [SECURIT
 | File | Responsabilità |
 |---|---|
 | [Sources/NXLibraryCore/Models/ButtonPrompts.swift](../Sources/NXLibraryCore/Models/ButtonPrompts.swift) | Traduce azioni in simboli o etichette per tastiera e controller Switch, Xbox e PlayStation. |
+| [Sources/NXLibraryCore/Models/ControllerInput.swift](../Sources/NXLibraryCore/Models/ControllerInput.swift) | Decodifica report, calibra stick, calcola transizioni, annulla pressioni e decide il ripiego HID. |
 | [Sources/NXLibraryCore/Models/CollectionRow.swift](../Sources/NXLibraryCore/Models/CollectionRow.swift) | Definisce proporzioni delle copertine e geometria della riga Collection. |
 | [Sources/NXLibraryCore/Models/DetailsFacts.swift](../Sources/NXLibraryCore/Models/DetailsFacts.swift) | Sceglie le righe del pannello Details per Switch e Steam: solo i valori presenti, niente di tecnico. |
 | [Sources/NXLibraryCore/Models/CriticRating.swift](../Sources/NXLibraryCore/Models/CriticRating.swift) | Identità pubblica del gioco e console (Mac, Switch, Switch 2), voto originale /100, provenienza e riempimento proporzionale delle cinque stelle. |
@@ -643,6 +647,7 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 | [Tests/NXLibraryCoreTests/BuildServiceTests.swift](../Tests/NXLibraryCoreTests/BuildServiceTests.swift) | Processi, eventi, cancellazione, lease e conservazione della build dopo un errore d’installazione, con retry senza nuova esecuzione del motore; un avvio fallito non lascia file aperti. |
 | [Tests/NXLibraryCoreTests/GameAppDestinationTests.swift](../Tests/NXLibraryCoreTests/GameAppDestinationTests.swift) | Installazione e scoperta nella cartella scelta, rebuild dopo il cambio cartella, conflitti di nome, sorgenti protette e cartelle non disponibili o di sola lettura. |
 | [Tests/NXLibraryCoreTests/ButtonPromptsTests.swift](../Tests/NXLibraryCoreTests/ButtonPromptsTests.swift) | Etichette e simboli per tastiera, controller e scelte esplicite dell’utente. |
+| [Tests/NXLibraryCoreTests/ControllerInputTests.swift](../Tests/NXLibraryCoreTests/ControllerInputTests.swift) | Report Nintendo sintetici, calibrazione, transizioni, annullamento degli hold e precedenza di GameController. |
 | [Tests/NXLibraryCoreTests/CheatCopyTests.swift](../Tests/NXLibraryCoreTests/CheatCopyTests.swift) | Testi di intestazione, rifiuto, conferma e rimozione dei cheats. |
 | [Tests/NXLibraryCoreTests/CheatFileTests.swift](../Tests/NXLibraryCoreTests/CheatFileTests.swift) | Parsing dei codici secondo il motore, sezioni, metadati, nomi duplicati e codici non validi. |
 | [Tests/NXLibraryCoreTests/CheatInstallTests.swift](../Tests/NXLibraryCoreTests/CheatInstallTests.swift) | Build ID, title ID, file senza nome, cartelle e decisioni di installazione. |
