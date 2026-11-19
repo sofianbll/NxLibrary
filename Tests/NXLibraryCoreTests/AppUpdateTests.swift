@@ -87,7 +87,7 @@ final class AppUpdateTests: XCTestCase {
     }
 
     func testDownloadSourceIsPublicProjectRepository() {
-        XCTAssertEqual(AppUpdate.defaultRepository, "Bium23/NxLibrary")
+        XCTAssertEqual(AppUpdate.defaultRepository, "sofianbll/NxLibrary")
     }
 
     func testRejectsReleaseWithoutDigest() throws {
@@ -130,18 +130,21 @@ final class AppUpdateTests: XCTestCase {
         XCTAssertNil(AppUpdate.parseRelease(json, successor: nil))
     }
 
-    /// The bridge: once the repository is renamed, GitHub answers the old release API with links under the new
-    /// name (checked on a moved repository). This copy keeps updating from both, and from nothing else.
-    func testTheBridgeAcceptsTheRenamedRepositoryByDefault() throws {
-        XCTAssertEqual(AppUpdate.defaultRepository, "Bium23/NxLibrary")
-        XCTAssertEqual(AppUpdate.successorRepository, "Bium23/Arcane")
+    func testForkDoesNotAcceptUpstreamReleaseAssets() throws {
+        let fork = try XCTUnwrap(AppUpdate.defaultRepository)
+        XCTAssertNil(AppUpdate.successorRepository)
         let renamed = try changingAsset { $0["browser_download_url"] = successorURL }
-        XCTAssertNotNil(AppUpdate.parseRelease(renamed))
-        XCTAssertNotNil(AppUpdate.parseRelease(Data(releaseJSON.utf8)))
+        XCTAssertNil(AppUpdate.parseRelease(renamed, repository: fork))
+        XCTAssertNil(AppUpdate.parseRelease(Data(releaseJSON.utf8), repository: fork))
+        let forkRelease = try changingAsset {
+            $0["browser_download_url"] = "https://github.com/\(fork)/releases/download/v0.3.0/NXLibrary-0.3.0.zip"
+        }
+        XCTAssertNotNil(AppUpdate.parseRelease(forkRelease, repository: fork))
         let wrongCase = try changingAsset {
             $0["browser_download_url"] = "https://github.com/Bium23/arcane/releases/download/v0.3.0/NXLibrary-0.3.0.zip"
         }
-        XCTAssertNil(AppUpdate.parseRelease(wrongCase), "the path must match GitHub's spelling exactly")
+        XCTAssertNil(AppUpdate.parseRelease(wrongCase, successor: "Bium23/Arcane"),
+                     "the path must match GitHub's spelling exactly")
     }
 
     func testDownloadBudgetAndGitHubRedirectBoundary() {

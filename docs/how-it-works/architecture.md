@@ -776,8 +776,8 @@ Nel repository, `.build/` contiene gli output SwiftPM, `work/Runtime` il runtime
 - Il gate si verifica prima del download e prima dell'installazione, insieme ai controlli e ai lease esistenti. Il motivo dell'attesa arriva al dialogo come valore, così la chiusura di un gioco aggiorna il pulsante Update.
 
 **Download e verifica.**
-- `AppUpdater` coordina gli aggiornamenti da `Bium23/NxLibrary`, senza autenticazione. Le regole di versione, requisiti, digest, identità del bundle e installazione sono in `AppUpdate`.
-- La release si accetta solo se lo zip `NXLibrary-<versione>.zip` sta nel percorso di download di quel repository. `AppUpdate.successorRepository` (`Bium23/Arcane`) è il nome che il repository può prendere: dopo una rinomina GitHub risponde alla vecchia API delle release con link sotto il nome nuovo, quindi anche quel percorso è accettato, scritto esattamente come lo restituisce GitHub.
+- `AppUpdater` coordina gli aggiornamenti da `sofianbll/NxLibrary`, senza autenticazione. Le regole di versione, requisiti, digest, identità del bundle e installazione sono in `AppUpdate`.
+- La release si accetta solo se lo zip `NXLibrary-<versione>.zip` sta nel percorso di download del repository configurato. Il fork non accetta un secondo percorso: `AppUpdate.successorRepository` non è impostato.
 - `AppUpdateDownload` limita il trasferimento alla dimensione dichiarata e agli host HTTPS di GitHub.
 - `validate_update.py` verifica struttura e percorsi, poi estrae contando i dati davvero decompressi tramite il Python incluso. Prima della sostituzione si controllano versione, marker, identificativo e firma del bundle.
 - La firma ad hoc protegge il contenuto sigillato ma non identifica da sola il maintainer.
