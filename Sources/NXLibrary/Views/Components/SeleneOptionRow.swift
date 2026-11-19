@@ -13,18 +13,24 @@ struct SeleneOptionRow<Trailing: View>: View {
     var enabled = true
     /// Opt-in focus expansion; other option screens keep their existing layout.
     var aboutPreview: String? = nil
+    var leading: AnyView? = nil
+    var titleAccessory: AnyView? = nil
     @ViewBuilder var trailing: () -> Trailing
 
     var body: some View {
         HStack(spacing: canvas.u(18)) {
+            leading
             if let icon {
                 MaterialIconView(icon, size: 24)
                     .foregroundColor(destructive ? SeleneTheme.danger : (enabled ? SeleneTheme.rowIcon : SeleneTheme.ink60))
             }
             VStack(alignment: .leading, spacing: canvas.u(3)) {
-                Text(title)
-                    .seleneFont(21, .medium)
-                    .foregroundColor(destructive ? SeleneTheme.danger : (enabled ? SeleneTheme.ink : SeleneTheme.ink60))
+                HStack(spacing: canvas.u(8)) {
+                    Text(title)
+                        .seleneFont(21, .medium)
+                        .foregroundColor(destructive ? SeleneTheme.danger : (enabled ? SeleneTheme.ink : SeleneTheme.ink60))
+                    titleAccessory
+                }
                 if let about {
                     Group {
                         if let aboutPreview {

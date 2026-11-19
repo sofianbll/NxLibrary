@@ -175,7 +175,9 @@ Nel menu rapido, Theme apre prima i colori con anteprima viva; A applica la pale
 
 La barra laterale segue `SettingsSidebarGroup`: General, Library, Porting e System. Ogni sezione mostra solo le righe di `SettingsCatalog` che le appartengono.
 
-In General → Online services, un checkout con supporto Nextendo mostra la connessione e l'ID client pubblico. Sign in apre il browser predefinito e la riga offre Cancel finché attende la callback loopback. Una callback valida porta allo scambio PKCE e allo store condiviso del motore; Sign out rimuove solo il token locale. In Game Options → More settings, Network conserva solo le modalità dichiarate dal bundle del gioco.
+In General → Online services, un checkout con supporto Nextendo mostra la scheda account, Amici e l'ID client pubblico avanzato. La scheda legge l'account all'apertura, al completamento di Sign in e con Check status, senza polling. Il codice amico può essere copiato; la riga Amici espande l'elenco e i link per aggiungere un amico o aprire il profilo nel browser. Le letture in corso si annullano quando si lascia la pagina; una rotazione già avviata termina per conservare il token condiviso.
+
+Sign in apre il browser predefinito e la riga offre Cancel finché attende la callback loopback. Una callback valida porta allo scambio PKCE e allo store condiviso del motore; Sign out rimuove solo il token locale. In Game Options → More settings, Network conserva solo le modalità dichiarate dal bundle del gioco.
 
 In System → About, il pulsante Support Arcane compare tra il riepilogo dell’app e i crediti. `SettingsAboutSection` apre la pagina Buy Me a Coffee nel browser predefinito tramite clic, Invio o conferma del controller.
 
