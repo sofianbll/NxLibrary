@@ -34,7 +34,7 @@ final class ControllerInputTests: XCTestCase {
         let payload = try XCTUnwrap(decoder.decode(reportID: 0x3f, bytes: bytes))
         XCTAssertEqual(payload.buttons, [.b, .a, .y, .x, .l, .r])
         XCTAssertEqual(decoder.decode(reportID: 0x3f, bytes: [0x3f] + bytes), payload)
-        XCTAssertNil(decoder.decode(reportID: 0x30, bytes: bytes))
+        XCTAssertNil(decoder.decode(reportID: 0x21, bytes: bytes))
         XCTAssertNil(decoder.decode(reportID: 0x3f, bytes: []))
         XCTAssertNil(decoder.decode(reportID: 0x3f, bytes: Array(bytes.prefix(10))))
         XCTAssertNil(decoder.decode(reportID: 0x3f, bytes: [0x3f] + bytes.prefix(9)))
@@ -77,6 +77,80 @@ final class ControllerInputTests: XCTestCase {
         XCTAssertEqual(ControllerInputState().changes(from: right), [.button(.right, false), .leftStick(.zero)])
     }
 
+    func testNintendoReportModeSwitchPreservesHeldButtonsAndReleasesStaleInputs() throws {
+        var decoder = NintendoHIDInput()
+        let simple = try XCTUnwrap(decoder.decode(reportID: 0x3f, bytes: report(buttons: 3, hat: 0, lx: .max)))
+        let fullBytes = fullReport(buttons: [0x08, 0, 0x04])
+        let full = try XCTUnwrap(decoder.decode(reportID: 0x30, bytes: fullBytes))
+        XCTAssertEqual(full.changes(from: simple), [
+            .button(.up, false), .button(.right, true), .button(.b, false), .leftStick(.zero),
+        ])
+        XCTAssertEqual(decoder.decode(reportID: 0x30, bytes: [0x30] + fullBytes)?.changes(from: full), [])
+        let neutral = try XCTUnwrap(decoder.decode(reportID: 0x3f, bytes: report()))
+        XCTAssertEqual(neutral.changes(from: full), [.button(.right, false), .button(.a, false)])
+    }
+
+    func testNintendoFullReportMapsEveryButtonBit() {
+        let expected: [ControllerButton?] = [
+            .y, .x, .b, .a, nil, nil, .r, .zr,
+            .view, .menu, .r3, .l3, .home, .capture, nil, nil,
+            .down, .up, .right, .left, nil, nil, .l, .zl,
+        ]
+        var decoder = NintendoHIDInput()
+        for (bit, button) in expected.enumerated() {
+            var bytes = fullReport()
+            bytes[2 + bit / 8] = UInt8(1 << (bit % 8))
+            let buttons: Set<ControllerButton> = button.map { [$0] } ?? []
+            XCTAssertEqual(decoder.decode(reportID: 0x30, bytes: bytes)?.buttons, buttons, "payload bit \(bit)")
+            XCTAssertEqual(decoder.decode(reportID: 0x30, bytes: [0x30] + bytes)?.buttons, buttons, "report bit \(bit)")
+        }
+        XCTAssertEqual(decoder.decode(reportID: 0x30, bytes: fullReport(buttons: [0, 0, 0x06]))?.buttons, [.up, .right])
+    }
+
+    func testNintendoFullReportRejectsUnknownIDsAndInvalidLengths() throws {
+        var decoder = NintendoHIDInput()
+        let bytes = fullReport(buttons: [0x08, 0, 0], lx: 3500)
+        let padded = bytes + Array(repeating: 0, count: 15)
+        for id: UInt32 in [0, 0x21, 0x31, 0x81] {
+            XCTAssertNil(decoder.decode(reportID: id, bytes: [0x30] + bytes))
+        }
+        XCTAssertNil(decoder.decode(reportID: 0x30, bytes: []))
+        XCTAssertNil(decoder.decode(reportID: 0x30, bytes: bytes.dropLast()))
+        XCTAssertNil(decoder.decode(reportID: 0x30, bytes: [0x21] + bytes))
+        let state = try XCTUnwrap(decoder.decode(reportID: 0x30, bytes: bytes))
+        XCTAssertEqual(state.buttons, [.a])
+        XCTAssertEqual(decoder.decode(reportID: 0x30, bytes: padded), state)
+        XCTAssertEqual(decoder.decode(reportID: 0x30, bytes: [0x30] + padded), state)
+    }
+
+    func testNintendoFullReportPacksBothSticksWithYUpAndCentersAfterExtremes() throws {
+        var decoder = NintendoHIDInput()
+        for (low, high): (UInt16, UInt16) in [(0, 4095), (4095, 0)] {
+            let state = try XCTUnwrap(decoder.decode(reportID: 0x30,
+                                                     bytes: fullReport(lx: low, ly: high, rx: high, ry: low)))
+            let direction: Float = low == 0 ? -1 : 1
+            XCTAssertEqual(state.leftStick, SIMD2(direction, -direction))
+            XCTAssertEqual(state.rightStick, SIMD2(-direction, direction))
+        }
+        XCTAssertEqual(decoder.decode(reportID: 0x30, bytes: fullReport()), ControllerInputState())
+    }
+
+    func testNintendoFullReportLearnsItsOwnRestAndReach() throws {
+        var decoder = NintendoHIDInput()
+        _ = decoder.decode(reportID: 0x3f, bytes: report())
+        XCTAssertEqual(decoder.decode(reportID: 0x30, bytes: fullReport(lx: 1700, ly: 1700))?.leftStick, .zero)
+        XCTAssertEqual(decoder.decode(reportID: 0x30, bytes: fullReport(lx: 1843, ly: 1700))?.leftStick, .zero)
+        let diagonal = try XCTUnwrap(decoder.decode(reportID: 0x30, bytes: fullReport(lx: 1843, ly: 1843)))
+        XCTAssertEqual(diagonal.leftStick.x, 0.0440, accuracy: 0.001)
+        XCTAssertEqual(diagonal.leftStick.x, diagonal.leftStick.y)
+        XCTAssertEqual(decoder.decode(reportID: 0x30, bytes: fullReport(lx: 3700, ly: 1700))?.leftStick.x, 1)
+        XCTAssertEqual(decoder.decode(reportID: 0x30, bytes: fullReport(lx: 3500, ly: 1700))?.leftStick.x, 1)
+        let halfReach = try XCTUnwrap(decoder.decode(reportID: 0x30, bytes: fullReport(lx: 2700, ly: 1700)))
+        XCTAssertEqual(halfReach.leftStick.x, 0.48718, accuracy: 0.0002)
+        let otherSide = try XCTUnwrap(decoder.decode(reportID: 0x30, bytes: fullReport(lx: 1100, ly: 1700)))
+        XCTAssertEqual(otherSide.leftStick.x, -0.48718, accuracy: 0.0002)
+    }
+
     func testDisconnectCancelsHoldsWithoutTurningThemIntoTaps() {
         var holds = ControllerHolds()
         XCTAssertNil(holds.update(.menu, pressed: true, at: 1))
@@ -114,5 +188,14 @@ final class ControllerInputTests: XCTestCase {
                         rx: UInt16 = 32_768, ry: UInt16 = 32_768) -> [UInt8] {
         [UInt8(truncatingIfNeeded: buttons), UInt8(buttons >> 8), hat] +
             [lx, ly, rx, ry].flatMap { [UInt8(truncatingIfNeeded: $0), UInt8($0 >> 8)] }
+    }
+
+    private func fullReport(buttons: [UInt8] = [0, 0, 0], lx: UInt16 = 2048, ly: UInt16 = 2048,
+                            rx: UInt16 = 2048, ry: UInt16 = 2048) -> [UInt8] {
+        func packed(_ x: UInt16, _ y: UInt16) -> [UInt8] {
+            [UInt8(truncatingIfNeeded: x), UInt8(x >> 8 | (y & 0xf) << 4), UInt8(y >> 4)]
+        }
+        // The timer can have the same value as the report ID. Vibration and IMU bytes are unused.
+        return [0x30, 0x8e] + buttons + packed(lx, ly) + packed(rx, ry) + Array(repeating: 0xff, count: 37)
     }
 }

@@ -147,7 +147,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 | [Sources/NXLibrary/Services/ControllerSource.swift](../../Sources/NXLibrary/Services/ControllerSource.swift) | Contratto di connessione, identità e transizioni normalizzate per le sorgenti di input. |
 | [Sources/NXLibrary/Services/GameControllerService.swift](../../Sources/NXLibrary/Services/GameControllerService.swift) | Sceglie il pad attivo, gestisce tap, hold e navigazione, pubblica azioni e simboli. |
 | [Sources/NXLibrary/Services/GCControllerSource.swift](../../Sources/NXLibrary/Services/GCControllerSource.swift) | Legge il profilo esteso di GameController, lo schema dei tasti e i simboli di sistema. |
-| [Sources/NXLibrary/Services/HIDControllerSource.swift](../../Sources/NXLibrary/Services/HIDControllerSource.swift) | Scopre i pad HID Nintendo fisici e legge il report `0x3F` del pad selezionato in modalità condivisa. |
+| [Sources/NXLibrary/Services/HIDControllerSource.swift](../../Sources/NXLibrary/Services/HIDControllerSource.swift) | Scopre i pad HID Nintendo fisici e legge i report `0x3F` e `0x30` del pad selezionato in modalità condivisa. |
 | [Sources/NXLibrary/Services/LaunchReadinessProbe.swift](../../Sources/NXLibrary/Services/LaunchReadinessProbe.swift) | Attende una finestra visibile del gioco (per bundle o, per Steam, per pid) per terminare la schermata di lancio. |
 | [Sources/NXLibrary/Services/NotificationService.swift](../../Sources/NXLibrary/Services/NotificationService.swift) | Invia notifiche dei porting e instrada i clic verso il titolo o l’errore interessato. |
 | [Sources/NXLibrary/Services/OnlineBackgroundService.swift](../../Sources/NXLibrary/Services/OnlineBackgroundService.swift) | Carica pagine e miniature e scarica wallpaper o video conservando progressi e crediti. |
@@ -238,7 +238,7 @@ Cartella `Sources/NXLibraryCore/Selene/`.
 | [Sources/NXLibraryCore/Selene/OnlineBackgrounds.swift](../../Sources/NXLibraryCore/Selene/OnlineBackgrounds.swift) | Modella sorgenti e risultati e interpreta le risposte dei provider di sfondi fissi e video. |
 | [Sources/NXLibraryCore/Selene/SeleneImporter.swift](../../Sources/NXLibraryCore/Selene/SeleneImporter.swift) | Importa suoni e wallpaper dalla cartella Selene dell’utente e risolve cue e fallback. |
 | [Sources/NXLibraryCore/Selene/ButtonPrompts.swift](../../Sources/NXLibraryCore/Selene/ButtonPrompts.swift) | Traduce azioni in simboli o etichette per tastiera e controller Switch, Xbox e PlayStation. |
-| [Sources/NXLibraryCore/Selene/ControllerInput.swift](../../Sources/NXLibraryCore/Selene/ControllerInput.swift) | Decodifica report, calibra stick, calcola transizioni, annulla pressioni e decide il ripiego HID. |
+| [Sources/NXLibraryCore/Selene/ControllerInput.swift](../../Sources/NXLibraryCore/Selene/ControllerInput.swift) | Decodifica entrambi i report Nintendo, calibra gli stick per formato, calcola transizioni, annulla pressioni e decide il ripiego HID. |
 | [Sources/NXLibraryCore/Selene/FocusIndex.swift](../../Sources/NXLibraryCore/Selene/FocusIndex.swift) | Mantiene un indice di focus entro i limiti di una lista. |
 | [Sources/NXLibraryCore/Selene/HoldDetector.swift](../../Sources/NXLibraryCore/Selene/HoldDetector.swift) | Distingue pressione breve e prolungata usando un tempo fornito dal chiamante. |
 | [Sources/NXLibraryCore/Selene/MaterialIcon.swift](../../Sources/NXLibraryCore/Selene/MaterialIcon.swift) | Elenca i glifi del font Material Icons incluso nel bundle. |
@@ -838,7 +838,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/NXLibraryCoreTests/SystemCommandRunnerTests.swift](../../Tests/NXLibraryCoreTests/SystemCommandRunnerTests.swift) | Un comando atteso, sincrono o in streaming, non fa girare il run loop mentre aspetta. |
 | [Tests/ArcanePortingTests/GameAppDestinationTests.swift](../../Tests/ArcanePortingTests/GameAppDestinationTests.swift) | Installazione e scoperta nella cartella scelta, rebuild dopo il cambio cartella, conflitti di nome, sorgenti protette e cartelle non disponibili o di sola lettura. |
 | [Tests/NXLibraryCoreTests/ButtonPromptsTests.swift](../../Tests/NXLibraryCoreTests/ButtonPromptsTests.swift) | Etichette e simboli per tastiera, controller e scelte esplicite dell’utente. |
-| [Tests/NXLibraryCoreTests/ControllerInputTests.swift](../../Tests/NXLibraryCoreTests/ControllerInputTests.swift) | Report Nintendo sintetici, calibrazione, transizioni, annullamento degli hold e precedenza di GameController. |
+| [Tests/NXLibraryCoreTests/ControllerInputTests.swift](../../Tests/NXLibraryCoreTests/ControllerInputTests.swift) | Report Nintendo sintetici e cambio di formato, calibrazione, transizioni, annullamento degli hold e precedenza di GameController. |
 | [Tests/ArcanePortingTests/CheatCopyTests.swift](../../Tests/ArcanePortingTests/CheatCopyTests.swift) | Testi di intestazione, rifiuto, conferma e rimozione dei cheats. |
 | [Tests/ArcanePortingTests/CheatFileTests.swift](../../Tests/ArcanePortingTests/CheatFileTests.swift) | Parsing dei codici secondo il motore, sezioni, metadati, nomi duplicati e codici non validi. |
 | [Tests/ArcanePortingTests/CheatInstallTests.swift](../../Tests/ArcanePortingTests/CheatInstallTests.swift) | Build ID, title ID, file senza nome, cartelle e decisioni di installazione. |

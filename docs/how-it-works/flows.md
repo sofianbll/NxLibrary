@@ -31,7 +31,7 @@ flowchart TD
     H --> K["Prima home Spotlight: moonlight condiviso → entrata<br/>Entrance animation; niente volo con Riduci movimento"]
     I --> K
     F --> J["In background: recuperi dei salvataggi, installazioni in attesa,<br/>scansione Steam se attivo, controllo engine se attivo, aggiornamenti;<br/>avviso se la copia è temporanea (App Translocation)"]
-    P["GameController · ripiego HID 0x3F"] --> Q["GameControllerService: GamepadAction"]
+    P["GameController · ripiego HID 0x3F / 0x30"] --> Q["GameControllerService: GamepadAction"]
     Q --> F
 ```
 

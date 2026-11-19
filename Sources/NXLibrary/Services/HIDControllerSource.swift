@@ -70,7 +70,12 @@ final class HIDControllerSource: ControllerSource {
               (property(kIOHIDTransportKey) as? String)?.caseInsensitiveCompare("Virtual") != .orderedSame,
               let elements = IOHIDDeviceCopyMatchingElements(device, nil, Self.options) as? [IOHIDElement],
               elements.contains(where: {
-                  IOHIDElementGetUsagePage($0) == UInt32(kHIDPage_Button) && IOHIDElementGetReportID($0) == 0x3f
+                  let type = IOHIDElementGetType($0).rawValue
+                  guard (kIOHIDElementTypeInput_Misc.rawValue...kIOHIDElementTypeInput_NULL.rawValue).contains(type)
+                  else { return false }
+                  let reportID = IOHIDElementGetReportID($0)
+                  // Nintendo can expose the full report as vendor-defined data, not button elements.
+                  return reportID == 0x30 || (reportID == 0x3f && IOHIDElementGetUsagePage($0) == UInt32(kHIDPage_Button))
               }) else { return }
         // Matching both usages can return two references to the same registry device.
         if let entry = Self.registryID(device),
