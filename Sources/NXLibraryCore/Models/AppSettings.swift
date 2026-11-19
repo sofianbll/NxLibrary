@@ -110,6 +110,8 @@ public enum LaunchShade: String, Codable, CaseIterable, Identifiable, Equatable 
 public struct AppSettings: Codable, Equatable {
     public var appLanguage: AppLanguage = .automatic
     public var appRegion: String? = nil
+    /// A public application identifier, never an account credential. Nil uses the packaged default.
+    public var nextendoClientID: String? = nil
     public var backgroundShade: BackgroundShade
     public var readableText: Bool
     public var reduceMotion: Bool
@@ -249,7 +251,7 @@ public struct AppSettings: Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case appLanguage, appRegion
+        case appLanguage, appRegion, nextendoClientID
         case backgroundShade, readableText, reduceMotion, showButtonHints, showClock
         case restoreLastGame, checkEngineAtLaunch, refreshLibraryAtLaunch, lastSelectedGameID
         case startInFullscreen
@@ -268,6 +270,8 @@ public struct AppSettings: Codable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         appLanguage = (try container.decodeIfPresent(String.self, forKey: .appLanguage)).flatMap(AppLanguage.init(rawValue:)) ?? .automatic
         appRegion = AppLocale.validRegion(try container.decodeIfPresent(String.self, forKey: .appRegion))
+        nextendoClientID = (try? container.decodeIfPresent(String.self, forKey: .nextendoClientID))
+            .flatMap { NextendoAuthorization.validClientID($0) ? $0 : nil }
         self.backgroundShade = try container.decodeIfPresent(BackgroundShade.self, forKey: .backgroundShade) ?? .balanced
         self.readableText = try container.decodeIfPresent(Bool.self, forKey: .readableText) ?? true
         self.reduceMotion = try container.decodeIfPresent(Bool.self, forKey: .reduceMotion) ?? false

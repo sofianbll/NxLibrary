@@ -35,13 +35,20 @@ public enum SettingsCatalog {
     }
 
     /// In sidebar order (`SettingsSidebarGroup`), each section's rows as listed.
-    public static let all: [SettingDescriptor] = {
+    public static let all: [SettingDescriptor] = ordered(listed)
+    private static let includingNextendo = ordered(listed + [
+        action("nextendo", .apiServices, "Nextendo", "Free community online play for compatible nxnative games. Requires a Nextendo account."),
+        row("nextendoClientID", .apiServices, "Nextendo client ID",
+            "Public OAuth client ID for sign-in and online play. Clear the field to use the build default.") { $0.nextendoClientID },
+    ])
+
+    private static func ordered(_ entries: [SettingDescriptor]) -> [SettingDescriptor] {
         let order = SettingsSidebarGroup.all.flatMap(\.sections)
-        return listed.enumerated().sorted {
+        return entries.enumerated().sorted {
             (order.firstIndex(of: $0.element.group) ?? order.count, $0.offset)
                 < (order.firstIndex(of: $1.element.group) ?? order.count, $1.offset)
         }.map(\.element)
-    }()
+    }
 
     private static let listed: [SettingDescriptor] = [
         // Start-up
@@ -196,16 +203,21 @@ public enum SettingsCatalog {
         action("projectDocs", .about, "Open project docs", "Open the project documentation."),
     ]
 
-    public static func changed(in settings: AppSettings, externalChanges: Set<String> = []) -> [SettingDescriptor] {
-        all.filter { $0.isChanged(settings) || externalChanges.contains($0.id) }
+    private static func visible(supportsNextendo: Bool) -> [SettingDescriptor] {
+        supportsNextendo ? includingNextendo : all
+    }
+
+    public static func changed(in settings: AppSettings, externalChanges: Set<String> = [],
+                               supportsNextendo: Bool = false) -> [SettingDescriptor] {
+        visible(supportsNextendo: supportsNextendo).filter { $0.isChanged(settings) || externalChanges.contains($0.id) }
     }
 
     /// Case- and diacritic-insensitive match over title and about.
-    public static func search(_ query: String) -> [SettingDescriptor] {
+    public static func search(_ query: String, supportsNextendo: Bool = false) -> [SettingDescriptor] {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !needle.isEmpty else { return [] }
         let options: String.CompareOptions = [.caseInsensitive, .diacriticInsensitive]
-        return all.filter {
+        return visible(supportsNextendo: supportsNextendo).filter {
             $0.title.range(of: needle, options: options) != nil
                 || L10n.text($0.title).range(of: needle, options: options) != nil
                 || L10n.text($0.about).range(of: needle, options: options) != nil

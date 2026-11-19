@@ -2,6 +2,12 @@
 
 User-visible changes to Arcane (formerly NX Library) are recorded here. Entries are grouped by release, with the newest first. Engine changes also have their own [upgrade notes](docs/upstream-upgrades/README.md).
 
+## Unreleased
+
+### Added
+
+- **Nextendo sign-in** in **Settings → General → Online services** when the selected nxnative checkout supports it. Compatible game apps expose their own **Network** choice in **Game Options → More settings**. Offline and local play do not require an account.
+
 ## 0.2.0 — 2026-11-18
 
 See the [validation checklist](docs/validation.md) for the state of manual checks.

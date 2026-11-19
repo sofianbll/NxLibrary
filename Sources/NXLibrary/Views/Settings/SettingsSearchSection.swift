@@ -4,6 +4,7 @@ import NXLibraryCore
 /// Search: a Selene pill field over `SettingsCatalog.search`; picking a result opens its group.
 struct SettingsSearchSection: View {
     @ObservedObject var settings: AppSettingsStore
+    let supportsNextendo: Bool
     let onOpenGroup: (SettingsSection) -> Void
     let onSubmit: () -> Void
     /// Bumped when the player opens the field (A or Right from the sidebar). Selecting Search never
@@ -15,7 +16,7 @@ struct SettingsSearchSection: View {
     @State private var query = ""
     @FocusState private var fieldFocused: Bool
 
-    private var results: [SettingDescriptor] { SettingsCatalog.search(query) }
+    private var results: [SettingDescriptor] { SettingsCatalog.search(query, supportsNextendo: supportsNextendo) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: canvas.u(8)) {
@@ -48,7 +49,7 @@ struct SettingsSearchSection: View {
         }
         .onAppear(perform: publishActions)
         .onChange(of: fieldRequest) { _ in fieldFocused = true }
-        .onChange(of: query) { _ in publishActions() }
+        .onChange(of: results.map(\.id)) { _ in publishActions() }
     }
 
     private func publishActions() {
@@ -61,6 +62,7 @@ struct SettingsChangedSection: View {
     @ObservedObject var settings: AppSettingsStore
     @ObservedObject var viewModel: AppViewModel
     @ObservedObject private var controller = GameControllerService.shared
+    let supportsNextendo: Bool
     let onOpenGroup: (SettingsSection) -> Void
     let onActions: ([SettingsRowAction]) -> Void
     @Environment(\.seleneCanvas) private var canvas
@@ -77,7 +79,7 @@ struct SettingsChangedSection: View {
         if URL(fileURLWithPath: viewModel.nxnativePath).standardizedFileURL != root.appendingPathComponent("nxnative").standardizedFileURL {
             external.insert("engineFolder")
         }
-        return SettingsCatalog.changed(in: settings.settings, externalChanges: external)
+        return SettingsCatalog.changed(in: settings.settings, externalChanges: external, supportsNextendo: supportsNextendo)
     }
 
     var body: some View {

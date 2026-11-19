@@ -40,6 +40,17 @@ public struct SettingsView: View {
     /// A palette change redraws the whole screen; selection and focus live here and survive it.
     @ObservedObject private var theme = ThemeStore.shared
     @ObservedObject private var igdb = IGDBSettings.shared
+    @ObservedObject private var nextendo = NextendoSettings.shared
+    @State private var nextendoEngine: EngineSelection?
+    private struct EngineSelection: Equatable {
+        let path: String
+        let commit: String?
+    }
+    private var engine: EngineSelection? {
+        guard viewModel.isNxnativeValid, !viewModel.nxnativePath.isEmpty else { return nil }
+        return EngineSelection(path: viewModel.nxnativePath, commit: viewModel.currentEngineCommit)
+    }
+    private var supportsNextendo: Bool { nextendoEngine != nil && engine == nextendoEngine }
     @Environment(\.nxAppLocale) private var localization
 
     public init(initialSection: SettingsSection,
@@ -90,6 +101,21 @@ public struct SettingsView: View {
         }
         .onDisappear(perform: removeKeyMonitor)
         .onDisappear { igdb.isEditing = false }
+        .onDisappear {
+            nextendo.isEditingClient = false
+            nextendo.cancelBrowser()
+        }
+        .task(id: engine) {
+            guard let selected = engine else { nextendoEngine = nil; return }
+            let supported = await Task.detached {
+                NextendoLaunch.engineSupportsSignIn(at: URL(fileURLWithPath: selected.path))
+            }.value
+            guard !Task.isCancelled, engine == selected else { return }
+            nextendoEngine = supported ? selected : nil
+        }
+        .onChange(of: supportsNextendo) { supported in
+            if !supported { nextendo.isEditingClient = false; nextendo.cancelBrowser() }
+        }
         .onChange(of: section) { _ in
             rowActions = []
             rowFocus = FocusIndex()
@@ -113,6 +139,11 @@ public struct SettingsView: View {
         .overlay {
             if igdb.isEditing {
                 IGDBCredentialsDialog(model: igdb) { igdb.isEditing = false }
+            }
+        }
+        .overlay {
+            if supportsNextendo && nextendo.isEditingClient {
+                NextendoClientDialog(settings: settings) { nextendo.isEditingClient = false }
             }
         }
         .opacity(showingControls ? 0.001 : 1)
@@ -151,6 +182,7 @@ public struct SettingsView: View {
                         viewModel: viewModel,
                         settings: settings,
                         artwork: artwork,
+                        supportsNextendo: supportsNextendo,
                         onViewControls: { showingControls = true },
                         onChooseLanguage: { localePicker = .language },
                         onChooseRegion: { localePicker = .region },
@@ -313,6 +345,7 @@ public struct SettingsView: View {
                   !router.isMenuPresented,
                   !viewModel.showSetupCheck,
                   !showingControls, localePicker == nil, !viewModel.isEditingSteamGridDBKey, !igdb.isEditing,
+                  !nextendo.isEditingClient,
                   viewModel.alertMessage == nil, viewModel.settingsNotice == nil,
                   viewModel.gameWithInstallFailure == nil,
                   let window = event.window,
@@ -365,7 +398,7 @@ public struct SettingsView: View {
 
     private func handleGamepad(_ action: GamepadAction) {
         // The key dialog takes the controller while it is open.
-        if viewModel.isEditingSteamGridDBKey || igdb.isEditing { return }
+        if viewModel.isEditingSteamGridDBKey || igdb.isEditing || nextendo.isEditingClient { return }
         if localePicker != nil {
             NotificationCenter.default.post(name: .nxLocalePickerGamepadAction, object: action)
             return
