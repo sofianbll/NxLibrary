@@ -1,0 +1,118 @@
+import XCTest
+@testable import NXLibraryCore
+
+final class ControllerInputTests: XCTestCase {
+    func testNintendoReportMapsEveryButtonBit() throws {
+        let expected: [ControllerButton] = [
+            .b, .a, .y, .x, .l, .r, .zl, .zr,
+            .view, .menu, .l3, .r3, .home, .capture,
+        ]
+        var decoder = NintendoHIDInput()
+        for bit in 0..<16 {
+            var bytes = report()
+            bytes[bit / 8] = UInt8(1 << (bit % 8))
+            let state = try XCTUnwrap(decoder.decode(reportID: 0x3f, bytes: bytes))
+            XCTAssertEqual(state.buttons, expected.indices.contains(bit) ? [expected[bit]] : [], "bit \(bit)")
+        }
+    }
+
+    func testHatMovesClockwiseAndCentersOutsideItsRange() throws {
+        let expected: [Set<ControllerButton>] = [
+            [.up], [.up, .right], [.right], [.right, .down],
+            [.down], [.down, .left], [.left], [.left, .up], [],
+        ]
+        var decoder = NintendoHIDInput()
+        for (hat, buttons) in expected.enumerated() {
+            XCTAssertEqual(decoder.decode(reportID: 0x3f, bytes: report(hat: UInt8(hat)))?.buttons, buttons)
+        }
+        XCTAssertEqual(decoder.decode(reportID: 0x3f, bytes: report(hat: 255))?.buttons, [])
+    }
+
+    func testReportWithOrWithoutIDAndRejectsShortOrUnrelatedReports() throws {
+        var decoder = NintendoHIDInput()
+        let bytes = report(buttons: 0x3f)
+        let payload = try XCTUnwrap(decoder.decode(reportID: 0x3f, bytes: bytes))
+        XCTAssertEqual(payload.buttons, [.b, .a, .y, .x, .l, .r])
+        XCTAssertEqual(decoder.decode(reportID: 0x3f, bytes: [0x3f] + bytes), payload)
+        XCTAssertNil(decoder.decode(reportID: 0x30, bytes: bytes))
+        XCTAssertNil(decoder.decode(reportID: 0x3f, bytes: []))
+        XCTAssertNil(decoder.decode(reportID: 0x3f, bytes: Array(bytes.prefix(10))))
+        XCTAssertNil(decoder.decode(reportID: 0x3f, bytes: [0x3f] + bytes.prefix(9)))
+    }
+
+    func testSticksLearnRestAndSeparateReachesAndSaturateAt91Percent() throws {
+        var decoder = NintendoHIDInput()
+        XCTAssertEqual(decoder.decode(reportID: 0x3f, bytes: report(lx: 29_491))?.leftStick, .zero)
+        XCTAssertEqual(decoder.decode(reportID: 0x3f, bytes: report(lx: 32_000))?.leftStick, .zero)
+        let halfReach = try XCTUnwrap(decoder.decode(reportID: 0x3f, bytes: report(lx: 40_959)))
+        XCTAssertEqual(halfReach.leftStick.x, 0.48718, accuracy: 0.0002)
+        XCTAssertEqual(decoder.decode(reportID: 0x3f, bytes: report(lx: 58_982))?.leftStick.x, 1)
+        XCTAssertEqual(decoder.decode(reportID: 0x3f, bytes: report(lx: 56_328))?.leftStick.x, 1)
+        let grownReach = try XCTUnwrap(decoder.decode(reportID: 0x3f, bytes: report(lx: 44_237)))
+        XCTAssertEqual(grownReach.leftStick.x, 0.48718, accuracy: 0.0002)
+        let otherSide = try XCTUnwrap(decoder.decode(reportID: 0x3f, bytes: report(lx: 18_022)))
+        XCTAssertEqual(otherSide.leftStick.x, -0.48718, accuracy: 0.0002)
+    }
+
+    func testHeldStickIsNotLearnedAsRestAndBothYAxesAreInverted() throws {
+        var decoder = NintendoHIDInput()
+        let first = try XCTUnwrap(decoder.decode(reportID: 0x3f, bytes: report(ly: 0, rx: .max, ry: .max)))
+        XCTAssertEqual(first.leftStick, SIMD2(0, 1))
+        XCTAssertEqual(first.rightStick.x, 1)
+        XCTAssertEqual(first.rightStick.y, -1)
+        let centered = try XCTUnwrap(decoder.decode(reportID: 0x3f, bytes: report()))
+        XCTAssertEqual(centered.leftStick, .zero)
+        XCTAssertEqual(centered.rightStick, .zero)
+    }
+
+    func testTransitionsOnlyEmitChangedControls() throws {
+        var decoder = NintendoHIDInput()
+        let upAndA = try XCTUnwrap(decoder.decode(reportID: 0x3f, bytes: report(buttons: 2, hat: 0)))
+        XCTAssertEqual(upAndA.changes(from: .init()), [.button(.up, true), .button(.a, true)])
+        XCTAssertEqual(upAndA.changes(from: upAndA), [])
+        let right = try XCTUnwrap(decoder.decode(reportID: 0x3f, bytes: report(hat: 2, lx: .max)))
+        XCTAssertEqual(right.changes(from: upAndA), [
+            .button(.up, false), .button(.right, true), .button(.a, false), .leftStick(SIMD2(1, 0)),
+        ])
+        XCTAssertEqual(ControllerInputState().changes(from: right), [.button(.right, false), .leftStick(.zero)])
+    }
+
+    func testDisconnectCancelsHoldsWithoutTurningThemIntoTaps() {
+        var holds = ControllerHolds()
+        XCTAssertNil(holds.update(.menu, pressed: true, at: 1))
+        XCTAssertNil(holds.update(.view, pressed: true, at: 1.05))
+        holds.reset()
+        XCTAssertFalse(holds.isPressed)
+        XCTAssertEqual(holds.tick(at: 2), [])
+        XCTAssertNil(holds.update(.menu, pressed: false, at: 2.1))
+        XCTAssertNil(holds.update(.view, pressed: false, at: 2.2))
+        XCTAssertNil(holds.update(.menu, pressed: true, at: 3))
+        XCTAssertEqual(holds.update(.menu, pressed: false, at: 3.2), .tap)
+        XCTAssertNil(holds.update(.view, pressed: true, at: 4))
+        XCTAssertEqual(holds.tick(at: 4.49), [])
+        XCTAssertEqual(holds.tick(at: 4.5), [.view])
+        XCTAssertNil(holds.update(.view, pressed: false, at: 4.6))
+    }
+
+    func testGCClaimWaitsTwoSecondsAndMatchingGCTakesOverEvenLater() {
+        var pad = ControllerArbitration.HID(name: "Lic Pro Controller", claimedByGC: true, connectedAt: 10)
+        XCTAssertEqual(pad.admission(gcNames: [], at: 11.99), .wait(until: 12))
+        var early = pad
+        XCTAssertEqual(early.admission(gcNames: ["Lic Pro Controller"], at: 10.5), .gameController)
+        XCTAssertEqual(early.admission(gcNames: [], at: 10.6), .hid)
+        XCTAssertEqual(pad.admission(gcNames: ["Other gamepad"], at: 12), .hid)
+        XCTAssertEqual(pad.admission(gcNames: ["lic pro controller"], at: 13), .gameController)
+        XCTAssertEqual(pad.admission(gcNames: [], at: 14), .hid)
+        var unclaimed = ControllerArbitration.HID(name: "Pad", claimedByGC: false, connectedAt: 10)
+        XCTAssertEqual(unclaimed.admission(gcNames: [], at: 10), .hid)
+        XCTAssertEqual(ControllerArbitration.preferred(hasGameController: true, hasHID: true), .gameController)
+        XCTAssertEqual(ControllerArbitration.preferred(hasGameController: false, hasHID: true), .hid)
+        XCTAssertNil(ControllerArbitration.preferred(hasGameController: false, hasHID: false))
+    }
+
+    private func report(buttons: UInt16 = 0, hat: UInt8 = 8, lx: UInt16 = 32_768, ly: UInt16 = 32_768,
+                        rx: UInt16 = 32_768, ry: UInt16 = 32_768) -> [UInt8] {
+        [UInt8(truncatingIfNeeded: buttons), UInt8(buttons >> 8), hat] +
+            [lx, ly, rx, ry].flatMap { [UInt8(truncatingIfNeeded: $0), UInt8($0 >> 8)] }
+    }
+}

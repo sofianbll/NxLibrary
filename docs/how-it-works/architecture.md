@@ -715,10 +715,13 @@ Prove e misure di queste scelte: [docs/history/reviews/2026-11-16-ratings-metada
   - Sopra una wallpaper il moonlight oro resta montato, nascosto e fermo finché non serve, ed entra ed esce con l'uniform `presence` sul suo thread.
 
 **Input e suoni.**
-- `GameControllerService` produce `GamepadAction` e riconosce i simboli dei tasti. La shell dà l'input al livello attivo.
+- `ControllerSource` passa identità, connessioni e transizioni sul thread principale. `GCControllerSource` usa il primo controller con profilo esteso, conserva lo schema dei tasti Nintendo e legge i simboli che seguono le rimappature di macOS.
+- `HIDControllerSource` cerca gamepad e joystick fisici con pulsanti nel report Nintendo `0x3F`, senza usare il VID/PID come identificativo di layout. Apre solo il pad selezionato e non prende accesso esclusivo, così non impedisce la lettura all'engine. `NintendoHIDInput` decodifica il report, calibra gli stick come nxnative e produce transizioni senza duplicati. L3, Home e Capture non hanno un'azione in Arcane.
+- `GameControllerService` dà precedenza a GameController. Se macOS dichiara un pad HID compatibile, `ControllerArbitration` aspetta fino a due secondi che compaia con lo stesso nome; in assenza di un pad GameController utilizzabile, passa a HID. Se GameController compare dopo, interrompe la lettura HID. Il nome non distingue due pad fisici dello stesso modello. In modalità Automatic, HID usa i simboli Nintendo senza la rimappatura di sistema.
+- Il servizio applica la zona morta configurabile e l'intervallo di 120 ms allo stick sinistro. `HoldDetector` distingue tap e pressione di 0,5 s per Plus/Minus; il cambio di pad o la disconnessione annulla gli appui in corso senza generare azioni. La shell instrada gli stessi `GamepadAction` al livello attivo.
 - `AppShellView.nativeDialogOwnsInput` dà precedenza a un alert in attesa (`alertMessage`), a `NSApp.modalWindow`, alla sheet nella finestra key o allegata alla finestra key/main. Controller, tastiera e disponibilità dei menu condividono questo controllo; la tastiera controlla anche la finestra dell'evento. Il controller scarta l'azione prima di inoltrarla a qualunque schermata o dialogo interno. *Perché:* il controller non attraversa i monitor `NSEvent` che già cedono la tastiera ai dialoghi nativi. `run_review.py` esegue il routing reale con stati sintetici, compreso il ritorno ai comandi dopo la chiusura.
 - `ButtonPrompts` esclude i segnaposto fatti solo di forme, comprese varianti come `capsule.portrait.fill`, e usa in quel caso i simboli della marca riconosciuta; conserva i glifi significativi come `circle.circle` e `square.circle`.
-- `HoldDetector` e i modelli di focus rendono verificabili mapping e navigazione.
+- I modelli di focus rendono verificabile la navigazione.
 - `SoundEffectService` risolve i cue tramite `SeleneImporter` e applica volume e attivazione.
 
 ## Dati su disco
