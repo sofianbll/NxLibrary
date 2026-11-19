@@ -11,9 +11,11 @@ public struct SettingsRowAction: Identifiable {
     public let activate: () -> Void
     /// A second button on the row, such as Back to tested beside Update: Right moves the focus to it, Left back.
     public let secondary: (title: String, activate: () -> Void)?
+    private let additionalButtons: [() -> Void]
 
     public init(id: String, title: String, rowID: String? = nil, isEnabled: Bool = true,
                 cycle: ((Int) -> Void)? = nil, secondary: (title: String, activate: () -> Void)? = nil,
+                additionalButtons: [() -> Void] = [],
                 activate: @escaping () -> Void) {
         self.id = id
         self.rowID = rowID ?? title
@@ -22,6 +24,7 @@ public struct SettingsRowAction: Identifiable {
         self.cycle = cycle
         self.activate = activate
         self.secondary = secondary
+        self.additionalButtons = additionalButtons
     }
 
     public static func value(_ id: String, _ title: String,
@@ -30,11 +33,13 @@ public struct SettingsRowAction: Identifiable {
     }
 
     /// Buttons the focus can move between in this row.
-    public var buttonCount: Int { secondary == nil ? 1 : 2 }
+    public var buttonCount: Int { (secondary == nil ? 1 : 2) + additionalButtons.count }
 
-    /// Presses the row's button at `index` (0 the row's own, 1 the second); any other index presses the first.
+    /// Presses the focused button; an invalid index falls back to the primary action.
     public func press(button index: Int) {
-        if index == 1, let secondary { secondary.activate() } else { activate() }
+        if index == 1, let secondary { secondary.activate(); return }
+        guard index > 0, index < buttonCount else { activate(); return }
+        additionalButtons[index - (secondary == nil ? 1 : 2)]()
     }
 
     public enum Sideways: Equatable { case button(Int), leaveRows, stay }

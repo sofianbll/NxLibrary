@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 19 novembre 2026. Copertura di **728 file** del progetto, compresi i controlli di pubblicazione, la CI con regressioni app senza UI, il master dell’icona, le guide per sviluppo e media, gli screenshot del README, l'integrazione di nxnative, il canale di aggiornamento e il primo avvio che parte da ciò che è già sul Mac, il setup del porting con cartella unica per scoperta e installazione dei giochi. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 20 novembre 2026. Copertura di **730 file** del progetto, compresi i controlli di pubblicazione, la CI con regressioni app senza UI, il master dell’icona, le guide per sviluppo e media, gli screenshot del README, l'integrazione di nxnative, il canale di aggiornamento e il primo avvio che parte da ciò che è già sul Mac, il setup del porting con cartella unica per scoperta e installazione dei giochi. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le funzionalità, quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -93,7 +93,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../CONTRIBUTING.md), [SECURIT
 | [Sources/NXLibrary/ViewModels/AppViewModel+Toolchain.swift](../Sources/NXLibrary/ViewModels/AppViewModel+Toolchain.swift) | Espone il riepilogo del gate della toolchain per l’interfaccia. |
 | [Sources/NXLibrary/ViewModels/SavePanelModel.swift](../Sources/NXLibrary/ViewModels/SavePanelModel.swift) | Gestisce refresh, anteprime, backup, importazione, ripristino, errori e conferma temporanea di successo. |
 | [Sources/NXLibrary/ViewModels/SetupCheckModel.swift](../Sources/NXLibrary/ViewModels/SetupCheckModel.swift) | Esegue probe e installazioni del Setup in background, con avanzamento e ricontrollo periodico. |
-| [Sources/NXLibrary/ViewModels/NextendoSettings.swift](../Sources/NXLibrary/ViewModels/NextendoSettings.swift) | Pubblica lo stato della connessione Nextendo e coordina verifica account, accesso e disconnessione locale. |
+| [Sources/NXLibrary/ViewModels/NextendoSettings.swift](../Sources/NXLibrary/ViewModels/NextendoSettings.swift) | Pubblica la scheda e lo stato Nextendo in memoria e coordina verifica annullabile, accesso e disconnessione locale. |
 
 ## Modelli dello stato applicativo
 
@@ -204,7 +204,8 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../CONTRIBUTING.md), [SECURIT
 | [Sources/NXLibraryCore/Models/GameRuntimeConfig.swift](../Sources/NXLibraryCore/Models/GameRuntimeConfig.swift) | Persiste opzioni per titolo, prepara Review e lingua del rebuild, mappa DM_* e unisce env.txt. |
 | [Sources/NXLibraryCore/Models/LauncherSettings.swift](../Sources/NXLibraryCore/Models/LauncherSettings.swift) | Legge launcher.json e verifica i controlli supportati, con fallback per le build precedenti. |
 | [Sources/NXLibraryCore/Models/NextendoLaunch.swift](../Sources/NXLibraryCore/Models/NextendoLaunch.swift) | Rileva il flag di porting e il supporto Nextendo del checkout e della build; valida la sessione online e compone il solo ID client nel lancio. |
-| [Sources/NXLibraryCore/Services/NextendoOAuth.swift](../Sources/NXLibraryCore/Services/NextendoOAuth.swift) | Genera richiesta PKCE, valida la callback, scambia e ruota token e legge il nome dell’account. |
+| [Sources/NXLibraryCore/Services/NextendoAccountService.swift](../Sources/NXLibraryCore/Services/NextendoAccountService.swift) | Legge scheda account, profilo, stato di gioco online e amici ordinati; risolve ritratti e titoli pubblici senza bearer. |
+| [Sources/NXLibraryCore/Services/NextendoOAuth.swift](../Sources/NXLibraryCore/Services/NextendoOAuth.swift) | Genera la richiesta PKCE, valida la callback, scambia e ruota i token, legge userinfo e offre trasporto Nextendo limitato. |
 | [Sources/NXLibraryCore/Services/NextendoTokenStore.swift](../Sources/NXLibraryCore/Services/NextendoTokenStore.swift) | Legge, sostituisce e rimuove il refresh token condiviso sotto il lock nxnative, con permessi privati. |
 | [Sources/NXLibraryCore/Models/AppIconProgress.swift](../Sources/NXLibraryCore/Models/AppIconProgress.swift) | Stati e testi della preparazione icona, con esito informativo aggiunto al log della build conclusa. |
 | [Sources/NXLibraryCore/Models/IconLaunchWait.swift](../Sources/NXLibraryCore/Models/IconLaunchWait.swift) | Conserva una richiesta Play durante la firma dell'icona e la revoca su annullamento, errore o chiusura del dialogo. |
@@ -324,7 +325,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../CONTRIBUTING.md), [SECURIT
 | [Sources/NXLibraryCore/Services/DatabaseMetadataService.swift](../Sources/NXLibraryCore/Services/DatabaseMetadataService.swift) | Letture pubbliche limitate e annullabili, richieste condivise, cache testuale per gioco/piattaforma e recupero offline. |
 | [Sources/NXLibraryCore/Models/DetailsFocus.swift](../Sources/NXLibraryCore/Models/DetailsFocus.swift) | Gestisce zone e spostamenti del focus nei link e nelle bande di Details. |
 | [Sources/NXLibraryCore/Models/FocusIndex.swift](../Sources/NXLibraryCore/Models/FocusIndex.swift) | Mantiene un indice di focus entro i limiti di una lista. |
-| [Sources/NXLibraryCore/Models/SettingsRowAction.swift](../Sources/NXLibraryCore/Models/SettingsRowAction.swift) | Identifica azioni e righe Settings, mantenendo una sola azione primaria per riga senza accorpare giochi omonimi. |
+| [Sources/NXLibraryCore/Models/SettingsRowAction.swift](../Sources/NXLibraryCore/Models/SettingsRowAction.swift) | Identifica righe Settings senza accorpare giochi omonimi e instrada focus e conferma tra più pulsanti della stessa riga. |
 | [Sources/NXLibraryCore/Models/GameOptionsPresentation.swift](../Sources/NXLibraryCore/Models/GameOptionsPresentation.swift) | Definisce righe, livelli, etichette, scelte runtime e focus di Game Options. |
 | [Sources/NXLibraryCore/Models/HoldDetector.swift](../Sources/NXLibraryCore/Models/HoldDetector.swift) | Distingue pressione breve e prolungata usando un tempo fornito dal chiamante. |
 | [Sources/NXLibraryCore/Models/MaterialIcon.swift](../Sources/NXLibraryCore/Models/MaterialIcon.swift) | Elenca i glifi del font Material Icons incluso nel bundle. |
@@ -413,7 +414,7 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 | [Sources/NXLibraryCore/Models/AppLocale.swift](../Sources/NXLibraryCore/Models/AppLocale.swift) | Sei lingue, risoluzione delle preferenze e regione indipendente; nomi e ricerca delle regioni. |
 | [Sources/NXLibraryCore/Models/GameGenre.swift](../Sources/NXLibraryCore/Models/GameGenre.swift) | Generi noti tradotti alla presentazione; dati originali e generi personali conservati. |
 | [Sources/NXLibraryCore/Services/AppLocalization.swift](../Sources/NXLibraryCore/Services/AppLocalization.swift) | Contesto osservabile, lookup portabile delle risorse e interpolazioni/plurali. |
-| [Sources/NXLibraryCore/Resources/Localizable.xcstrings](../Sources/NXLibraryCore/Resources/Localizable.xcstrings) | Testi condivisi e traduzioni en/it/fr/de/es/pt-BR, incluse le etichette Network dal motore. |
+| [Sources/NXLibraryCore/Resources/Localizable.xcstrings](../Sources/NXLibraryCore/Resources/Localizable.xcstrings) | Testi condivisi e traduzioni en/it/fr/de/es/pt-BR, incluse le etichette Network e della scheda Nextendo. |
 
 ## Core · profilo dei dati
 
@@ -467,7 +468,7 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 | [Sources/NXLibrary/Views/Detail/CriticRatingValue.swift](../Sources/NXLibrary/Views/Detail/CriticRatingValue.swift) | Valore della riga Critic score: cinque stelle, numero /100 e fonte, senza finestre aggiuntive; caricamento e assenza espliciti. |
 | [Sources/NXLibrary/ViewModels/IGDBSettings.swift](../Sources/NXLibrary/ViewModels/IGDBSettings.swift) | Configurazione IGDB facoltativa: verifica prima del salvataggio, rimozione e invalidazione delle richieste/voti precedenti. |
 | [Sources/NXLibrary/Views/Components/IGDBCredentialsDialog.swift](../Sources/NXLibrary/Views/Components/IGDBCredentialsDialog.swift) | Guida sintetica in cinque passi, Client ID, Client Secret nascosto, verifica/salvataggio e annullamento; input Settings sospeso. |
-| [Sources/NXLibrary/Views/Settings/SettingsAPISection.swift](../Sources/NXLibrary/Views/Settings/SettingsAPISection.swift) | Pagina generale Online services: IGDB, SteamGridDB e Nextendo quando supportato, con azioni e focus condivisi. |
+| [Sources/NXLibrary/Views/Settings/SettingsAPISection.swift](../Sources/NXLibrary/Views/Settings/SettingsAPISection.swift) | Pagina generale Online services: IGDB, SteamGridDB e scheda Nextendo con profilo, stato e pannello amici, con azioni e focus condivisi. |
 | [Sources/NXLibrary/Views/Settings/NextendoClientDialog.swift](../Sources/NXLibrary/Views/Settings/NextendoClientDialog.swift) | Dialogo Selene per scegliere e validare l’ID pubblico o riprendere il default incluso nella build. |
 
 ## UI · Game Options, cheats e salvataggi
@@ -494,7 +495,7 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 
 | File | Responsabilità |
 |---|---|
-| [Sources/NXLibrary/Views/Settings/SettingsView.swift](../Sources/NXLibrary/Views/Settings/SettingsView.swift) | Compone sidebar e gruppo attivo, rileva la capacità Nextendo del checkout e coordina focus, input, dialoghi e reset. |
+| [Sources/NXLibrary/Views/Settings/SettingsView.swift](../Sources/NXLibrary/Views/Settings/SettingsView.swift) | Compone sidebar e gruppo attivo, rileva la capacità Nextendo del checkout e coordina focus di righe e pulsanti, input, dialoghi e reset. |
 | [Sources/NXLibrary/Views/Settings/SettingsSidebar.swift](../Sources/NXLibrary/Views/Settings/SettingsSidebar.swift) | Disegna intestazione e sezioni sotto le intestazioni di gruppo (General, Switch, Steam, System). |
 | [Sources/NXLibrary/Views/Settings/SettingsSectionContent.swift](../Sources/NXLibrary/Views/Settings/SettingsSectionContent.swift) | Instrada il gruppo selezionato e passa alle sezioni interessate la capacità Nextendo. |
 | [Sources/NXLibrary/Views/Settings/SettingsSearchSection.swift](../Sources/NXLibrary/Views/Settings/SettingsSearchSection.swift) | Presenta ricerca e Changed, con apertura del gruppo della riga selezionata e rispetto della capacità Nextendo. |
@@ -549,7 +550,7 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 | [Sources/NXLibrary/Views/Components/AppUpdateDialog.swift](../Sources/NXLibrary/Views/Components/AppUpdateDialog.swift) | Presenta controllo aggiornamenti, note di release, errori e progresso nel dialogo dell’app. |
 | [Sources/NXLibrary/Views/Components/SeleneHintsBar.swift](../Sources/NXLibrary/Views/Components/SeleneHintsBar.swift) | Disegna i suggerimenti contestuali alla posizione condivisa, con grandezza dei simboli invariata. |
 | [Sources/NXLibrary/Views/Components/SeleneHomeChrome.swift](../Sources/NXLibrary/Views/Components/SeleneHomeChrome.swift) | Rende elementi condivisi della cornice e dei controlli della home Selene; trattiene gli hint durante l’entrata. |
-| [Sources/NXLibrary/Views/Components/SeleneOptionRow.swift](../Sources/NXLibrary/Views/Components/SeleneOptionRow.swift) | Disegna righe di opzioni con icona, titolo, descrizione, focus e contenuto laterale. |
+| [Sources/NXLibrary/Views/Components/SeleneOptionRow.swift](../Sources/NXLibrary/Views/Components/SeleneOptionRow.swift) | Disegna righe di opzioni con icona o ritratto, titolo, indicatore opzionale, descrizione, focus e azioni laterali. |
 | [Sources/NXLibrary/Views/Components/SeleneExpandableText.swift](../Sources/NXLibrary/Views/Components/SeleneExpandableText.swift) | Rivela la descrizione completa animando l'altezza fra due layout di testo stabili; usato solo dalle righe dei metadati. |
 | [Sources/NXLibrary/Views/Components/SelenePillButton.swift](../Sources/NXLibrary/Views/Components/SelenePillButton.swift) | Disegna il pulsante pill condiviso da azioni e dialoghi. |
 | [Sources/NXLibrary/Views/Components/SelenePromptBadge.swift](../Sources/NXLibrary/Views/Components/SelenePromptBadge.swift) | Rende simbolo o etichetta del pulsante del controller o della tastiera. |
@@ -708,6 +709,7 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 | [Tests/NXLibraryCoreTests/NewestEngineTests.swift](../Tests/NXLibraryCoreTests/NewestEngineTests.swift) | Lock e Metal di main, validità della scelta, comandi git del cambio, gate Newest engine, scheda Setup e frase. |
 | [Tests/NXLibraryCoreTests/NUPSourceCatalogTests.swift](../Tests/NXLibraryCoreTests/NUPSourceCatalogTests.swift) | NUP storici, multiprogramma e soli update; identità DLC, JSON, capacità checkout, programma zero nei vecchi record e argv coerenti. |
 | [Tests/NXLibraryCoreTests/NXNativeGameSettingsTests.swift](../Tests/NXLibraryCoreTests/NXNativeGameSettingsTests.swift) | Build senza adattatore, migrazione, chiavi fissate, precedenza al lancio e scrittura dei soli valori diversi dal default. |
+| [Tests/NXLibraryCoreTests/NextendoAccountServiceTests.swift](../Tests/NXLibraryCoreTests/NextendoAccountServiceTests.swift) | Risposte sintetiche account e amici, presenza, ordinamento, errori senza credenziali, 401, annullamento e richieste pubbliche. |
 | [Tests/NXLibraryCoreTests/NextendoLaunchTests.swift](../Tests/NXLibraryCoreTests/NextendoLaunchTests.swift) | Capacità dichiarate, scelta Network generica, visibilità in Settings, blocco senza sessione e ambiente in Play. |
 | [Tests/NXLibraryCoreTests/NextendoOAuthTests.swift](../Tests/NXLibraryCoreTests/NextendoOAuthTests.swift) | PKCE RFC 7636, callback loopback, scambio e rotazione sintetici, scadenza ed errore temporaneo. |
 | [Tests/NXLibraryCoreTests/NextendoTokenStoreTests.swift](../Tests/NXLibraryCoreTests/NextendoTokenStoreTests.swift) | Permessi, sostituzione atomica, flock POSIX, annullamento, disconnessione e link rifiutati su dati sintetici. |
@@ -775,7 +777,7 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 | [Tests/NXLibraryCoreTests/GameFocusTests.swift](../Tests/NXLibraryCoreTests/GameFocusTests.swift) | Ritorno della libreria davanti solo per il gioco in primo piano, mai con un altro gioco aperto, uscita contata una volta. |
 | [Tests/NXLibraryCoreTests/ModStoreModelTests.swift](../Tests/NXLibraryCoreTests/ModStoreModelTests.swift) | Store delle mod da copia fresca o vecchia, abbinamenti incerti o sicuri, ordine della libreria, copie di un altro gioco, chiusura senza perdite. |
 | [Tests/NXLibraryCoreTests/SessionSummaryTests.swift](../Tests/NXLibraryCoreTests/SessionSummaryTests.swift) | Card di fine sessione: gioco, sessione e totale, meno di un minuto, sessioni troppo brevi o in corso, altri giochi, giochi Steam. |
-| [Tests/NXLibraryCoreTests/SettingsRowButtonsTests.swift](../Tests/NXLibraryCoreTests/SettingsRowButtonsTests.swift) | Riga con due pulsanti: Sinistra/Destra fra i pulsanti, uscita dalla riga, riga con un solo pulsante, A preme quello in focus. |
+| [Tests/NXLibraryCoreTests/SettingsRowButtonsTests.swift](../Tests/NXLibraryCoreTests/SettingsRowButtonsTests.swift) | Righe con uno, due o tre pulsanti: Sinistra/Destra fra i pulsanti, uscita dalla riga e conferma dell'azione in focus. |
 | [Tests/NXLibraryCoreTests/SpotlightRowGeometryTests.swift](../Tests/NXLibraryCoreTests/SpotlightRowGeometryTests.swift) | Posto a schermo = camera più posto nella riga, tessere che restano ferme durante lo scorrimento, distanze costanti e quattro tessere di riserva ai bordi. |
 | [Tests/NXLibraryCoreTests/TileMotionTests.swift](../Tests/NXLibraryCoreTests/TileMotionTests.swift) | Periodi e curve di bagliore, ring e riflesso, campioni che chiudono il loop senza salti, fase nel periodo e simbolo del download. |
 | [Tests/NXLibraryCoreTests/AppLocaleTests.swift](../Tests/NXLibraryCoreTests/AppLocaleTests.swift) | Preferenze, migrazione, formati, ricerca, identità e traduzioni native; avvisi pipeline localizzati senza output tecnico grezzo. |

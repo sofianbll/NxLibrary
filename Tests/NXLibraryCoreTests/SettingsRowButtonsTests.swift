@@ -30,4 +30,18 @@ final class SettingsRowButtonsTests: XCTestCase {
         row.press(button: 5)
         XCTAssertEqual(pressed, ["back", "update", "update"])
     }
+
+    func testThirdAccountButtonCanBeFocusedAndPressed() {
+        var pressed: [String] = []
+        let row = SettingsRowAction(id: "nextendo", title: "Nextendo",
+                                    secondary: ("Check status", { pressed.append("check") }),
+                                    additionalButtons: [{ pressed.append("sign out") }]) { pressed.append("copy") }
+        XCTAssertEqual(row.buttonCount, 3)
+        XCTAssertEqual(SettingsRowAction.sideways(from: 1, by: 1, buttons: row.buttonCount), .button(2))
+        XCTAssertEqual(SettingsRowAction.sideways(from: 2, by: 1, buttons: row.buttonCount), .stay)
+        row.press(button: 2)
+        row.press(button: 1)
+        row.press(button: 0)
+        XCTAssertEqual(pressed, ["sign out", "check", "copy"])
+    }
 }
