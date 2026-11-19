@@ -124,6 +124,27 @@ final class NXNativeGameSettingsTests: XCTestCase {
                        "an unmanaged key is never migrated")
     }
 
+    func testEffectiveLaunchValueMatchesEnginePrecedenceWithoutMigrating() throws {
+        let f = try fixture(env: "DM_RUMBLE=1\r\nDM_RUMBLE=0\r\n")
+        let bundled = f.game.url.appendingPathComponent("Contents/Resources/dm/env.txt")
+        try Data("DM_RUMBLE=0\n".utf8).write(to: bundled)
+        f.store.values[domain] = ["DM_RUMBLE": "1"]
+        let s = try settings(f)
+        XCTAssertEqual(s.effectiveLaunchValue("DM_RUMBLE", environment: ["DM_RUMBLE": "0"]), "0")
+        XCTAssertEqual(s.effectiveLaunchValue("DM_RUMBLE", environment: [:]), "1")
+        XCTAssertEqual(try String(contentsOf: f.envURL, encoding: .utf8), "DM_RUMBLE=1\r\nDM_RUMBLE=0\r\n")
+        try FileManager.default.removeItem(at: f.envURL)
+        XCTAssertEqual(s.effectiveLaunchValue("DM_RUMBLE", environment: [:]), "0")
+        try FileManager.default.removeItem(at: bundled)
+        try s.set("DM_RUMBLE", to: "0")
+        XCTAssertEqual(s.effectiveLaunchValue("DM_RUMBLE", environment: [:]), "0")
+        XCTAssertEqual(s.effectiveLaunchValue("DM_RUMBLE", environment: ["DM_SAVED_CHOICES": "0"]), "1")
+        try Data("DM_SAVED_CHOICES=0\n".utf8).write(to: bundled)
+        XCTAssertEqual(s.effectiveLaunchValue("DM_RUMBLE", environment: [:]), "1")
+        XCTAssertEqual(s.effectiveLaunchValue("DM_RUMBLE", environment: ["DM_SAVED_CHOICES": "1"]), "0")
+        XCTAssertNil(s.effectiveLaunchValue("UNDECLARED", environment: [:]))
+    }
+
     func testSetWritesOnlyNonDefaultsAndRefusesUnofferedValues() throws {
         let f = try fixture()
         let s = try settings(f)
