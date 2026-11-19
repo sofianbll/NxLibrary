@@ -195,6 +195,8 @@ Regole della barra:
   - le cache di compilazione, per gioco e per tutti, in Porting → Storage; spazio usato, log, cache di metadati e artwork e backup in Library → Storage;
   - App icon in Look: è l'icona del Dock.
 - Online services (`apiServices`) raccoglie IGDB (voti) e SteamGridDB (artwork). La nota iniziale dice che le connessioni sono facoltative e che le fonti pubbliche funzionano senza chiavi. Non esiste un reset di gruppo che elimini le credenziali.
+- `SettingsAPISection` offre Nextendo solo se il checkout selezionato dichiara `--nextendo` e la scelta `DM_NETWORK=nextendo` in `settings.tsv`. Search e Changed rispettano la stessa condizione. Il client ID pubblico è un override facoltativo in `AppSettings`, con ripiego sul valore del bundle Arcane.
+- `NextendoSettings` pubblica nome, stato e problemi della connessione. `NextendoBrowserSignIn` apre il browser predefinito e riceve il codice una sola volta su `127.0.0.1`, preferendo la porta `47823`. Il listener si chiude con Cancel o dopo cinque minuti. `NextendoAuthorization` verifica lo `state` OAuth e calcola il challenge PKCE; `NextendoOAuth` usa `BoundedDownload` per token e identità via HTTPS, senza redirect.
 
 **Chi decide cosa.**
 
@@ -364,7 +366,9 @@ I percorsi completi sono in [flows.md](flows.md#3-play-di-un-gioco-switch-nxnati
 **Preparazione.**
 - Il flusso Play controlla operazioni sui salvataggi, recuperi e installazioni in attesa.
 - `GameRuntimeConfig` traduce le impostazioni in variabili `DM_*`. `LauncherSettingsReader` legge il contratto `launcher.json` del gioco e decide i controlli supportati, con un ripiego per le app più vecchie.
+- `NXNativeGameSettings.effectiveLaunchValue` legge un'impostazione dichiarata senza scriverla, nell'ordine del launcher del gioco: ambiente, `env.txt` del titolo, `env.txt` incluso, scelta salvata e default della build.
 - `LaunchService` scrive `env.txt`, conserva le variabili non gestite tramite il merge del modello runtime e avvia il bundle con `NSWorkspace.OpenConfiguration`, passando anche `DM_LAUNCHER=0`.
+- Una build che dichiara `DM_NETWORK` usa **More settings** come ogni altra scelta del motore. Solo se dichiara anche l'opzione `nextendo` e la scelta effettiva è Nextendo, Play verifica la sessione e passa `DM_NEXTENDO_CLIENT_ID`. Offline, LAN e LDN non interrogano il servizio. Il valore di `DM_NETWORK` resta al launcher del gioco.
 - `CloudSavesPreferences` applica la preferenza cloud al dominio del gioco prima del lancio. Off rimuove anche all'avvio la preferenza cloud salvata dal launcher del gioco. Gli override avanzati `DM_SAVE_SYNC`, nei file o nell'ambiente, mantengono la precedenza del motore: `SaveLocation.inspect` ne segnala l'origine e blocca le operazioni incompatibili con la sincronizzazione attiva.
 
 **Firma dell'icona in corso.**
@@ -704,6 +708,7 @@ I percorsi sono relativi alla home. `Application Support/NXLibrary` è `~/Librar
 | `Application Support/NXLibrary/gamebanana/matches.json` | Pagina GameBanana scelta per ogni gioco, gestita da `GameBananaMatchStore`. |
 | `~/Library/Caches/NXLibrary/gamebanana/` | Cache delle risposte e delle immagini di GameBanana, comprese le copie dello store. |
 | `~/Library/Application Support/nxnative/<TID>/` | `env.txt`, `save`, eventuale `save_device`, `save_user2`…`save_user8`, registro `save.users`, cheat, mod e dati runtime del motore. |
+| `~/Library/Application Support/nxnative/nextendo/` | Store condiviso dei titoli: solo `refresh_token` UTF-8 (`0600`, cartella `0700`), aggiornato con `fsync` e sostituzione atomica, o rimosso alla disconnessione sotto il `flock` di `.lock`. Non fa parte del profilo Arcane né viene copiato nella Dev. |
 | `~/Library/Logs/nxnative/<TID>.log` | Log del gioco avviato. |
 | `<Game apps>/<nome>.app` | Prima installazione del gioco; default `~/Applications`. I rebuild aggiornano l'app nella sua posizione. |
 | Accanto al gioco: `.nxlibrary-install-<hash>.json` | Ultima ricevuta di installazione per quel percorso, gestita da `BuildOutputInstaller`. |

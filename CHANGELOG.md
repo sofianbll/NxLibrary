@@ -7,6 +7,7 @@ User-visible changes to Arcane (formerly NX Library) are recorded here. Entries 
 ### Added
 
 - Navigate Arcane with a PowerA **Lic Pro Controller** through HID when macOS does not list it in GameController. Automatic prompts use Nintendo button names; in-game input is unchanged.
+- **Nextendo sign-in** in **Settings → General → Online services** when the selected nxnative checkout supports it. Compatible game apps expose their own **Network** choice in **Game Options → More settings**. Offline and local play do not require an account.
 
 ## 0.2.0 — 2026-11-18
 

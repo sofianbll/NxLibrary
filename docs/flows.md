@@ -76,7 +76,11 @@ flowchart TD
     C -->|"operazione sui salvataggi o recupero"| X["Attesa / spiegazione"]
     C -->|"icona in firma"| Y["Dialogo Preparing (IconLaunchWait)"]
     C -->|"sì"| D["SaveOperationGate: lease del titolo"]
-    D --> E["LauncherSettings migra launcher.json<br/>oppure LaunchService aggiorna env.txt"]
+    D --> N{"La build offre Nextendo ed è la scelta effettiva?"}
+    N -->|"sì"| P{"Client ID valido e sessione verificata?"}
+    P -->|"no"| X
+    P -->|"sì: aggiunge solo il client ID pubblico"| E
+    N -->|"no"| E["LauncherSettings migra launcher.json<br/>oppure LaunchService aggiorna env.txt"]
     E --> F["CloudSavesPreferences applica la scelta cloud"]
     F --> M["ModStore riconcilia le cartelle prima di Play"]
     M --> G["LaunchService apre l'app (NSWorkspace)"]
@@ -170,6 +174,8 @@ flowchart TD
 Nel menu rapido, Theme apre prima i colori con anteprima viva; A applica la palette e passa alla selezione dello sfondo. Il tema Arcane conserva il blu classico e l’identità predefinita `selene`; le alternative Arcane Crystal e Arcane Flow salvano `arcane-crystal` e `arcane-flow` nello stesso `colorThemeID`. La shell conserva un backdrop persistente; le pagine ne dichiarano stile, pausa e Mods con `SeleneBackdropRequest`, mantenendo artwork e maschere locali. La shell passa la palette completa in `SeleneBackdropStyle`: cambia il valore dell’ambiente e aggiorna sfondo e maschere anche senza spostare la selezione. La superficie usa lo stesso renderer, con orologio e regole di pausa condivisi. Le particelle sono sempre morbide, senza una scelta aggiuntiva. La scelta dello sfondo mantiene il dialogo di destinazione esistente.
 
 La barra laterale segue `SettingsSidebarGroup`: General, Library, Porting e System. Ogni sezione mostra solo le righe di `SettingsCatalog` che le appartengono.
+
+In General → Online services, un checkout con supporto Nextendo mostra la connessione e l'ID client pubblico. Sign in apre il browser predefinito e la riga offre Cancel finché attende la callback loopback. Una callback valida porta allo scambio PKCE e allo store condiviso del motore; Sign out rimuove solo il token locale. In Game Options → More settings, Network conserva solo le modalità dichiarate dal bundle del gioco.
 
 In System → About, il pulsante Support Arcane compare tra il riepilogo dell’app e i crediti. `SettingsAboutSection` apre la pagina Buy Me a Coffee nel browser predefinito tramite clic, Invio o conferma del controller.
 

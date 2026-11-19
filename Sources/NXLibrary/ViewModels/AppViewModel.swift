@@ -1415,11 +1415,49 @@ public final class AppViewModel: ObservableObject {
             return
         }
         launchingGameId = game.id
+        let gameSettings = gameSettings(for: game)
+        let setting = gameSettings.flatMap { NextendoLaunch.networkSetting(in: $0.settings) }
+        let mode = setting?.accepts("nextendo") == true ? gameSettings?.effectiveLaunchValue(NextendoLaunch.networkKey) : nil
+        if NextendoLaunch.requiresSignIn(setting: setting, mode: mode) {
+            let clientID = settingsStore?.settings.nextendoClientID ?? NextendoLaunch.buildClientID
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                do {
+                    // Validate access under the engine's lock, including credentials written by other frontends.
+                    let store = NextendoTokenStore()
+                    let environment = try await NextendoLaunch.environment(setting: setting, mode: mode, clientID: clientID) { client in
+                        try await NextendoOAuth(store: store).accountName(clientID: client) != nil
+                    }
+                    self.startGame(game, titleId: titleId, token: saveLaunchToken, gameSettings: gameSettings,
+                                   environment: environment)
+                } catch {
+                    self.saveGate.end(titleID: titleId, token: saveLaunchToken)
+                    self.launchingGameId = nil
+                    let problem = error as? NextendoError ?? .service
+                    let hint = problem.localizedDescription
+                    SoundEffectService.shared.play(.error)
+                    if [.clientID, .signedOut, .expired, .authorization].contains(problem) {
+                        self.showSettingsNotice(title: "Nextendo", message: hint, actionTitle: "Online services") { [weak self] in
+                            guard let self else { return }
+                            self.gameForSettingsSheet = nil
+                            self.router?.openSettings(.apiServices)
+                        }
+                    } else {
+                        self.showSettingsNotice(title: "Nextendo", message: hint)
+                    }
+                }
+            }
+            return
+        }
+        startGame(game, titleId: titleId, token: saveLaunchToken, gameSettings: gameSettings)
+    }
+
+    private func startGame(_ game: PortedGame, titleId: String, token saveLaunchToken: UUID,
+                           gameSettings: NXNativeGameSettings?, environment: [String: String] = [:]) {
         launchOverlay = LaunchOverlayState(game: .nxnative(game))
         SoundEffectService.shared.play(.launch)
 
         // A saved-choices build reads the game's own store; only an older build takes env.txt and the environment.
-        let gameSettings = gameSettings(for: game)
         let config = GameRuntimeConfig.load(for: game)
         do {
             if let gameSettings {
@@ -1453,7 +1491,7 @@ public final class AppViewModel: ObservableObject {
         if let store = modStore(for: game) { _ = performModChange { try store.sync() } }
 
         launchService.launch(appURL: game.url,
-                             environment: gameSettings == nil ? config.toEnvironmentDict() : [:]) { [weak self] success, error in
+                             environment: gameSettings == nil ? config.toEnvironmentDict() : environment) { [weak self] success, error in
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.saveGate.end(titleID: titleId, token: saveLaunchToken)
