@@ -87,7 +87,7 @@ final class AppUpdateTests: XCTestCase {
     }
 
     func testDownloadSourceIsPublicProjectRepository() {
-        XCTAssertEqual(AppUpdate.defaultRepository, "Bium23/NxLibrary")
+        XCTAssertEqual(AppUpdate.defaultRepository, "sofianbll/NxLibrary")
     }
 
     func testRejectsReleaseWithoutDigest() throws {

@@ -17,7 +17,7 @@ import Darwin
 /// - A failure anywhere leaves a working app where it was.
 public enum AppUpdate {
     /// Public release source. Development copies still never replace themselves.
-    public static let defaultRepository: String? = "Bium23/NxLibrary"
+    public static let defaultRepository: String? = "sofianbll/NxLibrary"
     /// A UserDefaults override of `defaultRepository`, for testing before publishing.
     public static let repositoryOverrideKey = "NXLibrary_UpdateRepository"
     /// A repository that may replace `defaultRepository` under another name. GitHub redirects the old
