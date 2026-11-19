@@ -2289,7 +2289,7 @@ public final class AppViewModel: ObservableObject {
         let start = size > UInt64(maxBytes) ? size - UInt64(maxBytes) : 0
         try? handle.seek(toOffset: start)
         guard let data = try? handle.readToEnd() else { return "" }
-        return String(data: data, encoding: .utf8) ?? ""
+        return String(decoding: data, as: UTF8.self)
     }
 
     public var buildProgress: Double { progressFraction }
@@ -2669,9 +2669,11 @@ public final class AppViewModel: ObservableObject {
             packageVersion: engineSourceCapabilities.titleSelection
                 ? SourceSelection.packageVersion(for: target.sources, stagedSelection: !workspace.links.isEmpty) : nil,
             allowUntestedToolchain: allowUntestedToolchain,
+            nextendoClientID: settingsStore?.settings.nextendoClientID ?? NextendoLaunch.buildClientID,
             extraArguments: extraArguments
         )
         lastPortingCommand = [command.executable.path] + command.arguments
+        let nextendoRequested = command.environment[NextendoLaunch.clientIDKey] != nil
 
         stopStageElapsedTimer()
         buildStartedAt = Date()
@@ -2726,7 +2728,8 @@ public final class AppViewModel: ObservableObject {
             completion: { [weak self] result in
                 DispatchQueue.main.async {
                     self?.finishBuild(result, gameID: target.id,
-                                      finalApp: finalApp, tempDir: tempRoot)
+                                      finalApp: finalApp, tempDir: tempRoot,
+                                      nextendoRequested: nextendoRequested)
                 }
             }
         )
@@ -2907,7 +2910,7 @@ public final class AppViewModel: ObservableObject {
     }
 
     private func finishBuild(_ result: BuildResult, gameID: UUID,
-                             finalApp: URL, tempDir: URL) {
+                             finalApp: URL, tempDir: URL, nextendoRequested: Bool) {
         stopStageElapsedTimer()
         currentBuildCacheURL = nil
         portingProgress?.finish(success: result.success)
@@ -2932,6 +2935,7 @@ public final class AppViewModel: ObservableObject {
                 metalVersion: toolchain.metalVersion,
                 xcodeVersion: toolchain.xcodeVersion,
                 toolchainVerified: verified,
+                nextendoRequested: nextendoRequested ? true : nil,
                 cancelled: result.cancelled
             )
 

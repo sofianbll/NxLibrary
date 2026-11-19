@@ -72,6 +72,30 @@ final class PortingFailureReasonTests: XCTestCase {
         XCTAssertEqual(classify(#"{"ev": "say", "msg": "[RED] no such file: /Users/x/keys/prod.keys"}"#).kind, .keys)
     }
 
+    func testNextendoBuildFailureShowsTheEngineMessage() {
+        let log = """
+        {"ev": "say", "msg": "provisional game profile"}
+        {"ev": "stage_end", "name": "Nextendo game patch", "ok": false}
+        {"ev": "say", "msg": "[RED] Nextendo game patch could not be verified, no game code was changed: <urlopen error timed out>"}
+        """
+        let reason = classify(log)
+        XCTAssertEqual(reason.what(game: "A Game"),
+                       "Nextendo game patch could not be verified, no game code was changed: <urlopen error timed out>")
+        XCTAssertEqual(reason.action, .none)
+        let incompleteRead = """
+        {"ev": "stage_end", "name": "Nextendo game patch", "ok": false}
+        {"ev": "say", "msg": "[RED] IncompleteRead: response closed early"}
+        """
+        XCTAssertEqual(classify(incompleteRead).what(game: "A Game"), "IncompleteRead: response closed early")
+
+        let laterFailure = """
+        {"ev": "stage_end", "name": "Nextendo game patch", "ok": true}
+        {"ev": "stage_end", "name": "Mac app", "ok": false}
+        {"ev": "say", "msg": "[RED] pack_app.py failed"}
+        """
+        XCTAssertEqual(classify(laterFailure), PortingFailureReason(kind: .unknown))
+    }
+
     func testPortedGameDecodesWithoutReason() throws {
         let game = PortedGame(name: "A", url: URL(fileURLWithPath: "/a.app"), platform: .macApp, sizeBytes: 1,
                               modificationDate: Date(timeIntervalSince1970: 0))

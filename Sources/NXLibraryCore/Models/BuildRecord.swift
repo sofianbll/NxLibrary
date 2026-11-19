@@ -10,13 +10,14 @@ public struct BuildRecord: Codable, Equatable {
     public var metalVersion: String?
     public var xcodeVersion: String?
     public var toolchainVerified: Bool
+    public var nextendoRequested: Bool?
     public var cancelled: Bool
 
     public init(startedAt: Date = Date(), endedAt: Date? = nil,
                 exitCode: Int32? = nil, logPath: String? = nil,
                 outputPath: String? = nil, engineCommit: String? = nil,
                 metalVersion: String? = nil, xcodeVersion: String? = nil,
-                toolchainVerified: Bool = false, cancelled: Bool = false) {
+                toolchainVerified: Bool = false, nextendoRequested: Bool? = nil, cancelled: Bool = false) {
         self.startedAt = startedAt
         self.endedAt = endedAt
         self.exitCode = exitCode
@@ -26,6 +27,7 @@ public struct BuildRecord: Codable, Equatable {
         self.metalVersion = metalVersion
         self.xcodeVersion = xcodeVersion
         self.toolchainVerified = toolchainVerified
+        self.nextendoRequested = nextendoRequested
         self.cancelled = cancelled
     }
 }

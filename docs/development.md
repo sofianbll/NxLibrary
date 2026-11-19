@@ -34,7 +34,9 @@ bash scripts/build_app.sh /tmp/NXLibrary-Review.app
 
 A plain development app uses bundle ID `local.nxlibrary.development`, takes its version from `VERSION` and has no release marker. It never installs its own updates.
 
-Register a public PKCE application with Nextendo for `http://127.0.0.1:47823/callback`, with the engine's `identity`, `friends`, `game.matchmaking`, `presence` and `profil` scopes. Enter the public ID in Online services when the selected engine declares support. To package a default instead, optionally set `DM_NEXTENDO_CLIENT_ID` when running `build_app.sh`; it writes only the public ID to `DMNextendoClientID`. Do not supply a client secret. Game apps must already be built with Nextendo support; this does not change Arcane's engine pin or request online-capable builds.
+Register a public PKCE application with Nextendo for `http://127.0.0.1:47823/callback`, with the engine's `identity`, `friends`, `game.matchmaking`, `presence` and `profil` scopes. Enter the public ID in Online services when the selected engine declares support. To package a default instead, optionally set `DM_NEXTENDO_CLIENT_ID` when running `build_app.sh`; it writes only the public ID to `DMNextendoClientID`. Do not supply a client secret.
+
+`BuildCommandBuilder` adds `--nextendo` to `scripts/build_ipa_from_nsp.py` only when the selected checkout declares it and a valid public client ID is available (settings first, then Arcane's `Info.plist`). Only that command gets `DM_NEXTENDO_CLIENT_ID` in its environment; building does not check the player's session. The engine can reuse a valid cached patch catalog and can continue when a verified catalog has no patch for the exact game build. A fetch or verification failure fails the build; Arcane shows the engine error and does not retry without Nextendo. The engine pin is unchanged.
 
 ### Bundled runtime
 

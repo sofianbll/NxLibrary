@@ -19,6 +19,7 @@ public enum BuildCommandBuilder {
         programIndex: Int? = nil,
         packageVersion: String? = nil,
         allowUntestedToolchain: Bool = false,
+        nextendoClientID: String? = nil,
         extraArguments: [String] = []
     ) -> BuildCommand {
         var args = [
@@ -44,10 +45,16 @@ public enum BuildCommandBuilder {
         // Metal compiler unless this flag is present. Keep it tied to the
         // app's explicit, persisted override.
         if allowUntestedToolchain { args.append("--allow-other-metal") }
-        args += extraArguments
+        args += extraArguments.filter { $0 != NextendoLaunch.buildFlag }
 
         var env = toolchain.environment(base: ProcessInfo.processInfo.environment, developerDir: developerDir)
         env["PYTHONUNBUFFERED"] = "1"
+        env[NextendoLaunch.clientIDKey] = nil
+        if let nextendoClientID, NextendoAuthorization.validClientID(nextendoClientID),
+           NextendoLaunch.engineSupportsBuild(at: repo) {
+            args.append(NextendoLaunch.buildFlag)
+            env[NextendoLaunch.clientIDKey] = nextendoClientID
+        }
         return BuildCommand(executable: toolchain.python, arguments: args,
                             environment: env, workingDirectory: repo)
     }

@@ -67,6 +67,39 @@ final class BuildCommandBuilderTests: XCTestCase {
         XCTAssertTrue(cmd.arguments.contains("--allow-other-metal"))
     }
 
+    func testNextendoRequiresAnEngineFlagAndConfiguredClientID() throws {
+        let repo = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let scripts = repo.appendingPathComponent("scripts")
+        try FileManager.default.createDirectory(at: scripts, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: repo) }
+        let cli = scripts.appendingPathComponent("build_ipa_from_nsp.py")
+        let toolchain = EngineToolchain.resolve(runtime: nil, repo: repo)
+
+        for supported in [false, true] {
+            try (supported ? "ap.add_argument('--nextendo')\n" : "").write(to: cli, atomically: true, encoding: .utf8)
+            for clientID in [nil, "sample-client", "invalid client"] as [String?] {
+                let expectedID = supported && clientID == "sample-client" ? clientID : nil
+                let command = BuildCommandBuilder.make(
+                    repo: repo, toolchain: toolchain, workspace: repo, keys: nil,
+                    output: repo.appendingPathComponent("Game.app"), developerDir: repo,
+                    nextendoClientID: clientID,
+                    extraArguments: expectedID == nil ? ["--nextendo", "--allow-damaged"] : ["--allow-damaged"]
+                )
+                XCTAssertEqual(command.arguments.filter { $0 == "--nextendo" }.count, expectedID == nil ? 0 : 1)
+                XCTAssertEqual(command.environment["DM_NEXTENDO_CLIENT_ID"], expectedID)
+                XCTAssertTrue(command.arguments.contains("--allow-damaged"))
+            }
+        }
+    }
+
+    func testBuildRecordKeepsNextendoRequestAndDecodesOlderRecords() throws {
+        let record = BuildRecord(nextendoRequested: true)
+        let encoded = try JSONEncoder().encode(record)
+        XCTAssertEqual(try JSONDecoder().decode(BuildRecord.self, from: encoded), record)
+        let legacy = Data(#"{"startedAt":0,"toolchainVerified":true,"cancelled":false}"#.utf8)
+        XCTAssertNil(try JSONDecoder().decode(BuildRecord.self, from: legacy).nextendoRequested)
+    }
+
     func testMotionAndRomfsFlags() {
         let repo = URL(fileURLWithPath: "/tmp/repo")
         let cmd = BuildCommandBuilder.make(
