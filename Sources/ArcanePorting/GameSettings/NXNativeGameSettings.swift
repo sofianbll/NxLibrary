@@ -49,6 +49,7 @@ public struct NXNativeGameSettings {
     public let settings: [LauncherSetting]
     public let domain: String
     public let envURL: URL
+    private let bundleEnvURL: URL
     private let store: SavedChoicesStore
     private let preferences: UserDefaults
     private let legacyKey: String
@@ -68,6 +69,7 @@ public struct NXNativeGameSettings {
         return NXNativeGameSettings(
             settings: file.settings, domain: domain,
             envURL: supportDirectory.appendingPathComponent(titleId).appendingPathComponent("env.txt"),
+            bundleEnvURL: game.url.appendingPathComponent("Contents/Resources/dm/env.txt"),
             store: store, preferences: preferences, legacyKey: GameRuntimeConfig.storageKey(for: game))
     }
 
@@ -102,6 +104,29 @@ public struct NXNativeGameSettings {
     }
 
     // MARK: - Reading and writing
+
+    /// The value Play's child process sees. Does not migrate or change a saved choice.
+    public func effectiveLaunchValue(_ env: String, environment: [String: String] = ProcessInfo.processInfo.environment) -> String? {
+        guard let setting = setting(env) else { return nil }
+        if let inherited = environment[env] { return inherited }
+        var ignoreSaved = environment["DM_SAVED_CHOICES"]
+        for url in [envURL, bundleEnvURL] {
+            guard let text = try? String(contentsOf: url, encoding: .utf8) else { continue }
+            for line in text.split(whereSeparator: \.isNewline) {
+                let trimmed = line.trimmingCharacters(in: CharacterSet(charactersIn: " \t"))
+                guard let equals = trimmed.firstIndex(of: "=") else { continue }
+                let key = trimmed[..<equals].trimmingCharacters(in: .whitespaces)
+                // The host preserves whitespace immediately after '='.
+                let value = trimmed[trimmed.index(after: equals)...]
+                if key == env { return String(value) }
+                if key == "DM_SAVED_CHOICES", ignoreSaved == nil { ignoreSaved = String(value) }
+            }
+        }
+        if ignoreSaved != "0", let saved = store.value(env, domain: domain), setting.accepts(saved) {
+            return saved
+        }
+        return setting.defaultValue
+    }
 
     /// What each setting is now: the player's env.txt, then a saved choice this build accepts, then the default.
     public func snapshot() -> GameSettingsSnapshot {
