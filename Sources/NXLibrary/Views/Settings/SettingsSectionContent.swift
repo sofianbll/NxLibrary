@@ -6,6 +6,7 @@ struct SettingsSectionContent: View {
     @ObservedObject var viewModel: AppViewModel
     @ObservedObject var settings: AppSettingsStore
     @ObservedObject var artwork: ArtworkStore
+    let supportsNextendo: Bool
     let onViewControls: () -> Void
     let onChooseLanguage: () -> Void
     let onChooseRegion: () -> Void
@@ -18,10 +19,11 @@ struct SettingsSectionContent: View {
     var body: some View {
         switch section {
         case .search:
-            SettingsSearchSection(settings: settings, onOpenGroup: onOpenGroup,
+            SettingsSearchSection(settings: settings, supportsNextendo: supportsNextendo, onOpenGroup: onOpenGroup,
                                   onSubmit: onSearchSubmit, fieldRequest: searchFieldRequest, onActions: onActions)
         case .changed:
             SettingsChangedSection(settings: settings, viewModel: viewModel, setup: viewModel.setup,
+                                   supportsNextendo: supportsNextendo,
                                    onOpenGroup: onOpenGroup, onActions: onActions)
         case .startUp:
             SettingsStartUpSection(settings: settings, onActions: onActions, onChooseLanguage: onChooseLanguage, onChooseRegion: onChooseRegion)
@@ -34,7 +36,7 @@ struct SettingsSectionContent: View {
         case .look:
             SettingsLookSection(viewModel: viewModel, settings: settings, onActions: onActions)
         case .apiServices:
-            SettingsAPISection(viewModel: viewModel, onActions: onActions)
+            SettingsAPISection(viewModel: viewModel, settings: settings, supportsNextendo: supportsNextendo, onActions: onActions)
         case .libraryGames:
             SettingsLibraryGamesSection(viewModel: viewModel, settings: settings, onActions: onActions)
         case .games:

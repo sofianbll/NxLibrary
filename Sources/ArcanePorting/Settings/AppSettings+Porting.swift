@@ -5,6 +5,16 @@ import NXLibraryCore
 /// (`AppSettings.moduleValues`); a missing or unreadable value is its default, and an unreadable one stays in the
 /// file until it is changed.
 extension AppSettings {
+    /// Optional public OAuth client ID. The token is never stored here.
+    public var nextendoClientID: String? {
+        get {
+            moduleValues["nextendoClientID"]?.stringValue.flatMap {
+                NextendoAuthorization.validClientID($0) ? $0 : nil
+            }
+        }
+        set { moduleValues["nextendoClientID"] = newValue.map(CatalogJSON.string) }
+    }
+
     /// What a new ported game starts with.
     public var gameDefaults: GameRuntimeConfig {
         get { moduleValue("gameDefaults", as: GameRuntimeConfig.self) ?? GameRuntimeConfig() }

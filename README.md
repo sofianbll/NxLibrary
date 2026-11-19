@@ -72,6 +72,8 @@ Automated checks cover the application code, publication inputs, compilation and
 
 Porting uses nxnative commit `99224562` with Xcode 27.2 and Metal 32023.922. Porting Setup retrieves that commit. Installed game apps use the engine they were built with. See the [engine upgrade notes](docs/history/engine-upgrades/README.md).
 
+Nextendo is a free community service for online play, not a Nintendo service. If your selected engine supports it, open **Settings → General → Online services → Nextendo** to sign in with a Nextendo account. The **Nextendo client ID** field uses the packaged public client ID when provided. To play online, select **Nextendo (online)** under **Game Options → More settings → Network**, if your game app offers it. A game built without Nextendo support does not gain it from signing in; use an engine and game build that support it. This does not change the engine pin or the build command Arcane uses.
+
 ## Getting started
 
 ### Requirements

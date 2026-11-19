@@ -34,6 +34,8 @@ bash scripts/build_app.sh /tmp/NXLibrary-Review.app
 
 A plain development app uses bundle ID `local.nxlibrary.development`, takes its version from `VERSION` and has no release marker. It never installs its own updates.
 
+Register a public PKCE application with Nextendo for `http://127.0.0.1:47823/callback`, with the engine's `identity`, `friends`, `game.matchmaking`, `presence` and `profil` scopes. Enter the public ID in Online services when the selected engine declares support. To package a default instead, optionally set `DM_NEXTENDO_CLIENT_ID` when running `build_app.sh`; it writes only the public ID to `DMNextendoClientID`. Do not supply a client secret. Game apps must already be built with Nextendo support; this does not change Arcane's engine pin or request online-capable builds.
+
 ### Bundled runtime
 
 `bundle_runtime.sh` prepares `work/Runtime/` from the exact downloads and hashes in `runtime.lock`. It includes Python, capstone, lz4, fontTools, zbic (Nintendo's zstd variant, read by the engine for system 22.0.0+ code), nsz with its dependencies (NSZ / XCZ inputs), `zstd` and `glslangValidator`, their required non-system libraries and licence notices. zbic is GPLv2, so its source archive ships in `Runtime/sources/`. `EngineRuntimeRequirementsTests` fails when the pinned engine's README or `.github/requirements/tools.txt` asks for a Python package that `runtime.lock` lacks. It relinks the native libraries for the bundle, signs them and checks that the tools run without Homebrew on `PATH`.

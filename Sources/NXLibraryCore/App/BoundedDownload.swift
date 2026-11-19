@@ -4,8 +4,8 @@ import Foundation
 /// one byte at a time cost about 6 µs per byte (a 640 KB LaunchBox page: 5.4 s instead of 2.0 s, almost all
 /// of it CPU; measured 16 Nov 2026), so the public-source and Steam downloads read through this instead.
 /// Redirects are never followed: the redirect response itself is returned, for the caller's URL checks.
-enum BoundedDownload {
-    static func data(for request: URLRequest, session: URLSession, limit: Int) async throws -> (Data, URLResponse) {
+package enum BoundedDownload {
+    package static func data(for request: URLRequest, session: URLSession, limit: Int) async throws -> (Data, URLResponse) {
         try Task.checkCancellation()
         let collector = Collector(limit: limit)
         let task = session.dataTask(with: request)

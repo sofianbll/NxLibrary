@@ -7,14 +7,21 @@ extension SettingsCatalog {
     /// Every Settings row (spec §5.7), in screen order.
     public static let all: [SettingDescriptor] = ordered(baseRows + portingRows)
 
-    public static func changed(in settings: AppSettings, externalChanges: Set<String> = []) -> [SettingDescriptor] {
-        changed(in: settings, externalChanges: externalChanges, rows: all)
+    public static func changed(in settings: AppSettings, externalChanges: Set<String> = [],
+                               supportsNextendo: Bool = false) -> [SettingDescriptor] {
+        changed(in: settings, externalChanges: externalChanges, rows: supportsNextendo ? includingNextendo : all)
     }
 
     /// Case- and diacritic-insensitive match over title and about.
-    public static func search(_ query: String) -> [SettingDescriptor] {
-        search(query, in: all)
+    public static func search(_ query: String, supportsNextendo: Bool = false) -> [SettingDescriptor] {
+        search(query, in: supportsNextendo ? includingNextendo : all)
     }
+
+    private static let includingNextendo = ordered(baseRows + portingRows + [
+        action("nextendo", .apiServices, "Nextendo", "Free community online play for compatible nxnative games. Requires a Nextendo account."),
+        row("nextendoClientID", .apiServices, "Nextendo client ID",
+            "Public OAuth client ID for sign-in and online play. Clear the field to use the build default.") { $0.nextendoClientID },
+    ])
 
     /// Each Porting section's rows, in screen order.
     static let portingRows: [SettingDescriptor] = [

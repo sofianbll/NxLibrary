@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 21 novembre 2026. Copertura di **801 file** del progetto, compresi i controlli di pubblicazione, la CI con regressioni app senza UI, il master dell’icona, le guide per sviluppo e media, gli screenshot del README, l'integrazione di nxnative, il canale di aggiornamento e il primo avvio che parte da ciò che è già sul Mac, il setup del porting con cartella unica per scoperta e installazione dei giochi. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 21 novembre 2026. Copertura di **810 file** del progetto, compresi i controlli di pubblicazione, la CI con regressioni app senza UI, il master dell’icona, le guide per sviluppo e media, gli screenshot del README, l'integrazione di nxnative, il canale di aggiornamento e il primo avvio che parte da ciò che è già sul Mac, il setup del porting con cartella unica per scoperta e installazione dei giochi. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -96,7 +96,8 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 | [Sources/NXLibrary/ViewModels/AppViewModel.swift](../../Sources/NXLibrary/ViewModels/AppViewModel.swift) | Coordina libreria e catalogo, sorgenti, lancio (con la sincronizzazione delle mod prima di Play), primo avvio, Game options, spazio su disco e icona di Arcane nel Dock. Crea i modelli Switch, conserva la scelta Steam del Setup, tiene lo stato del porting letto dalla home e non scansiona Game files all’avvio. Il file tiene stato, init, primo avvio, icona nel Dock e i due scrittori della libreria e dello spazio (`applyCatalog`, `cleanStorage`); il resto sta nelle estensioni qui sotto. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+Storage.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Storage.swift) | Spazio su disco: misura, cancella cache e log. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+Library.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Library.swift) | Libreria: file trascinati, caricamento e scansione, import delle build esistenti, Locate Sources e cartella della libreria. |
-| [Sources/NXLibrary/ViewModels/AppViewModel+Launch.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Launch.swift) | Play: salvataggi cloud e mod prima dell’avvio, sorveglianza dell’avvio e overlay. |
+| [Sources/NXLibrary/ViewModels/AppViewModel+Launch.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Launch.swift) | Play: controllo Nextendo per il gioco online, salvataggi cloud e mod prima dell’avvio, sorveglianza dell’avvio e overlay. |
+| [Sources/NXLibrary/ViewModels/NextendoSettings.swift](../../Sources/NXLibrary/ViewModels/NextendoSettings.swift) | Pubblica lo stato della connessione Nextendo e coordina verifica account, accesso e disconnessione locale. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+GameActions.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+GameActions.swift) | Azioni su un gioco: Game options, preferito, nascosto, salvataggi cloud, chiusura, rimozione e Mostra nel Finder. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+GameFiles.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+GameFiles.swift) | File di un gioco: riepilogo e rimozione delle sorgenti, cancellazione del porting, cartella Ryujinx e log. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+Mods.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Mods.swift) | Crea lo `ModStore` di un gioco, il valore della riga Mods e le frasi per ogni errore. |
@@ -142,6 +143,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 |---|---|
 | [Sources/NXLibrary/Services/AppUpdater.swift](../../Sources/NXLibrary/Services/AppUpdater.swift) | Coordina controllo release, download, verifica, installazione e riavvio di Arcane. |
 | [Sources/NXLibrary/Services/NativeMenuCommands.swift](../../Sources/NXLibrary/Services/NativeMenuCommands.swift) | Coordina tracking, disponibilità nella scena e passaggio differito dai menu macOS alle azioni del launcher. |
+| [Sources/NXLibrary/Services/NextendoBrowserSignIn.swift](../../Sources/NXLibrary/Services/NextendoBrowserSignIn.swift) | Apre il browser predefinito e riceve una callback HTTP su loopback, con annullamento e scadenza. |
 | [Sources/NXLibrary/Services/ControllerSource.swift](../../Sources/NXLibrary/Services/ControllerSource.swift) | Contratto di connessione, identità e transizioni normalizzate per le sorgenti di input. |
 | [Sources/NXLibrary/Services/GameControllerService.swift](../../Sources/NXLibrary/Services/GameControllerService.swift) | Sceglie il pad attivo, gestisce tap, hold e navigazione, pubblica azioni e simboli. |
 | [Sources/NXLibrary/Services/GCControllerSource.swift](../../Sources/NXLibrary/Services/GCControllerSource.swift) | Legge il profilo esteso di GameController, lo schema dei tasti e i simboli di sistema. |
@@ -171,7 +173,7 @@ Cartella `Sources/NXLibraryCore/App/`.
 | [Sources/NXLibraryCore/App/AppBundleRename.swift](../../Sources/NXLibraryCore/App/AppBundleRename.swift) | Decide se una copia release che si chiama ancora `NX Library.app` diventa `Arcane.app` alla chiusura, e fa lo spostamento nella stessa cartella. |
 | [Sources/NXLibraryCore/App/AppUpdatePresentation.swift](../../Sources/NXLibraryCore/App/AppUpdatePresentation.swift) | Definisce gli stati dell’updater e il gate di installazione per versione e tipo di copia. |
 | [Sources/NXLibraryCore/App/AppUpdateDownload.swift](../../Sources/NXLibraryCore/App/AppUpdateDownload.swift) | Scarica gli aggiornamenti con limiti di dimensione, redirect HTTPS vincolati a GitHub e gestione del file temporaneo. |
-| [Sources/NXLibraryCore/App/BoundedDownload.swift](../../Sources/NXLibraryCore/App/BoundedDownload.swift) | Lettura HTTP limitata a blocchi, senza redirect né byte per byte: usata da Wikidata, IGDB, LaunchBox/TheGamesDB e Steam. |
+| [Sources/NXLibraryCore/App/BoundedDownload.swift](../../Sources/NXLibraryCore/App/BoundedDownload.swift) | Lettura HTTP limitata a blocchi e senza redirect, condivisa fra base e modulo per i provider, Steam e Nextendo. |
 | [Sources/NXLibraryCore/App/ConnectivityWatcher.swift](../../Sources/NXLibraryCore/App/ConnectivityWatcher.swift) | Avvisa sul main thread quando il Mac torna online, perché il giro delle descrizioni riprenda da solo; la prima lettura non conta. |
 | [Sources/NXLibraryCore/App/DisplayNameCache.swift](../../Sources/NXLibraryCore/App/DisplayNameCache.swift) | Nomi visualizzati di cartelle e volumi letti una volta per URL: la pagina si ricostruisce a ogni disegno e un disco esterno in stop bloccherebbe ogni volta. |
 | [Sources/NXLibraryCore/App/AppIdentity.swift](../../Sources/NXLibraryCore/App/AppIdentity.swift) | Nome visibile dell'app ("Arcane", non tradotto), il vecchio nome detto solo dal benvenuto, il nome del modulo Porting, pagina del progetto, guida online aperta da About e User-Agent unico delle richieste di rete. |
@@ -420,12 +422,12 @@ Cartelle `Sources/ArcanePorting/Settings/` e `ArcanePorting/App/`.
 
 | File | Responsabilità |
 |---|---|
-| [Sources/ArcanePorting/Settings/AppSettings+Porting.swift](../../Sources/ArcanePorting/Settings/AppSettings+Porting.swift) | Game defaults, Cloud saves e la cartella scelta, letti e scritti nelle chiavi di sempre di `settings.json`; un valore assente o illeggibile è il suo default. |
+| [Sources/ArcanePorting/Settings/AppSettings+Porting.swift](../../Sources/ArcanePorting/Settings/AppSettings+Porting.swift) | Game defaults, Cloud saves, cartella scelta e ID client pubblico Nextendo nelle chiavi di sempre di `settings.json`; un valore assente o illeggibile è il suo default. |
 | [Sources/ArcanePorting/Settings/SettingsReset+Porting.swift](../../Sources/ArcanePorting/Settings/SettingsReset+Porting.swift) | Reset group completo: quello della base più New games (`gameDefaults`). |
 | [Sources/ArcanePorting/App/AppDataProfile+Porting.swift](../../Sources/ArcanePorting/App/AppDataProfile+Porting.swift) | Dove le build mettono i file temporanei: la cartella del profilo e, nel profilo stabile, accanto a ogni cartella Game apps. |
 | [Sources/ArcanePorting/App/FirstRunFindings+Porting.swift](../../Sources/ArcanePorting/App/FirstRunFindings+Porting.swift) | Il primo avvio conta le app nxnative della cartella Game apps, nella lettura e nel lettore annullabile. |
 | [Sources/ArcanePorting/App/DevelopmentProfileImporter+Porting.swift](../../Sources/ArcanePorting/App/DevelopmentProfileImporter+Porting.swift) | I controlli Porting della copia di sviluppo (`library.json`, catalogo con i tipi noti e l’import legacy) e `DevelopmentProfileImporter()` e `AppData.prepare()` con questi. |
-| [Sources/ArcanePorting/Settings/SettingsCatalog+Porting.swift](../../Sources/ArcanePorting/Settings/SettingsCatalog+Porting.swift) | Le righe del gruppo Porting (Engine, Keys, Library, New games con la vibrazione, Cloud saves, Porting storage) e l’elenco completo `all` in ordine di schermata, con `changed` e `search`. |
+| [Sources/ArcanePorting/Settings/SettingsCatalog+Porting.swift](../../Sources/ArcanePorting/Settings/SettingsCatalog+Porting.swift) | Righe Porting e catalogo completo in ordine di schermata; Changed e Search offrono la connessione Nextendo solo se supportata. |
 
 ## Porting · Setup, motore e chiavi
 
@@ -495,6 +497,9 @@ Cartella `Sources/ArcanePorting/Launch/`.
 | [Sources/ArcanePorting/Launch/AppIconProgress.swift](../../Sources/ArcanePorting/Launch/AppIconProgress.swift) | Stati e testi della preparazione icona, con esito informativo aggiunto al log della build conclusa. |
 | [Sources/ArcanePorting/Launch/IconLaunchWait.swift](../../Sources/ArcanePorting/Launch/IconLaunchWait.swift) | Conserva una richiesta Play durante la firma dell'icona e la revoca su annullamento, errore o chiusura del dialogo. |
 | [Sources/ArcanePorting/Launch/LaunchService.swift](../../Sources/ArcanePorting/Launch/LaunchService.swift) | Scrive l’ambiente runtime e avvia il bundle del gioco tramite NSWorkspace. |
+| [Sources/ArcanePorting/Launch/NextendoLaunch.swift](../../Sources/ArcanePorting/Launch/NextendoLaunch.swift) | Rileva il supporto Nextendo dal checkout e dalla build, valida la sessione e compone l'ambiente del lancio. |
+| [Sources/ArcanePorting/Launch/NextendoOAuth.swift](../../Sources/ArcanePorting/Launch/NextendoOAuth.swift) | Genera la richiesta PKCE, valida la callback, scambia e ruota i token e legge il nome dell’account. |
+| [Sources/ArcanePorting/Launch/NextendoTokenStore.swift](../../Sources/ArcanePorting/Launch/NextendoTokenStore.swift) | Legge, sostituisce e rimuove il refresh token condiviso sotto il lock nxnative, con permessi privati. |
 | [Sources/ArcanePorting/Launch/AppIconWriter.swift](../../Sources/ArcanePorting/Launch/AppIconWriter.swift) | Scrive l’icona scelta nell’app del gioco, conserva l’originale, rifirma e verifica, e annulla tutto in caso di errore. |
 | [Sources/ArcanePorting/Launch/NXNativeLibraryMerge.swift](../../Sources/ArcanePorting/Launch/NXNativeLibraryMerge.swift) | Algoritmo di merge nxnative usato dal repository del catalogo comune. |
 
@@ -632,7 +637,8 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Sources/NXLibrary/Views/Detail/CriticRatingValue.swift](../../Sources/NXLibrary/Views/Detail/CriticRatingValue.swift) | Valore della riga Critic score: cinque stelle, numero /100 e fonte, senza finestre aggiuntive; caricamento e assenza espliciti. |
 | [Sources/NXLibrary/ViewModels/IGDBSettings.swift](../../Sources/NXLibrary/ViewModels/IGDBSettings.swift) | Configurazione IGDB facoltativa: verifica prima del salvataggio, rimozione e invalidazione delle richieste/voti precedenti. |
 | [Sources/NXLibrary/Views/Components/IGDBCredentialsDialog.swift](../../Sources/NXLibrary/Views/Components/IGDBCredentialsDialog.swift) | Guida sintetica in cinque passi, Client ID, Client Secret nascosto, verifica/salvataggio e annullamento; input Settings sospeso. |
-| [Sources/NXLibrary/Views/Settings/SettingsAPISection.swift](../../Sources/NXLibrary/Views/Settings/SettingsAPISection.swift) | Pagina generale Servizi API: nota sulle fonti facoltative, IGDB e SteamGridDB con azioni e focus condivisi. |
+| [Sources/NXLibrary/Views/Settings/SettingsAPISection.swift](../../Sources/NXLibrary/Views/Settings/SettingsAPISection.swift) | Servizi facoltativi: IGDB, SteamGridDB e Nextendo quando supportato, con azioni e focus condivisi. |
+| [Sources/NXLibrary/Views/Settings/NextendoClientDialog.swift](../../Sources/NXLibrary/Views/Settings/NextendoClientDialog.swift) | Dialogo Selene per scegliere e validare l’ID client pubblico o riprendere il default della build. |
 
 ## UI · Game Options, cheats e salvataggi
 
@@ -888,6 +894,9 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/ArcanePortingTests/NewestEngineTests.swift](../../Tests/ArcanePortingTests/NewestEngineTests.swift) | Lock e Metal di main, validità della scelta, comandi git del cambio, gate Newest engine, scheda Setup e frase. |
 | [Tests/ArcanePortingTests/NUPSourceCatalogTests.swift](../../Tests/ArcanePortingTests/NUPSourceCatalogTests.swift) | NUP storici, multiprogramma e soli update; identità DLC, JSON, capacità checkout, programma zero nei vecchi record e argv coerenti. |
 | [Tests/ArcanePortingTests/NXNativeGameSettingsTests.swift](../../Tests/ArcanePortingTests/NXNativeGameSettingsTests.swift) | Build senza adattatore, migrazione, chiavi fissate, precedenza al lancio e scrittura dei soli valori diversi dal default. |
+| [Tests/ArcanePortingTests/NextendoLaunchTests.swift](../../Tests/ArcanePortingTests/NextendoLaunchTests.swift) | Capacità dichiarate, scelta Network, visibilità in Settings, blocco senza sessione e ambiente in Play. |
+| [Tests/ArcanePortingTests/NextendoOAuthTests.swift](../../Tests/ArcanePortingTests/NextendoOAuthTests.swift) | PKCE RFC 7636, callback, scambio e rotazione sintetici, scadenza ed errore temporaneo. |
+| [Tests/ArcanePortingTests/NextendoTokenStoreTests.swift](../../Tests/ArcanePortingTests/NextendoTokenStoreTests.swift) | Permessi, sostituzione atomica, flock POSIX, annullamento, disconnessione e link rifiutati. |
 | [Tests/ArcanePortingTests/OnlineArtworkSourcesTests.swift](../../Tests/ArcanePortingTests/OnlineArtworkSourcesTests.swift) | Ricerca Steam e loghi MediaWiki/Commons con risposte sintetiche. |
 | [Tests/NXLibraryCoreTests/OnlineBackgroundsTests.swift](../../Tests/NXLibraryCoreTests/OnlineBackgroundsTests.swift) | Parser degli sfondi fissi, risoluzioni, crediti e nomi dei download. |
 | [Tests/NXLibraryCoreTests/OnlineLiveSourcesTests.swift](../../Tests/NXLibraryCoreTests/OnlineLiveSourcesTests.swift) | Parser e indirizzi dei provider di sfondi video. |
@@ -1021,7 +1030,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 
 | File | Responsabilità |
 |---|---|
-| [scripts/build_app.sh](../../scripts/build_app.sh) | Compila in staging, prepara plist, runtime e risorse, verifica la firma e pubblica il bundle con sostituzione atomica. |
+| [scripts/build_app.sh](../../scripts/build_app.sh) | Compila in staging, prepara plist (con ID client Nextendo pubblico facoltativo), runtime e risorse, verifica la firma e pubblica il bundle con sostituzione atomica. |
 | [scripts/install_built_app.swift](../../scripts/install_built_app.swift) | Piccolo ingresso CLI che riusa BuildOutputInstaller per installare Arcane dopo il packaging. |
 | [scripts/check_publication.py](../../scripts/check_publication.py) | Rifiuta contenuti personali o di gioco versionati e formati di segreto riconoscibili; verifica il runtime rispetto al lock prima del packaging. |
 | [scripts/build_dmg.sh](../../scripts/build_dmg.sh) | Confeziona un bundle già costruito in un’immagine DMG di sviluppo. |

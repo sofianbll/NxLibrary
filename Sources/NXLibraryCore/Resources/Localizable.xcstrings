@@ -13303,6 +13303,47 @@
         }
       }
     },
+    "Check status": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status prüfen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check status"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprobar estado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifier l’état"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controlla lo stato"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verificar status"
+          }
+        }
+      }
+    },
     "Cloud sync covers only the primary user and device save.": {
       "comment": "NUP program identity or local multiuser save scope; cloud still covers the primary user and device only.",
       "localizations": {
@@ -19695,6 +19736,47 @@
         }
       }
     },
+    "Could not access the shared Nextendo sign-in. Close any running games and try again.": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die gemeinsame Nextendo-Anmeldung ist nicht zugänglich. Schließe laufende Spiele und versuche es erneut."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not access the shared Nextendo sign-in. Close any running games and try again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se puede acceder a la sesión compartida de Nextendo. Cierra los juegos abiertos y vuelve a intentarlo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible d’accéder à la connexion Nextendo partagée. Fermez les jeux ouverts et réessayez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile accedere alla sessione condivisa di Nextendo. Chiudi i giochi aperti e riprova."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível acessar a sessão compartilhada do Nextendo. Feche os jogos abertos e tente de novo."
+          }
+        }
+      }
+    },
     "Could not build the GitHub API URL.": {
       "comment": "UpstreamChecker.swift",
       "localizations": {
@@ -19785,6 +19867,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法更改 %@ 的 App 图标：%@"
+          }
+        }
+      }
+    },
+    "Could not check the Nextendo account. Try again.": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Nextendo-Konto konnte nicht geprüft werden. Versuche es erneut."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not check the Nextendo account. Try again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo verificar la cuenta de Nextendo. Vuelve a intentarlo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de vérifier le compte Nextendo. Réessayez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile verificare l’account Nextendo. Riprova."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível verificar a conta do Nextendo. Tente de novo."
           }
         }
       }
@@ -19926,6 +20049,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法载入 %@ 的游戏库条目。"
+          }
+        }
+      }
+    },
+    "Could not open the Nextendo sign-in window.": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Nextendo-Anmeldefenster konnte nicht geöffnet werden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not open the Nextendo sign-in window."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo abrir la ventana de inicio de sesión de Nextendo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible d’ouvrir la fenêtre de connexion à Nextendo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile aprire la finestra di accesso a Nextendo."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível abrir a janela de entrada do Nextendo."
           }
         }
       }
@@ -20255,6 +20419,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法将 %@ 用于云存档。"
+          }
+        }
+      }
+    },
+    "Could not verify sign-in": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anmeldung nicht überprüfbar"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not verify sign-in"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo verificar la sesión"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connexion non vérifiée"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesso non verificato"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível verificar a sessão"
           }
         }
       }
@@ -24835,6 +25040,47 @@
         }
       }
     },
+    "Enter a valid public Nextendo client ID in Online services.": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gib unter Onlinedienste eine gültige öffentliche Nextendo-Client-ID ein."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a valid public Nextendo client ID in Online services."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce un ID de cliente público de Nextendo válido en Servicios en línea."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saisissez un identifiant client public Nextendo valide dans Services en ligne."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci un ID client pubblico Nextendo valido in Servizi online."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insira um identificador público de cliente do Nextendo válido em Serviços online."
+          }
+        }
+      }
+    },
     "Entrance animation": {
       "comment": "SettingsCatalog.swift",
       "localizations": {
@@ -27274,6 +27520,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "目标帧率"
+          }
+        }
+      }
+    },
+    "Free community online play for compatible nxnative games. Requires a Nextendo account.": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kostenloser Community-Onlinedienst für kompatible nxnative-Spiele. Ein Nextendo-Konto ist erforderlich."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free community online play for compatible nxnative games. Requires a Nextendo account."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servicio comunitario gratuito para jugar en línea con juegos compatibles de nxnative. Requiere una cuenta de Nextendo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Service communautaire gratuit pour jouer en ligne avec les jeux nxnative compatibles. Un compte Nextendo est nécessaire."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servizio gratuito della comunità per giocare online con i giochi nxnative compatibili. Serve un account Nextendo."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serviço comunitário gratuito para jogar online com jogos nxnative compatíveis. Requer uma conta Nextendo."
           }
         }
       }
@@ -36159,6 +36446,88 @@
         }
       }
     },
+    "LAN": {
+      "comment": "nxnative launcher.json",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LAN"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LAN"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LAN"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réseau local (LAN)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LAN"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LAN"
+          }
+        }
+      }
+    },
+    "LAN and Local wireless play with devices on the same Wi-Fi network. Nextendo is a community service for online play and requires a separate sign-in.": {
+      "comment": "nxnative launcher.json",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LAN und lokale Drahtlosverbindung verbinden Geräte im selben WLAN. Nextendo ist ein Community-Dienst für Online-Spiele und erfordert eine eigene Anmeldung."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LAN and Local wireless play with devices on the same Wi-Fi network. Nextendo is a community service for online play and requires a separate sign-in."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La LAN y la conexión inalámbrica local conectan dispositivos de la misma red Wi‑Fi. Nextendo es un servicio comunitario de juego en línea que requiere su propia cuenta."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le réseau local et la connexion sans fil locale relient les appareils sur le même Wi‑Fi. Nextendo est un service communautaire de jeu en ligne qui nécessite une connexion distincte."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LAN e connessione wireless locale usano la stessa rete Wi‑Fi. Nextendo è un servizio della comunità per giocare online e richiede un accesso separato."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LAN e conexão local sem fio usam dispositivos na mesma rede Wi‑Fi. O Nextendo é um serviço comunitário para jogar online e exige uma sessão separada."
+          }
+        }
+      }
+    },
     "LAST PLAYED": {
       "comment": "DetailsTopBlock.swift",
       "localizations": {
@@ -37894,6 +38263,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在载入…"
+          }
+        }
+      }
+    },
+    "Local wireless": {
+      "comment": "nxnative launcher.json",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokale Drahtlosverbindung"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local wireless"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conexión inalámbrica local"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connexion sans fil locale"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connessione wireless locale"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conexão local sem fio"
           }
         }
       }
@@ -41799,6 +42209,47 @@
         }
       }
     },
+    "Network": {
+      "comment": "nxnative launcher.json",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Netzwerk"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Red"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réseau"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rete"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rede"
+          }
+        }
+      }
+    },
     "Never": {
       "comment": "LibraryPresentation.swift",
       "localizations": {
@@ -42688,6 +43139,252 @@
           "stringUnit": {
             "state": "translated",
             "value": "下次启动"
+          }
+        }
+      }
+    },
+    "Nextendo": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo"
+          }
+        }
+      }
+    },
+    "Nextendo (online)": {
+      "comment": "nxnative launcher.json",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo (online)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo (online)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo (en línea)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo (en ligne)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo (online)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo (online)"
+          }
+        }
+      }
+    },
+    "Nextendo client ID": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo-Client-ID"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo client ID"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID de cliente de Nextendo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Identifiant client Nextendo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID client Nextendo"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Identificador de cliente do Nextendo"
+          }
+        }
+      }
+    },
+    "Nextendo did not authorize sign-in. Check the client ID and its permissions.": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo hat die Anmeldung nicht autorisiert. Prüfe die Client-ID und ihre Berechtigungen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo did not authorize sign-in. Check the client ID and its permissions."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo no autorizó el inicio de sesión. Comprueba el ID de cliente y sus permisos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo n’a pas autorisé la connexion. Vérifiez l’identifiant client et ses autorisations."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo non ha autorizzato l’accesso. Controlla l’ID client e le sue autorizzazioni."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Nextendo não autorizou a entrada. Verifique o identificador de cliente e as permissões dele."
+          }
+        }
+      }
+    },
+    "Nextendo sign-in expired. Sign in again.": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Nextendo-Anmeldung ist abgelaufen. Melde dich erneut an."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo sign-in expired. Sign in again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La sesión de Nextendo ha caducado. Vuelve a iniciar sesión."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La connexion à Nextendo a expiré. Reconnectez-vous."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’accesso a Nextendo è scaduto. Accedi di nuovo."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A sessão no Nextendo expirou. Entre novamente."
+          }
+        }
+      }
+    },
+    "Nextendo sign-in timed out. Try again.": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeitüberschreitung bei der Nextendo-Anmeldung. Versuche es erneut."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nextendo sign-in timed out. Try again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se agotó el tiempo para iniciar sesión en Nextendo. Vuelve a intentarlo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le délai de connexion à Nextendo est dépassé. Réessayez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tempo scaduto per l’accesso a Nextendo. Riprova."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O tempo para entrar no Nextendo acabou. Tente de novo."
           }
         }
       }
@@ -45512,6 +46209,47 @@
         }
       }
     },
+    "Not set": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht festgelegt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not set"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin configurar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non défini"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non impostato"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não configurado"
+          }
+        }
+      }
+    },
     "Not supported: %@.": {
       "comment": "CheatsPanel.swift",
       "localizations": {
@@ -46076,6 +46814,47 @@
         }
       }
     },
+    "Offline": {
+      "comment": "nxnative launcher.json",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin conexión"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hors ligne"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offline"
+          }
+        }
+      }
+    },
     "One sync choice for all games, applied at next launch: Off, iCloud Drive or a folder you choose. Only the primary user and device save sync.": {
       "comment": "NUP program identity or local multiuser save scope; cloud still covers the primary user and device only.",
       "localizations": {
@@ -46636,6 +47415,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "一次一个更新；捆绑的 DLC 保持在一起。"
+          }
+        }
+      }
+    },
+    "Online play": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Online spielen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Online play"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Juego en línea"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeu en ligne"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gioco online"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jogo online"
           }
         }
       }
@@ -50911,6 +51731,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "上一个%@"
+          }
+        }
+      }
+    },
+    "Public OAuth client ID for sign-in and online play. Clear the field to use the build default.": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffentliche OAuth-Client-ID für Anmeldung und Online-Spiele. Lass das Feld leer, um die Vorgabe des Builds zu verwenden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Public OAuth client ID for sign-in and online play. Clear the field to use the build default."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID de cliente OAuth público para iniciar sesión y jugar en línea. Deja el campo vacío para usar el valor predeterminado de la compilación."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Identifiant client OAuth public pour la connexion et le jeu en ligne. Laissez le champ vide pour utiliser la valeur incluse dans cette version."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID client OAuth pubblico per accedere e giocare online. Lascia vuoto il campo per usare il valore predefinito della build."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Identificador público de cliente OAuth para entrar e jogar online. Deixe o campo vazio para usar o padrão da compilação."
           }
         }
       }
@@ -55590,6 +56451,252 @@
           "stringUnit": {
             "state": "translated",
             "value": "存档"
+          }
+        }
+      }
+    },
+    "Sign in to Nextendo in Online services before playing online.": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melde dich vor dem Online-Spiel unter Onlinedienste bei Nextendo an."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to Nextendo in Online services before playing online."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión en Nextendo en Servicios en línea antes de jugar en línea."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez-vous à Nextendo dans Services en ligne avant de jouer en ligne."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi a Nextendo in Servizi online prima di giocare online."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entre no Nextendo em Serviços online antes de jogar online."
+          }
+        }
+      }
+    },
+    "Sign in…": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anmelden…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar sesión…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se connecter…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrar…"
+          }
+        }
+      }
+    },
+    "Sign out": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abmelden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerrar sesión"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se déconnecter"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnetti"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sair"
+          }
+        }
+      }
+    },
+    "Sign-in expired": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anmeldung abgelaufen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign-in expired"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sesión caducada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connexion expirée"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesso scaduto"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sessão expirada"
+          }
+        }
+      }
+    },
+    "Signed in as %@": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angemeldet als %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signed in as %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sesión iniciada como %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecté en tant que %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesso come %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sessão iniciada como %@"
+          }
+        }
+      }
+    },
+    "Signed out": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abgemeldet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signed out"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sesión cerrada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déconnecté"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non connesso"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sessão encerrada"
           }
         }
       }
@@ -74342,6 +75449,88 @@
           "stringUnit": {
             "state": "translated",
             "value": "请等待当前构建、存储操作或 App 更新完成。"
+          }
+        }
+      }
+    },
+    "Return to Arcane to finish signing in.": {
+      "comment": "Nextendo loopback response, shown in the browser",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kehre zu Arcane zurück, um die Anmeldung abzuschließen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to Arcane to finish signing in."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuelve a Arcane para terminar de iniciar sesión."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revenez dans Arcane pour terminer la connexion."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torna in Arcane per completare l’accesso."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volte ao Arcane para concluir a entrada."
+          }
+        }
+      }
+    },
+    "Waiting for your browser…": {
+      "comment": "Nextendo sign-in",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warte auf deinen Browser…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for your browser…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esperando a tu navegador…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En attente du navigateur…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In attesa del browser…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aguardando seu navegador…"
           }
         }
       }

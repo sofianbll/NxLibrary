@@ -26,6 +26,11 @@ if ! [[ "$VERSION" =~ ^[0-9]+(\.[0-9]+){1,3}$ ]]; then
 fi
 RELEASE_KEY="  <key>NXLibraryDevelopmentProfile</key><true/>"
 [ "${NX_RELEASE:-0}" = "1" ] && RELEASE_KEY="  <key>NXLibraryRelease</key><true/>"
+NEXTENDO_CLIENT_ID="${DM_NEXTENDO_CLIENT_ID:-}"
+if [[ -n "$NEXTENDO_CLIENT_ID" && ! "$NEXTENDO_CLIENT_ID" =~ ^[A-Za-z0-9._-]{1,128}$ ]]; then
+  echo "error: DM_NEXTENDO_CLIENT_ID must be a valid public client ID" >&2
+  exit 1
+fi
 if [ -z "${DEVELOPER_DIR:-}" ]; then
   if [ -d "/Applications/Xcode.app/Contents/Developer" ]; then
     export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
@@ -98,6 +103,9 @@ $RELEASE_KEY
 </dict>
 </plist>
 PLIST
+if [[ -n "$NEXTENDO_CLIENT_ID" ]]; then
+  /usr/bin/plutil -insert DMNextendoClientID -string "$NEXTENDO_CLIENT_ID" "$APP/Contents/Info.plist"
+fi
 
 # Exercise the real profile/defaults accessor under this bundle identity, without
 # opening the app or importing data. Unit-test hosts have a different identity.
