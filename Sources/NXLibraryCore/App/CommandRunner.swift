@@ -25,24 +25,7 @@ public final class SystemCommandRunner: CommandRunning, Sendable {
     public func run(_ executable: URL, _ arguments: [String],
                     environment: [String: String]?,
                     currentDirectory: URL?) throws -> CommandResult {
-        let process = Process()
-        process.executableURL = executable
-        process.arguments = arguments
-        if let currentDirectory { process.currentDirectoryURL = currentDirectory }
-        if let environment { process.environment = environment }
-        let out = Pipe()
-        let err = Pipe()
-        process.standardOutput = out
-        process.standardError = err
-        let waitForExit = try process.runWithExitWait()
-        let outData = out.fileHandleForReading.readDataToEndOfFile()
-        let errData = err.fileHandleForReading.readDataToEndOfFile()
-        waitForExit()
-        return CommandResult(
-            status: process.terminationStatus,
-            stdout: String(data: outData, encoding: .utf8) ?? "",
-            stderr: String(data: errData, encoding: .utf8) ?? ""
-        )
+        try execute(executable, arguments, environment: environment, currentDirectory: currentDirectory, onLine: nil)
     }
 
     /// Runs like `run`, and hands every line of either pipe to `onLine` as it
@@ -50,6 +33,12 @@ public final class SystemCommandRunner: CommandRunning, Sendable {
     public func stream(_ executable: URL, _ arguments: [String],
                        environment: [String: String]?, currentDirectory: URL?,
                        onLine: @escaping (String) -> Void) throws -> CommandResult {
+        try execute(executable, arguments, environment: environment, currentDirectory: currentDirectory, onLine: onLine)
+    }
+
+    private func execute(_ executable: URL, _ arguments: [String],
+                         environment: [String: String]?, currentDirectory: URL?,
+                         onLine: ((String) -> Void)?) throws -> CommandResult {
         let process = Process()
         process.executableURL = executable
         process.arguments = arguments
@@ -61,6 +50,8 @@ public final class SystemCommandRunner: CommandRunning, Sendable {
         process.standardError = err
 
         let group = DispatchGroup()
+        let waitForExit = try process.runWithExitWait()
+
         let lock = NSLock()
         var collected = [Data(), Data()]
         for (slot, pipe) in [out, err].enumerated() {
@@ -70,29 +61,24 @@ public final class SystemCommandRunner: CommandRunning, Sendable {
                 let chunk = handle.availableData
                 guard !chunk.isEmpty else {
                     handle.readabilityHandler = nil
-                    buffer.finish().forEach(onLine)
+                    if let onLine { buffer.finish().forEach(onLine) }
                     group.leave()
                     return
                 }
                 lock.lock()
                 collected[slot].append(chunk)
                 lock.unlock()
-                buffer.append(chunk).forEach(onLine)
+                if let onLine { buffer.append(chunk).forEach(onLine) }
             }
-        }
-        let waitForExit: () -> Void
-        do {
-            waitForExit = try process.runWithExitWait()
-        } catch {
-            out.fileHandleForReading.readabilityHandler = nil
-            err.fileHandleForReading.readabilityHandler = nil
-            throw error
         }
         waitForExit()
         group.wait()
+        func decode(_ data: Data) -> String {
+            onLine == nil ? (String(data: data, encoding: .utf8) ?? "") : String(decoding: data, as: UTF8.self)
+        }
         return CommandResult(status: process.terminationStatus,
-                             stdout: String(decoding: collected[0], as: UTF8.self),
-                             stderr: String(decoding: collected[1], as: UTF8.self))
+                             stdout: decode(collected[0]),
+                             stderr: decode(collected[1]))
     }
 }
 

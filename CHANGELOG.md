@@ -12,6 +12,7 @@ User-visible changes to Arcane (formerly NX Library) are recorded here. Entries 
 
 ### Fixed
 
+- Opening **Game Options** right after launch no longer crashes while checking cheat support in a custom engine checkout.
 - A PowerA **Lic Pro Controller** using the HID fallback can still navigate Arcane after a game leaves it in Nintendo full report mode. No controller reconnect is needed.
 
 ## 0.2.1 — 2026-11-20
