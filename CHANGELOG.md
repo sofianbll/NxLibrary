@@ -11,6 +11,10 @@ User-visible changes to Arcane (formerly NX Library) are recorded here. Entries 
 - **Nextendo-enabled game builds** when the selected engine supports `--nextendo` and a public client ID is configured. Building does not require signing in; if the engine cannot prepare Nextendo, Arcane shows the error instead of retrying offline.
 - Manage **Nextendo friends** in Online services: add by friend code, accept or decline requests, remove friends and find recent players.
 
+### Changed
+
+- **Game Options → Mods** separates file mods from code mods, with separate ordering and notes on when each takes effect.
+
 ### Fixed
 
 - Opening **Game Options** right after launch no longer crashes while checking cheat support in a custom engine checkout.

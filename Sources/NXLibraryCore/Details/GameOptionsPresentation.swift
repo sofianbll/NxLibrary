@@ -409,6 +409,24 @@ public struct GameOptionsFocus: Equatable, Sendable {
     }
 }
 
+/// Actionable rows in the Mods panel, in display and focus order.
+public struct ModsPanelPresentation {
+    public enum Row: Hashable {
+        case mod(String)
+        case importCode, openFolder, rebuild
+    }
+
+    public let fileRows: [Row]
+    public let codeRows: [Row]
+    public let rows: [Row]
+
+    public init(mods: [LocalMod], needsRebuild: Bool) {
+        fileRows = mods.filter { !$0.isCodeMod }.map { .mod($0.folderName) }
+        codeRows = mods.filter(\.isCodeMod).map { .mod($0.folderName) }
+        rows = fileRows + codeRows + [.importCode, .openFolder] + (needsRebuild ? [.rebuild] : [])
+    }
+}
+
 /// Values for the choice rows. Left/Right step through them, wrapping at the ends.
 public enum GameOptionsValues {
     public static let rumbleStrengthCount = 4

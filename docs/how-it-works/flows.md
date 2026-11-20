@@ -165,7 +165,7 @@ flowchart TD
     D --> E["ModDownload (host GameBanana) · dimensione e MD5"]
     E --> F["ModInstaller: bsdtar, niente .. / link"]
     F --> G["ModStore.adopt: ordine e stato in mods/TID.json"]
-    L["Game options → Mods → Import code mod<br/>copia exefs senza spostare l'originale"] --> G
+    L["Game options → Mods → Import code mod<br/>in fondo a Code mods, visibile anche senza mod;<br/>copia exefs senza spostare l'originale"] --> G
     G -->|"RomFS"| H["EnvFileEditor scrive DM_ROMFS_OVERLAY in env.txt"]
     G --> C2["ModsPanel: controlla DMCommit e profilo Z-A in background<br/>esclude solo arc/data.trpfd se la fusione è attiva"]
     H --> I["L'engine legge le mod al prossimo avvio del gioco"]

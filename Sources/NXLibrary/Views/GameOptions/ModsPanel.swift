@@ -3,7 +3,7 @@ import AppKit
 import NXLibraryCore
 import ArcanePorting
 
-/// Game options → Mods: RomFS applies on Play; ExeFS applies on Rebuild. Both use the same ordered list.
+/// Game options → Mods: file mods apply on Play; code mods may require Rebuild.
 ///
 /// Input: Up/Down move, A (Return, Space) switches a mod or activates an action, Left/Right move the focused mod up or
 /// down, Y (Delete, or a click on the Remove hint) moves it to the Trash after a confirmation, B (or Esc) returns. A
@@ -21,7 +21,7 @@ struct ModsPanel: View {
     @State private var needsRebuild = false
     @State private var importing = false
     @State private var running: Bool
-    @State private var focus = 0
+    @State private var focus = FocusIndex()
     @State private var confirmRemove: String?
     @State private var confirmFocus: SeleneConfirmButton = .cancel
     /// The last refusal or failed write, one sentence; cleared by the next action.
@@ -32,12 +32,7 @@ struct ModsPanel: View {
     @Environment(\.seleneReduceMotion) private var reduceMotion
     @Environment(\.nxAppLocale) private var locale
 
-    enum Row: Hashable {
-        case mod(String)
-        case importCode
-        case openFolder
-        case rebuild
-    }
+    private typealias Row = ModsPanelPresentation.Row
 
     init(viewModel: AppViewModel, game: PortedGame, settings: GameSettingsSnapshot?,
          onRebuild: @escaping () -> Void, onClose: @escaping () -> Void) {
@@ -51,7 +46,12 @@ struct ModsPanel: View {
 
     private var store: ModStore? { viewModel.modStore(for: game) }
 
-    private var rows: [Row] { mods.map { .mod($0.folderName) } + [.importCode, .openFolder] + (needsRebuild ? [.rebuild] : []) }
+    private var presentation: ModsPanelPresentation { ModsPanelPresentation(mods: mods, needsRebuild: needsRebuild) }
+
+    private var focusedRow: Row? {
+        let rows = presentation.rows
+        return rows.indices.contains(focus.index) ? rows[focus.index] : nil
+    }
 
     private var inactiveOnlineCodeMods: Set<String> {
         guard let settings, let network = NextendoLaunch.networkSetting(in: settings.settings),
@@ -61,14 +61,13 @@ struct ModsPanel: View {
     }
 
     private var focusedMod: LocalMod? {
-        guard rows.indices.contains(focus), case .mod(let name) = rows[focus] else { return nil }
+        guard case .mod(let name)? = focusedRow else { return nil }
         return mods.first { $0.folderName == name }
     }
 
     // MARK: - Body
 
     var body: some View {
-        let rows = self.rows
         let inactiveOnline = inactiveOnlineCodeMods
         return ZStack {
             SeleneTheme.scrim65
@@ -93,7 +92,7 @@ struct ModsPanel: View {
                         .padding(.leading, canvas.u(8))
                         .padding(.bottom, canvas.u(14))
                     noticeArea(hasInactiveOnlineMods: !inactiveOnline.isEmpty)
-                    list(rows, inactiveOnline: inactiveOnline)
+                    list(presentation, inactiveOnline: inactiveOnline)
                 }
                 .frame(width: canvas.u(1040), alignment: .leading)
                 .frame(maxHeight: .infinity, alignment: .top)
@@ -114,7 +113,7 @@ struct ModsPanel: View {
         }
         .animation(reduceMotion ? nil : SeleneTheme.quick, value: confirmRemove)
         .onAppear {
-            sync()
+            sync(preservingFocus: false)
             installKeyMonitor()
         }
         .onDisappear {
@@ -166,34 +165,29 @@ struct ModsPanel: View {
         }
     }
 
-    private func list(_ rows: [Row], inactiveOnline: Set<String>) -> some View {
-        ScrollViewReader { proxy in
+    private func list(_ presentation: ModsPanelPresentation, inactiveOnline: Set<String>) -> some View {
+        let rows = presentation.rows
+        return ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: canvas.u(8)) {
                     if mods.isEmpty {
                         SeleneOptionRow(icon: nil, title: L10n.text("No mods yet"), about: ModsCopy.empty, focused: false, enabled: false) {}
                     }
                     ForEach(Array(rows.enumerated()), id: \.element) { index, row in
-                        rowView(row, focused: index == focus, inactiveOnline: inactiveOnline)
+                        if row == presentation.fileRows.first {
+                            sectionHeader("File mods", subtitle: "Apply at the next launch. Also work online.")
+                        }
+                        if row == presentation.codeRows.first {
+                            sectionHeader("Code mods", subtitle: "Rebuild the game after making changes. Turning off all code mods or re-enabling the entire built set needs no rebuild. Inactive online (Nextendo).")
+                        }
+                        rowView(row, focused: index == focus.index, inactiveOnline: inactiveOnline)
+                            .padding(.top, row == .openFolder ? canvas.u(8) : 0)
                             .id(row)
                             .contentShape(Rectangle())
                             .onTapGesture {
-                                focus = index
+                                focus.index = index
                                 activate(row)
                             }
-                    }
-                    Text(ModsCopy.help)
-                        .seleneFont(14)
-                        .foregroundColor(SeleneTheme.ink60)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, canvas.u(10))
-                        .padding(.top, canvas.u(10))
-                    if mods.contains(where: { $0.exefs != nil }) {
-                        Text(L10n.text("If code mods patch the main module, Nextendo mode takes priority and none of the code mods load."))
-                            .seleneFont(14)
-                            .foregroundColor(SeleneTheme.ink60)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.horizontal, canvas.u(10))
                     }
                 }
                 .padding(.top, canvas.u(6))
@@ -201,34 +195,47 @@ struct ModsPanel: View {
                 .animation(reduceMotion ? nil : SeleneTheme.quick, value: mods)
             }
             .scrollIndicators(.hidden)
-            .onChange(of: focus) { _, index in
+            .onChange(of: focus.index) { _, index in
                 guard rows.indices.contains(index) else { return }
                 withAnimation(reduceMotion ? nil : SeleneTheme.quick) { proxy.scrollTo(rows[index], anchor: .center) }
             }
         }
     }
 
+    private func sectionHeader(_ title: String, subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: canvas.u(3)) {
+            Text(L10n.text(title, context: locale))
+                .seleneFont(17, .semibold)
+                .foregroundColor(ThemeStore.shared.palette.id == SelenePaletteCatalog.defaultID ? SeleneTheme.ink75 : SeleneTheme.glyph)
+                .accessibilityAddTraits(.isHeader)
+            Text(L10n.text(subtitle, context: locale))
+                .seleneFont(15)
+                .foregroundColor(SeleneTheme.ink60)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.leading, canvas.u(26))
+        .padding(.top, canvas.u(16))
+        .padding(.trailing, canvas.u(24))
+    }
+
     private func rowView(_ row: Row, focused: Bool, inactiveOnline: Set<String>) -> some View {
         let text = describe(row)
-        let code: Bool
         let inactiveBadge: String?
         if case .mod(let name) = row {
-            code = mods.first { $0.folderName == name }?.exefs != nil
             inactiveBadge = inactiveOnline.contains(name) ? L10n.text("Inactive online", context: locale) : nil
         } else {
-            code = false
             inactiveBadge = nil
         }
         return SeleneOptionRow(icon: text.icon, title: text.title, about: text.about, focused: focused,
                                enabled: text.enabled) {
-            if code { SeleneValueChip(text: L10n.text("Code", context: locale)) }
             if let inactiveBadge { SeleneValueChip(text: inactiveBadge) }
             if let isOn = text.isOn {
                 SeleneSwitch(isOn: .constant(isOn)).allowsHitTesting(false)
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel([text.title, code ? L10n.text("Code") : nil, inactiveBadge, text.about].compactMap { $0 }.joined(separator: ". "))
+        .accessibilityLabel([text.title, inactiveBadge, text.about].compactMap { $0 }.joined(separator: ". "))
         .accessibilityValue(text.isOn.map { $0 ? L10n.text("On") : L10n.text("Off") } ?? "")
         .accessibilityAddTraits(.isButton)
     }
@@ -268,12 +275,14 @@ struct ModsPanel: View {
 
     // MARK: - Actions
 
-    private func reload() {
+    private func reload(preservingFocus: Bool = true) {
+        let previousRow = preservingFocus ? focusedRow : nil
         running = RunningGameMonitor.runningApplication(for: game) != nil
         let store = store
         mods = store?.mods() ?? []
         needsRebuild = store?.codeModsNeedRebuild(app: game.url, build: game.lastBuild) == true
-        focus = min(focus, max(rows.count - 1, 0))
+        let rows = presentation.rows
+        focus.index = previousRow.flatMap { rows.firstIndex(of: $0) } ?? GameOptionsFocus.clamped(focus.index, count: rows.count)
         conflictRefresh?.cancel()
         guard let store else { conflicts = []; return }
         let engineFolder = viewModel.setup.nxnativePath
@@ -286,10 +295,10 @@ struct ModsPanel: View {
     }
 
     /// Re-reads the folder and lets the store drop mods that are gone (only while the game is not running).
-    private func sync() {
+    private func sync(preservingFocus: Bool = true) {
         guard !importing else { return }
         if let store, let failure = viewModel.performModChange({ try store.sync() }) { message = failure }
-        reload()
+        reload(preservingFocus: preservingFocus)
     }
 
     private func activate(_ row: Row) {
@@ -348,12 +357,9 @@ struct ModsPanel: View {
     private func moveFocusedMod(by offset: Int) {
         guard let mod = focusedMod else { return }
         message = nil
-        let before = mods.map(\.folderName)
+        let before = focus
         guard change(click: false, { try $0.move(folderName: mod.folderName, by: offset) }) else { return }
-        if mods.map(\.folderName) != before {
-            focus = rows.firstIndex(of: .mod(mod.folderName)) ?? focus
-            SoundEffectService.shared.play(.focus)
-        }
+        if focus != before { SoundEffectService.shared.play(.focus) }
     }
 
     private func askRemove() {
@@ -401,10 +407,9 @@ struct ModsPanel: View {
     // MARK: - Input
 
     private func move(by delta: Int) {
-        let next = min(max(focus + delta, 0), max(rows.count - 1, 0))
-        guard next != focus else { return }
-        focus = next
-        SoundEffectService.shared.play(.focus)
+        let previous = focus
+        focus.move(by: delta, count: presentation.rows.count)
+        if focus != previous { SoundEffectService.shared.play(.focus) }
     }
 
     private func close() {
@@ -435,8 +440,7 @@ struct ModsPanel: View {
         case .navigateLeft: moveFocusedMod(by: -1)
         case .navigateRight: moveFocusedMod(by: 1)
         case .confirm:
-            let rows = self.rows
-            if rows.indices.contains(focus) { activate(rows[focus]) }
+            if let focusedRow { activate(focusedRow) }
         case .contextAction: askRemove()
         case .cancel, .secondaryAction, .menu: close()
         default: break
@@ -478,7 +482,7 @@ enum ModsCopy {
     static func header(on: Int, total: Int) -> String {
         switch (on, total) {
         case (_, 0): return L10n.text("No mods in this game's folder")
-        case (0, _): return total == 1 ? "1 mod, off" : L10n.format("%@ mods, all off", [String(describing: total)])
+        case (0, _): return total == 1 ? L10n.text("1 mod, off") : L10n.format("%@ mods, all off", [String(describing: total)])
         default: return L10n.format("%@ of %@ on", [String(on), String(total)])
         }
     }
@@ -496,8 +500,5 @@ enum ModsCopy {
     }
     static var colon: String {
         L10n.text("Rename this folder: its name can't contain ':'.")
-    }
-    static var help: String {
-        L10n.text("RomFS changes apply at the next launch. Code mods apply after a rebuild.")
     }
 }

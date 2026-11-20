@@ -93,6 +93,28 @@ final class GameOptionsPresentationTests: XCTestCase {
         XCTAssertEqual(ModStore.rowValue(on: 2, total: 3), "2 on")
     }
 
+    func testModsPanelGroupsMixedModsAndFocusSkipsSectionHeadings() {
+        let folder = URL(fileURLWithPath: "/fixture")
+        let code = LocalMod(folderName: "Code", folder: folder, romfs: nil, exefs: folder, isOn: false)
+        let file = LocalMod(folderName: "File", folder: folder, romfs: folder, isOn: true)
+        let mixed = LocalMod(folderName: "Mixed", folder: folder, romfs: folder, exefs: folder, isOn: true)
+        let presentation = ModsPanelPresentation(mods: [code, file, mixed], needsRebuild: true)
+        XCTAssertEqual(presentation.fileRows, [.mod("File")])
+        XCTAssertEqual(presentation.codeRows, [.mod("Code"), .mod("Mixed")])
+        XCTAssertEqual(presentation.rows, [.mod("File"), .mod("Code"), .mod("Mixed"), .importCode, .openFolder, .rebuild])
+
+        var focus = FocusIndex()
+        focus.move(by: 1, count: presentation.rows.count)
+        XCTAssertEqual(presentation.rows[focus.index], .mod("Code"))
+        focus.move(by: 2, count: presentation.rows.count)
+        XCTAssertEqual(presentation.rows[focus.index], .importCode)
+
+        let empty = ModsPanelPresentation(mods: [], needsRebuild: false)
+        XCTAssertTrue(empty.fileRows.isEmpty)
+        XCTAssertTrue(empty.codeRows.isEmpty)
+        XCTAssertEqual(empty.rows, [.importCode, .openFolder])
+    }
+
     /// Edit details sits under Play wherever the options open.
     func testEditDetailsUnderPlayForEveryOrigin() {
         for origin in [GameOptionsOrigin.spotlight, .collection, .details] {

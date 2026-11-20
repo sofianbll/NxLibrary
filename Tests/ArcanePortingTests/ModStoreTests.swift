@@ -4,6 +4,39 @@ import os
 @testable import ArcanePorting
 
 final class CodeModStoreTests: XCTestCase {
+    func testMovesStayInTheirSectionAndTogglesAreIndependent() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("CodeModStore-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = ModStore(supportFolder: root.appendingPathComponent("game"), recordsFile: root.appendingPathComponent("mods.json"),
+                             titleID: "0100000000010000", canWrite: { true }, trash: { _ in XCTFail() })
+        for (folder, tree) in [(store.modsFolder, "A/romfs"), (store.codeModsFolder, "B/exefs"),
+                               (store.modsFolder, "C/romfs"), (store.codeModsFolder, "D/exefs"),
+                               (store.codeModsFolder, "D/romfs")] {
+            try FileManager.default.createDirectory(at: folder.appendingPathComponent(tree), withIntermediateDirectories: true)
+        }
+        for romfs in [store.modsFolder.appendingPathComponent("A/romfs"),
+                      store.codeModsFolder.appendingPathComponent("D/romfs")] {
+            try Data().write(to: romfs.appendingPathComponent("shared.bin"))
+        }
+        try store.setOn(true, folderName: "A")
+        try store.setOn(true, folderName: "D")
+        let overlay = try XCTUnwrap(store.overlayValue())
+        XCTAssertEqual(store.conflicts(), [ModConflict(upper: "A", lower: "D")])
+        try store.move(folderName: "B", by: -1)
+        try store.move(folderName: "C", by: 1)
+        XCTAssertEqual(store.mods().map(\.folderName), ["A", "B", "C", "D"])
+        XCTAssertEqual(store.overlayValue(), overlay)
+
+        try store.move(folderName: "C", by: -1)
+        XCTAssertEqual(store.mods().map(\.folderName), ["C", "B", "A", "D"])
+        try store.move(folderName: "B", by: 1)
+        XCTAssertEqual(store.mods().map(\.folderName), ["C", "D", "A", "B"])
+        XCTAssertEqual(store.mods().filter(\.isOn).map(\.folderName), ["D", "A"])
+        XCTAssertEqual(store.conflicts().first?.message, "D and A change the same files: D takes priority.")
+        try store.setOn(false, folderName: "D")
+        XCTAssertEqual(store.mods().filter(\.isOn).map(\.folderName), ["A"])
+    }
+
     func testCopiesAndPersistsSelectionAndOnlyStagesEnabledModsInOrder() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("CodeModStore-\(UUID())")
         defer { try? FileManager.default.removeItem(at: root) }
