@@ -11,6 +11,25 @@ public enum GameBananaAPI {
         url(base + "Util/Search/Results", [("_sModelName", "Game"), ("_sSearchString", name), ("_nPage", "\(page)")])
     }
 
+    public static func modSearchURL(gameID: Int, query: String) -> URL {
+        url(base + "Util/Search/Results", [("_sModelName", "Mod"), ("_sOrder", "best_match"),
+                                          ("_idGameRow", "\(gameID)"), ("_sSearchString", query)])
+    }
+
+    /// Read the ID only: a pasted address is never fetched or passed through to the API.
+    public static func modID(from text: String) -> Int? {
+        let link = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URLComponents(string: link.contains("://") ? link : "https://" + link),
+              ["https", "http"].contains(url.scheme?.lowercased()),
+              ["gamebanana.com", "www.gamebanana.com"].contains(url.host?.lowercased()),
+              url.user == nil, url.password == nil, url.port == nil,
+              url.percentEncodedPath.hasPrefix("/mods/") else { return nil }
+        var digits = url.percentEncodedPath.dropFirst("/mods/".count)
+        if digits.last == "/" { digits = digits.dropLast() }
+        guard digits.utf8.allSatisfy({ (48...57).contains($0) }), let id = Int(digits), id > 0 else { return nil }
+        return id
+    }
+
     public static func modIndexURL(gameID: Int, page: Int, perPage: Int) -> URL {
         url(base + "Mod/Index", [("_aFilters[Generic_Game]", "\(gameID)"), ("_nPage", "\(page)"),
                                  ("_nPerpage", "\(perPage)"), ("_sSort", "Generic_MostDownloaded")])
@@ -311,6 +330,7 @@ private struct RequirementEntry: Decodable {
 
 public struct GameBananaModProfile: Decodable, Equatable, Sendable {
     public let id: Int
+    public let gameID: Int?
     public let name: String
     public let profileURL: URL?
     public let version: String
@@ -334,8 +354,9 @@ public struct GameBananaModProfile: Decodable, Equatable, Sendable {
                 contentRatings: [String: String] = [:], images: [GameBananaImage] = [],
                 submitter: GameBananaSubmitter = GameBananaSubmitter(name: ""), files: [GameBananaFile] = [],
                 likes: Int = 0, downloads: Int = 0, dateAdded: Date? = nil, dateUpdated: Date? = nil,
-                requirements: [GameBananaRequirement] = []) {
+                requirements: [GameBananaRequirement] = [], gameID: Int? = nil) {
         self.id = id
+        self.gameID = gameID
         self.name = name
         self.profileURL = profileURL
         self.version = version
@@ -358,6 +379,7 @@ public struct GameBananaModProfile: Decodable, Equatable, Sendable {
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: AnyKey.self)
         id = try c.required("_idRow")
+        gameID = (try? c.nestedContainer(keyedBy: AnyKey.self, forKey: AnyKey("_aGame")))?.optional("_idRow")
         name = c.value("_sName", "")
         profileURL = c.url("_sProfileUrl")
         version = c.value("_sVersion", "")

@@ -4,6 +4,25 @@ import XCTest
 
 /// Synthetic responses shaped like GameBanana's apiv11 and legacy Core API (verified 2026-11-06).
 final class GameBananaAPITests: XCTestCase {
+    func testModSearchURLScopesAndEncodesTheQuery() {
+        XCTAssertEqual(GameBananaAPI.modSearchURL(gameID: 23582, query: "Café & C++").absoluteString,
+                       "https://gamebanana.com/apiv11/Util/Search/Results?_sModelName=Mod&_sOrder=best_match&_idGameRow=23582&_sSearchString=Caf%C3%A9%20%26%20C%2B%2B")
+    }
+
+    func testModIDAcceptsOnlyGameBananaModLinks() {
+        for link in ["https://gamebanana.com/mods/716848", " www.gamebanana.com/mods/716848/?a=b#files ",
+                     "http://GameBanana.com/mods/716848"] {
+            XCTAssertEqual(GameBananaAPI.modID(from: link), 716848, link)
+        }
+        for link in ["716848", "https://gamebanana.com.evil.test/mods/716848", "https://api.gamebanana.com/mods/716848",
+                     "https://evil.test@gamebanana.com/mods/716848", "https://gamebanana.com/games/716848",
+                     "https://gamebanana.com/mods/716848/extra", "gamebanana.com/mods/0",
+                     "https://gamebanana.com:444/mods/716848", "https://gamebanana.com/mods/+716848",
+                     "https://gamebanana.com/mods//716848"] {
+            XCTAssertNil(GameBananaAPI.modID(from: link), link)
+        }
+    }
+
     private func decode<T: Decodable>(_ type: T.Type, _ json: String) throws -> T {
         try JSONDecoder().decode(type, from: Data(json.utf8))
     }

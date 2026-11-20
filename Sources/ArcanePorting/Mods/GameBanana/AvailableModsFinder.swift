@@ -4,7 +4,7 @@ import NXLibraryCore
 /// A GameBanana mod confirmed to work with the engine: at least one of its files is a single RomFS tree for this game.
 public struct AvailableMod: Equatable, Identifiable, Sendable {
     public let id: Int
-    /// Position in GameBanana's most-downloaded order, so tiles keep that order.
+    /// Position in GameBanana's result order, before compatibility filtering.
     public let rank: Int
     public let name: String
     public let author: String
@@ -77,7 +77,7 @@ public struct AvailableModsFinder: Sendable {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    try await run(gameID: gameID) { continuation.yield($0) }
+                    _ = try await load(gameID: gameID) { continuation.yield($0) }
                     continuation.finish()
                 } catch {
                     continuation.finish(throwing: error)
@@ -87,57 +87,81 @@ public struct AvailableModsFinder: Sendable {
         }
     }
 
-    private func run(gameID: Int, yield: (AvailableMod) -> Void) async throws {
+    /// Yields the popular mods and installed entries; returns whether raising `want` can show more.
+    func load(gameID: Int, yield: (AvailableMod) async -> Void) async throws -> Bool {
         var shown: Set<Int> = []
-        let rank = try await scan(gameID: gameID) { mod in
+        let (rank, hasMore) = try await scan(gameID: gameID) { mod in
             shown.insert(mod.id)
-            yield(mod)
+            await yield(mod)
         }
         for (offset, id) in installed.enumerated() where !shown.contains(id) && !Task.isCancelled {
-            if let mod = try await check(modID: id, rank: rank + offset) {
+            if let mod = try await check(GameBananaModSummary(id: id, name: ""), rank: rank + offset) {
                 shown.insert(id)
-                yield(mod)
+                await yield(mod)
             }
         }
+        return hasMore
     }
 
-    /// The list, most downloaded first; returns the rank after the last mod it read.
-    private func scan(gameID: Int, yield: (AvailableMod) -> Void) async throws -> Int {
+    /// The list, most downloaded first; returns the rank after the last mod it read and whether more may remain.
+    private func scan(gameID: Int, yield: (AvailableMod) async -> Void) async throws -> (Int, Bool) {
         var found = 0, scanned = 0, page = 1
+        var seen: Set<Int> = []
         while found < want, scanned < maxScanned, !Task.isCancelled {
             let result = try await client.modPage(gameID: gameID, page: page, perPage: perPage)
             let batch = Array(result.records.prefix(maxScanned - scanned))
             let start = scanned
             scanned += batch.count
-            var confirmed: [AvailableMod] = []
-            try await withThrowingTaskGroup(of: AvailableMod?.self) { group in
-                for (offset, summary) in batch.enumerated() where ModSupport.isVisible(summary) {
-                    group.addTask { try await check(summary, rank: start + offset) }
-                }
-                for try await mod in group { if let mod { confirmed.append(mod) } }
-            }
-            for mod in confirmed.sorted(by: { $0.rank < $1.rank }) where found < want {
-                yield(mod)
+            let confirmed = try await checks(batch, start: start, seen: &seen)
+            let remaining = want - found
+            for mod in confirmed.prefix(remaining) {
+                await yield(mod)
                 found += 1
             }
-            if result.isComplete || result.records.isEmpty { break }
+            let complete = result.isComplete || batch.isEmpty
+            if found == want {
+                return (scanned, confirmed.count > remaining || (!complete && scanned < maxScanned))
+            }
+            if complete { break }
             page += 1
         }
-        return scanned
+        return (scanned, false)
     }
 
-    /// An installed mod read from its own page; nil when it is gone or no longer works.
-    private func check(modID: Int, rank: Int) async throws -> AvailableMod? {
-        let summary = GameBananaModSummary(id: modID, name: "")
-        do { return try await check(summary, rank: rank) } catch GameBananaError.unavailable { return nil }
+    /// A linked mod must belong to this game, even if its archive would otherwise look compatible.
+    public func search(_ query: String, gameID: Int) async throws -> [AvailableMod] {
+        if let id = GameBananaAPI.modID(from: query) {
+            let mod = try await check(GameBananaModSummary(id: id, name: ""), rank: 0, gameID: gameID)
+            return mod.map { [$0] } ?? []
+        }
+        // shortcut: the first best-match page only; add search paging if narrower queries aren't enough.
+        let records = try await client.searchMods(gameID: gameID, query: query)
+        var seen: Set<Int> = []
+        return try await checks(Array(records.prefix(maxScanned)), seen: &seen, gameID: gameID)
     }
 
-    private func check(_ summary: GameBananaModSummary, rank: Int) async throws -> AvailableMod? {
+    private func checks(_ batch: [GameBananaModSummary], start: Int = 0, seen: inout Set<Int>,
+                        gameID: Int? = nil) async throws -> [AvailableMod] {
+        try await withThrowingTaskGroup(of: AvailableMod?.self) { group in
+            for (offset, summary) in batch.enumerated() where ModSupport.isVisible(summary) && seen.insert(summary.id).inserted {
+                group.addTask { try await check(summary, rank: start + offset, gameID: gameID) }
+            }
+            var confirmed: [AvailableMod] = []
+            for try await mod in group { if let mod { confirmed.append(mod) } }
+            return confirmed.sorted { $0.rank < $1.rank }
+        }
+    }
+
+    private func check(_ summary: GameBananaModSummary, rank: Int, gameID: Int? = nil) async throws -> AvailableMod? {
+        try Task.checkCancellation()
         let profile: GameBananaModProfile
         do { profile = try await client.profile(modID: summary.id) } catch GameBananaError.unavailable { return nil }
+        guard profile.id == summary.id else { return nil }
+        if let gameID, profile.gameID != gameID { return nil }
         guard ModSupport.isVisible(profile) else { return nil }
         var files: [GameBananaFile] = []
         for file in profile.files {
+            try Task.checkCancellation()
             do {
                 let paths = try await client.archivePaths(fileID: file.id)
                 if ModSupport.romfsRoot(in: paths, titleID: titleID) != nil { files.append(file) }

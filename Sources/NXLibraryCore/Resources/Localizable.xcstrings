@@ -10550,6 +10550,17 @@
         }
       }
     },
+    "Back to popular mods": {
+      "comment": "DetailsBands.swift",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Back to popular mods" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Torna alle mod più popolari" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Revenir aux mods populaires" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Zurück zu beliebten Mods" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Volver a los mods populares" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Voltar aos mods populares" } }
+      }
+    },
     "Back to review": {
       "comment": "AddGameStepThreeView.swift",
       "localizations": {
@@ -17547,6 +17558,17 @@
         }
       }
     },
+    "Clear search": {
+      "comment": "DetailsBands.swift",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Clear search" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Azzera la ricerca" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Effacer la recherche" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Suche zurücksetzen" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Borrar búsqueda" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Limpar busca" } }
+      }
+    },
     "Clear the console?": {
       "comment": "ConsoleView.swift",
       "localizations": {
@@ -20680,6 +20702,17 @@
             "value": "无法下载壁纸"
           }
         }
+      }
+    },
+    "Couldn't load more mods. Try again.": {
+      "comment": "GameBananaBandModel.swift",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn't load more mods. Try again." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Impossibile caricare altre mod. Riprova." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Impossible de charger d’autres mods. Réessayez." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Weitere Mods konnten nicht geladen werden. Versuche es erneut." } },
+        "es": { "stringUnit": { "state": "translated", "value": "No se pudieron cargar más mods. Inténtalo de nuevo." } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Não foi possível carregar mais mods. Tente novamente." } }
       }
     },
     "Couldn't remove it": {
@@ -40124,6 +40157,17 @@
         }
       }
     },
+    "Mod name or GameBanana link": {
+      "comment": "GameBananaFindPanel.swift, DetailsBands.swift",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Mod name or GameBanana link" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Nome della mod o link GameBanana" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Nom du mod ou lien GameBanana" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Mod-Name oder GameBanana-Link" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Nombre del mod o enlace de GameBanana" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Nome do mod ou link do GameBanana" } }
+      }
+    },
     "Mods": {
       "comment": "DetailsBands.swift:236",
       "localizations": {
@@ -44202,6 +44246,17 @@
             "value": "没有正在进行的构建"
           }
         }
+      }
+    },
+    "No compatible mods found. Try another name or link.": {
+      "comment": "GameBananaFindPanel.swift",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No compatible mods found. Try another name or link." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Nessuna mod compatibile. Prova un altro nome o link." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Aucun mod compatible. Essayez un autre nom ou lien." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Keine kompatiblen Mods gefunden. Versuche einen anderen Namen oder Link." } },
+        "es": { "stringUnit": { "state": "translated", "value": "No se encontraron mods compatibles. Prueba con otro nombre o enlace." } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Nenhum mod compatível. Tente outro nome ou link." } }
       }
     },
     "No connection. Mods you installed still work.": {
@@ -50041,6 +50096,17 @@
             "value": "预览"
           }
         }
+      }
+    },
+    "Paste a GameBanana mod link.": {
+      "comment": "GameBananaFindPanel.swift",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Paste a GameBanana mod link." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Incolla il link di una mod su GameBanana." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Collez le lien d’un mod GameBanana." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Füge einen Link zu einer Mod auf GameBanana ein." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Pega un enlace a un mod de GameBanana." } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Cole o link de um mod no GameBanana." } }
       }
     },
     "Paste the API key from Preferences → API in your SteamGridDB profile. It stays on this Mac.": {
@@ -58260,6 +58326,28 @@
         }
       }
     },
+    "Search mods": {
+      "comment": "GameBananaFindPanel.swift, DetailsBands.swift",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Search mods" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Cerca mod" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Rechercher des mods" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Mods suchen" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Buscar mods" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Buscar mods" } }
+      }
+    },
+    "Search results": {
+      "comment": "GameBananaBandModel.swift",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Search results" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Risultati della ricerca" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Résultats de recherche" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Suchergebnisse" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Resultados de búsqueda" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Resultados da busca" } }
+      }
+    },
     "Search settings": {
       "comment": "SettingsSearchSection.swift",
       "localizations": {
@@ -60195,6 +60283,17 @@
             "value": "在游戏库中显示"
           }
         }
+      }
+    },
+    "Show more": {
+      "comment": "DetailsBands.swift",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Show more" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Mostra altro" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Voir plus" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Mehr anzeigen" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Ver más" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Ver mais" } }
       }
     },
     "Show less": {

@@ -57,6 +57,19 @@ public actor GameBananaClient {
                         lifetime: 86400) { try? JSONDecoder().decode(GameBananaGamePage.self, from: $0).records }
     }
 
+    public func searchMods(gameID: Int, query: String) async throws -> [GameBananaModSummary] {
+        let url = GameBananaAPI.modSearchURL(gameID: gameID, query: query)
+        return try await fetch(url, kind: "mod-search", key: Self.hash(url.absoluteString), lifetime: 6 * 3600) {
+            // A successful response has a records array, even when there are no matches.
+            try? JSONDecoder().decode(ModSearchResponse.self, from: $0).records
+        }
+    }
+
+    private struct ModSearchResponse: Decodable {
+        let records: [GameBananaModSummary]
+        enum CodingKeys: String, CodingKey { case records = "_aRecords" }
+    }
+
     public func modPage(gameID: Int, page: Int, perPage: Int) async throws -> GameBananaModPage {
         try await fetch(GameBananaAPI.modIndexURL(gameID: gameID, page: page, perPage: perPage), kind: "index",
                         key: "\(gameID)-\(page)-\(perPage)", lifetime: 6 * 3600) {

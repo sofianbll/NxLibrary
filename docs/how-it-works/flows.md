@@ -153,6 +153,10 @@ flowchart TD
 flowchart TD
     A["Fascia Mods o card Mods (store)"] --> B["GameBananaMatch: pagina del gioco"]
     B --> C["AvailableModsFinder + ModSupport<br/>solo mod RomFS che funzionano"]
+    B --> S["Fascia: Search mods, nome o link"]
+    S --> C
+    B --> M["Fascia: Show more, +12 mod nei limiti"]
+    M --> C
     C --> D["ModDetailPanel: Install"]
     D --> E["ModDownload (host GameBanana) · dimensione e MD5"]
     E --> F["ModInstaller: bsdtar, niente .. / link"]

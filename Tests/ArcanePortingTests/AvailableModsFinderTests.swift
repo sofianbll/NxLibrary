@@ -31,12 +31,12 @@ final class AvailableModsFinderTests: XCTestCase {
     }
 
     /// A profile whose files are `(fileID, paths)`; each file's listing is served too.
-    private func profile(_ id: Int, files: [(Int, [String])], requirements: String = "[]") {
+    private func profile(_ id: Int, files: [(Int, [String])], requirements: String = "[]", gameID: Int = 6376) {
         let list = files.map { file in
             #"{"_idRow": \#(file.0), "_sFile": "f\#(file.0).zip", "_nFilesize": 10, "_tsDateAdded": \#(1_700_000_000 + file.0), "_sDownloadUrl": "https://gamebanana.com/dl/\#(file.0)", "_sMd5Checksum": "x"}"#
         }.joined(separator: ",")
         http.serve("Mod/\(id)/ProfilePage", #"""
-        {"_idRow": \#(id), "_sName": "Mod \#(id)", "_sProfileUrl": "https://gamebanana.com/mods/\#(id)",
+        {"_idRow": \#(id), "_sName": "Mod \#(id)", "_sProfileUrl": "https://gamebanana.com/mods/\#(id)", "_aGame": {"_idRow": \#(gameID)},
          "_sText": "Hello<br>world", "_aSubmitter": {"_sName": "Author \#(id)"},
          "_aPreviewMedia": {"_aImages": [{"_sBaseUrl": "https://images.gamebanana.com/img/ss/mods", "_sFile": "\#(id).jpg", "_sFile220": "220-\#(id).jpg"}]},
          "_aRequirements": \#(requirements), "_aFiles": [\#(list)]}
@@ -118,6 +118,48 @@ final class AvailableModsFinderTests: XCTestCase {
         let mods = try await collect(finder(want: 2))
         XCTAssertEqual(mods.map(\.id), [1, 2])
         XCTAssertEqual(http.count("_nPage=2&"), 0)
+    }
+
+    func testLoadingMoreReusesCheckedPagesThenStopsAtTheEnd() async throws {
+        page(Array(1...15), rated: [1], complete: false)
+        page(Array(16...20), complete: true, number: 2)
+        for id in 2...20 { profile(id, files: [(id * 10, ["romfs/a"])]) }
+
+        var ids: [Int] = []
+        let hasMore = try await finder(want: 12).load(gameID: 6376) { ids.append($0.id) }
+        XCTAssertEqual(ids, Array(2...13))
+        XCTAssertTrue(hasMore)
+        XCTAssertEqual(http.count("_nPage=2&"), 0)
+
+        ids = []
+        let hasEvenMore = try await finder(want: 24).load(gameID: 6376) { ids.append($0.id) }
+        XCTAssertEqual(ids, Array(2...20))
+        XCTAssertFalse(hasEvenMore)
+        XCTAssertEqual(http.count("_nPage=1&"), 1)
+        XCTAssertEqual(http.count("_nPage=2&"), 1)
+        XCTAssertEqual(http.count("Mod/2/ProfilePage"), 1)
+    }
+
+    func testSearchAndLinkUseTheSameCompatibilityCheck() async throws {
+        let records = [summary(1, rated: true), summary(2), summary(3), summary(3), summary(4)].joined(separator: ",")
+        http.serve("_sSearchString=Bench", #"{"_aRecords": [\#(records)]}"#)
+        profile(2, files: [(20, ["not-a-mod.txt"])])
+        profile(3, files: [(30, ["Add_Anim/romfs/a.bin"])])
+        profile(4, files: [(40, ["romfs/a.bin"])], gameID: 99)
+
+        let finder = finder()
+        let results = try await finder.search("Bench", gameID: 6376)
+        XCTAssertEqual(results.map(\.id), [3])
+        XCTAssertEqual(http.count("Mod/1/ProfilePage"), 0)
+        XCTAssertEqual(http.count("Mod/3/ProfilePage"), 1)
+        let link = try await finder.search("https://gamebanana.com/mods/3", gameID: 6376)
+        XCTAssertEqual(link.map(\.id), [3])
+        let incompatible = try await finder.search("https://gamebanana.com/mods/2", gameID: 6376)
+        XCTAssertTrue(incompatible.isEmpty)
+        let wrongGame = try await finder.search("https://gamebanana.com/mods/4", gameID: 6376)
+        XCTAssertTrue(wrongGame.isEmpty)
+        XCTAssertEqual(http.count("itemid=40&"), 0)
+        XCTAssertEqual(http.count("Util/Search"), 1)
     }
 
     func testStopsAtMaxScanned() async throws {

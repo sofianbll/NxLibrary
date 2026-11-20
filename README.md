@@ -247,7 +247,7 @@ Cheats change values while you play, for one game version only. New items, looks
 Arcane manages file mods for games ported with nxnative.
 
 - **Mod store.** The **Mods** card in Spotlight opens a store of the GameBanana mods that work with your games: a featured banner, the most popular, a row per category and a row per game, sorted by Popular, Most liked, Newest or Recently updated. Hide the card in **Settings → Spotlight**.
-- **A game's Mods band.** Each game page lists its GameBanana mods and the ones you installed. Open a mod for its images, author, version and requirements, then press **Install**; **Update** appears when the author replaces the file. If the game's GameBanana page is uncertain, the band asks once, and **Wrong game?** picks another.
+- **A game's Mods band.** Each game page lists popular compatible GameBanana mods and the ones you installed. Choose **Search mods** to enter a name or paste a GameBanana mod link, or **Show more** to browse the next batch of popular mods. Open a mod for its images, author, version and requirements, then press **Install**; **Update** appears when the author replaces the file. If the game's GameBanana page is uncertain, the band asks once, and **Wrong game?** picks another.
 - **Your own mods.** File mods (a folder with `romfs` inside) go into the game's mods folder. Turn them on in the band or in **Game Options → Mods**; the order decides which mod wins when two change the same file. **Remove** moves a mod to the Trash.
 
 Mods apply at the next launch, without a rebuild. The engine reads file mods only: mods that patch code (`exefs`, such as 60 fps patches) or need a loader or PC tool (exlaunch, Skyline, ARCropolis, mod managers) don't work, and the store leaves them out.
