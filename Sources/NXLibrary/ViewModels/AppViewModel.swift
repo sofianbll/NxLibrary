@@ -1494,7 +1494,7 @@ public final class AppViewModel: ObservableObject {
 
         Task { @MainActor in
             let appURL = game.url
-            let supported = await Task.detached(priority: .utility) { HomeMenu.supported(by: appURL) }.value
+            let supported = await InstalledEngineCapabilities.shared.supportsHomeMenu(in: appURL, engineFolder: nxnativePath)
             let homeMenu = HomeMenu.environment(supported: supported, launcherBundleID: Bundle.main.bundleIdentifier)
             let overrides = (gameSettings == nil ? config.toEnvironmentDict() : environment)
                 .merging(homeMenu) { _, launcher in launcher }

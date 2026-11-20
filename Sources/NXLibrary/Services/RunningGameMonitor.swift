@@ -50,15 +50,17 @@ final class RunningGameMonitor: ObservableObject {
     private var focus = GameFocus()
     private var focusToken: NSObjectProtocol?
     private var homeMenus: [UUID: HomeMenuWatch] = [:]
+    private var engineFolder: () -> String = { "" }
 
     init(center: NotificationCenter = NSWorkspace.shared.notificationCenter) {
         self.center = center
     }
 
     /// Seeds the running set from the workspace, ends stale play sessions once, then follows launches and quits.
-    func start(sessions: PlaySessionStore) {
+    func start(sessions: PlaySessionStore, engineFolder: @escaping () -> String) {
         guard tokens.isEmpty else { return }
         self.sessions = sessions
+        self.engineFolder = engineFolder
         let tracker = RunningAppsTracker(snapshot: Self.runningBundleIDs)
         self.tracker = tracker
         sessions.reconcile(runningBundleIDs: tracker.running)
@@ -250,7 +252,8 @@ final class RunningGameMonitor: ObservableObject {
             let id = game.id
             let pid = app.processIdentifier
             watch.lookup = Task { [weak self, weak watch] in
-                guard await Task.detached(priority: .utility, operation: { HomeMenu.supported(by: url) }).value else { return }
+                guard let folder = self?.engineFolder(),
+                      await InstalledEngineCapabilities.shared.supportsHomeMenu(in: url, engineFolder: folder) else { return }
                 let executable = HomeMenu.hostExecutable(in: url)
                 // The launcher may take a while to start its child (first launch / external disk).
                 for attempt in 0..<140 {

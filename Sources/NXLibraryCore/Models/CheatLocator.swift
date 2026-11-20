@@ -68,7 +68,7 @@ public enum CheatLocator {
     /// launcher.c env_file: KEY=VALUE lines, leading blanks and trailing blanks / line ends dropped, `#` a comment,
     /// the key's trailing blanks dropped, the value kept as written.
     static func envLines(_ text: String) -> [(String, String)] {
-        text.split(separator: "\n", omittingEmptySubsequences: false).compactMap { raw in
+        text.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline).compactMap { raw in
             var line = Substring(raw)
             while let c = line.first, c == " " || c == "\t" { line = line.dropFirst() }
             while let c = line.last, c == "\r" || c == " " || c == "\t" { line = line.dropLast() }

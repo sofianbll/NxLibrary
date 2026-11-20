@@ -11,14 +11,15 @@ public enum HomeMenu {
     }
 
     /// Check the installed build, not the currently selected checkout: either can be newer than the other.
-    public static func supported(by app: URL) -> Bool {
+    public static func supported(by app: URL, knownEngine: Bool = false) -> Bool {
         guard let host = try? Data(contentsOf: hostExecutable(in: app), options: [.mappedIfSafe]) else { return false }
         func contains(_ marker: String) -> Bool {
             host.range(of: Data("\(marker)\0".utf8)) != nil
         }
-        // The port composes the action into one format; NX2Apple 0035 has one format per request.
+        // For imported/backported builds, the wire markers can prove support without engine history.
         return contains(launcherKey) && contains(bundleIDKey)
-            && (contains("org.nxnative.%@.%d") || (contains("org.nxnative.resume.%d") && contains("org.nxnative.quit.%d")))
+            && (knownEngine || contains("org.nxnative.%@.%d")
+                || (contains("org.nxnative.resume.%d") && contains("org.nxnative.quit.%d")))
     }
 
     public static func environment(supported: Bool, launcherBundleID: String?) -> [String: String] {

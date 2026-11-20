@@ -167,6 +167,7 @@ flowchart TD
     F --> G["ModStore.adopt: ordine e stato in mods/TID.json"]
     L["Game options → Mods → Import code mod<br/>copia exefs senza spostare l'originale"] --> G
     G -->|"RomFS"| H["EnvFileEditor scrive DM_ROMFS_OVERLAY in env.txt"]
+    G --> C2["ModsPanel: controlla DMCommit e profilo Z-A in background<br/>esclude solo arc/data.trpfd se la fusione è attiva"]
     H --> I["L'engine legge le mod al prossimo avvio del gioco"]
     G -->|"ExeFS"| R["Rebuild se la selezione differisce dal bundle installato"]
     R --> P["BuildService: patch accese in ordine → --mods"]

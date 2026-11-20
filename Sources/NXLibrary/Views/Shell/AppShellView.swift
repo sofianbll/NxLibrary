@@ -702,7 +702,7 @@ public struct AppShellView: View {
         artwork.trimCache()
         viewModel.refreshBoxArtIndex()
         if settings.settings.checkEngineAtLaunch && !AppData.profile.isDevelopment { SetupCheckModel.checkAtLaunch(viewModel: viewModel) }
-        runningGames.start(sessions: playSessions)
+        runningGames.start(sessions: playSessions, engineFolder: { [weak viewModel] in viewModel?.nxnativePath ?? "" })
         runningGames.setGames(viewModel.libraryGames)
         viewModel.runningGameMonitor = runningGames
         // Steam's playtime first: a Steam game already running starts a session at once, and trimming needs Steam's last values.

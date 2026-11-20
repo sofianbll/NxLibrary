@@ -15,6 +15,7 @@ struct ModsPanel: View {
 
     @State private var mods: [LocalMod] = []
     @State private var conflicts: [ModConflict] = []
+    @State private var conflictRefresh: Task<Void, Never>?
     @State private var needsRebuild = false
     @State private var importing = false
     @State private var running: Bool
@@ -104,7 +105,10 @@ struct ModsPanel: View {
             sync()
             installKeyMonitor()
         }
-        .onDisappear(perform: removeKeyMonitor)
+        .onDisappear {
+            conflictRefresh?.cancel()
+            removeKeyMonitor()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .nxGameOptionsGamepadAction)) { note in
             guard let action = note.object as? GamepadAction else { return }
             handleGamepad(action)
@@ -246,10 +250,19 @@ struct ModsPanel: View {
 
     private func reload() {
         running = RunningGameMonitor.runningApplication(for: game) != nil
+        let store = store
         mods = store?.mods() ?? []
-        conflicts = store?.conflicts() ?? []
         needsRebuild = store?.codeModsNeedRebuild(app: game.url) == true
         focus = min(focus, max(rows.count - 1, 0))
+        conflictRefresh?.cancel()
+        guard let store else { conflicts = []; return }
+        let engineFolder = viewModel.nxnativePath
+        conflictRefresh = Task { @MainActor in
+            let merges = await InstalledEngineCapabilities.shared.mergesTrpfd(
+                in: game.url, engineFolder: engineFolder, gameData: store.supportFolder)
+            guard !Task.isCancelled else { return }
+            conflicts = store.conflicts(mergesTrpfd: merges)
+        }
     }
 
     /// Re-reads the folder and lets the store drop mods that are gone (only while the game is not running).
