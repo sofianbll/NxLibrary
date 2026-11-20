@@ -33,7 +33,7 @@ public struct ModConflict: Equatable, Sendable {
         self.lower = lower
     }
 
-    public var message: String { L10n.format("%@ and %@ change the same files: the upper one wins.", [String(describing: (upper)), String(describing: (lower))]) }
+    public var message: String { L10n.format("%1$@ and %2$@ change the same files: %1$@ takes priority.", [upper, lower]) }
 }
 
 public enum ModStoreError: Error, Equatable {
@@ -207,13 +207,17 @@ public struct ModStore {
         }
     }
 
-    /// Moves a mod up (negative) or down (positive) in the list; the ends hold it.
+    /// Moves a mod within its section, leaving the other section's slots untouched.
     public func move(folderName: String, by offset: Int) throws {
         try change { list in
-            guard let index = list.firstIndex(where: { $0.folderName == folderName }) else { return }
-            let target = min(max(index + offset, 0), list.count - 1)
+            guard let mod = list.first(where: { $0.folderName == folderName }) else { return }
+            let slots = list.indices.filter { list[$0].isCodeMod == mod.isCodeMod }
+            var section = slots.map { list[$0] }
+            guard let index = section.firstIndex(where: { $0.folderName == folderName }) else { return }
+            let target = min(max(index + offset, 0), section.count - 1)
             guard target != index else { return }
-            list.insert(list.remove(at: index), at: target)
+            section.insert(section.remove(at: index), at: target)
+            for (slot, mod) in zip(slots, section) { list[slot] = mod }
         }
     }
 

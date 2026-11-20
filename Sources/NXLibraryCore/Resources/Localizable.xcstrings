@@ -253,15 +253,26 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "%@ de %@ em uso"}}
       }
     },
-    "Code": {
-      "comment": "ModsPanel.swift: code mod badge",
+    "Code mods": {
+      "comment": "ModsPanel.swift: ExeFS section heading",
       "localizations": {
-        "de": {"stringUnit": {"state": "translated", "value": "Code"}},
-        "en": {"stringUnit": {"state": "translated", "value": "Code"}},
-        "es": {"stringUnit": {"state": "translated", "value": "Código"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Code"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Codice"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Código"}}
+        "de": {"stringUnit": {"state": "translated", "value": "Code-Mods"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Code mods"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Mods de código"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mods de code"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Mod di codice"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Mods de código"}}
+      }
+    },
+    "File mods": {
+      "comment": "ModsPanel.swift: RomFS section heading",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Datei-Mods"}},
+        "en": {"stringUnit": {"state": "translated", "value": "File mods"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Mods de archivos"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mods de fichiers"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Mod di file"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Mods de arquivos"}}
       }
     },
     "Code mods can't build in a path containing a comma, colon or line break.": {
@@ -286,15 +297,15 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Copia uma pasta com patches exefs. A original fica no lugar."}}
       }
     },
-    "If code mods patch the main module, Nextendo mode takes priority and none of the code mods load.": {
-      "comment": "ModsPanel.swift",
+    "Rebuild the game after making changes. Turning off all code mods or re-enabling the entire built set needs no rebuild. Inactive online (Nextendo).": {
+      "comment": "ModsPanel.swift: ExeFS section subtitle",
       "localizations": {
-        "de": {"stringUnit": {"state": "translated", "value": "Wenn Code-Mods das Hauptmodul ändern, hat der Nextendo-Modus Vorrang und keine Code-Mods werden geladen."}},
-        "en": {"stringUnit": {"state": "translated", "value": "If code mods patch the main module, Nextendo mode takes priority and none of the code mods load."}},
-        "es": {"stringUnit": {"state": "translated", "value": "Si los mods de código modifican el módulo principal, el modo Nextendo tiene prioridad y no se carga ninguno."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Si un mod de code modifie le module principal, le mode Nextendo est prioritaire et aucun mod de code ne se charge."}},
-        "it": {"stringUnit": {"state": "translated", "value": "Se le mod di codice modificano il modulo principale, la modalità Nextendo ha la precedenza e nessuna mod di codice viene caricata."}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Se os mods de código alterarem o módulo principal, o modo Nextendo tem prioridade e nenhum mod de código é carregado."}}
+        "de": {"stringUnit": {"state": "translated", "value": "Baue das Spiel nach Änderungen neu. Alle Code-Mods auszuschalten oder den gesamten eingebauten Satz wieder zu aktivieren, erfordert keinen Neubau. Online inaktiv (Nextendo)."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Rebuild the game after making changes. Turning off all code mods or re-enabling the entire built set needs no rebuild. Inactive online (Nextendo)."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Recompila el juego después de hacer cambios. Desactivar todos los mods de código o reactivar todo el conjunto compilado no requiere recompilar. Inactivos en línea (Nextendo)."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Recompile le jeu après un changement. Tout couper ou tout réactiver le lot compilé ne demande pas de rebuild. Inactifs en ligne (Nextendo)."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ricompila il gioco dopo una modifica. Non serve ricompilare per disattivare tutte le mod di codice o riattivare l’intero gruppo compilato. Inattive online (Nextendo)."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Recompile o jogo após fazer alterações. Desativar todos os mods de código ou reativar todo o conjunto compilado não exige recompilação. Inativos online (Nextendo)."}}
       }
     },
     "Import code mod": {
@@ -462,15 +473,26 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Recompile o jogo para aplicar as alterações nos mods de código."}}
       }
     },
-    "RomFS changes apply at the next launch. Code mods apply after a rebuild.": {
-      "comment": "ModsPanel.swift",
+    "Apply at the next launch. Also work online.": {
+      "comment": "ModsPanel.swift: RomFS section subtitle",
       "localizations": {
-        "de": {"stringUnit": {"state": "translated", "value": "RomFS-Änderungen gelten beim nächsten Start. Code-Mods benötigen einen neuen Build."}},
-        "en": {"stringUnit": {"state": "translated", "value": "RomFS changes apply at the next launch. Code mods apply after a rebuild."}},
-        "es": {"stringUnit": {"state": "translated", "value": "Los cambios RomFS se aplican al volver a iniciar el juego. Los mods de código requieren volver a compilarlo."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Les changements RomFS s’appliquent au prochain lancement. Les mods de code nécessitent de recompiler le jeu."}},
-        "it": {"stringUnit": {"state": "translated", "value": "Le modifiche RomFS si applicano al prossimo avvio. Le mod di codice richiedono una nuova compilazione."}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "As alterações de RomFS valem na próxima vez que o jogo abrir. Os mods de código exigem uma recompilação."}}
+        "de": {"stringUnit": {"state": "translated", "value": "Gelten ab dem nächsten Start. Funktionieren auch online."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Apply at the next launch. Also work online."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Se aplican en el próximo inicio. También funcionan en línea."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "S'appliquent au prochain lancement. Fonctionnent aussi en ligne."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Si applicano al prossimo avvio. Funzionano anche online."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Valem na próxima inicialização. Também funcionam online."}}
+      }
+    },
+    "1 mod, off": {
+      "comment": "ModsPanel.swift: summary for one installed, disabled mod",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "1 Mod, inaktiv"}},
+        "en": {"stringUnit": {"state": "translated", "value": "1 mod, off"}},
+        "es": {"stringUnit": {"state": "translated", "value": "1 mod desactivado"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "1 mod désactivé"}},
+        "it": {"stringUnit": {"state": "translated", "value": "1 mod disattivata"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "1 mod desativado"}}
       }
     },
     "The selected engine cannot build code mods. Switch engines or turn them off.": {
@@ -1900,43 +1922,43 @@
         }
       }
     },
-    "%@ and %@ change the same files: the upper one wins.": {
+    "%1$@ and %2$@ change the same files: %1$@ takes priority.": {
       "comment": "ModStore.swift",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ and %@ change the same files: the upper one wins."
+            "value": "%1$@ and %2$@ change the same files: %1$@ takes priority."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ e %@ modificano gli stessi file: prevale quella più in alto."
+            "value": "%1$@ e %2$@ modificano gli stessi file: prevale %1$@."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ et %@ modifient les mêmes fichiers : celui du dessus est prioritaire."
+            "value": "%1$@ et %2$@ modifient les mêmes fichiers : %1$@ est prioritaire."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ und %@ ändern dieselben Dateien: Der obere Mod hat Vorrang."
+            "value": "%1$@ und %2$@ ändern dieselben Dateien: %1$@ hat Vorrang."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ y %@ modifican los mismos archivos: el de arriba tiene prioridad."
+            "value": "%1$@ y %2$@ modifican los mismos archivos: %1$@ tiene prioridad."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ e %@ alteram os mesmos arquivos: o de cima tem prioridade."
+            "value": "%1$@ e %2$@ alteram os mesmos arquivos: %1$@ tem prioridade."
           }
         }
       }
