@@ -62,7 +62,7 @@ final class AppViewModel: ObservableObject {
     // MARK: - Workspace & Paths
     @Published var defaultInstallPath: String = ""
 
-    /// The update dialog is up (set by the shell); screens leave input to it.
+    /// The shell's update dialog owns input; screens leave the keyboard to it.
     var shellDialogOwnsInput = false
     /// "Welcome to Arcane" is on screen, until its fade has ended: screens' own keyboard monitors let Return and
     /// the arrows go to it, and Spotlight holds its entrance until it has gone.

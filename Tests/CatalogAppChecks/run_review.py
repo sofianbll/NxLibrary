@@ -113,9 +113,11 @@ struct SpotlightPageModel { var links = [1]; var more: [Int] = [] }
     var catalogBuildRecoveries: [Int] = []
     var currentFocusedCatalogGame: CatalogGame?
     var currentFocusedGame: PortedGame? { currentFocusedCatalogGame?.nxnativeGame }
+    var launches: [UUID] = []
+    func launchGame(_ game: PortedGame) { launches.append(game.id) }
 }
 @MainActor final class SoundEffectService {
-    enum Cue { case focus }
+    enum Cue { case focus, click, error }
     static let shared = SoundEffectService()
     var count = 0
     func play(_ cue: Cue) { count += 1 }
@@ -194,8 +196,50 @@ final class ApplicationState {
     var modalWindow: Int?
     var keyWindow: WindowState?
     var mainWindow: WindowState?
+    func yieldActivation(toApplicationWithBundleIdentifier id: String) {}
 }
 let NSApp = ApplicationState()
+struct NSRunningApplication {
+    let processIdentifier: Int32
+    static var hiddenPID: Int32?
+    var isHidden: Bool { processIdentifier == Self.hiddenPID }
+    init?(processIdentifier: Int32) { self.processIdentifier = processIdentifier }
+}
+@MainActor final class RunningGameMonitor {
+    struct Host { let pid: Int32; let isAlive = true }
+    struct Watch {
+        let host: Host?
+        let session: HomeMenu.Session?
+        let app = NSRunningApplication(processIdentifier: 410)!
+    }
+    var homeMenus: [UUID: Watch] = [:]
+    static var effects: [String] = []
+    func isRunning(_ game: PortedGame) -> Bool { homeMenus[game.id] != nil }
+    static func runningApplication(for game: PortedGame) -> NSRunningApplication? { .init(processIdentifier: 410) }
+    static func postHomeMenu(_ name: String) { effects.append(name) }
+    static func activate(_ app: NSRunningApplication) { effects.append("activate \(app.processIdentifier)") }
+    // ACTUAL_RESUME
+}
+enum GameResourceState {
+    static func unavailableReason(for game: PortedGame) -> String? { nil }
+}
+@MainActor final class ResumeHost {
+    let game: PortedGame
+    let runningGames = RunningGameMonitor()
+    let viewModel = ViewModel()
+    struct Model { let presentation = (canPlay: true, canRebuild: false) }
+    let currentModel = Model()
+    init(game: PortedGame) { self.game = game }
+    func rebuild() {}
+    // ACTUAL_PRIMARY_ACTION
+}
+struct ModsPanelHost {
+    var settings: GameSettingsSnapshot?
+    let mods: [LocalMod]
+    var warningVisible: Bool { !inactiveOnlineCodeMods.isEmpty }
+    var badgedMods: Set<String> { inactiveOnlineCodeMods }
+    // ACTUAL_INACTIVE_ONLINE_MODS
+}
 final class NativeMenus { var isTracking = false }
 @MainActor final class GameControllerService {
     static let shared = GameControllerService()
@@ -217,7 +261,6 @@ final class NativeMenus { var isTracking = false }
     var showsSettingsNotice = false
     var showsInstallFailure = false
     var showsUpdateOffer = false
-    var homeMenuGame: PortedGame?
     var dialogActions: [GamepadAction] = []
     var isHomeRoute: Bool { router.route == .library || router.route == .collection }
     func availability() -> NativeMenuAvailability { nativeMenuAvailability }
@@ -231,7 +274,6 @@ final class NativeMenus { var isTracking = false }
     func closeGameInput(_ action: GamepadAction) { dialogActions.append(action) }
     func removeGameInput(_ action: GamepadAction) { dialogActions.append(action) }
     func updateOfferInput(_ action: GamepadAction) { dialogActions.append(action) }
-    func homeMenuInput(_ action: GamepadAction, game: PortedGame) { dialogActions.append(action) }
     func menuInput(_ action: GamepadAction) { dialogActions.append(action) }
     // ACTUAL_DIALOG
     // ACTUAL_MENU
@@ -398,21 +440,57 @@ final class NativeMenus { var isTracking = false }
         GameControllerService.shared.onAction?(.confirm)
         require(input.dialogActions == [.confirm] && received.actions.isEmpty,
                 "An internal update dialog must still receive input when no native window is open")
-        input.showsUpdateOffer = false
-        input.dialogActions = []
-        input.homeMenuGame = PortedGame(name: "Paused fixture", url: URL(fileURLWithPath: "/tmp/Paused.app"),
-                                       platform: .macApp, sizeBytes: 1, modificationDate: Date())
-        NSApp.modalWindow = 1
-        GameControllerService.shared.onAction?(.confirm)
-        require(input.dialogActions.isEmpty && received.actions.isEmpty,
-                "The pause card must not receive input underneath a native dialog")
-        NSApp.modalWindow = nil
-        GameControllerService.shared.onAction?(.navigateRight)
-        GameControllerService.shared.onAction?(.confirm)
-        require(input.dialogActions == [.navigateRight, .confirm] && received.actions.isEmpty,
-                "The pause card must receive its own controller actions, not send them to Spotlight")
+
+        let detail = ResumeHost(game: firstModsGame)
+        let engine = RunningGameMonitor.Host(pid: 411)
+        var session = HomeMenu.Session(pid: engine.pid)
+        session.receive(.paused, from: engine.pid)
+        detail.runningGames.homeMenus[detail.game.id] = .init(host: engine, session: session)
+        detail.primaryAction()
+        require(RunningGameMonitor.effects == ["org.nxnative.resume.411", "activate 411"],
+                "The existing Resume button must notify and activate the paused host")
+
+        RunningGameMonitor.effects = []
+        session.receive(.resumed, from: engine.pid)
+        detail.runningGames.homeMenus[detail.game.id] = .init(host: engine, session: session)
+        detail.primaryAction()
+        require(RunningGameMonitor.effects == ["activate 410"] && detail.viewModel.launches.isEmpty,
+                "Resume on a running, unpaused game must only activate its existing app")
+
+        RunningGameMonitor.effects = []
+        NSRunningApplication.hiddenPID = engine.pid
+        detail.primaryAction()
+        require(RunningGameMonitor.effects == ["org.nxnative.resume.411", "activate 411"],
+                "Resume must recover a hidden host if Arcane missed the pause notification")
+
+        let network = try! JSONDecoder().decode(LauncherSetting.self, from: Data("""
+            {"env":"DM_NETWORK","kind":"choice","section":"Game","label":"Network","default":"offline",
+             "options":[["offline","Offline"],["nextendo","Nextendo (online)"]]}
+            """.utf8))
+        func settings(_ mode: String, network: LauncherSetting) -> GameSettingsSnapshot {
+            .init(settings: [network], values: [network.env: mode], fixed: [])
+        }
+        let mods = [
+            LocalMod(folderName: "On", folder: root, romfs: nil, exefs: root, isOn: true),
+            LocalMod(folderName: "Mixed", folder: root, romfs: root, exefs: root, isOn: true),
+            LocalMod(folderName: "Off", folder: root, romfs: nil, exefs: root, isOn: false),
+            LocalMod(folderName: "RomFS", folder: root, romfs: root, isOn: true)
+        ]
+        var modsPanel = ModsPanelHost(settings: settings("nextendo", network: network), mods: mods)
+        require(modsPanel.warningVisible && modsPanel.badgedMods == ["On", "Mixed"],
+                "Nextendo online must warn and badge only enabled code mods")
+        let noActiveCode = ModsPanelHost(settings: modsPanel.settings, mods: Array(mods.suffix(2)))
+        require(!noActiveCode.warningVisible && noActiveCode.badgedMods.isEmpty,
+                "Nextendo online without any enabled code mods must not warn")
+        var unsupported = network
+        unsupported.options?.removeAll { $0.value == "nextendo" }
+        for snapshot in [settings("offline", network: network), settings("nextendo", network: unsupported), nil] {
+            modsPanel.settings = snapshot
+            require(!modsPanel.warningVisible && modsPanel.badgedMods.isEmpty,
+                    "Offline mode and unknown or unsupported Nextendo must not warn or badge code mods")
+        }
         if failures > 0 { exit(1) }
-        print("Actual app review checks passed: achievement startup, logo platform, wheel focus, Mods reads, Steam launch, native dialogs and input routing.")
+        print("Actual app review checks passed: achievement startup, logo platform, wheel focus, Mods reads and Nextendo warnings, Steam launch, native dialogs, input routing and Resume.")
     }
 }
 '''
@@ -438,6 +516,12 @@ host = host.replace('// ACTUAL_MENU', declaration(
     'Sources/NXLibrary/Views/Shell/AppShellView.swift', '    private var nativeMenuAvailability:'))
 host = host.replace('// ACTUAL_DIALOG', declaration(
     'Sources/NXLibrary/Views/Shell/AppShellView.swift', '    private var nativeDialogOwnsInput:'))
+host = host.replace('// ACTUAL_RESUME', declaration(
+    'Sources/NXLibrary/Services/RunningGameMonitor.swift', '    func resume(_ game:'))
+host = host.replace('// ACTUAL_PRIMARY_ACTION', declaration(
+    'Sources/NXLibrary/Views/Detail/GameDetailView+Input.swift', '    func primaryAction()'))
+host = host.replace('// ACTUAL_INACTIVE_ONLINE_MODS', declaration(
+    'Sources/NXLibrary/Views/GameOptions/ModsPanel.swift', '    private var inactiveOnlineCodeMods:'))
 controller = declaration('Sources/NXLibrary/Views/Shell/AppShellView.swift',
                          '        GameControllerService.shared.onAction =')
 host = host.replace('// ACTUAL_CONTROLLER', controller.replace('[weak viewModel, weak router]', '[self, weak viewModel, weak router]'))

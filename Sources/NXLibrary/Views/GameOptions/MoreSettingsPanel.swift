@@ -87,16 +87,17 @@ struct MoreSettingsPanel: View {
         snapshot?.fixed.contains(setting.env) ?? false
     }
 
-    private func about(_ setting: LauncherSetting) -> String {
+    private func about(_ setting: LauncherSetting, value: String) -> String {
         if isFixed(setting) { return L10n.text("Set in env.txt") }
-        if let note = setting.note, !note.isEmpty { return L10n.text(note) }
+        if let note = setting.note(for: value), !note.isEmpty { return L10n.text(note) }
         return L10n.text(setting.section)
     }
 
     private func rowView(_ setting: LauncherSetting, focused: Bool) -> some View {
         let current = value(setting)
         let label = L10n.text(GameSettingValues.label(setting, current))
-        return SeleneOptionRow(icon: nil, title: L10n.text(setting.label), about: about(setting), focused: focused,
+        let about = about(setting, value: current)
+        return SeleneOptionRow(icon: nil, title: L10n.text(setting.label), about: about, focused: focused,
                                enabled: !isFixed(setting)) {
             if setting.kind == "toggle" {
                 SeleneSwitch(isOn: .constant(current == setting.on)).allowsHitTesting(false)
@@ -106,7 +107,7 @@ struct MoreSettingsPanel: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.text(setting.label))
-        .accessibilityHint(about(setting))
+        .accessibilityHint(about)
         .accessibilityValue(label)
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { change(setting, by: 1) }

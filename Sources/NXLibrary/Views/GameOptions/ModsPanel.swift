@@ -11,6 +11,7 @@ import ArcanePorting
 struct ModsPanel: View {
     @ObservedObject var viewModel: AppViewModel
     let game: PortedGame
+    let settings: GameSettingsSnapshot?
     let onRebuild: () -> Void
     let onClose: () -> Void
 
@@ -38,9 +39,11 @@ struct ModsPanel: View {
         case rebuild
     }
 
-    init(viewModel: AppViewModel, game: PortedGame, onRebuild: @escaping () -> Void, onClose: @escaping () -> Void) {
+    init(viewModel: AppViewModel, game: PortedGame, settings: GameSettingsSnapshot?,
+         onRebuild: @escaping () -> Void, onClose: @escaping () -> Void) {
         self.viewModel = viewModel
         self.game = game
+        self.settings = settings
         self.onRebuild = onRebuild
         self.onClose = onClose
         _running = State(initialValue: RunningGameMonitor.runningApplication(for: game) != nil)
@@ -49,6 +52,13 @@ struct ModsPanel: View {
     private var store: ModStore? { viewModel.modStore(for: game) }
 
     private var rows: [Row] { mods.map { .mod($0.folderName) } + [.importCode, .openFolder] + (needsRebuild ? [.rebuild] : []) }
+
+    private var inactiveOnlineCodeMods: Set<String> {
+        guard let settings, let network = NextendoLaunch.networkSetting(in: settings.settings),
+              network.accepts("nextendo"), (settings.value(network.env) ?? network.defaultValue) == "nextendo"
+        else { return [] }
+        return Set(mods.filter { $0.isOn && $0.exefs != nil }.map(\.folderName))
+    }
 
     private var focusedMod: LocalMod? {
         guard rows.indices.contains(focus), case .mod(let name) = rows[focus] else { return nil }
@@ -59,6 +69,7 @@ struct ModsPanel: View {
 
     var body: some View {
         let rows = self.rows
+        let inactiveOnline = inactiveOnlineCodeMods
         return ZStack {
             SeleneTheme.scrim65
                 .ignoresSafeArea()
@@ -81,8 +92,8 @@ struct ModsPanel: View {
                         .foregroundColor(SeleneTheme.ink60)
                         .padding(.leading, canvas.u(8))
                         .padding(.bottom, canvas.u(14))
-                    noticeArea
-                    list(rows)
+                    noticeArea(hasInactiveOnlineMods: !inactiveOnline.isEmpty)
+                    list(rows, inactiveOnline: inactiveOnline)
                 }
                 .frame(width: canvas.u(1040), alignment: .leading)
                 .frame(maxHeight: .infinity, alignment: .top)
@@ -127,8 +138,9 @@ struct ModsPanel: View {
         return items
     }
 
-    @ViewBuilder private var noticeArea: some View {
-        let notices = (running ? [ModsCopy.running(gameName: game.name)] : [])
+    @ViewBuilder private func noticeArea(hasInactiveOnlineMods: Bool) -> some View {
+        let notices = (hasInactiveOnlineMods ? [L10n.text("Nextendo online mode: Code mods don't load. Set Network to Offline to use them.", context: locale)] : [])
+            + (running ? [ModsCopy.running(gameName: game.name)] : [])
             + (needsRebuild ? [L10n.text("Rebuild to apply code mod changes.", context: locale)] : [])
         if !notices.isEmpty || message != nil || !conflicts.isEmpty {
             VStack(alignment: .leading, spacing: canvas.u(8)) {
@@ -154,7 +166,7 @@ struct ModsPanel: View {
         }
     }
 
-    private func list(_ rows: [Row]) -> some View {
+    private func list(_ rows: [Row], inactiveOnline: Set<String>) -> some View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: canvas.u(8)) {
@@ -162,7 +174,7 @@ struct ModsPanel: View {
                         SeleneOptionRow(icon: nil, title: L10n.text("No mods yet"), about: ModsCopy.empty, focused: false, enabled: false) {}
                     }
                     ForEach(Array(rows.enumerated()), id: \.element) { index, row in
-                        rowView(row, focused: index == focus)
+                        rowView(row, focused: index == focus, inactiveOnline: inactiveOnline)
                             .id(row)
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -196,20 +208,27 @@ struct ModsPanel: View {
         }
     }
 
-    private func rowView(_ row: Row, focused: Bool) -> some View {
+    private func rowView(_ row: Row, focused: Bool, inactiveOnline: Set<String>) -> some View {
         let text = describe(row)
         let code: Bool
-        if case .mod(let name) = row { code = mods.first { $0.folderName == name }?.exefs != nil }
-        else { code = false }
+        let inactiveBadge: String?
+        if case .mod(let name) = row {
+            code = mods.first { $0.folderName == name }?.exefs != nil
+            inactiveBadge = inactiveOnline.contains(name) ? L10n.text("Inactive online", context: locale) : nil
+        } else {
+            code = false
+            inactiveBadge = nil
+        }
         return SeleneOptionRow(icon: text.icon, title: text.title, about: text.about, focused: focused,
                                enabled: text.enabled) {
             if code { SeleneValueChip(text: L10n.text("Code", context: locale)) }
+            if let inactiveBadge { SeleneValueChip(text: inactiveBadge) }
             if let isOn = text.isOn {
                 SeleneSwitch(isOn: .constant(isOn)).allowsHitTesting(false)
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel([text.title, code ? L10n.text("Code") : nil, text.about].compactMap { $0 }.joined(separator: ". "))
+        .accessibilityLabel([text.title, code ? L10n.text("Code") : nil, inactiveBadge, text.about].compactMap { $0 }.joined(separator: ". "))
         .accessibilityValue(text.isOn.map { $0 ? L10n.text("On") : L10n.text("Off") } ?? "")
         .accessibilityAddTraits(.isButton)
     }

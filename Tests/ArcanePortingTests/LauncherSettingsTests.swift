@@ -33,6 +33,8 @@ final class LauncherSettingsTests: XCTestCase {
         XCTAssertEqual(file?.game, "01007EF00011E000")
         XCTAssertEqual(file?.settings.count, 3)
         XCTAssertEqual(file?.settings[0].options?.map(\.value), ["30", "60"])
+        XCTAssertNil(file?.settings[0].optionNotes)
+        XCTAssertEqual(file?.settings[0].note(for: "60"), "Cap")
         XCTAssertEqual(file?.settings[1].min, 0.5)
         XCTAssertEqual(file?.settings[1].max, 1.0)
         XCTAssertEqual(file?.settings[2].on, "on")
@@ -69,6 +71,19 @@ final class LauncherSettingsTests: XCTestCase {
 
     private func setting(_ json: String) throws -> LauncherSetting {
         try JSONDecoder().decode(LauncherSetting.self, from: Data(json.utf8))
+    }
+
+    func testChoiceOptionNotesUseTheSelectedValueAndFallBackToTheSettingNote() throws {
+        let choice = try setting("""
+        {"env":"DM_NETWORK","kind":"choice","section":"Game","label":"Network","note":"Choose how this game connects.",
+         "options":[["offline","Offline"],["lan","LAN mode"],["nextendo","Online (Nextendo)"]],
+         "option_notes":{"offline":"No network. Code mods work.","nextendo":"Code mods are turned off.","unknown":"Do not use"}}
+        """)
+        XCTAssertEqual(GameSettingValues.label(choice, "nextendo"), "Online (Nextendo)")
+        XCTAssertEqual(choice.note(for: "offline"), "No network. Code mods work.")
+        XCTAssertEqual(choice.note(for: "nextendo"), "Code mods are turned off.")
+        XCTAssertEqual(choice.note(for: "lan"), "Choose how this game connects.")
+        XCTAssertEqual(choice.note(for: "unknown"), "Choose how this game connects.")
     }
 
     func testAcceptsOnlyWhatTheBuildOffers() throws {

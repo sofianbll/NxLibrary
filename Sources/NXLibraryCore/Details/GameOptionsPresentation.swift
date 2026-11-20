@@ -268,6 +268,11 @@ public struct GameOptionsPresentation: Equatable {
     /// The row's one-line description, when it has one.
     public func about(_ row: GameOptionsRow) -> String? {
         if isFixed(row) { return L10n.text("Set in env.txt") }
+        if row.isChoice, let settings, let key = row.settingKey, let setting = settings.setting(key),
+           setting.optionNotes != nil,
+           let note = setting.note(for: settings.value(key) ?? setting.defaultValue ?? ""), !note.isEmpty {
+            return L10n.text(note)
+        }
         switch row {
         case .play: return L10n.text("Launch the installed Mac app.")
         case .cheats: return L10n.text("Install and switch this game's cheats.")

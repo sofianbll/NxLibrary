@@ -19,17 +19,6 @@ extension AppShellView {
                 return event
             }
             let mods = event.modifierFlags.intersection([.command, .control, .option, .shift])
-            if let game = homeMenuGame, mods.isEmpty {
-                switch event.keyCode {
-                case 123: homeMenuInput(.navigateLeft, game: game)
-                case 124: homeMenuInput(.navigateRight, game: game)
-                case 36, 76, 49:
-                    if !event.isARepeat { homeMenuInput(.confirm, game: game) }
-                case 53: homeMenuInput(.cancel, game: game)
-                default: break
-                }
-                return nil
-            }
             // The Setup check and the welcome take the keyboard: arrows, Return, Space and Esc go to them.
             if viewModel.showSetupCheck || (showsWelcome && !showsSettingsNotice && !showsInstallFailure
                                             && !showsUpdateOffer && viewModel.gameToClose == nil

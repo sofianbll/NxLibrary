@@ -40,7 +40,7 @@ Come si aggiorna:
 
 | Parte | Stato | Prove ancora da fare |
 |---|---|---|
-| Pausa Home e ritorno ad Arcane | in attesa | Con una build compatibile, scegliere Home → Back to console mode. Provare card, tastiera/controller, Resume con audio e fullscreen, Quit, uscita esterna e riavvio di Arcane durante la pausa. Una build non compatibile non offre la voce. |
+| Pausa Home e ritorno ad Arcane | in attesa | Con una build compatibile, scegliere Home → Back to console mode. Provare ritorno senza dialogo, Resume dalla libreria con audio e fullscreen, Close Game e uscita esterna. Riprovare Resume dopo il riavvio di Arcane e con un gioco non in pausa. |
 | Apertura immediata di Game Options con Y | in attesa | A freddo, premere subito Y su un gioco portato con un checkout nxnative personalizzato; verificare che Game Options si apra senza crash e che la riga Cheats sia corretta. |
 | Mod di codice ExeFS | in attesa | In Arcane Dev con un engine `--mods`, importare una cartella `exefs` per la versione del gioco e verificare originale intatto, badge Code, Rebuild e uso della patch offline. Spegnere la mod, ricompilare e verificare che non si applichi. Verificare una mod RomFS, una mista e un archivio sbagliato; un build fallito deve lasciare app e avviso Rebuild intatti. |
 | Conflitti del descrittore Z-A | in attesa | Con una build che fonde il descrittore, provare mod con solo `arc/data.trpfd` in comune e mod con altri file condivisi. L’avviso torna in una build precedente o con `DM_TRPFD_MERGE=0`. |

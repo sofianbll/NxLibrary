@@ -18,6 +18,7 @@ public struct LauncherSetting: Decodable, Equatable, Identifiable {
     public var section: String
     public var label: String
     public var note: String?
+    public var optionNotes: [String: String]?
     public var defaultValue: String?
     public var options: [LauncherSettingOption]?
     public var min: Double?
@@ -35,6 +36,7 @@ public struct LauncherSetting: Decodable, Equatable, Identifiable {
     private enum CodingKeys: String, CodingKey {
         case env, kind, section, label, note, options, min, max, step, on, off, level, needs
         case defaultValue = "default"
+        case optionNotes = "option_notes"
     }
 
     public init(from decoder: Decoder) throws {
@@ -44,6 +46,7 @@ public struct LauncherSetting: Decodable, Equatable, Identifiable {
         section = try container.decode(String.self, forKey: .section)
         label = try container.decode(String.self, forKey: .label)
         note = try container.decodeIfPresent(String.self, forKey: .note)
+        optionNotes = kind == "choice" ? try? container.decode([String: String].self, forKey: .optionNotes) : nil
         defaultValue = try container.decodeIfPresent(String.self, forKey: .defaultValue)
         min = try container.decodeIfPresent(Double.self, forKey: .min)
         max = try container.decodeIfPresent(Double.self, forKey: .max)
@@ -71,6 +74,12 @@ public struct LauncherSettingsFile: Decodable, Equatable {
 // MARK: - The values a build takes
 
 extension LauncherSetting {
+    /// The selected choice's note, with the setting's own note as fallback.
+    public func note(for value: String) -> String? {
+        if kind == "choice", accepts(value), let option = optionNotes?[value], !option.isEmpty { return option }
+        return note
+    }
+
     /// Whether this build takes `value`, as `dm/mac/launcher.c` checks a saved choice: one of a choice's options,
     /// a toggle's `on` or `off`, or a number in a range (no leading space, no hex, finite).
     public func accepts(_ value: String) -> Bool {

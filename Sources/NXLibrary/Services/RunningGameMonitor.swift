@@ -17,9 +17,7 @@ final class RunningGameMonitor: ObservableObject {
     @Published private(set) var runningGameIDs: Set<UUID> = []
     /// The latest play session a game's quit ended, for the session card (nil when it was too short for one).
     @Published private(set) var endedSession: SessionSummary?
-    /// Most recently paused first, so switching between several running games never loses their state.
-    @Published private(set) var pausedGameIDs: [UUID] = []
-    @Published private(set) var quittingPausedGameIDs: Set<UUID> = []
+    @Published private(set) var pausedGameIDs: Set<UUID> = []
 
     @MainActor private final class HomeMenuWatch {
         let app: NSRunningApplication
@@ -99,7 +97,6 @@ final class RunningGameMonitor: ObservableObject {
         closeTasks = [:]
         homeMenus.removeAll()
         pausedGameIDs = []
-        quittingPausedGameIDs = []
     }
 
     /// The library changed: new and removed games are matched again.
@@ -112,17 +109,20 @@ final class RunningGameMonitor: ObservableObject {
         runningGameIDs.contains(game.id)
     }
 
-    /// Brings a running game's app forward. Never starts a second copy.
+    /// Brings a running game's app forward, resuming its host if paused. Never starts a second copy.
     func resume(_ game: PortedGame) {
         if let watch = homeMenus[game.id], let host = watch.host, host.isAlive {
-            guard let request = watch.session?.resumeRequest else { return }
-            let app = NSRunningApplication(processIdentifier: host.pid) ?? watch.app
-            if #available(macOS 14, *), let bundleID = game.effectiveBundleId {
-                NSApp.yieldActivation(toApplicationWithBundleIdentifier: bundleID)
+            if watch.session?.phase == .quitting { return }
+            let app = NSRunningApplication(processIdentifier: host.pid)
+            // A restarted Arcane does not receive the old pause notification; the engine hides its host.
+            if let request = watch.session?.resumeRequest(hostIsHidden: app?.isHidden == true) {
+                if #available(macOS 14, *), let bundleID = game.effectiveBundleId {
+                    NSApp.yieldActivation(toApplicationWithBundleIdentifier: bundleID)
+                }
+                Self.postHomeMenu(request)
+                Self.activate(app ?? watch.app)
+                return
             }
-            Self.postHomeMenu(request)
-            Self.activate(app)
-            return
         }
         guard let app = Self.runningApplication(for: game) else { return }
         Self.activate(app)
@@ -286,10 +286,10 @@ final class RunningGameMonitor: ObservableObject {
                     guard let self, let watch, self.homeMenus[id] === watch, host.isAlive else { return }
                     watch.session?.receive(event, from: host.pid)
                     if watch.session?.phase == .paused, !self.pausedGameIDs.contains(id) {
-                        self.pausedGameIDs.insert(id, at: 0)
+                        self.pausedGameIDs.insert(id)
                         self.comeForward()
                     } else if watch.session?.phase == .running {
-                        self.clearPausedGame(id)
+                        if self.pausedGameIDs.contains(id) { self.pausedGameIDs.remove(id) }
                         watch.quit?.cancel()
                     }
                 }
@@ -304,7 +304,6 @@ final class RunningGameMonitor: ObservableObject {
             return
         }
         guard let request = watch.session?.requestQuit() else { return }
-        quittingPausedGameIDs.insert(id)
         Self.postHomeMenu(request)
         watch.quit?.cancel()
         watch.quit = Task { [weak self, weak watch] in
@@ -314,7 +313,6 @@ final class RunningGameMonitor: ObservableObject {
             guard host.isAlive else { self.stopHomeMenu(id); return }
             host.terminate()
             watch.session?.quitTimedOut()
-            self.quittingPausedGameIDs.remove(id)
         }
     }
 
@@ -322,12 +320,7 @@ final class RunningGameMonitor: ObservableObject {
         if let watch = homeMenus.removeValue(forKey: id), let host = watch.host {
             watch.session?.receive(.exited, from: host.pid)
         }
-        clearPausedGame(id)
-    }
-
-    private func clearPausedGame(_ id: UUID) {
-        if pausedGameIDs.contains(id) { pausedGameIDs.removeAll { $0 == id } }
-        if quittingPausedGameIDs.contains(id) { quittingPausedGameIDs.remove(id) }
+        if pausedGameIDs.contains(id) { pausedGameIDs.remove(id) }
     }
 
     private static func postHomeMenu(_ name: String) {

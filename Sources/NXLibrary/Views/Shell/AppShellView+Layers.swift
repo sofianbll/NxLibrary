@@ -108,11 +108,6 @@ extension AppShellView {
                     .transition(.opacity)
                     .zIndex(4)
             }
-            if let game = homeMenuGame {
-                homeMenuOverlay(game)
-                    .transition(.opacity)
-                    .zIndex(4)
-            }
             if router.isMenuPresented {
                 Group {
                     if router.isThemePickerOpen {
@@ -209,7 +204,6 @@ extension AppShellView {
                    value: viewModel.gameWithInstallFailure?.id)
         .animation(reduceMotion ? nil : SeleneTheme.quick, value: viewModel.settingsNotice?.id)
         .animation(reduceMotion ? nil : SeleneTheme.quick, value: showsUpdateOffer)
-        .animation(reduceMotion ? nil : SeleneTheme.quick, value: homeMenuGame?.id)
         .environment(\.seleneReduceMotion, reduceMotion)
         .environment(\.seleneBackdropStyle, backdropStyle)
         .environment(\.seleneSharesBackdrop, true)
@@ -298,8 +292,7 @@ extension AppShellView {
         .onChange(of: settings.settings.showsSessionCard) { _, on in
             if !on { sessionCard.clear() }
         }
-        .onChange(of: showsUpdateOffer || homeMenuGame != nil) { viewModel.shellDialogOwnsInput = $1 }
-        .onChange(of: homeMenuGame?.id) { homeMenuFocus = .cancel }
+        .onChange(of: showsUpdateOffer) { viewModel.shellDialogOwnsInput = $1 }
         // Closing clears it once the fade has ended (`closeWelcome`), so nothing under it moves or takes input before.
         .onChange(of: showsWelcome) { if $1 { viewModel.isWelcomeOpen = true } }
         .onChange(of: router.route) { _, route in

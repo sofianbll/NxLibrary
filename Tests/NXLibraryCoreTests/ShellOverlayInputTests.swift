@@ -1,7 +1,7 @@
 import XCTest
 
 /// Screens read the keyboard through their own `NSEvent` monitors. A shell overlay drawn on top of them
-/// (the update offer, the paused game, the welcome) must make every such monitor let the key go, or Return reaches the screen
+/// (the update offer, the welcome) must make every such monitor let the key go, or Return reaches the screen
 /// underneath: a game starts instead of the overlay's button.
 final class ShellOverlayInputTests: XCTestCase {
     private var views: URL {

@@ -308,6 +308,17 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Importar mod de código"}}
       }
     },
+    "Inactive online": {
+      "comment": "ModsPanel.swift: badge for a code mod blocked in Nextendo online mode",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Online inaktiv"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Inactive online"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Inactivo en línea"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Inactif en ligne"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Inattiva online"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Inativo online"}}
+      }
+    },
     "Manage RomFS and code mods for this game.": {
       "comment": "GameOptionsPresentation.swift",
       "localizations": {
@@ -317,6 +328,105 @@
         "fr": {"stringUnit": {"state": "translated", "value": "Gérer les mods RomFS et les mods de code de ce jeu."}},
         "it": {"stringUnit": {"state": "translated", "value": "Gestisci le mod RomFS e di codice di questo gioco."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Gerencie os mods de RomFS e de código deste jogo."}}
+      }
+    },
+    "Nextendo online mode: Code mods don't load. Set Network to Offline to use them.": {
+      "comment": "ModsPanel.swift: notice when a code mod is enabled in Nextendo online mode",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Nextendo-Online-Modus: Code-Mods werden nicht geladen. Stelle Netzwerk auf Offline, um sie zu verwenden."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Nextendo online mode: Code mods don't load. Set Network to Offline to use them."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Modo en línea de Nextendo: los mods de código no se cargan. Cambia Red a Sin conexión para usarlos."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mode en ligne Nextendo : les mods de code ne se chargent pas. Passe le réseau en Hors ligne pour les utiliser."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Modalità online Nextendo: le mod di codice non vengono caricate. Imposta Rete su Offline per usarle."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Modo online do Nextendo: os mods de código não são carregados. Defina a Rede como Offline para usá-los."}}
+      }
+    },
+    "Local communication": {
+      "comment": "nxnative launcher.json: Network choice",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Lokale Kommunikation"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Local communication"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Comunicación local"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Communication locale"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Comunicazione locale"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Comunicação local"}}
+      }
+    },
+    "LAN mode": {
+      "comment": "nxnative launcher.json: Network choice",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "LAN-Modus"}},
+        "en": {"stringUnit": {"state": "translated", "value": "LAN mode"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Modo LAN"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mode LAN"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Modalità LAN"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Modo LAN"}}
+      }
+    },
+    "Online (Nextendo)": {
+      "comment": "nxnative launcher.json: Network choice",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Online (Nextendo)"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Online (Nextendo)"}},
+        "es": {"stringUnit": {"state": "translated", "value": "En línea (Nextendo)"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "En ligne (Nextendo)"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Online (Nextendo)"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Online (Nextendo)"}}
+      }
+    },
+    "Choose how this game connects.": {
+      "comment": "nxnative launcher.json: Network note",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle, wie sich dieses Spiel verbindet."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Choose how this game connects."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige cómo se conecta este juego."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisis comment ce jeu se connecte."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli come si connette questo gioco."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha como este jogo se conecta."}}
+      }
+    },
+    "No network. Code mods work.": {
+      "comment": "nxnative launcher.json: Offline note",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Kein Netzwerk. Code-Mods funktionieren."}},
+        "en": {"stringUnit": {"state": "translated", "value": "No network. Code mods work."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Sin red. Los mods de código funcionan."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Aucun réseau. Les mods de code fonctionnent."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nessuna rete. Le mod di codice funzionano."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Sem rede. Os mods de código funcionam."}}
+      }
+    },
+    "Like nearby play on Switch: play with Macs or iPhones on the same Wi-Fi.": {
+      "comment": "nxnative launcher.json: Local communication note",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Wie lokales Spielen auf der Switch: Spiele mit Macs oder iPhones im selben WLAN."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Like nearby play on Switch: play with Macs or iPhones on the same Wi-Fi."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Como el juego local en Switch: juega con Mac o iPhone en la misma red Wi-Fi."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Comme « Personnes à proximité » sur Switch : joue avec des Mac ou iPhone sur le même Wi-Fi."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Come il gioco in locale su Switch: gioca con Mac o iPhone sulla stessa rete Wi-Fi."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Como jogar com pessoas por perto no Switch: jogue com Macs ou iPhones na mesma rede Wi-Fi."}}
+      }
+    },
+    "The game's LAN mode, if it has one: devices on the same network.": {
+      "comment": "nxnative launcher.json: LAN mode note",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Der LAN-Modus des Spiels, falls verfügbar: Geräte im selben Netzwerk."}},
+        "en": {"stringUnit": {"state": "translated", "value": "The game's LAN mode, if it has one: devices on the same network."}},
+        "es": {"stringUnit": {"state": "translated", "value": "El modo LAN del juego, si lo tiene: dispositivos en la misma red."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Le mode LAN du jeu, s'il en a un : appareils branchés sur le même réseau."}},
+        "it": {"stringUnit": {"state": "translated", "value": "La modalità LAN del gioco, se disponibile: dispositivi sulla stessa rete."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O modo LAN do jogo, se disponível: dispositivos na mesma rede."}}
+      }
+    },
+    "Internet through Nextendo, account required. Code mods are turned off.": {
+      "comment": "nxnative launcher.json: Online (Nextendo) note",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Internet über Nextendo, Konto erforderlich. Code-Mods sind deaktiviert."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Internet through Nextendo, account required. Code mods are turned off."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Internet a través de Nextendo; se requiere una cuenta. Los mods de código se desactivan."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Internet via Nextendo, compte requis. Les mods de code sont désactivés."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Internet tramite Nextendo, account obbligatorio. Le mod di codice sono disattivate."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Internet via Nextendo; é preciso ter uma conta. Os mods de código são desativados."}}
       }
     },
     "Not a mod: needs romfs or exefs patches.": {
@@ -30702,47 +30812,6 @@
         }
       }
     },
-    "Game paused": {
-      "comment": "AppShellView.swift",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Game paused"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gioco in pausa"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jeu en pause"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Spiel pausiert"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Juego en pausa"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jogo em pausa"
-          }
-        }
-      }
-    },
     "Game ready. No icon found; add one in Change artwork.": {
       "comment": "AppIconProgress.swift",
       "localizations": {
@@ -52941,47 +53010,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "退出游戏以安装模组。"
-          }
-        }
-      }
-    },
-    "Quitting…": {
-      "comment": "AppShellView.swift",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quitting…"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chiusura…"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fermeture…"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wird beendet…"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cerrando…"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Encerrando…"
           }
         }
       }
