@@ -77,10 +77,10 @@ struct AppShellView: View {
         router.route == .library || router.route == .collection
     }
 
-    /// The Close Game confirmation is open; menu commands and the dialog's input wait for it.
+    /// A shell dialog is open; menu commands wait for it.
     var isCloseGameOpen: Bool {
         viewModel.gameToClose != nil || viewModel.gameToRemove != nil || showsUpdateOffer || showsInstallFailure
-            || showsSettingsNotice
+            || showsSettingsNotice || viewModel.cloudLibraryGameID != nil
     }
     var showsInstallFailure: Bool {
         viewModel.gameWithInstallFailure != nil && !viewModel.showSetupCheck
@@ -233,6 +233,8 @@ struct AppShellView: View {
                 viewModel.dismissRemoveGame()
             } else if showsUpdateOffer {
                 updater.later()
+            } else if viewModel.cloudLibraryGameID != nil {
+                viewModel.cloudLibraryGameID = nil
             } else if viewModel.isGameOptionsOpen {
                 // Game options steps back (dialog, then Edit details) or closes.
                 NotificationCenter.default.post(name: .nxGameOptionsGamepadAction, object: GamepadAction.cancel)

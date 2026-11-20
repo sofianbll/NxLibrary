@@ -136,6 +136,8 @@ flowchart TD
 
 `BuildCommandBuilder` aggiunge `--nextendo` e l'ID pubblico all'ambiente solo se il checkout dichiara il flag e l'ID è configurato. La sessione serve al Play online, non al porting.
 
+**Details → Cloud library.** Con rclone configurato, Send controlla spazio e inventario di app e cache, verifica le copie Apple Archive in staging, pubblica entrambi gli oggetti verificati e infine il manifest. Download verifica hash, inventario e firma prima di pubblicare una copia mancante. Per liberare spazio, la conferma Selene precede una nuova verifica remota e il confronto locale; una divergenza lascia il file dov'è. La voce in libreria resta.
+
 ## 6. Importare o ripristinare un salvataggio
 
 ```mermaid

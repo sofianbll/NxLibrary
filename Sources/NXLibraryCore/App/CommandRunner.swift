@@ -38,7 +38,7 @@ public final class SystemCommandRunner: CommandRunning, Sendable {
     }
 
     /// Runs off the caller's executor and terminates the subprocess on cancellation.
-    func runCancellable(_ executable: URL, _ arguments: [String], environment: [String: String]?,
+    package func runCancellable(_ executable: URL, _ arguments: [String], environment: [String: String]?,
                         onStderr: (@Sendable (String) -> Void)? = nil) async throws -> CommandResult {
         let cancellation = CommandCancellation()
         return try await withTaskCancellationHandler {

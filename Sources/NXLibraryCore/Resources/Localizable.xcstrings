@@ -1,6 +1,256 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Cloud library": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Bibliothek"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Cloud library"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Biblioteca en la nube"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Bibliothèque cloud"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Libreria cloud"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Biblioteca na nuvem"}}
+      }
+    },
+    "Game app": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Spiel-App"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Game app"}},
+        "es": {"stringUnit": {"state": "translated", "value": "App del juego"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "App du jeu"}},
+        "it": {"stringUnit": {"state": "translated", "value": "App del gioco"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "App do jogo"}}
+      }
+    },
+    "Build cache": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Build-Cache"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Build cache"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Caché de compilación"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Cache de compilation"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cache di compilazione"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Cache de compilação"}}
+      }
+    },
+    "In progress": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "In Bearbeitung"}},
+        "en": {"stringUnit": {"state": "translated", "value": "In progress"}},
+        "es": {"stringUnit": {"state": "translated", "value": "En curso"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "En cours"}},
+        "it": {"stringUnit": {"state": "translated", "value": "In corso"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Em andamento"}}
+      }
+    },
+    "App installed": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Installiert"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Installed"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Instalado"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Installé"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Installato"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Instalado"}}
+      }
+    },
+    "Send": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Hochladen"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Send"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enviar"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoyer"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invia"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviar"}}
+      }
+    },
+    "On this Mac": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Auf diesem Mac"}},
+        "en": {"stringUnit": {"state": "translated", "value": "On this Mac"}},
+        "es": {"stringUnit": {"state": "translated", "value": "En este Mac"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Sur ce Mac"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Su questo Mac"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Neste Mac"}}
+      }
+    },
+    "In the cloud": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "In der Cloud"}},
+        "en": {"stringUnit": {"state": "translated", "value": "In the cloud"}},
+        "es": {"stringUnit": {"state": "translated", "value": "En la nube"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Dans le cloud"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nel cloud"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Na nuvem"}}
+      }
+    },
+    "Not saved in the cloud": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Nicht in der Cloud"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Not saved in the cloud"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Sin copia en la nube"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Pas de copie cloud"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nessuna copia nel cloud"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Sem cópia na nuvem"}}
+      }
+    },
+    "Cloud status unknown": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Status unbekannt"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Cloud status unknown"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Estado de la nube desconocido"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "État cloud inconnu"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Stato cloud sconosciuto"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Status na nuvem desconhecido"}}
+      }
+    },
+    "Local folder unavailable": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Lokaler Ordner nicht verfügbar"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Local folder unavailable"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Carpeta local no disponible"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Dossier local indisponible"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cartella locale non disponibile"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Pasta local indisponível"}}
+      }
+    },
+    "Free up space": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Speicher freigeben"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Free up space"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Liberar espacio"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Libérer de la place"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Libera spazio"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Liberar espaço"}}
+      }
+    },
+    "After verification, Arcane moves this app to the Trash. Download it again to play. Saves stay on this Mac.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Nach der Prüfung legt Arcane die Spiel-App in den Papierkorb. Lade sie zum Spielen erneut. Spielstände bleiben auf diesem Mac."}},
+        "en": {"stringUnit": {"state": "translated", "value": "After verification, Arcane moves this app to the Trash. Download it again to play. Saves stay on this Mac."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Tras verificar la copia, Arcane mueve la app a la Papelera. Descárgala de nuevo para jugar. Las partidas guardadas se quedan en este Mac."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Après vérification, Arcane met l’app à la Corbeille. Télécharge-la de nouveau pour jouer. Les sauvegardes restent sur ce Mac."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Dopo la verifica, Arcane sposta l’app nel Cestino. Scaricala di nuovo per giocare. I salvataggi restano su questo Mac."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Após a verificação, Arcane move o app para o Lixo. Baixe-o de novo para jogar. Os dados salvos ficam neste Mac."}}
+      }
+    },
+    "After verification, Arcane moves this build cache to the Trash. Game files and saves stay on this Mac.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Nach der Prüfung legt Arcane diesen Build-Cache in den Papierkorb. Spieldateien und Spielstände bleiben auf diesem Mac."}},
+        "en": {"stringUnit": {"state": "translated", "value": "After verification, Arcane moves this build cache to the Trash. Game files and saves stay on this Mac."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Tras verificar la copia, Arcane mueve la caché a la Papelera. Los archivos y las partidas guardadas se quedan en este Mac."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Après vérification, Arcane met le cache de compilation à la Corbeille. Les fichiers du jeu et les sauvegardes restent sur ce Mac."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Dopo la verifica, Arcane sposta la cache di compilazione nel Cestino. I file del gioco e i salvataggi restano su questo Mac."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Após a verificação, Arcane move o cache de compilação para o Lixo. Os arquivos do jogo e os dados salvos ficam neste Mac."}}
+      }
+    },
+    "Cancel transfer": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Übertragung abbrechen"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Cancel transfer"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Cancelar transferencia"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Annuler le transfert"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Annulla trasferimento"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Cancelar transferência"}}
+      }
+    },
+    "Transfer cancelled.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Übertragung abgebrochen."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Transfer cancelled."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Transferencia cancelada."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Transfert annulé."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Trasferimento annullato."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Transferência cancelada."}}
+      }
+    },
+    "Cloud storage is unavailable. Check rclone and try again.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Der Cloud-Speicher ist nicht verfügbar. Prüfe rclone und versuche es erneut."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Cloud storage is unavailable. Check rclone and try again."}},
+        "es": {"stringUnit": {"state": "translated", "value": "El almacenamiento en la nube no está disponible. Comprueba rclone y vuelve a intentarlo."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Le stockage cloud est indisponible. Vérifie rclone et réessaie."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Lo spazio cloud non è disponibile. Controlla rclone e riprova."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O armazenamento na nuvem está indisponível. Verifique o rclone e tente novamente."}}
+      }
+    },
+    "Close the game and wait for other operations to finish.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Schließe das Spiel und warte, bis andere Vorgänge abgeschlossen sind."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Close the game and wait for other operations to finish."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Cierra el juego y espera a que terminen las demás operaciones."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ferme le jeu et attends la fin des autres opérations."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Chiudi il gioco e attendi la fine delle altre operazioni."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Feche o jogo e aguarde o fim das outras operações."}}
+      }
+    },
+    "Not enough free space on the destination drive.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Nicht genug freier Speicher auf dem Ziellaufwerk."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Not enough free space on the destination drive."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No hay suficiente espacio libre en el disco de destino."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Espace libre insuffisant sur le disque de destination."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Spazio libero insufficiente sul disco di destinazione."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não há espaço livre suficiente no disco de destino."}}
+      }
+    },
+    "The app identity or signature could not be verified.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Die Identität oder Signatur der App konnte nicht bestätigt werden."}},
+        "en": {"stringUnit": {"state": "translated", "value": "The app identity or signature could not be verified."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se pudo verificar la identidad o la firma de la app."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Impossible de vérifier l’identité ou la signature de l’app."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Impossibile verificare l’identità o la firma dell’app."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível verificar a identidade ou a assinatura do app."}}
+      }
+    },
+    "This folder contains files that must stay on this Mac.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Dieser Ordner enthält Dateien, die auf diesem Mac bleiben müssen."}},
+        "en": {"stringUnit": {"state": "translated", "value": "This folder contains files that must stay on this Mac."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Esta carpeta contiene archivos que deben quedarse en este Mac."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ce dossier contient des fichiers qui doivent rester sur ce Mac."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Questa cartella contiene file che devono restare su questo Mac."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Esta pasta contém arquivos que precisam ficar neste Mac."}}
+      }
+    },
+    "The local copy changed. Check it before trying again.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Die lokale Kopie hat sich geändert. Prüfe sie, bevor du es erneut versuchst."}},
+        "en": {"stringUnit": {"state": "translated", "value": "The local copy changed. Check it before trying again."}},
+        "es": {"stringUnit": {"state": "translated", "value": "La copia local ha cambiado. Compruébala antes de volver a intentarlo."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "La copie locale a changé. Vérifie-la avant de réessayer."}},
+        "it": {"stringUnit": {"state": "translated", "value": "La copia locale è cambiata. Controllala prima di riprovare."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "A cópia local mudou. Verifique-a antes de tentar novamente."}}
+      }
+    },
+    "A local folder is missing, unavailable or shared with another game.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Ein lokaler Ordner fehlt, ist nicht verfügbar oder gehört auch zu einem anderen Spiel."}},
+        "en": {"stringUnit": {"state": "translated", "value": "A local folder is missing, unavailable or shared with another game."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Una carpeta local falta, no está disponible o se comparte con otro juego."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Un dossier local est absent, inaccessible ou partagé avec un autre jeu."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Una cartella locale manca, non è disponibile o è condivisa con un altro gioco."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Uma pasta local está ausente, indisponível ou é compartilhada com outro jogo."}}
+      }
+    },
+    "The cloud copy could not be verified.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Die Cloud-Kopie konnte nicht bestätigt werden."}},
+        "en": {"stringUnit": {"state": "translated", "value": "The cloud copy could not be verified."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se pudo verificar la copia en la nube."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Impossible de vérifier la copie cloud."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Impossibile verificare la copia nel cloud."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível verificar a cópia na nuvem."}}
+      }
+    },
+    "The cloud operation could not be completed.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Der Cloud-Vorgang konnte nicht abgeschlossen werden."}},
+        "en": {"stringUnit": {"state": "translated", "value": "The cloud operation could not be completed."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se pudo completar la operación en la nube."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "L’opération cloud n’a pas pu aboutir."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Impossibile completare l’operazione cloud."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível concluir a operação na nuvem."}}
+      }
+    },
     "Accept": {
       "localizations": {
         "de": {"stringUnit": {"state": "translated", "value": "Annehmen"}},

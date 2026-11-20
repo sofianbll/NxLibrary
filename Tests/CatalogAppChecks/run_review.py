@@ -109,6 +109,7 @@ struct SpotlightPageModel { var links = [1]; var more: [Int] = [] }
     var alertMessage: String?
     var gameToClose: Int?
     var gameToRemove: Int?
+    var cloudLibraryGameID: UUID?
     var launchOverlay: Int?
     var isBuilding = false
     var catalogBuildRecoveries: [Int] = []
@@ -456,6 +457,20 @@ final class NativeMenus { var isTracking = false }
         GameControllerService.shared.onAction?(.confirm)
         require(input.dialogActions == [.confirm] && received.actions.isEmpty,
                 "An internal update dialog must still receive input when no native window is open")
+        input.showsUpdateOffer = false
+        input.viewModel.cloudLibraryGameID = firstModsGame.id
+        let cloud = InputRecorder()
+        let cloudWatch = NotificationCenter.default.addObserver(forName: .nxCloudLibraryGamepadAction,
+                                                                object: nil, queue: nil) { note in
+            if let action = note.object as? GamepadAction { MainActor.assumeIsolated { cloud.actions.append(action) } }
+        }
+        for action: GamepadAction in [.navigateDown, .confirm, .menuHold] {
+            GameControllerService.shared.onAction?(action)
+        }
+        require(cloud.actions == [.navigateDown, .confirm, .menuHold] && received.actions.isEmpty && input.router.route == .library,
+                "Cloud library must own the controller without changing the underlying page")
+        NotificationCenter.default.removeObserver(cloudWatch)
+        input.viewModel.cloudLibraryGameID = nil
 
         let detail = ResumeHost(game: firstModsGame)
         let engine = RunningGameMonitor.Host(pid: 411)

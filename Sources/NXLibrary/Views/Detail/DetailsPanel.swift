@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import NXLibraryCore
+import ArcanePorting
 
 /// One available link under the Details panel.
 struct DetailsLink: Identifiable {
@@ -13,8 +14,12 @@ extension DetailsLink {
     /// Every source's links, in grid order, each only when it has a target. Technical actions
     /// (Rebuild, sources, log, saves) live in Options.
     @MainActor
-    static func links(app: URL?, store: URL?, hltb: URL?, viewModel: AppViewModel) -> [DetailsLink] {
+    static func links(app: URL?, store: URL?, hltb: URL?, viewModel: AppViewModel,
+                      cloudGame: PortedGame? = nil) -> [DetailsLink] {
         var links: [DetailsLink] = []
+        if let game = cloudGame, viewModel.showsCloudLibrary(game) {
+            links.append(DetailsLink(id: "cloud", title: L10n.text("Cloud library")) { viewModel.cloudLibraryGameID = game.id })
+        }
         if let app {
             links.append(DetailsLink(id: "app", title: L10n.text("Reveal in Finder")) { viewModel.revealInFinder(url: app) })
         }

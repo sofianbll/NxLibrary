@@ -258,6 +258,7 @@ extension GameDetailView {
             guard !router.isMenuPresented,
                   !NativeMenuCommands.shared.isTracking,
                   case .detail(let id) = router.route, id == game.id,
+                  viewModel.cloudLibraryGameID == nil,
                   viewModel.alertMessage == nil, viewModel.settingsNotice == nil,
                   !viewModel.isGameOptionsOpen,
                   viewModel.gameToClose == nil,

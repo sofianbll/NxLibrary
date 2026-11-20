@@ -29,13 +29,17 @@ extension AppViewModel {
     }
 
     func loadLibrary() {
-        guard !isScanningLibrary else { libraryRescanRequested = true; return }
+        guard !isScanningLibrary, !cloudLibrary.isWorking else { libraryRescanRequested = true; return }
         libraryRescanRequested = false
         do {
             let current = try catalogRepository.load()
             applyCatalog(current)
             scanLibrary(using: current)
         } catch { reportCatalogFailure(error) }
+    }
+
+    func resumeLibraryScanAfterCloud() {
+        if libraryRescanRequested && !cloudLibrary.isWorking { loadLibrary() }
     }
 
     /// Startup consumes its already-validated document, without a second

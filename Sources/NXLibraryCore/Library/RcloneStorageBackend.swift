@@ -32,6 +32,16 @@ public struct RcloneStorageBackend: StorageBackend {
         }
     }
 
+    public func list(in prefix: StorageObjectKey) async throws -> [StorageObject] {
+        let directory = try path(for: prefix)
+        let output: String
+        do { output = try await run(["lsjson", directory, "--files-only"]) }
+        catch StorageBackendError.notFound { return [] }
+        return try decode([Item].self, from: output).map {
+            StorageObject(key: StorageObjectKey(prefix.value + "/" + $0.path), size: $0.size, hashes: [:])
+        }
+    }
+
     public func put(_ source: URL, as object: StorageObject,
                     progress: (@Sendable (StorageProgress) -> Void)?) async throws {
         let final = try path(for: object.key)

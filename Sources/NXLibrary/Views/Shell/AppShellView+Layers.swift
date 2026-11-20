@@ -18,7 +18,8 @@ extension AppShellView {
                 .blur(radius: contentBlur)
                 // Keep artwork/tiles drawn and warm, as during Spotlight's entrance, while the full page covers them.
                 .opacity(fullScreenCover ? 0.001 : 1)
-                .allowsHitTesting(!fullScreenCover && !router.route.isOverlay && !viewModel.isGameOptionsOpen)
+                .allowsHitTesting(!fullScreenCover && !router.route.isOverlay && !viewModel.isGameOptionsOpen
+                                  && viewModel.cloudLibraryGameID == nil)
             if router.route == .addGame {
                 AddGameView(viewModel: viewModel,
                             router: router,
@@ -102,6 +103,12 @@ extension AppShellView {
                 installFailureOverlay(game)
                     .transition(.opacity)
                     .zIndex(3)
+            }
+            if let id = viewModel.cloudLibraryGameID,
+               let game = viewModel.libraryGames.first(where: { $0.id == id }) {
+                CloudLibraryPanel(viewModel: viewModel, model: viewModel.cloudLibrary, game: game)
+                    .allowsHitTesting(!showsSettingsNotice && !showsUpdateOffer && !showsInstallFailure)
+                    .zIndex(showsUpdateOffer || showsInstallFailure ? 2.9 : 3.1)
             }
             if showsSettingsNotice, let notice = viewModel.settingsNotice {
                 settingsNoticeOverlay(notice)
@@ -296,6 +303,7 @@ extension AppShellView {
         // Closing clears it once the fade has ended (`closeWelcome`), so nothing under it moves or takes input before.
         .onChange(of: showsWelcome) { if $1 { viewModel.isWelcomeOpen = true } }
         .onChange(of: router.route) { _, route in
+            viewModel.cloudLibraryGameID = nil
             recordLastHome(route)
             switch route {
             case .addGame:

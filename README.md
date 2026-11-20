@@ -331,6 +331,10 @@ The [upgrade notes](docs/history/engine-upgrades/README.md) record each engine r
 
 App data lives in `~/Library/Application Support/NXLibrary/`. Local game data uses `~/Library/Application Support/nxnative/<title ID>/`: RomFS-only mods use `mods/<name>/romfs`, and code or mixed mods use `code-mods/<name>/exefs` (and `romfs` beside it for mixed mods). Backups are stored under `NXLibrary/SaveBackups/<title ID>/`.
 
+**Details → Cloud library** is available for ported games when a trusted, private rclone remote is configured in the `NXLibrary_CloudStorage` preference (`gdrive:Games`, or just the remote name for the `Games` root). Use the Arcane profile's preference domain (`local.nxlibrary` or `local.nxlibrary.development`), then restart Arcane. Leave the preference unset to hide it. rclone owns the credentials; Arcane does not configure the account.
+
+**Send** makes a verified copy of the app and its registered build cache. **Free up space** moves one unchanged, fully backed-up local copy to the Trash only after confirmation and remote verification; the Trash still occupies disk space until emptied. **Download** checks an archive before installing it at its registered location, and does not overwrite a local copy. Sources and saves are not sent. A cache containing excluded data stays on disk.
+
 **Settings → Porting → Storage** shows app, build cache and log sizes for every library entry, including hidden games, with the largest caches first. **Delete cache** permanently removes only the chosen game's build cache after confirmation. Its app, original game files, saves and logs stay in place. The next rebuild may take longer. Shared cache confirmations list the other affected entries. Connect unavailable drives or check folder access, then choose **Recalculate**.
 
 Storage can also clear all build caches or logs and open the shared backups folder. Cleanup runs without blocking navigation and is unavailable during a build or app update. **Remove Sources & Build Cache deletes the selected original source files**, while retaining the installed app and saves. Read that confirmation carefully; it differs from clearing a cache.

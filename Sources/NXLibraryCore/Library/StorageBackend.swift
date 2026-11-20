@@ -46,6 +46,8 @@ public enum StorageBackendError: Error, Equatable, Sendable {
 /// Operations throw `CancellationError` when cancelled. Transfer callbacks run off the caller's executor.
 public protocol StorageBackend: Sendable {
     func list() async throws -> [StorageObject]
+    /// Lists immediate objects under a directory prefix, with keys relative to the same root.
+    func list(in prefix: StorageObjectKey) async throws -> [StorageObject]
     /// Publishes a new object only after verification. Serialise writers for a key; this is not compare-and-swap.
     func put(_ source: URL, as object: StorageObject, progress: (@Sendable (StorageProgress) -> Void)?) async throws
     /// Downloads to a new local file; does not replace an existing destination.
@@ -56,6 +58,13 @@ public protocol StorageBackend: Sendable {
 }
 
 extension StorageBackend {
+    public func list(in prefix: StorageObjectKey) async throws -> [StorageObject] {
+        let parent = prefix.value + "/"
+        return try await list().filter {
+            $0.key.value.hasPrefix(parent) && !$0.key.value.dropFirst(parent.count).contains("/")
+        }
+    }
+
     public func put(_ source: URL, as object: StorageObject) async throws {
         try await put(source, as: object, progress: nil)
     }

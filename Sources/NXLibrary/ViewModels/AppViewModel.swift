@@ -19,6 +19,8 @@ final class AppViewModel: ObservableObject {
     /// The automatic Icon's online lookup, shared by Switch and Steam games' Change artwork.
     static let automaticIconArtwork = ArtworkStore()
     let saveGate = SaveOperationGate()
+    let cloudLibrary = CloudLibraryModel()
+    @Published var cloudLibraryGameID: UUID?
     let saveQueue = DispatchQueue(label: "local.nxlibrary.saves", qos: .userInitiated)
     @Published var settingsNotice: SettingsNotice? {
         didSet {
@@ -122,7 +124,9 @@ final class AppViewModel: ObservableObject {
     @Published private(set) var storageCleanupMessage: String?
     var storageRefreshRequested = false
 
-    var canCleanStorage: Bool { !isBuilding && !isCleaningStorage && !isCalculatingStorage && !isUpdatingApp }
+    var canCleanStorage: Bool {
+        !isBuilding && !isCleaningStorage && !isCalculatingStorage && !isUpdatingApp && !cloudLibrary.isWorking
+    }
     @Published var showSetupCheck: Bool = false
     /// The Setup check's state and installs; lives with the app so an install survives closing the screen.
     lazy var setupCheck = SetupCheckModel(viewModel: self)

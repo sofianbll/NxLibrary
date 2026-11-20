@@ -39,13 +39,13 @@ extension AppShellView {
                 return nil
             }
             // The Close Game and Delete confirmations take the keyboard: arrows, Return, Space and Esc go to them.
-            if viewModel.gameToClose != nil || viewModel.gameToRemove != nil || showsUpdateOffer || showsInstallFailure || showsSettingsNotice, mods.isEmpty {
+            if isCloseGameOpen, mods.isEmpty {
                 let closeAction: GamepadAction?
                 switch event.keyCode {
                 case 123: closeAction = .navigateLeft
                 case 124: closeAction = .navigateRight
-                case 125: closeAction = showsUpdateOffer ? .navigateDown : nil
-                case 126: closeAction = showsUpdateOffer ? .navigateUp : nil
+                case 125: closeAction = showsUpdateOffer || viewModel.cloudLibraryGameID != nil ? .navigateDown : nil
+                case 126: closeAction = showsUpdateOffer || viewModel.cloudLibraryGameID != nil ? .navigateUp : nil
                 case 36, 76, 49: closeAction = .confirm
                 case 53: closeAction = .cancel
                 default: closeAction = nil
@@ -54,6 +54,7 @@ extension AppShellView {
                     GameControllerService.shared.onAction?(closeAction)
                     return nil
                 }
+                if viewModel.cloudLibraryGameID != nil { return nil }
             }
             // The open control center takes the keyboard: arrows, Return, Space and Esc go to the menu,
             // and no screen underneath sees them.

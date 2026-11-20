@@ -109,7 +109,7 @@ public final class StorageManager {
         return true
     }
 
-    private func cacheURL(for game: PortedGame, protecting games: [PortedGame]) throws -> URL {
+    public func cacheURL(for game: PortedGame, protecting games: [PortedGame]) throws -> URL {
         guard let title = game.titleId, title.count == 16, title.allSatisfy(\.isHexDigit),
               let path = game.buildCachePath, path.hasPrefix("/"),
               let workspace = game.workspacePath, workspace.hasPrefix("/") else {

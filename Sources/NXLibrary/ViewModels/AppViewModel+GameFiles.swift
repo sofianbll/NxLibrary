@@ -36,8 +36,8 @@ extension AppViewModel {
     }
 
     func removeSources(for game: PortedGame) {
-        guard !isBuilding else {
-            alertMessage = L10n.text("Wait for the current build to finish before removing sources.")
+        guard !isBuilding, !cloudLibrary.isWorking else {
+            alertMessage = L10n.text("Wait for the current build, storage operation or app update to finish.")
             return
         }
         let fm = FileManager.default
@@ -167,6 +167,10 @@ extension AppViewModel {
     }
 
     func deletePortedGame(_ game: PortedGame) {
+        guard !cloudLibrary.isWorking else {
+            alertMessage = L10n.text("Wait for the current build, storage operation or app update to finish.")
+            return
+        }
         do {
             let deleteBundle = game.canDeleteAppBundle()
             if deleteBundle, FileManager.default.fileExists(atPath: game.url.path) {

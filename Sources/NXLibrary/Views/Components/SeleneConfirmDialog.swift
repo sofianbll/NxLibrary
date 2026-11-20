@@ -167,7 +167,7 @@ struct SeleneSuccessNotice: View {
 }
 
 /// Selene's dialog card: 640u, glass, a hairline and a deep shadow.
-private struct SeleneDialogCard: ViewModifier {
+struct SeleneDialogCard: ViewModifier {
     @Environment(\.seleneCanvas) private var canvas
 
     func body(content: Content) -> some View {

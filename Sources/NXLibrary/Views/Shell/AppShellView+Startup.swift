@@ -102,6 +102,10 @@ extension AppShellView {
                 updateOfferInput(action)
                 return
             }
+            if viewModel.cloudLibraryGameID != nil {
+                NotificationCenter.default.post(name: .nxCloudLibraryGamepadAction, object: action)
+                return
+            }
             if router.isMenuPresented {
                 menuInput(action)
                 return

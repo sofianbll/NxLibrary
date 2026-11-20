@@ -426,6 +426,7 @@ extension SpotlightView {
                   !NativeMenuCommands.shared.isTracking,
                   !router.isSearchPresented,
                   router.route == .library,
+                  viewModel.cloudLibraryGameID == nil,
                   viewModel.alertMessage == nil, viewModel.settingsNotice == nil,
                   !viewModel.isGameOptionsOpen,
                   viewModel.gameToClose == nil,

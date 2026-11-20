@@ -454,6 +454,8 @@ I percorsi completi sono in [flows.md](flows.md#3-play-di-un-gioco-switch-nxnati
 
 **Fascia Mods.** Sta tra Details e More like this: vedi [Mod](#mod).
 
+**Libreria cloud.** Il link Cloud library in Details e Spotlight apre un pannello Selene con stato locale e remoto distinto per app e cache, invio, download, conferma del Cestino e avanzamento annullabile. Una lettura fallita mostra uno stato ignoto, non un'assenza. Chiudere il pannello non annulla il trasferimento.
+
 **More like this.** La fascia condivisa `DetailsMoreBand` mostra fino a sei giochi, dopo Mods per Switch e sotto About e Details per Steam. `MoreLikeThis` ordina per generi, sviluppatore ed editore in comune. Esclude il gioco corrente e quelli nascosti. Steam dà precedenza ai titoli Steam e cerca titoli Switch correlati quando non trova corrispondenze Steam. Usa scelte personali e metadati già disponibili, con i generi nella lingua dell'interfaccia. La cache Steam si legge all'apertura della pagina e la fascia compare solo con corrispondenze effettive.
 
 ## Cheat
@@ -598,10 +600,14 @@ Il percorso completo è in [flows.md](flows.md#6-importare-o-ripristinare-un-sal
 - Le righe dei giochi hanno identità UUID stabili per mouse, tastiera e controller.
 
 **Oggetti remoti (Core).**
-- `StorageBackend` espone chiavi relative a una radice, dimensioni, hash disponibili, errori e trasferimenti annullabili con avanzamento in byte. Non ha chiamanti nell'interfaccia e non interviene sui salvataggi.
+- `StorageBackend` espone chiavi relative a una radice, elenchi per prefisso, dimensioni, hash disponibili, errori e trasferimenti annullabili con avanzamento in byte. Non interviene sui salvataggi.
 - `RcloneStorageBackend` esegue rclone senza shell, con binario esplicito oppure trovato in `/opt/homebrew/bin` e nel `PATH`. Usa un remote e una radice espliciti; la configurazione e lo sblocco restano a rclone. Ignora le scorciatoie Drive perché possono puntare fuori dalla radice.
 - L'invio scrive sotto `.arcane-upload`, escluso dall'elenco. Confronta dimensione e hash comuni, oppure rilegge i byte con SHA-256. Pubblica con un movimento nativo senza ripiego su copia e verifica la chiave finale. L'annullamento tenta di pulire soltanto la chiave temporanea; se avviene durante la pubblicazione, occorre verificare la chiave finale prima di riprovare.
 - L'invio non è un compare-and-swap: chi scrive serializza le operazioni per chiave e verifica un oggetto già presente prima di riusarlo. Il download scrive in staging accanto alla destinazione, non sostituisce file esistenti e non verifica un manifest.
+- `CloudGameArchive` pubblica `<title ID>/<tipo>/<sha256>.aar` e poi un manifest JSON immutabile in `<title ID>/manifests/`; il nome contiene il tempo UTC in millisecondi e l'hash del manifest. Entrambe le copie vengono estratte e verificate in staging prima dell'invio. L'inventario comprende contenuti, tipi, modi, mtime in nanosecondi, link relativi sicuri e xattr portabili; proprietà, flag e ACL non sono ripristinati. Il commit e la catena shader, se noti, documentano la provenienza, non la compatibilità.
+- Il download controlla spazio, SHA-256, inventario e firma `codesign --verify --deep --strict` per l'app, quindi pubblica con un rename atomico sullo stesso volume. Il pannello non sovrascrive copie esistenti; lo scambio esplicito del Core conserva la precedente nello staging. La firma ad hoc non autentica l'autore: usare un remote privato e fidato.
+- La rimozione locale richiede conferma, una verifica SHA-256 remota nuova e la corrispondenza con l'inventario locale. La copia va nel Cestino; non si rimuove una cartella contenente voci escluse (`run/save`, chiavi note, `obsolete` e `nsp` per la cache). I salvataggi cloud dell'engine restano separati.
+- `CloudLibraryModel` legge la preferenza `NXLibrary_CloudStorage` del profilo, vuota per default; il nome del remote da solo usa `Games`. `AppViewModel+CloudLibrary` usa il lease del titolo condiviso con Play e installazione e il percorso `<ID>_build` già registrato; blocca build e pulizia durante il trasferimento. Il lock non coordina altri processi o Mac.
 
 ## Artwork, metadati e voti
 
