@@ -553,13 +553,8 @@ extension SpotlightView {
             SoundEffectService.shared.play(.focus)
             return nil
         }
-        let page = currentPage
-        // An open description can run past More like this's resting place.
-        let last: (SpotlightPageModel) -> SpotlightFocusArea = {
-            !$0.more.isEmpty ? .more : modsHost.localMods != nil ? .mods : .actions
-        }
-        let bottom = page.map { min(offset(for: last($0)), offset(for: .about)) }
-            ?? offset(for: .pills)
+        // A tall description or Mods grid can run past its band's resting place.
+        let bottom = currentPage.map { pageScrollEnd(hasMore: !$0.more.isEmpty) } ?? first
         let clamped = min(first, max(bottom, next))
         if event.hasPreciseScrollingDeltas || reduceMotion {
             var still = Transaction()
@@ -587,17 +582,27 @@ extension SpotlightView {
         if screenshotCount > 0 { areas.append(.strip) }
         if selectedAchievements != nil { areas.append(.achievements) }
         if !page.links.isEmpty { areas.append(.actions) }
-        if modsHost.localMods != nil { areas.append(.mods) }
         if !page.more.isEmpty { areas.append(.more) }
         let current = scroll
-        guard let nearest = areas.min(by: { abs(offset(for: $0) - current) < abs(offset(for: $1) - current) }),
-              nearest != viewModel.spotlight.focus else { return }
+        let state = viewModel.spotlight
+        let mods = modsHost.tiles.count
+        let visibleMod = visibleModIndex(at: current, keeping: state.modsIndex, count: mods)
+        if visibleMod != nil { areas.append(.mods) }
+        func distance(_ area: SpotlightFocusArea) -> CGFloat {
+            let rest = offset(for: area)
+            guard area == .mods else { return abs(rest - current) }
+            let last = offset(for: .mods, modsIndex: mods - 1)
+            return abs(min(rest, max(last, current)) - current)
+        }
+        guard let nearest = areas.min(by: { distance($0) < distance($1) }),
+              nearest != state.focus || (nearest == .mods && visibleMod != state.modsIndex) else { return }
         holdScroll = true
         mutate { state in
             state.focus = nearest
             state.pillIndex = 0
             state.actionIndex = 0
             state.moreIndex = 0
+            if nearest == .mods, let visibleMod { state.modsIndex = visibleMod }
         }
         SoundEffectService.shared.play(.focus)
     }

@@ -72,6 +72,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer python3 Tests/CatalogAp
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer python3 Tests/CatalogAppChecks/run_source_access.py
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer python3 Tests/CatalogAppChecks/run_entrance.py
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer python3 Tests/CatalogAppChecks/run_achievement_scroll.py
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer python3 Tests/CatalogAppChecks/run_mods_band_scroll.py
 bash scripts/build_app.sh
 codesign --verify --deep --strict "$HOME/Applications/Arcane Dev.app"
 ~~~

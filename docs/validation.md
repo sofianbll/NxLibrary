@@ -63,6 +63,7 @@ Come si aggiorna:
 | Icona dell'app: cristallo nella sfera di vetro con pennellate blu e prugna | scelta dal maintainer il 18 nov 2026 (immagine fornita da lui); resa in attesa | Dock, Finder e Launchpad a dimensione piccola; App icon in Look: Light, Dark e Mono; README su GitHub |
 | Posizione condivisa dei comandi: `SeleneHintsBar` a 32 unità dal fondo | in attesa | La posizione dei Settings (`7adc0ad`) è validata; la via di mezzo a 32 no |
 | Pannello Details uguale per ogni fonte | validato il 16 nov 2026 | — |
+| Scorrimento della fascia Mods | in attesa | In Spotlight e Details, usare Show more fino ad almeno cinque righe. Verificare con controller, rotella e trackpad che tutta la tessera a fuoco, anello compreso, resti sopra la sfumatura. Ripetere in una finestra corta, tornare alle prime righe e provare anche senza More like this. |
 | Voto della critica con Wikidata | validato il 16 nov 2026, abbinamenti compresi | — |
 | IGDB facoltativo: credenziali, voti, minimo di 3 recensioni, media utenti come ripiego | in attesa (il ripiego utenti è approvato come scelta) | Ocarina con voto utenti, un gioco con voto della critica, cambio rapido di gioco, rimozione di IGDB |
 | Sezione Online services (IGDB e SteamGridDB) | in attesa | — |

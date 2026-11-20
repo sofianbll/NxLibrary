@@ -159,7 +159,7 @@ flowchart TD
     B --> C["AvailableModsFinder + ModSupport<br/>RomFS, patch ExeFS o entrambi affiancati"]
     B --> S["Fascia: Search mods, nome o link"]
     S --> C
-    B --> M["Fascia: Show more, +12 mod nei limiti"]
+    B --> M["Fascia: Show more, +12 mod nei limiti;<br/>su/giù e rotella raggiungono le nuove righe"]
     M --> C
     C --> D["ModDetailPanel: Install"]
     D --> E["ModDownload (host GameBanana) · dimensione e MD5"]

@@ -114,8 +114,8 @@ struct DetailsMoreBand: View {
 
 /// The game's mods, between Details and More like this. Left to right (`ModsBandLayout`): installed mods (`ModStore`, at most 5) with their state,
 /// Manage mods, the GameBanana mods that work (image, name, author, Installed / Update), then status tiles (Retry, the
-/// "Is this the right game?" candidates, Wrong game?…). The row slides so the focused tile stays on screen. A click
-/// focuses a tile; a double click (or A) opens it.
+/// "Is this the right game?" candidates, Wrong game?…). The page scrolls to the focused row. A click focuses a
+/// tile; a double click (or A) opens it.
 struct DetailsModsBand: View {
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneReduceMotion) private var reduceMotion
@@ -131,6 +131,7 @@ struct DetailsModsBand: View {
 
     /// Selene DetailsStage's band tiles, as the screenshot strip draws them in Details.
     private static let style = SpotlightScreenshotStrip.Style.details
+    private static let ringOutset: CGFloat = 4
     /// The decode size of a GameBanana mod's art on its tile (`GameBananaBandModel.prepareImages` decodes the
     /// same, so a group of mods shows with its art).
     static let thumbnailPixels = 600
@@ -139,6 +140,13 @@ struct DetailsModsBand: View {
     /// How much taller than one row of tiles the band is, for the pages that place the bands below it.
     static func extraHeight(tileCount: Int) -> CGFloat {
         CGFloat(max(ModsBandLayout.rows(count: tileCount) - 1, 0)) * (style.tileHeight + style.gap)
+    }
+
+    /// The focused row's vertical bounds, including the enlarged tile's ring. The last row ends at the band's bottom.
+    static func focusedRow(_ index: Int, count: Int, bandBottom: CGFloat, canvas: SeleneCanvas) -> ClosedRange<CGFloat> {
+        let bottom = bandBottom - canvas.u(extraHeight(tileCount: count) - extraHeight(tileCount: min(index + 1, count)))
+        let outset = canvas.u((style.tileHeight / 2 + ringOutset) * style.focusScale - style.tileHeight / 2)
+        return (bottom - canvas.u(style.tileHeight) - outset)...(bottom + outset)
     }
 
     static func tiles(mods: [LocalMod], gameBanana: GameBananaBandModel) -> [ModsBandTile] {
@@ -353,7 +361,7 @@ struct DetailsModsBand: View {
         .overlay(
             RoundedRectangle(cornerRadius: canvas.u(style.radius + 3), style: .continuous)
                 .strokeBorder(SeleneTheme.focus, lineWidth: canvas.u(3))
-                .padding(canvas.u(-4))
+                .padding(canvas.u(-Self.ringOutset))
                 .opacity(focused ? 1 : 0)
         )
         .scaleEffect(focused ? style.focusScale : 1)
