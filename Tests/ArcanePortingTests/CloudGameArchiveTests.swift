@@ -154,7 +154,7 @@ final class CloudGameArchiveTests: XCTestCase {
         let f = try fixture()
         defer { try? FileManager.default.removeItem(at: f.root) }
         let service = f.service
-        _ = try await service.upload(f.game)
+        let manifest = try await service.upload(f.game)
         try Data("not-backed".utf8).write(to: f.cache.appendingPathComponent("run.key"))
         do {
             try await service.free(.cache, for: f.game, confirmed: true)
@@ -164,13 +164,37 @@ final class CloudGameArchiveTests: XCTestCase {
         try FileManager.default.createDirectory(at: saves, withIntermediateDirectories: true)
         let save = saves.appendingPathComponent("local")
         try Data([42]).write(to: save)
-        _ = try await service.upload(f.game)
+        let before = try await f.backend.list()
+        do {
+            _ = try await service.upload(f.game)
+            XCTFail("An archive with excluded data cannot be offered for later eviction")
+        } catch { XCTAssertEqual(error as? CloudArchiveError, .excludedFiles) }
+        let after = try await f.backend.list()
+        XCTAssertEqual(before, after)
+        let current = try await service.latest(titleID: title)
+        XCTAssertEqual(current, manifest)
         do {
             try await service.free(.cache, for: f.game, confirmed: true)
             XCTFail("No eviction if the cache has excluded files")
         } catch { XCTAssertEqual(error as? CloudArchiveError, .excludedFiles) }
         XCTAssertEqual(try Data(contentsOf: save), Data([42]))
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: f.trash.path), [])
+    }
+
+    func testCacheWithObsoleteOrConvertedPackagesCannotBeUploaded() async throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        for name in ["obsolete", "nsp"] {
+            let folder = f.cache.appendingPathComponent(name)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+            do {
+                _ = try await f.service.upload(f.game)
+                XCTFail("An excluded \(name) folder must stay on disk")
+            } catch { XCTAssertEqual(error as? CloudArchiveError, .excludedFiles) }
+            try FileManager.default.removeItem(at: folder)
+        }
+        let remote = try await f.backend.list()
+        XCTAssertEqual(remote, [])
     }
 
     func testExternalSymlinksStopPublication() async throws {

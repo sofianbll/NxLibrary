@@ -57,16 +57,56 @@ final class RcloneStorageBackendTests: XCTestCase {
         try await fixture.backend.verify(fixture.object)
     }
 
-    func testVerificationDownloadsWhenRemoteDoesNotOfferACommonHash() async throws {
+    func testVerificationDownloadsSHA256EvenWhenRemoteMD5Matches() async throws {
         let fixture = try Fixture()
         let config = fixture.directory.appendingPathComponent("rclone-test.conf")
-        try Data("[fixture]\ntype = local\nhashes = sha1\n".utf8).write(to: config)
+        try Data("[fixture]\ntype = local\nhashes = md5\n".utf8).write(to: config)
         let backend = RcloneStorageBackend(remote: "fixture", root: fixture.remote.path, config: config)
+        let md5 = "0bee89b07a248e27c83fc3d5951213c1"
+        let wrong = StorageObject(key: fixture.object.key, size: fixture.object.size,
+                                  hashes: ["sha256": String(repeating: "0", count: 64), "md5": md5])
         try await backend.put(fixture.source, as: fixture.object)
         let listed = try await backend.list()
-        XCTAssertEqual(listed.first?.hashes, ["sha1": "03cfd743661f07975fa2f1220c5194cbaff48451"])
-        try Data("xyz\n".utf8).write(to: fixture.remote.appendingPathComponent(fixture.object.key.value))
-        await assertError(.hashMismatch) { try await backend.verify(fixture.object) }
+        XCTAssertEqual(listed.first?.hashes, ["md5": md5])
+        try await backend.verify(fixture.object)
+        await assertError(.hashMismatch) { try await backend.verify(wrong) }
+    }
+
+    func testFailedFinalVerificationDeletesOnlyAnObjectThisPutCreated() async throws {
+        for concurrentWriter in [false, true] {
+            let fixture = try Fixture()
+            let binary = try XCTUnwrap(RcloneStorageBackend.findExecutable())
+            let final = fixture.remote.appendingPathComponent(fixture.object.key.value)
+            let shim = fixture.directory.appendingPathComponent("rclone-shim")
+            // For the real local backend, corrupt the result of a fresh move or put a different
+            // writer's file at the destination after the initial stat but before the move.
+            let mutate = "printf 'bad\\n' > \"$target\""
+            let script = """
+                #!/bin/sh
+                real=\(shellQuoted(binary.path))
+                if [ "$1" = moveto ]; then
+                    target=${3#:local:}
+                    \(concurrentWriter ? "/bin/mkdir -p \"${target%/*}\" || exit 1\n    " + mutate : "")
+                    "$real" "$@" || exit $?
+                    \(concurrentWriter ? ":" : mutate)
+                else
+                    exec "$real" "$@"
+                fi
+                """
+            try Data(script.utf8).write(to: shim)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: shim.path)
+            let backend = RcloneStorageBackend(remote: ":local:", root: fixture.remote.path,
+                                               executable: shim, config: URL(fileURLWithPath: "/dev/null"))
+            await assertError(concurrentWriter ? .alreadyExists : .hashMismatch) {
+                try await backend.put(fixture.source, as: fixture.object)
+            }
+            if concurrentWriter {
+                XCTAssertEqual(try Data(contentsOf: final), Data("bad\n".utf8))
+            } else {
+                XCTAssertFalse(FileManager.default.fileExists(atPath: final.path))
+            }
+            try fixture.assertStagingEmpty()
+        }
     }
 
     func testCancellationBeforePublicationCleansStaging() async throws {
@@ -120,6 +160,10 @@ final class RcloneStorageBackendTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? StorageBackendError, expected, file: file, line: line)
         }
+    }
+
+    private func shellQuoted(_ path: String) -> String {
+        "'" + path.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 
     private final class Fixture {

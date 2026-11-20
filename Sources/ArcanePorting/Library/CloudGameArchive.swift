@@ -189,15 +189,18 @@ public actor CloudGameArchive {
     public func upload(_ game: CloudArchiveGame, progress: Progress? = nil) async throws -> CloudGameManifest {
         _ = try begin(game.titleID)
         defer { activeTitles[game.titleID] = nil }
-        guard CloudArtifactKind.allCases.allSatisfy({ game.locations[$0] != nil }) else { throw CloudArchiveError.localMissing }
+        let snapshots = try CloudArtifactKind.allCases.map { kind in
+            let source = try location(kind, for: game)
+            let snapshot = try CloudArchiveInventory.scan(source, kind: kind)
+            guard !snapshot.hasExcludedFiles else { throw CloudArchiveError.excludedFiles }
+            return (source, snapshot)
+        }
         var artifacts: [Artifact] = []
         for (index, kind) in CloudArtifactKind.allCases.enumerated() {
             progress?(nil)
-            let source = try location(kind, for: game)
+            let (source, initial) = snapshots[index]
             let parent = source.deletingLastPathComponent()
             let volume = try CloudArchiveInventory.node(at: parent)
-            let initial = try CloudArchiveInventory.scan(source, kind: kind)
-            guard kind != .app || !initial.hasExcludedFiles else { throw CloudArchiveError.excludedFiles }
             try requireSpace(in: parent, bytes: initial.bytes, entries: initial.entries.count)
             let stage = try staging(in: parent)
             defer { try? FileManager.default.removeItem(at: stage) }

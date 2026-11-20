@@ -52,17 +52,24 @@ public struct RcloneStorageBackend: StorageBackend {
         guard try await item(at: final) == nil else { throw StorageBackendError.alreadyExists }
 
         let temporary = try objectPath("\(Self.staging)/\(UUID().uuidString)")
+        var createdFinal = false
         do {
             _ = try await run(["copyto", source.path, temporary], progress: progress)
             try await verify(object, at: temporary)
             // Do not let moveto fall back to streaming data into the final key.
-            _ = try await run(["moveto", temporary, final, "--immutable", "--checksum",
+            _ = try await run(["moveto", temporary, final, "--ignore-existing", "--immutable", "--checksum",
                                "--disable", "Copy", "--max-transfer", "0", "--retries", "1"])
+            // A skipped move leaves our unique staging object behind, even for identical content.
+            createdFinal = try await Task.detached { try await item(at: temporary) == nil }.value
+            guard createdFinal else { throw StorageBackendError.alreadyExists }
             try await verify(object, at: final)
         } catch {
-            _ = try? await Task.detached {
-                try await run(["deletefile", temporary, "--retries", "1", "--low-level-retries", "1",
-                               "--contimeout", "5s", "--timeout", "5s"])
+            let cleanup = createdFinal ? [final, temporary] : [temporary]
+            await Task.detached {
+                for target in cleanup {
+                    _ = try? await run(["deletefile", target, "--retries", "1", "--low-level-retries", "1",
+                                        "--contimeout", "5s", "--timeout", "5s"])
+                }
             }.value
             throw error
         }
@@ -103,19 +110,16 @@ public struct RcloneStorageBackend: StorageBackend {
     private func verify(_ object: StorageObject, at target: String) async throws {
         guard let item = try await item(at: target, withHashes: true) else { throw StorageBackendError.notFound }
         guard item.size == object.size else { throw StorageBackendError.hashMismatch }
-        var matched = false
-        for algorithm in ["sha256", "md5"] {
-            if let expected = object.hashes[algorithm], let actual = item.hashes?[algorithm], !actual.isEmpty {
-                guard actual.lowercased() == expected.lowercased() else { throw StorageBackendError.hashMismatch }
-                matched = true
-            }
+        let expected = object.hashes["sha256"]?.lowercased()
+        if let actual = item.hashes?["sha256"], !actual.isEmpty {
+            guard actual.lowercased() == expected else { throw StorageBackendError.hashMismatch }
+            return
         }
-        if matched { return }
         let output = try await run(["hashsum", "SHA-256", target, "--download"])
         let lines = output.split(separator: "\n")
         guard lines.count == 1, let digest = lines[0].split(separator: " ", maxSplits: 1).first,
               isHex(String(digest), length: 64) else { throw StorageBackendError.invalidResponse }
-        guard digest.lowercased() == object.hashes["sha256"]?.lowercased() else {
+        guard digest.lowercased() == expected else {
             throw StorageBackendError.hashMismatch
         }
     }

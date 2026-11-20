@@ -47,6 +47,7 @@ extension AppShellView {
         updater.blockedReason = { [weak viewModel, weak runningGames] in
             guard let viewModel else { return nil }
             if viewModel.isBuilding || viewModel.isCheckingCloudBuild { return L10n.text("After the porting") }
+            if viewModel.cloudLibrary.isWorking { return L10n.text("After the cloud transfer") }
             if viewModel.isCleaningStorage { return L10n.text("After storage cleanup") }
             if viewModel.launchingGameId != nil { return L10n.text("After the game starts") }
             if viewModel.saveGate.hasActiveOperations { return L10n.text("After the save operation") }
@@ -58,6 +59,7 @@ extension AppShellView {
         }
         updater.acquireInstallLease = { [weak viewModel, weak runningGames] in
             guard let viewModel, !viewModel.isBuilding, !viewModel.isCheckingCloudBuild,
+                  !viewModel.cloudLibrary.isWorking,
                   !viewModel.isCleaningStorage, viewModel.launchingGameId == nil,
                   runningGames?.runningGameIDs.isEmpty == true,
                   let token = viewModel.saveGate.beginAppUpdate() else { return nil }

@@ -1,6 +1,16 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "After the cloud transfer": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "After the cloud transfer"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Dopo il trasferimento cloud"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Après le transfert cloud"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Nach der Cloud-Übertragung"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Después de la transferencia a la nube"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Após a transferência na nuvem"}}
+      }
+    },
     "Checking the cloud cache…": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Checking the cloud cache…"}},

@@ -53,7 +53,7 @@ public protocol StorageBackend: Sendable {
     /// Downloads to a new local file; does not replace an existing destination.
     func get(_ key: StorageObjectKey, to destination: URL, progress: (@Sendable (StorageProgress) -> Void)?) async throws
     func delete(_ key: StorageObjectKey) async throws
-    /// Compares size and a common hash (or hashes the downloaded bytes). Requires an expected SHA-256.
+    /// Requires matching size and SHA-256, downloading the bytes to hash if necessary.
     func verify(_ object: StorageObject) async throws
 }
 
