@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 20 novembre 2026. Copertura di **730 file** del progetto, compresi i controlli di pubblicazione, la CI con regressioni app senza UI, il master dell’icona, le guide per sviluppo e media, gli screenshot del README, l'integrazione di nxnative, il canale di aggiornamento e il primo avvio che parte da ciò che è già sul Mac, il setup del porting con cartella unica per scoperta e installazione dei giochi. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 20 novembre 2026. Copertura di **731 file** del progetto, compresi i controlli di pubblicazione, la CI con regressioni app senza UI, il master dell’icona, le guide per sviluppo e media, gli screenshot del README, l'integrazione di nxnative, il canale di aggiornamento e il primo avvio che parte da ciò che è già sul Mac, il setup del porting con cartella unica per scoperta e installazione dei giochi. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le funzionalità, quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -189,7 +189,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../CONTRIBUTING.md), [SECURIT
 | [Sources/NXLibraryCore/Services/InstallProgress.swift](../Sources/NXLibraryCore/Services/InstallProgress.swift) | Interpreta avanzamento Git, percentuali, byte e righe parziali per le installazioni. |
 | [Sources/NXLibraryCore/Services/KeyStore.swift](../Sources/NXLibraryCore/Services/KeyStore.swift) | Valida le chiavi, espone solo il riepilogo e pubblica atomicamente la copia gestita con permessi 0600. |
 | [Sources/NXLibraryCore/Services/KeyCheck.swift](../Sources/NXLibraryCore/Services/KeyCheck.swift) | Legge intestazioni NCA e ticket e verifica se le chiavi possono aprire le sorgenti selezionate. |
-| [Sources/NXLibraryCore/Services/CommandRunner.swift](../Sources/NXLibraryCore/Services/CommandRunner.swift) | Confine sostituibile per comandi e output, con esecuzione sincrona o streaming delle righe. |
+| [Sources/NXLibraryCore/Services/CommandRunner.swift](../Sources/NXLibraryCore/Services/CommandRunner.swift) | Confine sostituibile per comandi: raccoglie entrambi gli stream in parallelo, con notifiche facoltative per riga, e attende senza eseguire il run loop chiamante. |
 | [Sources/NXLibraryCore/Services/UpstreamChecker.swift](../Sources/NXLibraryCore/Services/UpstreamChecker.swift) | Consulta i commit upstream tramite HTTP e produce stato e collegamento di confronto. |
 
 ## Core · sorgenti, porting, installazione e lancio
@@ -673,6 +673,7 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 | [Tests/NXLibraryCoreTests/AvailableModsFinderTests.swift](../Tests/NXLibraryCoreTests/AvailableModsFinderTests.swift) | Compatibilità RomFS/ExeFS da lista, ricerca e link, riuso delle pagine, limiti, rete assente e aggiornamenti. |
 | [Tests/NXLibraryCoreTests/ModInstallerTests.swift](../Tests/NXLibraryCoreTests/ModInstallerTests.swift) | Archivi RomFS, ExeFS e misti: MD5, percorsi pericolosi, codice sostitutivo, gioco aperto, spazio, nomi e aggiornamenti. |
 | [Tests/NXLibraryCoreTests/CloudSavesTests.swift](../Tests/NXLibraryCoreTests/CloudSavesTests.swift) | Cartelle cloud, preferenze per gioco e decodifica delle impostazioni precedenti. |
+| [Tests/NXLibraryCoreTests/CommandRunnerTests.swift](../Tests/NXLibraryCoreTests/CommandRunnerTests.swift) | Il comando sincrono e quello in streaming non eseguono il run loop principale durante l'attesa. |
 | [Tests/NXLibraryCoreTests/CompatibilityCheckerTests.swift](../Tests/NXLibraryCoreTests/CompatibilityCheckerTests.swift) | Commit, modifiche ammesse nel checkout, Metal, CLI e override del gate. |
 | [Tests/NXLibraryCoreTests/DetailsFocusTests.swift](../Tests/NXLibraryCoreTests/DetailsFocusTests.swift) | Spostamento nelle bande di Details, accesso a ricerca e Show more nella griglia Mods, limiti e sezioni vuote. |
 | [Tests/NXLibraryCoreTests/DirectorySizeTests.swift](../Tests/NXLibraryCoreTests/DirectorySizeTests.swift) | Somma dei file regolari ignorando nascosti e collegamenti; cartella mancante a zero. |

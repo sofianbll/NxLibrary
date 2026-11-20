@@ -64,6 +64,8 @@ flowchart TD
 
 Il checkout nxnative fornisce estrattore, rewriter, shader, profili dei giochi e runtime dei giochi compilati. Arcane prepara gli argomenti, controlla i requisiti e presenta lo stato delle operazioni. La cache dello stato upstream si riusa soltanto quando il suo commit di base coincide con il pin.
 
+`SystemCommandRunner` drena stdout e stderr in parallelo e attende la fine del processo e dei due stream senza eseguire il run loop chiamante. *Perché:* un comando sincrono, come il controllo Git dei cheat in Game Options, non deve far rientrare SwiftUI durante un aggiornamento della vista.
+
 ## Avvio e stato dell'app
 
 **Finestra e menu.**
