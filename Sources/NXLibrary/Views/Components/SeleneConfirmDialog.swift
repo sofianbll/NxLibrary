@@ -192,7 +192,7 @@ struct SeleneDialogCard: ViewModifier {
     }
 }
 
-/// The same card with one pill per choice, left to right. The caller owns input: it moves `focus` with Left/Right
+/// The same card with one pill per choice. The caller owns input: it moves `focus` with arrows
 /// or hover and acts on `onChoose` (the choice's index); B and a click outside are the caller's cancel.
 struct SeleneChoiceDialog: View {
     @Environment(\.seleneCanvas) private var canvas
@@ -201,6 +201,7 @@ struct SeleneChoiceDialog: View {
     let message: String
     let choices: [String]
     @Binding var focus: Int
+    var vertical = false
     let onChoose: (Int) -> Void
 
     var body: some View {
@@ -214,7 +215,10 @@ struct SeleneChoiceDialog: View {
                 .foregroundColor(SeleneTheme.ink75)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, canvas.u(14))
-            HStack(spacing: canvas.u(18)) {
+            let layout = vertical
+                ? AnyLayout(VStackLayout(spacing: canvas.u(10)))
+                : AnyLayout(HStackLayout(spacing: canvas.u(18)))
+            layout {
                 ForEach(Array(choices.enumerated()), id: \.offset) { index, choice in
                     SelenePillButton(title: choice, focused: focus == index) { onChoose(index) }
                         .onHover { if $0 { focus = index } }

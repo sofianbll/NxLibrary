@@ -121,7 +121,12 @@ flowchart TD
     B --> C["SourceSelection: titolo e versioni scelte"]
     C --> D["KeyCheck (se le sorgenti sono cifrate)<br/>NUP: identità programma e capacità del checkout"]
     D --> E["Review: GameAppDestination, GameRuntimeConfig.forReview"]
-    E --> F{"Gate: CompatibilityChecker<br/>Metal certificato o override"}
+    E --> R{"Sorgenti presenti e cache cloud verificata, se prevista?"}
+    R -->|"sorgenti mancanti"| S["Collegare i file originali"]
+    R -->|"cache non verificata"| T["Scarica la cache o conferma una build con cache temporanea"]
+    T -->|"scaricata"| R
+    T -->|"confermata e sorgenti presenti"| F
+    R -->|"sì"| F{"Gate: CompatibilityChecker<br/>Metal certificato o override"}
     F -->|"bloccato"| Z["Spiegazione (ToolchainGateCopy)<br/>Play delle app esistenti resta attivo"]
     F -->|"ok"| G["WorkspaceManager + BuildScratch"]
     G --> N["Porting accettato: richiesta permesso notifiche"]

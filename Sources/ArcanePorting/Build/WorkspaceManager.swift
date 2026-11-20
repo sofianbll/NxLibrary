@@ -27,22 +27,27 @@ public final class WorkspaceManager {
         self.fm = fileManager
     }
 
-    public func makeWorkspace(for game: DetectedGame, mode: WorkspaceMode) throws -> Workspace {
+    public func makeWorkspace(for game: DetectedGame, mode: WorkspaceMode, createCache: Bool = true) throws -> Workspace {
+        let planned = plannedWorkspace(for: game, mode: mode)
+        let dir = planned.directory
+        let cache = planned.buildCache
         switch mode {
-        case .folder(let dir):
-            let cache = dir.appendingPathComponent(cacheName(for: game))
-            try fm.createDirectory(at: cache, withIntermediateDirectories: true)
-            return Workspace(directory: dir, buildCache: cache, links: [])
+        case .folder:
+            if createCache { try fm.createDirectory(at: cache, withIntermediateDirectories: true) }
+            return planned
         case .staged:
-            let dir = root.appendingPathComponent(String(format: "%016llX", game.baseTitleId))
             try fm.createDirectory(at: dir, withIntermediateDirectories: true)
-            let cache = dir.appendingPathComponent(cacheName(for: game))
             // Only links owned by this workspace are replaced. Never walk a link
             // into the original source tree, and leave build-cache contents alone.
             if let contents = fm.enumerator(at: dir, includingPropertiesForKeys: [.isSymbolicLinkKey]) {
                 var oldLinks: [URL] = []
                 for case let entry as URL in contents {
                     if entry.resolvingSymlinksInPath() == cache.resolvingSymlinksInPath() { contents.skipDescendants(); continue }
+                    if entry.lastPathComponent.hasPrefix(".arcane-cloud-"),
+                       entry.deletingLastPathComponent().resolvingSymlinksInPath() == dir.resolvingSymlinksInPath() {
+                        contents.skipDescendants()
+                        continue
+                    }
                     if (try? entry.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true {
                         contents.skipDescendants()
                         oldLinks.append(entry)
@@ -83,9 +88,25 @@ public final class WorkspaceManager {
                 try fm.createSymbolicLink(at: link, withDestinationURL: source.url)
                 links.append(link)
             }
-            try fm.createDirectory(at: cache, withIntermediateDirectories: true)
+            if createCache { try fm.createDirectory(at: cache, withIntermediateDirectories: true) }
             return Workspace(directory: dir, buildCache: cache, links: links)
         }
+    }
+
+    /// Registers the expected locations without creating a workspace or cache.
+    public func plannedWorkspace(for game: DetectedGame, mode: WorkspaceMode) -> Workspace {
+        switch mode {
+        case .folder(let directory): return adoptExistingWorkspace(for: game, folder: directory)
+        case .staged:
+            return adoptExistingWorkspace(for: game, folder: root.appendingPathComponent(String(format: "%016llX", game.baseTitleId)))
+        }
+    }
+
+    /// A workspace that already exists beside the sources can be adopted
+    /// without touching its build cache, which is what makes rebuilds fast.
+    public func adoptExistingWorkspace(for game: DetectedGame, folder: URL) -> Workspace {
+        let cache = folder.appendingPathComponent(cacheName(for: game))
+        return Workspace(directory: folder, buildCache: cache, links: [])
     }
 
     public func brokenLinks(in workspace: URL) -> [URL] {

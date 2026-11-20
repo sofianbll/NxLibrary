@@ -13,8 +13,8 @@ extension AppShellView {
             SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle())
                 .onTapGesture { finishSettingsNotice(choice: 0) }
             SeleneChoiceDialog(title: notice.title, message: notice.message,
-                               choices: notice.retry == nil ? [notice.cancelTitle] : [notice.cancelTitle, notice.actionTitle],
-                               focus: $viewModel.settingsNoticeFocus,
+                               choices: notice.choices,
+                               focus: $viewModel.settingsNoticeFocus, vertical: notice.alternative != nil,
                                onChoose: { finishSettingsNotice(choice: $0) })
         }
     }
@@ -36,6 +36,7 @@ extension AppShellView {
         viewModel.settingsNotice = nil
         notice?.onDismiss?()
         if choice == 1 { notice?.retry?() }
+        if choice == 2 { notice?.alternative?.run() }
         presentLegacyNotice()
     }
 
@@ -94,8 +95,10 @@ extension AppShellView {
 
     func settingsNoticeInput(_ action: GamepadAction) {
         switch action {
-        case .navigateLeft: viewModel.settingsNoticeFocus = 0
-        case .navigateRight: viewModel.settingsNoticeFocus = viewModel.settingsNotice?.retry == nil ? 0 : 1
+        case .navigateLeft, .navigateUp: viewModel.settingsNoticeFocus = max(0, viewModel.settingsNoticeFocus - 1)
+        case .navigateRight, .navigateDown:
+            let last = (viewModel.settingsNotice?.choices.count ?? 1) - 1
+            viewModel.settingsNoticeFocus = min(last, viewModel.settingsNoticeFocus + 1)
         case .confirm: finishSettingsNotice(choice: viewModel.settingsNoticeFocus)
         case .cancel: finishSettingsNotice(choice: 0)
         default: break

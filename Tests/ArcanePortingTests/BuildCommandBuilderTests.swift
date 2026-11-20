@@ -51,8 +51,21 @@ final class BuildCommandBuilderTests: XCTestCase {
         XCTAssertTrue(cmd.arguments.contains("json"))
         XCTAssertFalse(cmd.arguments.contains("--show-fps"))
         XCTAssertFalse(cmd.arguments.contains("--mods"))
+        XCTAssertFalse(cmd.arguments.contains("--work-dir"))
         XCTAssertFalse(cmd.arguments.contains("--allow-other-metal"))
         XCTAssertTrue(cmd.environment["DEVELOPER_DIR"]?.contains("Xcode-beta") == true)
+    }
+
+    func testVerifiedCachePathIsSeparateFromSources() throws {
+        let repo = URL(fileURLWithPath: "/tmp/repo")
+        let sources = repo.appendingPathComponent("sources")
+        let cache = repo.appendingPathComponent("restored cache")
+        let command = BuildCommandBuilder.make(repo: repo,
+            toolchain: EngineToolchain.resolve(runtime: nil, repo: repo), workspace: sources, workDir: cache,
+            keys: nil, output: repo.appendingPathComponent("Game.app"), developerDir: repo)
+        XCTAssertEqual(command.arguments[1], sources.path)
+        let index = try XCTUnwrap(command.arguments.firstIndex(of: "--work-dir"))
+        XCTAssertEqual(command.arguments[index + 1], cache.path)
     }
 
     func testCodeModsFolderIsOneMacBuildArgument() throws {

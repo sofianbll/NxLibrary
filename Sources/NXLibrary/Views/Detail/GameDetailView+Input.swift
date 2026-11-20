@@ -162,8 +162,7 @@ extension GameDetailView {
             return
         }
         SoundEffectService.shared.play(.click)
-        viewModel.porting.startBuild(for: game)
-        if viewModel.isBuilding {
+        viewModel.porting.startBuild(for: game) {
             router.openAddGame()
         }
     }

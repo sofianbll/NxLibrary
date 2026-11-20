@@ -40,6 +40,7 @@ extension PortingModel {
     // MARK: - Build run
     var canStartBuild: Bool {
         !app.isBuilding
+            && !app.isCheckingCloudBuild
             && !app.cloudLibrary.isWorking
             && !app.isCleaningStorage
             && !app.isUpdatingApp
@@ -87,11 +88,16 @@ extension PortingModel {
     #endif
 
     func addSelectedGame(buildNow: Bool = false) {
+        guard !buildNow || canStartBuild else { return }
         guard let selection = self.selectedGame else {
             presentBuildError(NXLibraryError.noSelectedGame)
             return
         }
         let files = self.selectedSources
+        if buildNow, !files.allSatisfy({ FileManager.default.fileExists(atPath: $0.url.path) }) {
+            presentBuildError(NXLibraryError.missingSources)
+            return
+        }
         let sources = files.compactMap(Self.detectedSource(from:))
         // A NUP with no base game has only its updates: the selected one is taken as the whole game.
         guard SourceSelection.hasGame(files),
@@ -131,7 +137,7 @@ extension PortingModel {
             }
             app.librarySelection.selectedGameID = game.id
             app.logs.append(LogEntry(level: .success, message: L10n.format("Added %@ to the library.", [String(describing: game.name)])))
-            if buildNow, canStartBuild {
+            if buildNow {
                 startBuild(for: game)
             } else {
                 self.resetWizard()
@@ -144,7 +150,7 @@ extension PortingModel {
     @discardableResult
     func addGame(detected: DetectedGame, selected: [DetectedSource],
                         folder: URL?, bundleId: String? = nil) throws -> PortedGame {
-        guard !app.cloudLibrary.isWorking else { throw CloudArchiveError.busy }
+        guard !app.isCheckingCloudBuild, !app.cloudLibrary.isWorking else { throw CloudArchiveError.busy }
         let selectedGame = DetectedGame(
             baseTitleId: detected.baseTitleId,
             name: detected.name,
@@ -154,16 +160,27 @@ extension PortingModel {
         )
         guard selectedGame.hasGame else { throw NXLibraryError.baseRequired }
         let mode: WorkspaceMode = folder.map { .folder($0) } ?? .staged
-        // Made where its build will run (`BuildScratch`), so the first build never moves it.
+        // Register the path without creating a workspace while the cloud gate still needs to run.
         let root = BuildScratch.choose(core: app.core, appFolder: app.gameAppsFolder).workspaces
-        let workspace = try WorkspaceManager(root: root).makeWorkspace(for: selectedGame, mode: mode)
         let titleId = String(format: "%016llX", detected.baseTitleId)
+        let manager = WorkspaceManager(root: root)
+        let existing = app.hasCloudLibrary ? app.libraryGames.first { $0.titleId?.caseInsensitiveCompare(titleId) == .orderedSame } : nil
+        let workspace: Workspace
+        if app.hasCloudLibrary {
+            if let directory = existing?.workspacePath, let cache = existing?.buildCachePath {
+                workspace = Workspace(directory: URL(fileURLWithPath: directory), buildCache: URL(fileURLWithPath: cache), links: [])
+            } else {
+                workspace = manager.plannedWorkspace(for: selectedGame, mode: mode)
+            }
+        } else {
+            workspace = try manager.makeWorkspace(for: selectedGame, mode: mode)
+        }
         let updateVersion = selected.filter { $0.kind == .update }
             .compactMap { $0.version }.max().map(String.init)
 
         var game = PortedGame(
             name: detected.name,
-            url: workspace.buildCache.deletingLastPathComponent(),
+            url: existing.flatMap { $0.url.pathExtension.lowercased() == "app" ? $0.url : nil } ?? workspace.directory,
             platform: .macApp,
             sizeBytes: selectedGame.totalSizeBytes,
             modificationDate: Date(),
@@ -180,7 +197,8 @@ extension PortingModel {
         }
         game.workspacePath = workspace.directory.path
         game.buildCachePath = workspace.buildCache.path
-        game.status = .notBuilt
+        game.status = existing?.status ?? .notBuilt
+        if let existing { game.toolchain = existing.toolchain; game.lastBuild = existing.lastBuild }
         game.settings = pendingRuntimeConfig
 
         let catalog = try app.catalogRepository.mergeNXNative(scanned: [game], replacingSources: true, enableSource: true)
@@ -188,15 +206,33 @@ extension PortingModel {
         return catalog.nxnativeGames.first(where: { $0.titleId == titleId }) ?? game
     }
 
-    func startBuild(for game: PortedGame, extraArguments: [String] = []) {
+    func startBuild(for game: PortedGame, extraArguments: [String] = [], onStarted: (() -> Void)? = nil) {
+        if let archive = app.cloudLibrary.archive {
+            requestCloudBuild(for: game, archive: archive, extraArguments: extraArguments, onStarted: onStarted)
+            return
+        }
         do {
             try beginBuild(for: game, extraArguments: extraArguments)
+            onStarted?()
         } catch {
             presentBuildError(error)
         }
     }
 
-    func beginBuild(for game: PortedGame, extraArguments: [String] = []) throws {
+    func requestCloudBuild(for game: PortedGame, archive: CloudGameArchive, extraArguments: [String],
+                           onStarted: (() -> Void)?, withoutCache: Bool = false) {
+        guard !app.isCheckingCloudBuild else { return }
+        do { try checkBuildIdle(for: game) }
+        catch { presentBuildError(error); return }
+        app.isCheckingCloudBuild = true
+        Task { @MainActor [app] in
+            defer { app.isCheckingCloudBuild = false }
+            await app.startCloudBuild(for: game, archive: archive, extraArguments: extraArguments,
+                                      onStarted: onStarted, withoutCache: withoutCache)
+        }
+    }
+
+    private func checkBuildIdle(for game: PortedGame) throws {
         guard !app.isBuilding else { throw NXLibraryError.buildAlreadyRunning }
         guard !app.cloudLibrary.isWorking else { throw CloudArchiveError.busy }
         guard !app.isCleaningStorage else { throw NXLibraryError.environmentBlocked(L10n.text("wait for storage cleanup to finish")) }
@@ -204,14 +240,17 @@ extension PortingModel {
         guard !app.appIcon.appIconsInFlight.contains(game.id) else {
             throw NXLibraryError.environmentBlocked(L10n.text("wait for the app icon update to finish"))
         }
+    }
+
+    func beginBuild(for game: PortedGame, extraArguments: [String] = [], verifiedCache: URL? = nil,
+                    withoutCache: Bool = false, releaseCloudBuild: (() async -> Void)? = nil) throws {
+        try checkBuildIdle(for: game)
         var target = app.libraryGames.first(where: { $0.id == game.id }) ?? game
         guard let titleId = target.titleId,
               UInt64(titleId, radix: 16) != nil else {
             throw NXLibraryError.missingTitleId
         }
-        guard !target.sources.isEmpty,
-              SourceSelection.hasGame(target.sources),
-              target.sources.allSatisfy({ FileManager.default.fileExists(atPath: $0.url.path) }) else {
+        guard GameResourceState.sourcesAvailable(for: target) else {
             throw NXLibraryError.missingSources
         }
         // Snapshot the destination before any build work. Changing folders later cannot redirect this build.
@@ -298,23 +337,31 @@ extension PortingModel {
                                           existingWorkspace: existingDirectory)
         let managed = existingDirectory.map { BuildScratch.isManaged($0, core: app.core) } ?? false
         if let directory = existingDirectory, existingLinksOK, !managed,
-           target.sources.allSatisfy({ $0.layout == .package }) {
+           target.sources.allSatisfy({ source in
+               source.layout == .package && (!app.hasCloudLibrary || !source.isSymlink) && source.url.resolvingSymlinksInPath()
+                   == directory.appendingPathComponent(source.url.lastPathComponent).resolvingSymlinksInPath()
+           }) {
             let cache = target.buildCachePath.map(URL.init(fileURLWithPath:))
                 ?? directory.appendingPathComponent("\(titleId)_build")
-            try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
+            if !withoutCache && verifiedCache == nil {
+                try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
+            }
             workspace = Workspace(directory: directory, buildCache: cache, links: [])
         } else {
             let detected = try detectedGame(from: target)
-            workspace = try WorkspaceManager(root: scratch.workspaces).makeWorkspace(for: detected, mode: .staged)
+            workspace = try WorkspaceManager(root: scratch.workspaces).makeWorkspace(
+                for: detected, mode: .staged, createCache: verifiedCache == nil && !withoutCache)
             // A workspace Arcane left on another drive is only a cache now: that drive gets its room back.
             // A game not built yet still points at its workspace, which then stays.
-            if let old = existingDirectory, managed,
+            if verifiedCache == nil, !withoutCache, let old = existingDirectory, managed,
                old.resolvingSymlinksInPath() != workspace.directory.resolvingSymlinksInPath(),
                !target.url.standardizedFileURL.path.hasPrefix(old.standardizedFileURL.path) {
                 DispatchQueue.global(qos: .utility).async { try? FileManager.default.removeItem(at: old) }
             }
-            target.workspacePath = workspace.directory.path
-            target.buildCachePath = workspace.buildCache.path
+            if verifiedCache == nil, !withoutCache {
+                target.workspacePath = workspace.directory.path
+                target.buildCachePath = workspace.buildCache.path
+            }
         }
 
         do {
@@ -326,7 +373,7 @@ extension PortingModel {
 
         let requiredDisk = SourceSelection.uniqueSize(target.sources) * 2 + 10_000_000_000
         var measured = Set<UInt64>()
-        for volume in [workspace.directory, scratch.temp, finalApp.deletingLastPathComponent()] {
+        for volume in [workspace.directory, verifiedCache ?? workspace.buildCache, scratch.temp, finalApp.deletingLastPathComponent()] {
             if let device = BuildScratch.Volume.of(volume)?.device, !measured.insert(device).inserted { continue }
             if let free = freeBytes(at: volume), free < requiredDisk {
                 let freeText = AppViewModel.formatBytes(free)
@@ -365,10 +412,14 @@ extension PortingModel {
             throw NXLibraryError.environmentBlocked(AppViewModel.modMessage(error))
         }
         let stagedCodeMods = try codeMods.map { try FileManager.default.contentsOfDirectory(atPath: $0.path).sorted() }
+        let workDir = withoutCache ? tempRoot.appendingPathComponent("\(titleId)_build") : verifiedCache
+        // With --work-dir alone nxnative can still copy a profile from the old cache.
+        let freshProfile = withoutCache ? workDir.map { ["--profile-out", $0.appendingPathComponent("profile").path] } ?? [] : []
         let command = BuildCommandBuilder.make(
             repo: repo,
             toolchain: toolchain,
             workspace: workspace.directory,
+            workDir: workDir,
             keys: requiresKeys ? app.setup.keyStore.keyURL : nil,
             output: tempApp,
             developerDir: app.setup.resolvedDeveloperDir(),
@@ -383,7 +434,7 @@ extension PortingModel {
             allowUntestedToolchain: app.setup.allowUntestedToolchain,
             nextendoClientID: app.settingsStore?.settings.nextendoClientID ?? NextendoLaunch.buildClientID,
             codeModsFolder: codeMods,
-            extraArguments: extraArguments
+            extraArguments: extraArguments + freshProfile
         )
         lastPortingCommand = [command.executable.path] + command.arguments
         let nextendoRequested = command.environment[NextendoLaunch.clientIDKey] != nil
@@ -392,7 +443,7 @@ extension PortingModel {
         buildStartedAt = Date()
         buildTempDirectory = tempRoot
         app.buildLogURL = logURL
-        currentBuildCacheURL = workspace.buildCache
+        currentBuildCacheURL = workDir ?? workspace.buildCache
         isPollingPipelineArchive = false
         self.buildWizardStep = 3
         app.isBuilding = true
@@ -440,7 +491,8 @@ extension PortingModel {
                 DispatchQueue.main.async { self?.handleBuildEvent(event) }
             },
             completion: { [weak self] result in
-                DispatchQueue.main.async {
+                Task { @MainActor in
+                    if let releaseCloudBuild { await releaseCloudBuild() }
                     self?.finishBuild(result, gameID: target.id,
                                       finalApp: finalApp, tempDir: tempRoot,
                                       nextendoRequested: nextendoRequested, stagedCodeMods: stagedCodeMods)

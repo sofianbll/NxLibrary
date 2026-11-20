@@ -191,7 +191,7 @@ final class PortingModel: ObservableObject {
     }
 
     var canAddSelectedGame: Bool {
-        guard !app.isBuilding, !isScanningGameFolder, let game = selectedGame else { return false }
+        guard !app.isBuilding, !app.isCheckingCloudBuild, !isScanningGameFolder, let game = selectedGame else { return false }
         return game.hasGame
             && SourceSelection.hasGame(selectedSources)
             && selectedSourcesSizeBytes > 0

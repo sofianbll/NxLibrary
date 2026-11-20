@@ -80,6 +80,16 @@ public enum CloudArchiveError: LocalizedError, Equatable {
     }
 }
 
+public enum CloudRebuildDecision: Equatable, Sendable {
+    case allowed, missingSources, downloadCache
+
+    static func decide(sourcesAvailable: Bool, remoteCache: Bool, localVerified: Bool,
+                       withoutCache: Bool) -> Self {
+        if !sourcesAvailable { return .missingSources }
+        return remoteCache && !localVerified && !withoutCache ? .downloadCache : .allowed
+    }
+}
+
 public actor CloudGameArchive {
     public typealias Progress = @Sendable (Double?) -> Void
     private typealias Artifact = CloudGameManifest.Artifact
@@ -87,7 +97,7 @@ public actor CloudGameArchive {
     private let backend: any StorageBackend
     private let capacity: @Sendable (URL) -> Int64?
     private let trash: @Sendable (URL) throws -> Void
-    private var activeTitles: Set<String> = []
+    private var activeTitles: [String: UUID] = [:]
 
     public init(backend: any StorageBackend) {
         self.init(backend: backend, trash: { try FileManager.default.trashItem(at: $0, resultingItemURL: nil) })
@@ -117,6 +127,31 @@ public actor CloudGameArchive {
             } catch { continue }
         }
         return status
+    }
+
+    /// Hold the same title lease as upload, free and restore until the engine exits.
+    public func beginBuild(titleID: String) throws -> UUID {
+        try begin(titleID.uppercased())
+    }
+
+    public func endBuild(titleID: String, token: UUID) {
+        let title = titleID.uppercased()
+        if activeTitles[title] == token { activeTitles[title] = nil }
+    }
+
+    public func checkRebuild(_ game: CloudArchiveGame, sourcesAvailable: Bool, withoutCache: Bool)
+        async throws -> (decision: CloudRebuildDecision, verifiedCache: URL?) {
+        guard sourcesAvailable else { return (.missingSources, nil) }
+        guard !withoutCache else { return (.allowed, nil) }
+        let artifact = try await latest(titleID: game.titleID)?.artifacts.first { $0.kind == .cache }
+        let cache = try? location(.cache, for: game)
+        let verified = artifact.flatMap { artifact in
+            cache.flatMap { url in
+                (try? CloudArchiveInventory.scan(url, kind: .cache).sha256) == artifact.inventorySHA256 ? url : nil
+            }
+        }
+        return (.decide(sourcesAvailable: sourcesAvailable, remoteCache: artifact != nil,
+                        localVerified: verified != nil, withoutCache: withoutCache), verified)
     }
 
     public func latest(titleID: String) async throws -> CloudGameManifest? {
@@ -152,8 +187,8 @@ public actor CloudGameArchive {
     }
 
     public func upload(_ game: CloudArchiveGame, progress: Progress? = nil) async throws -> CloudGameManifest {
-        try begin(game)
-        defer { activeTitles.remove(game.titleID) }
+        _ = try begin(game.titleID)
+        defer { activeTitles[game.titleID] = nil }
         guard CloudArtifactKind.allCases.allSatisfy({ game.locations[$0] != nil }) else { throw CloudArchiveError.localMissing }
         var artifacts: [Artifact] = []
         for (index, kind) in CloudArtifactKind.allCases.enumerated() {
@@ -214,8 +249,8 @@ public actor CloudGameArchive {
     public func free(_ kind: CloudArtifactKind, for game: CloudArchiveGame, confirmed: Bool,
                      beforeMutation: @Sendable () throws -> Void = {}) async throws {
         guard confirmed else { throw CloudArchiveError.confirmationRequired }
-        try begin(game)
-        defer { activeTitles.remove(game.titleID) }
+        _ = try begin(game.titleID)
+        defer { activeTitles[game.titleID] = nil }
         let target = try location(kind, for: game)
         let parent = target.deletingLastPathComponent()
         let volume = try CloudArchiveInventory.node(at: parent)
@@ -238,14 +273,17 @@ public actor CloudGameArchive {
     public func restore(_ kind: CloudArtifactKind, for game: CloudArchiveGame,
                         onlyIfMissing: Bool = false, progress: Progress? = nil,
                         beforeMutation: @Sendable () throws -> Void = {}) async throws -> URL? {
-        try begin(game)
-        defer { activeTitles.remove(game.titleID) }
+        _ = try begin(game.titleID)
+        defer { activeTitles[game.titleID] = nil }
         let destination = try location(kind, for: game)
         let parent = destination.deletingLastPathComponent()
         let volume = try CloudArchiveInventory.node(at: parent)
         let previous = try existingNode(at: destination)
         guard previous.map({ $0.st_mode & S_IFMT == S_IFDIR && !onlyIfMissing }) ?? true else {
             throw CloudArchiveError.unsafePath
+        }
+        if kind == .cache, previous != nil, try CloudArchiveInventory.scan(destination, kind: .cache).hasExcludedFiles {
+            throw CloudArchiveError.excludedFiles
         }
         let artifact = try await remoteArtifact(kind, game)
         try requireSpace(in: parent, bytes: artifact.unpackedSize, entries: artifact.entryCount, archive: artifact.size)
@@ -281,9 +319,12 @@ public actor CloudGameArchive {
         return nil
     }
 
-    private func begin(_ game: CloudArchiveGame) throws {
-        guard SaveLocation.validID(game.titleID) else { throw CloudArchiveError.unsafePath }
-        guard activeTitles.insert(game.titleID).inserted else { throw CloudArchiveError.busy }
+    private func begin(_ titleID: String) throws -> UUID {
+        guard SaveLocation.validID(titleID) else { throw CloudArchiveError.unsafePath }
+        guard activeTitles[titleID] == nil else { throw CloudArchiveError.busy }
+        let token = UUID()
+        activeTitles[titleID] = token
+        return token
     }
 
     private func remoteArtifact(_ kind: CloudArtifactKind, _ game: CloudArchiveGame) async throws -> Artifact {

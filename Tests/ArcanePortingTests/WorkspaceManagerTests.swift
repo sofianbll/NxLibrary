@@ -16,7 +16,17 @@ final class WorkspaceManagerTests: XCTestCase {
         let game = DetectedGame(baseTitleId: 0x0100000000010000, name: "Game",
                                 base: source, updates: [], dlcs: [])
         let manager = WorkspaceManager(root: root.appendingPathComponent("workspaces"))
+        let planned = manager.plannedWorkspace(for: game, mode: .staged)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: planned.directory.path), "A blocked build only plans paths")
+        let sourcesOnly = try manager.makeWorkspace(for: game, mode: .staged, createCache: false)
+        XCTAssertEqual(sourcesOnly.directory, planned.directory)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: planned.buildCache.path))
+        let backup = planned.directory.appendingPathComponent(".arcane-cloud-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: backup, withIntermediateDirectories: false)
+        let backupLink = backup.appendingPathComponent("preserved-link")
+        try FileManager.default.createSymbolicLink(atPath: backupLink.path, withDestinationPath: "kept")
         let ws = try manager.makeWorkspace(for: game, mode: .staged)
+        XCTAssertEqual(try FileManager.default.destinationOfSymbolicLink(atPath: backupLink.path), "kept")
         XCTAssertTrue(FileManager.default.fileExists(
             atPath: ws.directory.appendingPathComponent(file.lastPathComponent).path))
         let link = try FileManager.default.destinationOfSymbolicLink(

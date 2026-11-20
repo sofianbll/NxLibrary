@@ -1,6 +1,66 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Checking the cloud cache…": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Checking the cloud cache…"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Verifica della cache nel cloud…"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vérification du cache dans le cloud…"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Cache wird geprüft…"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Comprobando la caché en la nube…"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Verificando o cache na nuvem…"}}
+      }
+    },
+    "Download cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Download cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scarica la cache"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Télécharger le cache"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cache laden"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Descargar la caché"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Baixar cache"}}
+      }
+    },
+    "Rebuild without cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Rebuild without cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ricompila senza cache"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Reconstruire sans le cache"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Ohne Cache neu bauen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Recompilar sin caché"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Recompilar sem cache"}}
+      }
+    },
+    "The build cache in the cloud has no verified local copy. Download it before rebuilding. Any existing cache is kept as a backup.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "The build cache in the cloud has no verified local copy. Download it before rebuilding. Any existing cache is kept as a backup."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Non c’è una copia locale verificata della cache nel cloud. Scaricala prima di ricompilare. L’eventuale cache esistente resta come backup."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Aucune copie locale vérifiée du cache dans le cloud. Téléchargez-le avant de reconstruire. Le cache existant, s’il y en a un, est conservé en sauvegarde."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Es gibt keine geprüfte lokale Kopie des Build-Caches aus der Cloud. Lade ihn vor dem Neubau herunter. Ein vorhandener Cache bleibt als Sicherung erhalten."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No hay una copia local verificada de la caché de compilación en la nube. Descárgala antes de recompilar. La caché existente se conserva como copia de seguridad."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não há uma cópia local verificada do cache de compilação na nuvem. Baixe o cache antes de recompilar. O cache existente será mantido como backup."}}
+      }
+    },
+    "Rebuild from the original game files without using the existing cache? This can take much longer.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Rebuild from the original game files without using the existing cache? This can take much longer."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ricompilare dai file originali del gioco senza usare la cache esistente? Può richiedere molto più tempo."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Reconstruire à partir des fichiers d’origine du jeu sans utiliser le cache existant ? Cela peut prendre beaucoup plus de temps."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Das Spiel aus den Originaldateien ohne den vorhandenen Cache neu bauen? Das kann deutlich länger dauern."}},
+        "es": {"stringUnit": {"state": "translated", "value": "¿Recompilar a partir de los archivos originales del juego sin usar la caché existente? Puede tardar mucho más."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Recompilar a partir dos arquivos originais do jogo sem usar o cache existente? Isso pode levar muito mais tempo."}}
+      }
+    },
+    "Arcane could not check the cloud manifest. Check rclone and try again.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Arcane could not check the cloud manifest. Check rclone and try again."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Arcane non ha potuto verificare il manifest nel cloud. Controlla rclone e riprova."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Arcane n’a pas pu vérifier le manifeste dans le cloud. Vérifiez rclone, puis réessayez."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Arcane konnte das Cloud-Manifest nicht prüfen. Prüfe rclone und versuche es erneut."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Arcane no pudo comprobar el manifiesto en la nube. Comprueba rclone y vuelve a intentarlo."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O Arcane não conseguiu verificar o manifesto na nuvem. Verifique o rclone e tente novamente."}}
+      }
+    },
     "Cloud library": {
       "localizations": {
         "de": {"stringUnit": {"state": "translated", "value": "Cloud-Bibliothek"}},

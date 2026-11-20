@@ -171,13 +171,8 @@ extension GameOptionsView {
     /// Rebuild. A dimmed row still runs the build, so the Metal gate explains a refusal
     /// through the usual alert; a build that starts opens Add Game with its progress.
     func rebuild(_ game: PortedGame) {
-        guard !presentation.sourcesDetached else {
-            SoundEffectService.shared.play(.error)
-            return
-        }
         SoundEffectService.shared.play(.click)
-        viewModel.porting.startBuild(for: game)
-        if viewModel.isBuilding {
+        viewModel.porting.startBuild(for: game) {
             onClose()
             onShowBuild()
         }

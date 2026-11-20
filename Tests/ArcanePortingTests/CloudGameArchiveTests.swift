@@ -7,10 +7,49 @@ import XCTest
 final class CloudGameArchiveTests: XCTestCase {
     private let title = "0100E65002BB8000"
 
+    func testRebuildDecisionRequiresSourcesAndVerifiedRemoteCacheUnlessExplicitlyOverridden() {
+        func decision(_ sources: Bool = true, _ remote: Bool = true, _ verified: Bool = false,
+                      _ override: Bool = false) -> CloudRebuildDecision {
+            .decide(sourcesAvailable: sources, remoteCache: remote, localVerified: verified, withoutCache: override)
+        }
+        XCTAssertEqual(decision(), .downloadCache, "Remote-only or mismatching cache")
+        XCTAssertEqual(decision(true, true, true), .allowed, "Verified local cache")
+        XCTAssertEqual(decision(true, false), .allowed, "No remote manifest")
+        XCTAssertEqual(decision(false), .missingSources)
+        XCTAssertEqual(decision(true, true, false, true), .allowed)
+        XCTAssertEqual(decision(false, true, false, true), .missingSources, "Override does not waive sources")
+    }
+
+    func testBuildLeaseExcludesCloudMutationsForTheSameTitle() async throws {
+        let service = CloudGameArchive(backend: RcloneStorageBackend(remote: ":local:", root: "/unused"))
+        let game = CloudArchiveGame(titleID: title, locations: [:])
+        let token = try await service.beginBuild(titleID: title.lowercased())
+        await service.endBuild(titleID: title, token: UUID())
+        let otherTitle = "0100000000000000"
+        let other = try await service.beginBuild(titleID: otherTitle)
+        await service.endBuild(titleID: otherTitle, token: other)
+        let operations: [() async throws -> Void] = [
+            { _ = try await service.upload(game) },
+            { try await service.free(.cache, for: game, confirmed: true) },
+            { try await service.restore(.cache, for: game) }
+        ]
+        for operation in operations {
+            do { try await operation(); XCTFail("Cloud mutation took an active build's lease") }
+            catch { XCTAssertEqual(error as? CloudArchiveError, .busy) }
+        }
+        await service.endBuild(titleID: title, token: token)
+        do { try await service.restore(.cache, for: game); XCTFail("Fixture has no destination") }
+        catch { XCTAssertEqual(error as? CloudArchiveError, .localMissing) }
+        let next = try await service.beginBuild(titleID: title)
+        await service.endBuild(titleID: title, token: next)
+    }
+
     func testSignedAppAndCacheRoundTripThroughLocalRclone() async throws {
         let fixture = try fixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
         let service = fixture.service
+        let before = try await service.checkRebuild(fixture.game, sourcesAvailable: true, withoutCache: false)
+        XCTAssertEqual(before.decision, .allowed)
         let manifest = try await service.upload(fixture.game)
         XCTAssertEqual(manifest.artifacts.map(\.kind), [.app, .cache])
         XCTAssertEqual(manifest.artifacts.first?.engineCommit, "72d43ff6")
@@ -30,8 +69,15 @@ final class CloudGameArchiveTests: XCTestCase {
             try await service.free(kind, for: fixture.game, confirmed: true)
             XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.game.locations[kind]!.path))
             XCTAssertTrue(FileManager.default.fileExists(atPath: fixture.trash.appendingPathComponent(kind.rawValue).path))
+            if kind == .cache {
+                let missing = try await service.checkRebuild(fixture.game, sourcesAvailable: true, withoutCache: false)
+                XCTAssertEqual(missing.decision, .downloadCache)
+            }
             _ = try await service.restore(kind, for: fixture.game)
         }
+        let restored = try await service.checkRebuild(fixture.game, sourcesAvailable: true, withoutCache: false)
+        XCTAssertEqual(restored.decision, .allowed)
+        XCTAssertEqual(restored.verifiedCache?.resolvingSymlinksInPath(), fixture.cache.resolvingSymlinksInPath())
         try command("/usr/bin/codesign", ["--verify", "--deep", "--strict", fixture.app.path])
         XCTAssertEqual(try String(contentsOf: fixture.cache.appendingPathComponent("run.key"), encoding: .utf8), "cache-data")
         XCTAssertEqual(try FileManager.default.destinationOfSymbolicLink(atPath: fixture.cache.appendingPathComponent("nested/link").path), "../run.key")
@@ -88,6 +134,8 @@ final class CloudGameArchiveTests: XCTestCase {
         let service = f.service
         _ = try await service.upload(f.game)
         try Data("current-v2".utf8).write(to: f.cache.appendingPathComponent("run.key"))
+        let changed = try await service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false)
+        XCTAssertEqual(changed.decision, .downloadCache)
         let interrupted = Task {
             try await service.restore(.cache, for: f.game, beforeMutation: { withUnsafeCurrentTask { $0?.cancel() } })
         }

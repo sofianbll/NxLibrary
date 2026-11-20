@@ -170,6 +170,7 @@ extension AddGameView {
     }
 
     private var buildHint: String {
+        if viewModel.isCheckingCloudBuild { return L10n.text("Checking the cloud cache…") }
         if porting.canStartBuild { return L10n.text("Builds the Mac app now; you can keep using the library meanwhile.") }
         if !porting.supportsSources(porting.selectedSources) { return L10n.text("These sources need a newer engine.") }
         if porting.selectedSourcesRequireKeys && !setup.isProdKeysValid { return L10n.text("Import prod.keys first.") }
@@ -191,7 +192,7 @@ extension AddGameView {
 
     private func addSelectedGame(buildNow: Bool) {
         porting.addSelectedGame(buildNow: buildNow)
-        guard porting.buildError == nil, !viewModel.isBuilding else { return }
+        guard porting.buildError == nil, !viewModel.isBuilding, !viewModel.isCheckingCloudBuild else { return }
         router.showLibrary()
     }
 

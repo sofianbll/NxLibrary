@@ -255,8 +255,10 @@ struct ModsPanel: View {
         case .openFolder:
             return (.folder, L10n.text("Open mods folder"), L10n.text("Put each mod in its own folder here."), nil, true)
         case .rebuild:
-            return (.build, L10n.text("Rebuild"), L10n.text("Build a new app; the old app stays if the build fails."), nil,
-                    !running && !importing && GameResourceState.sourcesAvailable(for: game))
+            let about = GameResourceState.sourcesAvailable(for: game)
+                ? L10n.text("Build a new app; the old app stays if the build fails.")
+                : L10n.text("Game files are missing or not attached. Attach them to rebuild.")
+            return (.build, L10n.text("Rebuild"), about, nil, !running && !importing)
         }
     }
 
@@ -318,7 +320,7 @@ struct ModsPanel: View {
             try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             viewModel.revealInFinder(url: folder)
         case .rebuild:
-            guard !running, !importing, GameResourceState.sourcesAvailable(for: game) else {
+            guard !running, !importing else {
                 SoundEffectService.shared.play(.error)
                 return
             }

@@ -7,6 +7,7 @@ enum CloudLibraryAction: Equatable {
     case upload
     case free(CloudArtifactKind)
     case restore(CloudArtifactKind)
+    case restoreBuildCache
 }
 
 struct CloudLibraryState {
@@ -52,9 +53,90 @@ extension AppViewModel {
 
     @MainActor func canChangeCloudLibrary(_ game: PortedGame) -> Bool {
         guard let title = game.titleId else { return false }
-        return !isBuilding && !isCleaningStorage && !isUpdatingApp && !isScanningLibrary &&
+        return !isBuilding && !isCheckingCloudBuild && !isCleaningStorage && !isUpdatingApp && !isScanningLibrary &&
             !appIcon.appIconsInFlight.contains(game.id) && game.pendingInstall == nil &&
             !saveGate.isBusy(titleID: title) && RunningGameMonitor.runningApplication(for: game) == nil
+    }
+
+    @MainActor func startCloudBuild(for game: PortedGame, archive: CloudGameArchive, extraArguments: [String],
+                                    onStarted: (() -> Void)?, withoutCache: Bool) async {
+        let target = libraryGames.first(where: { $0.id == game.id }) ?? game
+        guard GameResourceState.sourcesAvailable(for: target) else {
+            porting.presentBuildError(NXLibraryError.missingSources)
+            return
+        }
+        guard let title = target.titleId, SaveLocation.validID(title) else {
+            porting.presentBuildError(NXLibraryError.missingTitleId)
+            return
+        }
+        do {
+            let token = try await archive.beginBuild(titleID: title)
+            let release = { await archive.endBuild(titleID: title, token: token) }
+            do {
+                let locations = withoutCache ? CloudArchiveGame(titleID: title, locations: [:]) : await cloudLocations(for: target)
+                let check: (decision: CloudRebuildDecision, verifiedCache: URL?)
+                do {
+                    check = try await archive.checkRebuild(locations, sourcesAvailable: true, withoutCache: withoutCache)
+                } catch {
+                    await release()
+                    showCloudBuildNotice(for: target, archive: archive, extraArguments: extraArguments,
+                                         onStarted: onStarted, canDownload: false)
+                    return
+                }
+                switch check.decision {
+                case .missingSources:
+                    throw NXLibraryError.missingSources
+                case .downloadCache:
+                    await release()
+                    showCloudBuildNotice(for: target, archive: archive, extraArguments: extraArguments,
+                                         onStarted: onStarted, canDownload: true)
+                case .allowed:
+                    guard let current = libraryGames.first(where: { $0.id == target.id }),
+                          current.titleId == target.titleId, current.workspacePath == target.workspacePath,
+                          current.buildCachePath == target.buildCachePath else { throw CloudArchiveError.busy }
+                    try porting.beginBuild(for: target, extraArguments: extraArguments, verifiedCache: check.verifiedCache,
+                                   withoutCache: withoutCache,
+                                   releaseCloudBuild: release)
+                    onStarted?()
+                }
+            } catch {
+                await release()
+                throw error
+            }
+        } catch {
+            porting.presentBuildError(error)
+        }
+    }
+
+    @MainActor private func showCloudBuildNotice(for game: PortedGame, archive: CloudGameArchive,
+                                                  extraArguments: [String], onStarted: (() -> Void)?, canDownload: Bool) {
+        let title = L10n.text("Rebuild")
+        let confirmOverride: () -> Void = { [weak self] in
+            self?.showSettingsNotice(title: title,
+                message: L10n.text("Rebuild from the original game files without using the existing cache? This can take much longer."),
+                actionTitle: "Rebuild without cache", cancelTitle: "Cancel") { [weak self] in
+                    self?.porting.requestCloudBuild(for: game, archive: archive, extraArguments: extraArguments,
+                                            onStarted: onStarted, withoutCache: true)
+                }
+        }
+        if canDownload {
+            showSettingsNotice(title: title,
+                message: L10n.text("The build cache in the cloud has no verified local copy. Download it before rebuilding. Any existing cache is kept as a backup."),
+                actionTitle: "Download cache", cancelTitle: "Cancel") { [weak self] in
+                    guard let self else { return }
+                    self.performCloudLibrary(.restoreBuildCache, for: game)
+                    if self.cloudLibrary.jobs[game.id] != nil {
+                        self.cloudLibraryGameID = game.id
+                    } else {
+                        self.showSettingsNotice(title: title, message: self.cloudMessage(for: CloudArchiveError.busy))
+                    }
+                }
+            settingsNotice?.alternative = ("Rebuild without cache", confirmOverride)
+        } else {
+            showSettingsNotice(title: title,
+                message: L10n.text("Arcane could not check the cloud manifest. Check rclone and try again."),
+                actionTitle: "Rebuild without cache", cancelTitle: "Cancel", retry: confirmOverride)
+        }
     }
 
     @MainActor func refreshCloudLibrary(_ game: PortedGame) async {
@@ -132,8 +214,20 @@ extension AppViewModel {
                     if kind == .app {
                         self.applyCatalog(try self.catalogRepository.updateNXNative(id: id) { $0.status = .appMissing })
                     }
-                case .restore(let kind):
-                    try await archive.restore(kind, for: target, onlyIfMissing: true, progress: progress, beforeMutation: gameClosed)
+                case .restore, .restoreBuildCache:
+                    let kind: CloudArtifactKind
+                    if case .restore(let selectedKind) = action { kind = selectedKind } else { kind = .cache }
+                    if action == .restoreBuildCache, let cache = target.locations[.cache] {
+                        let parent = cache.deletingLastPathComponent()
+                        let root = BuildScratch.choose(core: AppData.supportRoot,
+                            appFolder: self.gameAppsFolder).workspaces
+                        if parent.standardizedFileURL.path == root.appendingPathComponent(target.titleID).standardizedFileURL.path,
+                           !FileManager.default.fileExists(atPath: parent.path) {
+                            try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+                        }
+                    }
+                    try await archive.restore(kind, for: target, onlyIfMissing: action != .restoreBuildCache,
+                                              progress: progress, beforeMutation: gameClosed)
                     if kind == .app, let url = target.locations[.app] {
                         GameIconProvider.forget(game)
                         self.applyCatalog(try self.catalogRepository.updateNXNative(id: id) { item in

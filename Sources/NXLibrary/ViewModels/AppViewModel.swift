@@ -13,6 +13,10 @@ struct SettingsNotice: Identifiable {
     var onDismiss: (() -> Void)? = nil
     var actionTitle = "Retry"
     var cancelTitle = "Back"
+    var alternative: (title: String, run: () -> Void)?
+    var choices: [String] {
+        [cancelTitle] + (retry == nil ? [] : [actionTitle]) + (alternative.map { [$0.title] } ?? [])
+    }
 }
 
 final class AppViewModel: ObservableObject {
@@ -21,6 +25,7 @@ final class AppViewModel: ObservableObject {
     let saveGate = SaveOperationGate()
     let cloudLibrary = CloudLibraryModel()
     @Published var cloudLibraryGameID: UUID?
+    @Published var isCheckingCloudBuild = false
     let saveQueue = DispatchQueue(label: "local.nxlibrary.saves", qos: .userInitiated)
     @Published var settingsNotice: SettingsNotice? {
         didSet {
@@ -125,7 +130,7 @@ final class AppViewModel: ObservableObject {
     var storageRefreshRequested = false
 
     var canCleanStorage: Bool {
-        !isBuilding && !isCleaningStorage && !isCalculatingStorage && !isUpdatingApp && !cloudLibrary.isWorking
+        !isBuilding && !isCheckingCloudBuild && !isCleaningStorage && !isCalculatingStorage && !isUpdatingApp && !cloudLibrary.isWorking
     }
     @Published var showSetupCheck: Bool = false
     /// The Setup check's state and installs; lives with the app so an install survives closing the screen.

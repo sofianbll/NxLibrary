@@ -376,8 +376,7 @@ extension SpotlightView {
         case .play:
             viewModel.launchGame(game)
         case .build:
-            viewModel.porting.startBuild(for: game)
-            if viewModel.isBuilding { router.openAddGame() }
+            viewModel.porting.startBuild(for: game) { router.openAddGame() }
         case .refuse:
             SoundEffectService.shared.play(.error)
         }

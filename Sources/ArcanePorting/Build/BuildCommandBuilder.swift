@@ -6,6 +6,7 @@ public enum BuildCommandBuilder {
         repo: URL,
         toolchain: EngineToolchain,
         workspace: URL,
+        workDir: URL? = nil,
         keys: URL?,
         output: URL,
         developerDir: URL,
@@ -33,6 +34,7 @@ public enum BuildCommandBuilder {
             "--keep-extracted",
         ]
         if let keys { args += ["-k", keys.path] }
+        if let workDir { args += ["--work-dir", workDir.path] }
         if let titleId { args += ["--title-id", titleId] }
         if let programIndex { args += ["--program", String(programIndex)] }
         if let packageVersion { args += ["-p", packageVersion] }

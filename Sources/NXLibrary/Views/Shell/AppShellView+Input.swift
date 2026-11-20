@@ -44,8 +44,8 @@ extension AppShellView {
                 switch event.keyCode {
                 case 123: closeAction = .navigateLeft
                 case 124: closeAction = .navigateRight
-                case 125: closeAction = showsUpdateOffer || viewModel.cloudLibraryGameID != nil ? .navigateDown : nil
-                case 126: closeAction = showsUpdateOffer || viewModel.cloudLibraryGameID != nil ? .navigateUp : nil
+                case 125: closeAction = showsUpdateOffer || showsSettingsNotice || viewModel.cloudLibraryGameID != nil ? .navigateDown : nil
+                case 126: closeAction = showsUpdateOffer || showsSettingsNotice || viewModel.cloudLibraryGameID != nil ? .navigateUp : nil
                 case 36, 76, 49: closeAction = .confirm
                 case 53: closeAction = .cancel
                 default: closeAction = nil

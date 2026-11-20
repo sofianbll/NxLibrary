@@ -14,6 +14,7 @@ User-visible changes to Arcane (formerly NX Library) are recorded here. Entries 
 
 ### Changed
 
+- **Rebuild** checks the original sources and verifies any cloud-backed cache before preparing the workspace. Download the cache or explicitly confirm rebuilding without it.
 - **Game Options → Mods** separates file mods from code mods, with separate ordering and notes on when each takes effect.
 
 ### Fixed

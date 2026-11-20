@@ -2,7 +2,11 @@ import Foundation
 @testable import NXLibraryCore
 @testable import ArcanePorting
 
-struct SettingsNotice { var retry: (() -> Void)?; var onDismiss: (() -> Void)? = nil }
+struct SettingsNotice {
+    var retry: (() -> Void)?
+    var onDismiss: (() -> Void)? = nil
+    var alternative: (title: String, run: () -> Void)?
+}
 final class AppViewModel {
     let catalogRepository: CatalogRepository
     var personalizations = CatalogPersonalizations.empty
