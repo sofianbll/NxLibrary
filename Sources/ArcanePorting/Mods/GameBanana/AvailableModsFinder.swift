@@ -1,7 +1,7 @@
 import Foundation
 import NXLibraryCore
 
-/// A GameBanana mod confirmed to work with the engine: at least one of its files is a single RomFS tree for this game.
+/// A GameBanana mod with at least one installable RomFS or ExeFS archive for this game.
 public struct AvailableMod: Equatable, Identifiable, Sendable {
     public let id: Int
     /// Position in GameBanana's result order, before compatibility filtering.
@@ -164,7 +164,7 @@ public struct AvailableModsFinder: Sendable {
             try Task.checkCancellation()
             do {
                 let paths = try await client.archivePaths(fileID: file.id)
-                if ModSupport.romfsRoot(in: paths, titleID: titleID) != nil { files.append(file) }
+                if (try? ModSupport.layout(in: paths, titleID: titleID)) != nil { files.append(file) }
             } catch GameBananaError.unavailable {
                 continue
             }

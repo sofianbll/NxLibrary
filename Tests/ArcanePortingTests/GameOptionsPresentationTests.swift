@@ -81,7 +81,7 @@ final class GameOptionsPresentationTests: XCTestCase {
         XCTAssertEqual(GameOptionsRow.mods.title, "Mods")
         XCTAssertEqual(GameOptionsRow.mods.icon, .puzzle)
         XCTAssertTrue(GameOptionsRow.mods.opensSubmenu)
-        XCTAssertEqual(p.about(.mods), "Turn this game's file mods on and off, and choose which one wins.")
+        XCTAssertEqual(p.about(.mods), "Manage RomFS and code mods for this game.")
     }
 
     func testModsRowValue() {

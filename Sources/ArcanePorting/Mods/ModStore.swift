@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 import NXLibraryCore
 
 /// What Arcane remembers about one mod of a game, in the game's records file (list order = overlay order).
@@ -9,6 +10,8 @@ public struct ModRecord: Codable, Equatable, Sendable {
     public var gameBananaFileID: Int?
     public var md5: String?
     public var installedAt: Date?
+    /// Legacy records without this field may own an entry in the RomFS overlay.
+    var codeOnly: Bool?
 
     public init(folderName: String, isOn: Bool, gameBananaModID: Int? = nil, gameBananaFileID: Int? = nil,
                 md5: String? = nil, installedAt: Date? = nil) {
@@ -37,19 +40,19 @@ public struct ModConflict: Equatable, Sendable {
 public enum ModStoreError: Error, Equatable {
     /// The game is running: its launcher read the overlay at start and the mods stay as they are until it quits.
     case notAllowed
-    /// The folder holds no RomFS tree.
+    /// The folder holds neither a RomFS tree nor ExeFS patches.
     case notAMod(String)
     /// `:` separates `DM_ROMFS_OVERLAY`'s folders, so a folder name with one cannot be on.
     case colonInName(String)
     /// The active mods' paths would not fit the launcher's line (`overlayLimit`).
     case overlayTooLong
+    case invalidCodeMod(String)
     case writeFailed(String)
 }
 
-/// One game's RomFS mods: the folders in `<support>/mods`, Arcane's record of their order and on/off state,
-/// and the `DM_ROMFS_OVERLAY` line of `<support>/env.txt` that makes the engine read the mods that are on, top first
-/// (dm/host/hle_fs.c). The folder is the truth for what exists; the record only orders it. Every change happens only
-/// while `canWrite` says the game is not running, and a removed mod goes to the Trash.
+/// A game's RomFS and ExeFS mods share one ordered record. RomFS applies through `DM_ROMFS_OVERLAY` on Play;
+/// ExeFS applies through an ordered snapshot of enabled patches on Rebuild.
+/// Every change requires `canWrite`, and removed mods go to the Trash.
 public struct ModStore {
     /// The Mac launcher reads `env.txt` lines into a 4096-byte buffer: `DM_ROMFS_OVERLAY=` (17) + value + newline
     /// must fit in 4095 (dm/mac/launcher.c `env_file`); the host keeps the value in `overlay[4096]`.
@@ -79,29 +82,49 @@ public struct ModStore {
     }
 
     public var modsFolder: URL { supportFolder.appendingPathComponent("mods") }
+    public var codeModsFolder: URL { supportFolder.appendingPathComponent("code-mods") }
     public var envFile: URL { supportFolder.appendingPathComponent("env.txt") }
 
     // MARK: - Reading
 
     /// Recorded mods in their order (only those whose folder exists), then folders without a record, off, by name.
     public func mods() -> [LocalMod] {
-        mods(entries: ModFolderScanner.entries(in: modsFolder), records: loadRecords())
+        mods(entries: entries, records: loadRecords())
+    }
+
+    private var entries: [URL] {
+        (ModFolderScanner.entries(in: modsFolder) + ModFolderScanner.entries(in: codeModsFolder))
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+    }
+
+    private func checkedEntries(in folder: URL) throws -> [URL] {
+        do {
+            let values = try folder.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+            guard values.isDirectory == true, values.isSymbolicLink != true else { throw CocoaError(.fileReadUnknown) }
+            return try ModFolderScanner.checkedEntries(in: folder)
+        } catch let error as CocoaError where error.code == .fileReadNoSuchFile || error.code == .fileNoSuchFile {
+            return []
+        }
+    }
+
+    private func checkedEntries() throws -> [URL] {
+        try checkedEntries(in: modsFolder) + checkedEntries(in: codeModsFolder)
     }
 
     private func mods(entries: [URL], records: [ModRecord]) -> [LocalMod] {
-        let names = entries.map(\.lastPathComponent)
-        let present = Set(names)
-        let recorded = records.filter { present.contains($0.folderName) }
+        let folders = Dictionary(entries.map { ($0.lastPathComponent, $0) }, uniquingKeysWith: { first, _ in first })
+        let recorded = records.filter { folders[$0.folderName] != nil }
         let known = Set(recorded.map(\.folderName))
-        let list = recorded.map { mod($0.folderName, on: $0.isOn) }
-            + names.filter { !known.contains($0) }.map { mod($0, on: false) }
+        let list = recorded.compactMap { record in folders[record.folderName].map { mod($0, on: record.isOn) } }
+            + folders.keys.sorted().filter { !known.contains($0) }.compactMap { folders[$0].map { mod($0, on: false) } }
         return allowsAutomaticMaintenance ? list : readingLiveOverlay(list)
     }
 
     /// A copied record orders metadata; the actual game's overlay determines what is active.
     /// Reading a separate profile must neither write the overlay nor display stale enabled states.
     private func readingLiveOverlay(_ list: [LocalMod]) -> [LocalMod] {
-        guard let text = try? String(contentsOf: envFile, encoding: .utf8) else { return list }
+        guard list.contains(where: { $0.romfs != nil }),
+              let text = try? String(contentsOf: envFile, encoding: .utf8) else { return list }
         let value = text.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }
             .last { $0.hasPrefix(Self.overlayKey + "=") }
             .map { String($0.dropFirst(Self.overlayKey.count + 1)) } ?? ""
@@ -110,6 +133,10 @@ public struct ModStore {
         for (index, path) in paths.enumerated() where order[path] == nil { order[path] = index }
         var observed: [(rank: Int, index: Int, item: LocalMod)] = []
         for (index, original) in list.enumerated() {
+            if original.exefs != nil {
+                observed.append((rank: Int.max, index: index, item: original))
+                continue
+            }
             var item = original
             let rank: Int? = item.romfs.flatMap { order[$0.standardizedFileURL.resolvingSymlinksInPath().path] }
             item.isOn = rank != nil
@@ -124,9 +151,13 @@ public struct ModStore {
 
     /// The records of mods installed from GameBanana whose folder still exists, by GameBanana mod id.
     public func gameBananaRecords() -> [Int: ModRecord] {
-        let present = Set(ModFolderScanner.entries(in: modsFolder).map(\.lastPathComponent))
+        gameBananaRecords(entries: entries, records: loadRecords())
+    }
+
+    private func gameBananaRecords(entries: [URL], records: [ModRecord]) -> [Int: ModRecord] {
+        let present = Set(entries.map(\.lastPathComponent))
         var found: [Int: ModRecord] = [:]
-        for record in loadRecords() where present.contains(record.folderName) {
+        for record in records where present.contains(record.folderName) {
             if let id = record.gameBananaModID, found[id] == nil { found[id] = record }
         }
         return found
@@ -144,14 +175,14 @@ public struct ModStore {
         return found
     }
 
-    /// Removes what an install interrupted by a quit or crash left in the mods folder: the hidden `.installing-<UUID>`
-    /// staging folders and `.installing-<UUID>.download` archives. Mods and other files stay; nothing happens while
-    /// the game runs.
+    /// Cleans abandoned install staging, never a previous version held for recovery.
     public func removeLeftoverInstalls() {
         guard allowsAutomaticMaintenance, canWrite() else { return }
         let fm = FileManager.default
-        for name in (try? fm.contentsOfDirectory(atPath: modsFolder.path)) ?? [] where name.hasPrefix(".installing-") {
-            try? fm.removeItem(at: modsFolder.appendingPathComponent(name))
+        for root in [modsFolder, codeModsFolder] where ModFolderScanner.isRealDirectory(root) {
+            for name in (try? fm.contentsOfDirectory(atPath: root.path)) ?? [] where name.hasPrefix(".installing-") {
+                try? fm.removeItem(at: root.appendingPathComponent(name))
+            }
         }
     }
 
@@ -161,7 +192,7 @@ public struct ModStore {
         try change { list in
             guard let index = list.firstIndex(where: { $0.folderName == folderName }) else { return }
             if on {
-                guard list[index].romfs != nil else { throw ModStoreError.notAMod(folderName) }
+                guard list[index].isMod else { throw ModStoreError.notAMod(folderName) }
                 guard !folderName.contains(":") else { throw ModStoreError.colonInName(folderName) }
             }
             list[index].isOn = on
@@ -181,44 +212,101 @@ public struct ModStore {
     /// Whether changes are allowed now (the game is not running).
     public var isWritable: Bool { canWrite() }
 
-    /// Takes a mod installed from GameBanana: moves the `staged` RomFS tree to `mods/<folderName>/romfs` and records
-    /// it. An update (a record with the same GameBanana mod id) moves the old folder to the Trash and keeps its folder
-    /// name, place in the list and on/off state. A new mod goes to the bottom, on when `turnOn` and the overlay still
-    /// fits the launcher's line. Returns whether the mod is on.
+    /// Copies a chosen folder's ExeFS patches, leaving the original alone.
+    public func importCodeMod(from source: URL) throws {
+        guard canWrite() else { throw ModStoreError.notAllowed }
+        guard ModFolderScanner.isRealDirectory(source) else { throw ModStoreError.invalidCodeMod(source.lastPathComponent) }
+        let tree = source.appendingPathComponent("exefs")
+        try adopt(romfs: nil, exefs: tree, name: source.lastPathComponent, record: nil)
+    }
+
+    /// A GameBanana update keeps the name, position and switch, even if the new archive changes kind.
     @discardableResult
-    public func adopt(staged romfs: URL, folderName: String, record: ModRecord, turnOn: Bool) throws -> Bool {
+    func adopt(romfs: URL?, exefs: URL?, name: String, record: ModRecord?, turnOn: Bool = true) throws -> LocalMod {
         guard canWrite() else { throw ModStoreError.notAllowed }
         let fm = FileManager.default
-        let previous = record.gameBananaModID.flatMap { gameBananaRecords()[$0] }
-        let name = previous?.folderName ?? folderName
-        let folder = modsFolder.appendingPathComponent(name)
+        let entries = try checkedEntries()
+        let stored = try checkedRecords()
+        let previous = record?.gameBananaModID.flatMap { gameBananaRecords(entries: entries, records: stored)[$0] }
+        let used = Set(entries.map(\.lastPathComponent))
+        let name = previous?.folderName ?? ModFolderName.make(from: name, modID: record?.gameBananaModID ?? 0, existing: used)
+        var list = mods(entries: entries, records: stored)
+        let index = previous.flatMap { old in list.firstIndex { $0.folderName == old.folderName } } ?? list.endIndex
+        let old = previous == nil || index == list.endIndex ? nil : list[index]
+        let root = exefs == nil ? modsFolder : codeModsFolder
+        let folder = root.appendingPathComponent(name)
+        let staging = root.appendingPathComponent(".installing-\(UUID().uuidString)")
+        let candidate = staging.appendingPathComponent("candidate")
+        let backup = root.appendingPathComponent(".previous-\(UUID().uuidString)").appendingPathComponent(name)
+        var keepBackup = false
+        defer {
+            try? fm.removeItem(at: staging)
+            if !keepBackup { try? fm.removeItem(at: backup.deletingLastPathComponent()) }
+        }
+
+        var local = LocalMod(folderName: name, folder: folder,
+                             romfs: romfs.map { _ in folder.appendingPathComponent("romfs") },
+                             exefs: exefs.map { _ in folder.appendingPathComponent("exefs") }, isOn: old?.isOn ?? turnOn)
+        guard local.isMod else { throw ModStoreError.notAMod(name) }
+        if old != nil { list.remove(at: index) }
+        list.insert(local, at: index)
+        if let value = overlay(for: list), value.utf8.count > Self.overlayLimit {
+            local.isOn = false
+            list[index].isOn = false
+        }
+        var adopted = record
+        adopted?.folderName = name
         do {
-            if previous != nil, fm.fileExists(atPath: folder.path) { try trash(folder) }
-            try fm.createDirectory(at: folder, withIntermediateDirectories: true)
-            try fm.moveItem(at: romfs, to: folder.appendingPathComponent("romfs"))
+            try fm.createDirectory(at: candidate, withIntermediateDirectories: true)
+            if let exefs {
+                for file in try Self.patchFiles(in: exefs, name: name) {
+                    let destination = candidate.appendingPathComponent("exefs").appendingPathComponent(file.relative)
+                    try fm.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+                    try fm.copyItem(at: file.url, to: destination)
+                }
+            }
+            if let romfs { try fm.moveItem(at: romfs, to: candidate.appendingPathComponent("romfs")) }
+            guard canWrite() else { throw ModStoreError.notAllowed }
+            if let old {
+                try fm.createDirectory(at: backup.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try fm.moveItem(at: old.folder, to: backup)
+            }
+            var published = false
+            do {
+                try fm.moveItem(at: candidate, to: folder)
+                published = true
+                try save(list, previous: stored, replacing: adopted)
+            } catch {
+                if published { try? fm.removeItem(at: folder) }
+                if let old {
+                    do { try fm.moveItem(at: backup, to: old.folder) }
+                    catch { keepBackup = true; throw ModStoreError.writeFailed("\(backup.path): \(error.localizedDescription)") }
+                }
+                throw error
+            }
+            if old != nil {
+                // Keep the previous version if the volume's Trash is unavailable.
+                do { try trash(backup) } catch {
+                    keepBackup = true
+                    throw ModStoreError.writeFailed("\(backup.path): \(error.localizedDescription)")
+                }
+            }
+        } catch let error as ModStoreError {
+            throw error
         } catch {
             throw ModStoreError.writeFailed(error.localizedDescription)
         }
-        var list = mods()
-        if previous == nil, turnOn, let index = list.firstIndex(where: { $0.folderName == name }),
-           list[index].romfs != nil, !name.contains(":") {
-            list[index].isOn = true
-            if let value = overlay(for: list), value.utf8.count > Self.overlayLimit { list[index].isOn = false }
-        }
-        var adopted = record
-        adopted.folderName = name
-        try save(list, replacing: adopted)
-        return list.first { $0.folderName == name }?.isOn ?? false
+        return local
     }
 
     /// Moves the mod's folder to the Trash and forgets it.
     public func remove(folderName: String) throws {
         guard canWrite() else { throw ModStoreError.notAllowed }
-        let folder = modsFolder.appendingPathComponent(folderName)
-        if FileManager.default.fileExists(atPath: folder.path) {
-            do { try trash(folder) } catch { throw ModStoreError.writeFailed(error.localizedDescription) }
-        }
-        try save(mods())
+        let stored = try checkedRecords()
+        let list = mods(entries: try checkedEntries(), records: stored)
+        guard let mod = list.first(where: { $0.folderName == folderName }) else { return }
+        do { try trash(mod.folder) } catch { throw ModStoreError.writeFailed(error.localizedDescription) }
+        try save(list.filter { $0.folderName != folderName }, previous: stored)
     }
 
     /// Drops records whose folder is gone and brings the overlay line in line with the list. Does nothing while the
@@ -228,7 +316,7 @@ public struct ModStore {
         guard !automatic || allowsAutomaticMaintenance else { return }
         guard canWrite(), FileManager.default.fileExists(atPath: recordsFile.path) else { return }
         let stored = try readRecords()
-        let list = mods(entries: try ModFolderScanner.checkedEntries(in: modsFolder), records: stored)
+        let list = mods(entries: try checkedEntries(), records: stored)
         let value = overlay(for: list)
         if let value, value.utf8.count > Self.overlayLimit { throw ModStoreError.overlayTooLong }
         let recorded = Set(stored.map(\.folderName))
@@ -236,36 +324,51 @@ public struct ModStore {
         if kept != stored.map(\.folderName) {
             try write(records: stored.filter { kept.contains($0.folderName) })
         }
-        try writeOverlay(value)
+        if stored.contains(where: { $0.codeOnly != true }) { try writeOverlay(value) }
     }
 
     // MARK: - Internals
 
     private func change(_ edit: (inout [LocalMod]) throws -> Void) throws {
         guard canWrite() else { throw ModStoreError.notAllowed }
-        var list = mods()
+        let stored = try checkedRecords()
+        var list = mods(entries: try checkedEntries(), records: stored)
         try edit(&list)
         if let value = overlay(for: list), value.utf8.count > Self.overlayLimit { throw ModStoreError.overlayTooLong }
-        try save(list)
+        try save(list, previous: stored)
     }
 
     /// Records the whole list (hand-installed folders get a record where they stand) and writes the overlay.
-    private func save(_ list: [LocalMod], replacing: ModRecord? = nil) throws {
-        var previous = Dictionary(loadRecords().map { ($0.folderName, $0) }, uniquingKeysWith: { first, _ in first })
+    private func save(_ list: [LocalMod], previous stored: [ModRecord], replacing: ModRecord? = nil) throws {
+        var previous = Dictionary(stored.map { ($0.folderName, $0) }, uniquingKeysWith: { first, _ in first })
         if let replacing { previous[replacing.folderName] = replacing }
         let records = list.map { mod -> ModRecord in
             var record = previous[mod.folderName] ?? ModRecord(folderName: mod.folderName, isOn: false)
             record.isOn = mod.isOn
+            record.codeOnly = mod.romfs == nil && mod.exefs != nil ? true : nil
             return record
         }
+        let hadRecords = FileManager.default.fileExists(atPath: recordsFile.path)
         try write(records: records)
-        try writeOverlay(overlay(for: list))
+        guard stored.contains(where: { $0.codeOnly != true }) || records.contains(where: { $0.codeOnly != true }) else { return }
+        do { try writeOverlay(overlay(for: list)) }
+        catch {
+            if hadRecords { try write(records: stored) }
+            else { try FileManager.default.removeItem(at: recordsFile) }
+            throw error
+        }
     }
 
-    private func mod(_ name: String, on: Bool) -> LocalMod {
-        let folder = modsFolder.appendingPathComponent(name)
+    private func mod(_ entry: URL, on: Bool) -> LocalMod {
+        let name = entry.lastPathComponent
+        let isCode = entry.deletingLastPathComponent().lastPathComponent == codeModsFolder.lastPathComponent
+        // Foundation can enumerate `/var` as `/private/var`; keep the store's spelling in overlay paths.
+        let folder = (isCode ? codeModsFolder : modsFolder).appendingPathComponent(name)
         let romfs = ModFolderScanner.romfs(in: folder, titleID: titleID)
-        return LocalMod(folderName: name, folder: folder, romfs: romfs, isOn: on && romfs != nil && !name.contains(":"))
+        let tree = folder.appendingPathComponent("exefs")
+        let exefs = isCode && ModFolderScanner.isRealDirectory(tree) ? tree : nil
+        return LocalMod(folderName: name, folder: folder, romfs: romfs, exefs: exefs,
+                        isOn: on && (romfs != nil || exefs != nil) && !name.contains(":"))
     }
 
     private func overlay(for list: [LocalMod]) -> String? {
@@ -279,7 +382,12 @@ public struct ModStore {
     }
 
     private func loadRecords() -> [ModRecord] {
-        (try? readRecords()) ?? []
+        (try? checkedRecords()) ?? []
+    }
+
+    private func checkedRecords() throws -> [ModRecord] {
+        do { return try readRecords() }
+        catch let error as CocoaError where error.code == .fileReadNoSuchFile || error.code == .fileNoSuchFile { return [] }
     }
 
     private func readRecords() throws -> [ModRecord] {
@@ -295,5 +403,83 @@ public struct ModStore {
         } catch {
             throw ModStoreError.writeFailed(error.localizedDescription)
         }
+    }
+
+    // MARK: - Code mods at build time
+
+    /// Compared against the engine's built-in metadata rather than the last attempted build, so a failed,
+    /// cancelled or pending install cannot clear the Rebuild notice.
+    public func codeModsNeedRebuild(app: URL) -> Bool {
+        let metadata = app.appendingPathComponent("Contents/Resources/dm/mods")
+        let installed = ModFolderScanner.entries(in: metadata).filter {
+            FileManager.default.fileExists(atPath: $0.appendingPathComponent("dm_code.tsv").path)
+        }.map(\.lastPathComponent)
+        guard let selected = try? codeMods(enabledCodeMods(), stage: nil) else { return true }
+        return selected != installed
+    }
+
+    func enabledCodeMods() throws -> [LocalMod] {
+        let entries = try checkedEntries(in: codeModsFolder)
+        guard !entries.isEmpty else { return [] }
+        return mods(entries: entries, records: try checkedRecords()).filter { $0.isOn && $0.exefs != nil }
+    }
+
+    /// The engine reads child folders in name order and applies the whole set together. Prefix with the
+    /// selected order and a fingerprint of the patch paths/content, which the engine preserves in its metadata.
+    func codeMods(_ list: [LocalMod], stage: URL?) throws -> [String] {
+        var names: [String] = []
+        let fm = FileManager.default
+        for (index, mod) in list.enumerated() {
+            guard let tree = mod.exefs else { continue }
+            let patches = try Self.patchFiles(in: tree, name: mod.folderName)
+            let candidate = stage?.appendingPathComponent(".candidate")
+            var hash = SHA256()
+            hash.update(data: Data(mod.folderName.utf8))
+            for patch in patches {
+                let input: URL
+                if let candidate {
+                    input = candidate.appendingPathComponent("exefs").appendingPathComponent(patch.relative)
+                    try fm.createDirectory(at: input.deletingLastPathComponent(), withIntermediateDirectories: true)
+                    try fm.copyItem(at: patch.url, to: input)
+                } else { input = patch.url }
+                var contents = SHA256()
+                let handle = try FileHandle(forReadingFrom: input)
+                defer { try? handle.close() }
+                while let chunk = try handle.read(upToCount: 1 << 20), !chunk.isEmpty { contents.update(data: chunk) }
+                hash.update(data: Data(("\u{0}" + patch.relative + "\u{0}").utf8))
+                hash.update(data: Data(contents.finalize()))
+            }
+            let digest = hash.finalize().prefix(12).map { String(format: "%02x", $0) }.joined()
+            let label = String(mod.folderName.unicodeScalars.prefix(24))
+            let name = String(format: "%08d", index) + "-" + digest + "-" + label
+            if let stage, let candidate { try fm.moveItem(at: candidate, to: stage.appendingPathComponent(name)) }
+            names.append(name)
+        }
+        return names
+    }
+
+    private static func patchFiles(in tree: URL, name: String) throws -> [(url: URL, relative: String)] {
+        let failure = ModStoreError.invalidCodeMod(name)
+        guard ModFolderScanner.isRealDirectory(tree) else { throw failure }
+        let keys: Set<URLResourceKey> = [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey]
+        var walkFailed = false
+        guard let walker = FileManager.default.enumerator(at: tree, includingPropertiesForKeys: Array(keys),
+                options: [.skipsHiddenFiles], errorHandler: { _, _ in walkFailed = true; return false }) else { throw failure }
+        let base = tree.resolvingSymlinksInPath().path + "/"
+        var files: [(url: URL, relative: String)] = []
+        for case let file as URL in walker {
+            let values = try file.resourceValues(forKeys: keys)
+            guard values.isSymbolicLink == false else { throw failure }
+            let resolved = file.resolvingSymlinksInPath().path
+            guard resolved.hasPrefix(base) else { throw failure }
+            let relative = String(resolved.dropFirst(base.count))
+            guard !relative.isEmpty, relative.rangeOfCharacter(from: ModSupport.patchSeparators) == nil,
+                  file.lastPathComponent.lowercased() != "main.npdm" else { throw failure }
+            if values.isDirectory == true { continue }
+            guard values.isRegularFile == true, ModSupport.isPatch(file.lastPathComponent) else { throw failure }
+            files.append((file, relative))
+        }
+        guard !walkFailed, !files.isEmpty else { throw failure }
+        return files.sorted { $0.relative < $1.relative }
     }
 }

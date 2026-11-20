@@ -54,7 +54,7 @@ public enum ModFolderScanner {
         return found
     }
 
-    private static func isRealDirectory(_ url: URL) -> Bool {
+    static func isRealDirectory(_ url: URL) -> Bool {
         guard let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]) else { return false }
         return values.isDirectory == true && values.isSymbolicLink != true
     }

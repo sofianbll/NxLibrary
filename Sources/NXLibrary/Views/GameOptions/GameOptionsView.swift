@@ -197,10 +197,12 @@ struct GameOptionsView: View {
             }
 
             if modsOpen {
-                ModsPanel(viewModel: viewModel, game: current) {
+                ModsPanel(viewModel: viewModel, game: current, onRebuild: {
+                    rebuild(current)
+                }, onClose: {
                     modsOpen = false
                     modsValue = viewModel.modsRowValue(for: current)
-                }
+                })
                 .transition(.opacity)
                 .zIndex(2)
             }

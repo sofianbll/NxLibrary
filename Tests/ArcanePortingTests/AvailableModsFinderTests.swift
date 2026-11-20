@@ -70,6 +70,14 @@ final class AvailableModsFinderTests: XCTestCase {
         XCTAssertEqual(http.count("Mod/3/ProfilePage"), 0)
     }
 
+    func testCodeOnlyAndSimpleMixedArchivesAreDiscoverable() async throws {
+        page([1], complete: true)
+        profile(1, files: [(11, ["Pack/exefs/2.0.2.pchtxt"]), (12, ["romfs/a", "exefs/abcd.ips"]),
+                           (13, ["Other/romfs/a", "Pack/exefs/2.0.2.pchtxt"])])
+        let mods = try await collect(finder())
+        XCTAssertEqual(mods.first?.files.map(\.id), [12, 11])
+    }
+
     /// A mod that needs a loader is never listed; one with other requirements is, and carries them for its panel.
     func testModsNeedingALoaderAreLeftOutAndOthersCarryTheirRequirements() async throws {
         page([1, 2], complete: true)

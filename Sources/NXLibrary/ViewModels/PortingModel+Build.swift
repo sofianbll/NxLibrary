@@ -346,11 +346,21 @@ extension PortingModel {
 
         let tempRoot = scratch.temp.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+        var started = false
+        defer { if !started { try? FileManager.default.removeItem(at: tempRoot) } }
         let tempApp = tempRoot.appendingPathComponent(finalApp.lastPathComponent)
         let logURL = app.core.appendingPathComponent("Logs").appendingPathComponent("\(titleId).log")
         try FileManager.default.createDirectory(at: logURL.deletingLastPathComponent(),
                                                 withIntermediateDirectories: true)
 
+        let capabilities = app.setup.engineSourceCapabilities
+        let codeMods: URL?
+        do {
+            codeMods = try BuildService.stageCodeMods(app.modStore(for: target), in: tempRoot,
+                                                     engineSupportsMods: capabilities.codeMods)
+        } catch let error as ModStoreError {
+            throw NXLibraryError.environmentBlocked(AppViewModel.modMessage(error))
+        }
         let command = BuildCommandBuilder.make(
             repo: repo,
             toolchain: toolchain,
@@ -361,13 +371,14 @@ extension PortingModel {
             appName: target.name,
             bundleId: target.bundleId ?? "org.nxnative.\(titleId.lowercased())",
             language: app.runtimeSettings.loadRuntimeConfig(for: target).languageForBuild,
-            titleId: app.setup.engineSourceCapabilities.titleSelection ? titleId : nil,
+            titleId: capabilities.titleSelection ? titleId : nil,
             programIndex: SourceSelection.programIndex(for: target.sources, titleID: titleId,
-                                                       nupPrograms: app.setup.engineSourceCapabilities.nupPrograms),
-            packageVersion: app.setup.engineSourceCapabilities.titleSelection
+                                                       nupPrograms: capabilities.nupPrograms),
+            packageVersion: capabilities.titleSelection
                 ? SourceSelection.packageVersion(for: target.sources, stagedSelection: !workspace.links.isEmpty) : nil,
             allowUntestedToolchain: app.setup.allowUntestedToolchain,
             nextendoClientID: app.settingsStore?.settings.nextendoClientID ?? NextendoLaunch.buildClientID,
+            codeModsFolder: codeMods,
             extraArguments: extraArguments
         )
         lastPortingCommand = [command.executable.path] + command.arguments
@@ -412,6 +423,7 @@ extension PortingModel {
 
         let service = BuildService()
         buildService = service
+        started = true
         service.start(
             command: command,
             logURL: logURL,

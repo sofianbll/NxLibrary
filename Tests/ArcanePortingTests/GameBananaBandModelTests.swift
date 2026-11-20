@@ -93,7 +93,7 @@ final class GameBananaBandModelTests: XCTestCase {
         let mods = store(gameA)
         let staged = dir.appendingPathComponent("staged/romfs")
         try FileManager.default.createDirectory(at: staged, withIntermediateDirectories: true)
-        try mods.adopt(staged: staged, folderName: "UI",
+        try mods.adopt(romfs: staged, exefs: nil, name: "UI",
                        record: ModRecord(folderName: "UI", isOn: false, gameBananaModID: 55, gameBananaFileID: 540),
                        turnOn: false)
         let model = band()

@@ -271,7 +271,7 @@ public struct GameOptionsPresentation: Equatable {
         switch row {
         case .play: return L10n.text("Launch the installed Mac app.")
         case .cheats: return L10n.text("Install and switch this game's cheats.")
-        case .mods: return L10n.text("Turn this game's file mods on and off, and choose which one wins.")
+        case .mods: return L10n.text("Manage RomFS and code mods for this game.")
         case .move: return L10n.text("Change its place on Spotlight.")
         case .favorite: return L10n.text("On your Favorites tab.")
         case .hidden: return L10n.text("Hidden games stay out of your lists.")

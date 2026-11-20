@@ -6,7 +6,7 @@ final class ModSupportTests: XCTestCase {
     private let tid = "0100000000010000"
 
     private func root(_ paths: [String], _ titleID: String? = nil) -> String? {
-        ModSupport.romfsRoot(in: paths, titleID: titleID ?? tid)
+        (try? ModSupport.layout(in: paths, titleID: titleID ?? tid))?.romfs
     }
 
     func testPlainRomFSRoot() {
@@ -26,11 +26,37 @@ final class ModSupportTests: XCTestCase {
         XCTAssertNil(root(["atmosphere/contents/\(tid)/romfs/a"], "01000000000A0000"))
     }
 
-    func testCodeModsAreUnsupported() {
+    func testNonPatchCodeIsUnsupported() {
         XCTAssertNil(root(["romfs/a", "exefs/main.npdm"]))
         XCTAssertNil(root(["romfs/a", "atmosphere/exefs_patches/x/1.ips"]))
         XCTAssertNil(root(["romfs/a", "60fps.pchtxt"]))
         XCTAssertNil(root(["romfs/a", "Mod/main.npdm"]))
+    }
+
+    func testCodeAndMixedLayouts() throws {
+        let base = "Pack/atmosphere/contents/\(tid.lowercased())"
+        let code = try ModSupport.layout(in: ["\(base)/ExeFS/", "\(base)/ExeFS/2.0.2.pchtxt", "readme.txt"], titleID: tid)
+        XCTAssertEqual(code.exefs, "\(base)/ExeFS")
+        XCTAssertNil(code.romfs)
+        let mixed = try ModSupport.layout(in: ["\(base)/exefs/abcd.IPS", "\(base)/romfs/data"], titleID: tid)
+        XCTAssertEqual(mixed.exefs, "\(base)/exefs")
+        XCTAssertEqual(mixed.romfs, "\(base)/romfs")
+    }
+
+    func testAmbiguousOrUnsupportedCodeLayouts() {
+        for paths in [
+            ["Other/exefs/mod.ips", "Pack/exefs/mod.ips"],
+            ["RomFS/romfs/data", "Code/exefs/mod.pchtxt"],
+            ["exefs/mod.pchtxt", "romfs/data", "main.npdm"],
+            ["exefs/mod.pchtxt", "exefs/main.nso"],
+            ["exefs/mod.ips", "../elsewhere"],
+            ["exefs/"],
+            ["atmosphere/contents/0100000000090000/exefs/mod.pchtxt"],
+            ["0100000000090000/exefs/mod.ips"],
+            ["exefs/mod.ips", "0100000000090000/readme.txt"],
+        ] {
+            XCTAssertThrowsError(try ModSupport.layout(in: paths, titleID: tid), "\(paths)")
+        }
     }
 
     func testCheatsAreIgnored() {

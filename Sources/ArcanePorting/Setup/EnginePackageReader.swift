@@ -54,6 +54,7 @@ public struct EngineSourceCapabilities {
     /// (nxnative 056e41fe: survey_nup, survey_dump). Before it, such a game is refused.
     public let provisionalNUP: Bool
     public let provisionalDumps: Bool
+    public let codeMods: Bool
     public init(repo: URL) {
         let text = (try? String(contentsOf: repo.appendingPathComponent("scripts/build_ipa_from_nsp.py"), encoding: .utf8)) ?? ""
         self.init(script: text)
@@ -66,6 +67,7 @@ public struct EngineSourceCapabilities {
         nupPrograms = nupContainers && text.contains("pack_nup.scan(n, program)")
         provisionalNUP = nupContainers && text.contains("survey_nup")
         provisionalDumps = extractedFolders && text.contains("survey_dump")
+        codeMods = text.contains("'--mods'") || text.contains("\"--mods\"")
     }
 }
 

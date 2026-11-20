@@ -321,7 +321,7 @@ Cartella `Sources/NXLibraryCore/Mods/`.
 | File | Responsabilità |
 |---|---|
 | [Sources/NXLibraryCore/Mods/ModsBandLayout.swift](../../Sources/NXLibraryCore/Mods/ModsBandLayout.swift) | Ordine delle tessere, Search accanto a Manage e movimento nella griglia (sei per riga). |
-| [Sources/NXLibraryCore/Mods/LocalMod.swift](../../Sources/NXLibraryCore/Mods/LocalMod.swift) | Una cartella della cartella mods di un gioco, con il suo `romfs` e lo stato. |
+| [Sources/NXLibraryCore/Mods/LocalMod.swift](../../Sources/NXLibraryCore/Mods/LocalMod.swift) | Una mod locale: cartella, stato e radici `romfs` o `exefs`. |
 
 ## Core · impostazioni, lingua e testi
 
@@ -571,7 +571,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 
 | File | Responsabilità |
 |---|---|
-| [Sources/ArcanePorting/Mods/ModStore.swift](../../Sources/ArcanePorting/Mods/ModStore.swift) | Ordine, interruttori, conflitti, Cestino e overlay delle mod RomFS. Ferma la riconciliazione se cartella o record non si leggono. |
+| [Sources/ArcanePorting/Mods/ModStore.swift](../../Sources/ArcanePorting/Mods/ModStore.swift) | Ordine, interruttori, conflitti, Cestino, overlay RomFS e snapshot delle patch ExeFS. Ferma la riconciliazione se cartella o record non si leggono. |
 | [Sources/ArcanePorting/Mods/ModFolderScanner.swift](../../Sources/ArcanePorting/Mods/ModFolderScanner.swift) | Elenca cartelle, archivi e file RomFS. La lettura stretta distingue una cartella vuota da una scansione fallita durante la riconciliazione. |
 | [Sources/ArcanePorting/Mods/ModSupport.swift](../../Sources/ArcanePorting/Mods/ModSupport.swift) | Quali file di mod funzionano (solo RomFS), dov'è la loro cartella `romfs`, nomi di cartella sicuri. |
 | [Sources/ArcanePorting/Mods/GameBanana/GameBananaAPI.swift](../../Sources/ArcanePorting/Mods/GameBanana/GameBananaAPI.swift) | URL di ricerca e ID dai link, host fidati, risposte GameBanana e testo dalle descrizioni HTML. |
@@ -579,7 +579,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Sources/ArcanePorting/Mods/GameBanana/GameBananaImageCache.swift](../../Sources/ArcanePorting/Mods/GameBanana/GameBananaImageCache.swift) | Cache su disco delle immagini delle mod dal CDN di GameBanana. |
 | [Sources/ArcanePorting/Mods/GameBanana/GameBananaMatch.swift](../../Sources/ArcanePorting/Mods/GameBanana/GameBananaMatch.swift) | Abbina un gioco alla sua pagina GameBanana per nome e ricorda la scelta. |
 | [Sources/ArcanePorting/Mods/GameBanana/AvailableModsFinder.swift](../../Sources/ArcanePorting/Mods/GameBanana/AvailableModsFinder.swift) | Verifica compatibilità da lista, ricerca o link e indica la pagina successiva e gli aggiornamenti. |
-| [Sources/ArcanePorting/Mods/GameBanana/ModInstaller.swift](../../Sources/ArcanePorting/Mods/GameBanana/ModInstaller.swift) | Controlla, estrae con `bsdtar` e installa una mod scaricata nella cartella del gioco. |
+| [Sources/ArcanePorting/Mods/GameBanana/ModInstaller.swift](../../Sources/ArcanePorting/Mods/GameBanana/ModInstaller.swift) | Controlla, estrae con `bsdtar` e adotta le radici RomFS ed ExeFS della mod scaricata. |
 | [Sources/ArcanePorting/Mods/GameBanana/GameBananaBandModel.swift](../../Sources/ArcanePorting/Mods/GameBanana/GameBananaBandModel.swift) | Stato della fascia Mods: abbinamento, ricerca, paginazione e installazioni. |
 | [Sources/ArcanePorting/Mods/GameBanana/ModCatalog.swift](../../Sources/ArcanePorting/Mods/GameBanana/ModCatalog.swift) | Categorie nostre, ordinamenti e sezioni della pagina dello store (altezze fisse). |
 | [Sources/ArcanePorting/Mods/GameBanana/ModCatalogSnapshots.swift](../../Sources/ArcanePorting/Mods/GameBanana/ModCatalogSnapshots.swift) | Le mod di ogni gioco salvate su disco, per aprire lo store subito; solo link GameBanana. |
@@ -659,7 +659,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Sources/NXLibrary/Views/GameOptions/ChangeArtworkView+Input.swift](../../Sources/NXLibrary/Views/GameOptions/ChangeArtworkView+Input.swift) | Input: schede, focus, indietro e chiusura, scelta, controller e monitor dei tasti. |
 | [Sources/NXLibrary/Views/GameOptions/ChangeMetadataView.swift](../../Sources/NXLibrary/Views/GameOptions/ChangeMetadataView.swift) | Offre alternative per campo da store, Title DB, GameTDB e IGDB, oppure testo personale; anteprima, scelta, annullamento e retry con lo stesso input. |
 | [Sources/NXLibrary/Views/GameOptions/CheatsPanel.swift](../../Sources/NXLibrary/Views/GameOptions/CheatsPanel.swift) | Presenta file, master switch, codici, importazione, rimozione e stato di scrittura dei cheats. |
-| [Sources/NXLibrary/Views/GameOptions/ModsPanel.swift](../../Sources/NXLibrary/Views/GameOptions/ModsPanel.swift) | Game options → Mods: accende, ordina e sposta nel Cestino le mod RomFS, apre la cartella mods. |
+| [Sources/NXLibrary/Views/GameOptions/ModsPanel.swift](../../Sources/NXLibrary/Views/GameOptions/ModsPanel.swift) | Game options → Mods: importazione ExeFS, badge Code, Rebuild, interruttori, ordine, Cestino e cartella RomFS. |
 | [Sources/NXLibrary/Views/Detail/ModDetailPanel.swift](../../Sources/NXLibrary/Views/Detail/ModDetailPanel.swift) | Dettaglio di una mod GameBanana: immagini, autore, versione, descrizione, Install/Update e link. |
 | [Sources/NXLibrary/Views/Detail/GameBananaFindPanel.swift](../../Sources/NXLibrary/Views/Detail/GameBananaFindPanel.swift) | Pannelli per trovare il gioco e cercare le sue mod, con lo stesso campo GameBanana. |
 | [Sources/NXLibrary/ViewModels/ModStoreHost.swift](../../Sources/NXLibrary/ViewModels/ModStoreHost.swift) | Store della card Mods: mantiene la cover fra schermate, rivalida abbinamenti e snapshot; rilegge i badge a ogni apertura e scarta i risultati di generazioni precedenti. |

@@ -1,6 +1,171 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%@ needs an exefs folder with .pchtxt or .ips files only, without links.": {
+      "comment": "AppViewModel+Mods.swift",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "%@ benötigt einen exefs-Ordner nur mit .pchtxt- oder .ips-Dateien, ohne Links."}},
+        "en": {"stringUnit": {"state": "translated", "value": "%@ needs an exefs folder with .pchtxt or .ips files only, without links."}},
+        "es": {"stringUnit": {"state": "translated", "value": "%@ necesita una carpeta exefs que solo contenga archivos .pchtxt o .ips, sin enlaces."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "%@ doit contenir un dossier exefs avec seulement des fichiers .pchtxt ou .ips, sans liens."}},
+        "it": {"stringUnit": {"state": "translated", "value": "%@ richiede una cartella exefs con soli file .pchtxt o .ips, senza collegamenti."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "%@ precisa de uma pasta exefs com apenas arquivos .pchtxt ou .ips, sem links."}}
+      }
+    },
+    "%@ of %@ on": {
+      "comment": "ModsPanel.swift",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "%@ von %@ aktiv"}},
+        "en": {"stringUnit": {"state": "translated", "value": "%@ of %@ on"}},
+        "es": {"stringUnit": {"state": "translated", "value": "%@ de %@ en uso"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "%@ sur %@ en service"}},
+        "it": {"stringUnit": {"state": "translated", "value": "%@ di %@ in uso"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "%@ de %@ em uso"}}
+      }
+    },
+    "Code": {
+      "comment": "ModsPanel.swift: code mod badge",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Code"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Code"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Código"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Code"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Codice"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Código"}}
+      }
+    },
+    "Code mods can't build in a path containing a comma, colon or line break.": {
+      "comment": "BuildService.swift",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Code-Mods lassen sich nicht in einem Pfad mit Komma, Doppelpunkt oder Zeilenumbruch bauen."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Code mods can't build in a path containing a comma, colon or line break."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se pueden compilar mods de código en una ruta con comas, dos puntos o saltos de línea."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Impossible de compiler des mods de code dans un chemin contenant une virgule, deux-points ou un saut de ligne."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Non puoi compilare le mod di codice in un percorso con virgole, due punti o ritorni a capo."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não é possível compilar mods de código em um caminho com vírgula, dois-pontos ou quebra de linha."}}
+      }
+    },
+    "Copy a folder with exefs patches. The original stays in place.": {
+      "comment": "ModsPanel.swift",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Einen Ordner mit ExeFS-Patches kopieren. Das Original bleibt erhalten."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Copy a folder with exefs patches. The original stays in place."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Copia una carpeta con parches exefs. La original se conserva."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Copie un dossier contenant des correctifs exefs. L’original reste en place."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Copia una cartella con patch exefs. L’originale resta al suo posto."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Copia uma pasta com patches exefs. A original fica no lugar."}}
+      }
+    },
+    "If code mods patch the main module, Nextendo mode takes priority and none of the code mods load.": {
+      "comment": "ModsPanel.swift",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Wenn Code-Mods das Hauptmodul ändern, hat der Nextendo-Modus Vorrang und keine Code-Mods werden geladen."}},
+        "en": {"stringUnit": {"state": "translated", "value": "If code mods patch the main module, Nextendo mode takes priority and none of the code mods load."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Si los mods de código modifican el módulo principal, el modo Nextendo tiene prioridad y no se carga ninguno."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Si un mod de code modifie le module principal, le mode Nextendo est prioritaire et aucun mod de code ne se charge."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Se le mod di codice modificano il modulo principale, la modalità Nextendo ha la precedenza e nessuna mod di codice viene caricata."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Se os mods de código alterarem o módulo principal, o modo Nextendo tem prioridade e nenhum mod de código é carregado."}}
+      }
+    },
+    "Import code mod": {
+      "comment": "ModsPanel.swift",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Code-Mod importieren"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Import code mod"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Importar mod de código"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Importer un mod de code"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Importa mod di codice"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Importar mod de código"}}
+      }
+    },
+    "Manage RomFS and code mods for this game.": {
+      "comment": "GameOptionsPresentation.swift",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "RomFS- und Code-Mods für dieses Spiel verwalten."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Manage RomFS and code mods for this game."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Gestiona los mods RomFS y de código de este juego."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Gérer les mods RomFS et les mods de code de ce jeu."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Gestisci le mod RomFS e di codice di questo gioco."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Gerencie os mods de RomFS e de código deste jogo."}}
+      }
+    },
+    "Not a mod: needs romfs or exefs patches.": {
+      "comment": "ModsPanel.swift",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Kein Mod: romfs oder exefs-Patches fehlen."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Not a mod: needs romfs or exefs patches."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No es un mod: necesita romfs o parches exefs."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ce n’est pas un mod : il manque romfs ou des correctifs exefs."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Non è una mod: manca romfs o mancano le patch exefs."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não é um mod: precisa de romfs ou patches exefs."}}
+      }
+    },
+    "Open the mods folder to add RomFS mods, or import a code mod.": {
+      "comment": "ModsPanel.swift",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Öffne den Mods-Ordner für RomFS-Mods oder importiere einen Code-Mod."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Open the mods folder to add RomFS mods, or import a code mod."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Abre la carpeta de mods para añadir mods RomFS o importa un mod de código."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ouvre le dossier des mods pour ajouter un mod RomFS, ou importe un mod de code."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Apri la cartella delle mod per aggiungere mod RomFS oppure importa una mod di codice."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Abra a pasta de mods para adicionar mods RomFS ou importe um mod de código."}}
+      }
+    },
+    "Rebuild to apply code mod changes.": {
+      "comment": "ModsPanel.swift",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Baue das Spiel neu, um Änderungen an Code-Mods zu übernehmen."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Rebuild to apply code mod changes."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Vuelve a compilar para aplicar los cambios de los mods de código."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Recompile le jeu pour appliquer les changements des mods de code."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ricompila il gioco per applicare le modifiche alle mod di codice."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Recompile o jogo para aplicar as alterações nos mods de código."}}
+      }
+    },
+    "RomFS changes apply at the next launch. Code mods apply after a rebuild.": {
+      "comment": "ModsPanel.swift",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "RomFS-Änderungen gelten beim nächsten Start. Code-Mods benötigen einen neuen Build."}},
+        "en": {"stringUnit": {"state": "translated", "value": "RomFS changes apply at the next launch. Code mods apply after a rebuild."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Los cambios RomFS se aplican al volver a iniciar el juego. Los mods de código requieren volver a compilarlo."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Les changements RomFS s’appliquent au prochain lancement. Les mods de code nécessitent de recompiler le jeu."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Le modifiche RomFS si applicano al prossimo avvio. Le mod di codice richiedono una nuova compilazione."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "As alterações de RomFS valem na próxima vez que o jogo abrir. Os mods de código exigem uma recompilação."}}
+      }
+    },
+    "The selected engine cannot build code mods. Switch engines or turn them off.": {
+      "comment": "BuildService.swift",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Die gewählte Engine kann keine Code-Mods bauen. Wechsle die Engine oder schalte die Mods aus."}},
+        "en": {"stringUnit": {"state": "translated", "value": "The selected engine cannot build code mods. Switch engines or turn them off."}},
+        "es": {"stringUnit": {"state": "translated", "value": "El motor seleccionado no compila mods de código. Cambia de motor o desactiva esos mods."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Le moteur sélectionné ne compile pas les mods de code. Change de moteur ou désactive-les."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Il motore selezionato non compila le mod di codice. Cambia motore o disattiva le mod."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O motor selecionado não compila mods de código. Troque de motor ou desative os mods."}}
+      }
+    },
+    "This archive needs a romfs folder or an exefs folder with patches.": {
+      "comment": "ModInstaller.swift",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Dieses Archiv benötigt einen romfs-Ordner oder einen exefs-Ordner mit Patches."}},
+        "en": {"stringUnit": {"state": "translated", "value": "This archive needs a romfs folder or an exefs folder with patches."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Este archivo necesita una carpeta romfs o una carpeta exefs con parches."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Cette archive doit contenir un dossier romfs ou un dossier exefs avec des correctifs."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Questo archivio richiede una cartella romfs o una cartella exefs con patch."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Este arquivo precisa de uma pasta romfs ou de uma pasta exefs com patches."}}
+      }
+    },
+    "Use one mod for this game, with romfs and exefs side by side if it has both. Replacement code files aren't supported.": {
+      "comment": "ModInstaller.swift",
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Verwende einen einzelnen Mod für dieses Spiel, mit romfs und exefs nebeneinander, falls beide vorhanden sind. Ersatzdateien für Code werden nicht unterstützt."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Use one mod for this game, with romfs and exefs side by side if it has both. Replacement code files aren't supported."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Usa un solo mod para este juego, con romfs y exefs al mismo nivel si tiene ambos. No se admiten archivos que sustituyan código."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Utilise un seul mod pour ce jeu, avec romfs et exefs au même niveau s’il contient les deux. Les fichiers qui remplacent le code ne sont pas pris en charge."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Usa una sola mod per questo gioco, con romfs ed exefs allo stesso livello se sono entrambe presenti. I file che sostituiscono il codice non sono supportati."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Use um único mod para este jogo, com romfs e exefs no mesmo nível se houver os dois. Arquivos que substituem código não são compatíveis."}}
+      }
+    },
     "A free, open-source game library and launcher for Mac. Play installed games and port compatible Switch titles with nxnative.": {
       "comment": "SettingsAboutSection.swift",
       "localizations": {
