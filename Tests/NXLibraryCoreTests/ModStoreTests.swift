@@ -74,6 +74,38 @@ final class CodeModStoreTests: XCTestCase {
     }
 }
 
+final class ModStoreConflictTests: XCTestCase {
+    func testMergedDescriptorIsIgnoredOnlyForZAAndRealConflictsRemain() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("ModStore-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let support = root.appendingPathComponent("support")
+        let records = root.appendingPathComponent("records.json")
+        let store = ModStore(supportFolder: support, recordsFile: records, titleID: "0100f43008c44000",
+                             canWrite: { true }, trash: { _ in XCTFail("Unexpected trash") })
+        for name in ["A", "B"] {
+            let arc = store.modsFolder.appendingPathComponent("\(name)/romfs/arc")
+            try FileManager.default.createDirectory(at: arc, withIntermediateDirectories: true)
+            try Data().write(to: arc.appendingPathComponent("data.trpfd"))
+            try store.setOn(true, folderName: name)
+        }
+        let conflict = ModConflict(upper: "A", lower: "B")
+        XCTAssertEqual(store.conflicts(), [conflict])
+        XCTAssertEqual(store.conflicts(mergesTrpfd: true), [])
+
+        let other = ModStore(supportFolder: support, recordsFile: records, titleID: "0100000000000000",
+                             canWrite: { true }, trash: { _ in XCTFail("Unexpected trash") })
+        XCTAssertEqual(other.conflicts(mergesTrpfd: true), [conflict])
+
+        for name in ["A", "B"] {
+            try Data().write(to: store.modsFolder.appendingPathComponent("\(name)/romfs/arc/shared.bin"))
+        }
+        XCTAssertEqual(store.conflicts(mergesTrpfd: true), [conflict])
+        try store.setOn(false, folderName: "B")
+        XCTAssertEqual(store.conflicts(mergesTrpfd: true), [])
+        XCTAssertFalse(try XCTUnwrap(store.overlayValue()).contains("/B/"))
+    }
+}
+
 final class ModStoreLayoutTests: XCTestCase {
     private func mod(_ id: Int, downloads: Int = 0, likes: Int = 0, added: TimeInterval = 0, updated: TimeInterval = 0,
                      category: String = "Skins", image: Bool = true) -> AvailableMod {

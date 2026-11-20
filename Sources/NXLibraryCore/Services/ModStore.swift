@@ -164,9 +164,16 @@ public struct ModStore {
         return found
     }
 
-    /// Pairs of mods that are on and share a file, in list order.
-    public func conflicts() -> [ModConflict] {
-        let on = mods().filter { $0.isOn }.compactMap { mod in mod.romfs.map { (mod.folderName, ModFolderScanner.files(under: $0)) } }
+    /// Pairs of mods that are on and share a file, in list order. Only pass true when this game's engine guarantees
+    /// it merges the Z-A descriptor; unknown or older builds must retain the warning.
+    public func conflicts(mergesTrpfd: Bool = false) -> [ModConflict] {
+        let on = mods().filter { $0.isOn }.compactMap { mod in
+            mod.romfs.map { romfs in
+                var files = ModFolderScanner.files(under: romfs)
+                if mergesTrpfd && titleID == "0100F43008C44000" { files.remove("arc/data.trpfd") }
+                return (mod.folderName, files)
+            }
+        }
         var found: [ModConflict] = []
         for i in on.indices {
             for j in on.indices where j > i && !on[i].1.isDisjoint(with: on[j].1) {
