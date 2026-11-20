@@ -104,7 +104,9 @@ public struct NextendoOAuth {
 
     public init(store: NextendoTokenStore = NextendoTokenStore()) {
         self.init(store: store) { request in
-            let limit = ["/api/friends", "/api/profile", "/api/avatar"].contains(request.url?.path ?? "") ? 1_048_576 : 65_536
+            let path = request.url?.path ?? ""
+            let limit = ["/api/friends", "/api/profile", "/api/avatar", "/api/recent-players"].contains(path)
+                || path.hasPrefix("/api/friends/") ? 1_048_576 : 65_536
             return try await BoundedDownload.data(for: request, session: Self.session, limit: limit)
         }
     }
@@ -212,6 +214,15 @@ public struct NextendoOAuth {
     }
 
     func get(_ path: String, query: [URLQueryItem] = [], clientID: String?, access: String?) async throws -> (Data, Int) {
+        try await api(path, query: query, clientID: clientID, access: access)
+    }
+
+    func post(_ path: String, json: Data, clientID: String, access: String) async throws -> (Data, Int) {
+        try await api(path, clientID: clientID, access: access, json: json)
+    }
+
+    private func api(_ path: String, query: [URLQueryItem] = [], clientID: String?, access: String?,
+                     json: Data? = nil) async throws -> (Data, Int) {
         var url = URLComponents()
         url.scheme = "https"
         url.host = "nextendo.network"
@@ -220,6 +231,11 @@ public struct NextendoOAuth {
         guard let endpoint = url.url else { throw NextendoError.service }
         var request = try request(endpoint, clientID: clientID)
         if let access { request.setValue("Bearer \(access)", forHTTPHeaderField: "Authorization") }
+        if let json {
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = json
+        }
         let result = try await response(request)
         try Task.checkCancellation()
         return result

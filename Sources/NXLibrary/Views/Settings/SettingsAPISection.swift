@@ -17,17 +17,24 @@ struct SettingsAPISection: View {
     @ObservedObject private var igdb = IGDBSettings.shared
     @ObservedObject private var nextendo = NextendoSettings.shared
     @State private var friendsExpanded = false
+    @State private var recentExpanded = false
+    @State private var friendCode = ""
+    @FocusState private var friendCodeFocused: Bool
     @State private var copiedCode: String?
 
     private var clientID: String? { settings.settings.nextendoClientID ?? NextendoLaunch.buildClientID }
     private let accountRowID = "Nextendo"
     private let friendsRowID = "nextendoFriends"
+    private let addRowID = "nextendoAddFriend"
+    private let recentRowID = "nextendoRecentPlayers"
     private let linksRowID = "nextendoLinks"
     private let advancedRowID = "Nextendo client ID"
     private var canActivateNextendo: Bool { !nextendo.isBusy || nextendo.isWaitingForBrowser }
     private var hasFriendCode: Bool { nextendo.account?.friendCode != nil }
     private var showFriends: Bool { nextendo.status == .signedIn && nextendo.account != nil }
-    private var friends: [NextendoAccountSnapshot.Friend]? { nextendo.account?.friends }
+    private var friendData: NextendoAccountSnapshot? { nextendo.friendsNeedRefresh ? nil : nextendo.account }
+    private var friends: [NextendoAccountSnapshot.Friend]? { friendData?.friends }
+    private var canUpdateFriends: Bool { !nextendo.isBusy && !nextendo.friendsNeedRefresh && clientID != nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: canvas.u(8)) {
@@ -82,12 +89,24 @@ struct SettingsAPISection: View {
             }
         }
         .onChange(of: nextendo.status) { status in
-            if status != .signedIn { friendsExpanded = false }
+            if status != .signedIn { resetFriendsPanel() }
             if supportsNextendo { publishActions() }
         }
         .onChange(of: showFriends) { _ in if supportsNextendo { publishActions() } }
         .onChange(of: hasFriendCode) { _ in if supportsNextendo { publishActions() } }
         .onChange(of: friendsExpanded) { _ in if supportsNextendo { publishActions() } }
+        .onChange(of: recentExpanded) { _ in if supportsNextendo { publishActions() } }
+        .onChange(of: nextendo.revision) { _ in if supportsNextendo { publishActions() } }
+        .onChange(of: nextendo.friendsNeedRefresh) { _ in if supportsNextendo { publishActions() } }
+        .onChange(of: nextendo.submittedFriendCode) { submitted in
+            if submitted == friendCode { friendCode = "" }
+        }
+        .onChange(of: focusedRow) { row in
+            if row != addRowID, friendCodeFocused { friendCodeFocused = false }
+        }
+        .onChange(of: focusedButton) { button in
+            if focusedRow == addRowID, button == 1 { friendCodeFocused = false }
+        }
         .onChange(of: nextendo.isBusy) { _ in if supportsNextendo { publishActions() } }
         .onChange(of: nextendo.isWaitingForBrowser) { _ in if supportsNextendo { publishActions() } }
         .onDisappear { if supportsNextendo { endNextendoVisit() } }
@@ -196,10 +215,45 @@ struct SettingsAPISection: View {
 
     private var friendsPanel: some View {
         SelenePanel {
+            addFriendRow
+            if let message = nextendo.friendMessage {
+                friendNotice(message.key, isError: message.isError)
+            }
+            if nextendo.friendsNeedRefresh, nextendo.friendMessage?.isError == false {
+                friendNotice("Could not refresh the lists. Use Check status.", isError: true)
+            }
+            if let requests = friendData?.requests, !requests.isEmpty {
+                SettingsSubheading(text("Received requests"))
+                LazyVStack(spacing: canvas.u(8)) {
+                    ForEach(requests) { player in
+                        playerLine(player.name, row: requestRowID(player.id), buttons: requestButtons(player.id))
+                    }
+                }
+            }
+            if let sent = friendData?.sent, !sent.isEmpty {
+                SettingsSubheading(text("Sent requests"))
+                LazyVStack(spacing: canvas.u(8)) {
+                    ForEach(sent) { player in
+                        playerLine(player.name, row: "nextendoSent-\(player.id)", detail: text("Pending"))
+                    }
+                }
+            }
+            if friendData != nil, friendData?.requests == nil || friendData?.sent == nil {
+                friendNotice("Friend requests unavailable", isError: true)
+            }
+            SeleneButtonRow("Recently played with", id: recentRowID, buttonTitle: recentExpanded ? "Hide" : "Show",
+                            action: toggleRecent)
+                .accessibilityValue(text(recentExpanded ? "Expanded" : "Collapsed"))
+            if recentExpanded { recentPlayers }
             if let friends, !friends.isEmpty {
                 LazyVStack(spacing: canvas.u(8)) {
                     ForEach(friends) { friend in
-                        NextendoFriendLine(friend: friend, revision: nextendo.revision)
+                        let row = friendRowID(friend.id)
+                        NextendoFriendLine(friend: friend, revision: nextendo.revision) {
+                            action(removeButton(friend), row: row, index: 0)
+                                .disabled(!canUpdateFriends)
+                        }
+                        .id("selene-row-\(row)")
                     }
                 }
             } else {
@@ -208,16 +262,104 @@ struct SettingsAPISection: View {
             }
             HStack(spacing: canvas.u(8)) {
                 Spacer(minLength: 0)
-                action(addFriend, row: linksRowID, index: 0)
-                action(openProfile, row: linksRowID, index: 1)
+                action(openProfile, row: linksRowID, index: 0)
             }
             .id("selene-row-\(linksRowID)")
         }
     }
 
-    private var addFriend: NextendoButton {
-        .init("Add a friend", symbol: "arrow.up.right") { openURL(URL(string: "https://nextendo.network/account#form-ajout")!) }
+    private var addFriendRow: some View {
+        SeleneRow("Add a friend", id: addRowID) {
+            TextField(text("Friend code"), text: $friendCode, prompt: Text(verbatim: "SW-0000-0000-0000"))
+                .textFieldStyle(.plain)
+                .focused($friendCodeFocused)
+                .onSubmit(sendFriendCode)
+                .accessibilityLabel(text("Friend code"))
+                .seleneFont(15)
+                .foregroundColor(SeleneTheme.ink)
+                .padding(canvas.u(8))
+                .frame(maxWidth: canvas.u(195))
+                .background(RoundedRectangle(cornerRadius: canvas.u(7)).fill(SeleneTheme.glassLight))
+                .seleneRowFocus(friendCodeFocused || (focusedRow == addRowID && focusedButton == 0), radius: canvas.u(7))
+            action(.init("Add", action: sendFriendCode), row: addRowID, index: 1)
+        }
+        .disabled(!canUpdateFriends)
     }
+
+    private var recentPlayers: some View {
+        Group {
+            if let players = friendData?.recentPlayers, !players.isEmpty {
+                LazyVStack(spacing: canvas.u(8)) {
+                    ForEach(players) { player in
+                        playerLine(player.name, row: recentPlayerRowID(player.id),
+                                   buttons: recentButton(player).map { [$0] } ?? []) {
+                            NextendoGameTitle(name: player.game, id: player.gameID)
+                        }
+                    }
+                }
+            } else {
+                NextendoValue(text: text(friendData?.recentPlayers == nil ? "Recent players unavailable" : "No recent players."))
+                    .padding(.horizontal, canvas.u(8))
+            }
+        }
+    }
+
+    private func playerLine(_ name: String, row: String, detail: String? = nil, buttons: [NextendoButton] = [],
+                            @ViewBuilder game: () -> some View = { EmptyView() }) -> some View {
+        HStack(spacing: canvas.u(8)) {
+            Text(name).seleneFont(15).foregroundColor(SeleneTheme.ink90).lineLimit(1)
+            Spacer(minLength: canvas.u(8))
+            if let detail { NextendoValue(text: detail) }
+            game()
+            ForEach(buttons.indices, id: \.self) { index in
+                action(buttons[index], row: row, index: index)
+                    .disabled(!canUpdateFriends)
+            }
+        }
+        .padding(.horizontal, canvas.u(8))
+        .padding(.vertical, canvas.u(4))
+        .id("selene-row-\(row)")
+    }
+
+    private func friendNotice(_ key: String, isError: Bool) -> some View {
+        Text(text(key))
+            .seleneFont(15)
+            .foregroundColor(isError ? SeleneTheme.danger : SeleneTheme.ink90)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, canvas.u(8))
+    }
+
+    private func sendFriendCode() {
+        guard canUpdateFriends else { return }
+        updateFriend(.send(code: friendCode))
+    }
+
+    private func requestButtons(_ pid: UInt64) -> [NextendoButton] {
+        [.init("Accept") { updateFriend(.accept(pid: pid)) },
+         .init("Decline") { updateFriend(.decline(pid: pid)) }]
+    }
+
+    private func removeButton(_ friend: NextendoAccountSnapshot.Friend) -> NextendoButton {
+        .init("Remove friend") {
+            guard canUpdateFriends else { return }
+            friendCodeFocused = false
+            nextendo.friendToRemove = friend
+        }
+    }
+
+    private func recentButton(_ player: NextendoAccountSnapshot.Player) -> NextendoButton? {
+        guard friendData?.canAdd(player) == true, let code = player.friendCode else { return nil }
+        return .init("Add") { updateFriend(.send(code: code)) }
+    }
+
+    private func updateFriend(_ action: NextendoFriendAction) {
+        friendCodeFocused = false
+        nextendo.updateFriend(action, clientID: clientID)
+    }
+
+    private func requestRowID(_ pid: UInt64) -> String { "nextendoRequest-\(pid)" }
+    private func friendRowID(_ pid: UInt64) -> String { "nextendoFriend-\(pid)" }
+    private func recentPlayerRowID(_ pid: UInt64) -> String { "nextendoRecent-\(pid)" }
 
     private var openProfile: NextendoButton {
         .init("Open my profile", symbol: "arrow.up.right") { openURL(URL(string: "https://nextendo.network/account")!) }
@@ -249,6 +391,10 @@ struct SettingsAPISection: View {
         withAnimation(reduceMotion ? nil : SeleneTheme.quick) { friendsExpanded.toggle() }
     }
 
+    private func toggleRecent() {
+        withAnimation(reduceMotion ? nil : SeleneTheme.quick) { recentExpanded.toggle() }
+    }
+
     private func copyCode() {
         guard let code = nextendo.account?.friendCode, copiedCode != code else { return }
         let pasteboard = NSPasteboard.general
@@ -260,8 +406,15 @@ struct SettingsAPISection: View {
 
     private func endNextendoVisit() {
         nextendo.endVisit()
-        friendsExpanded = false
+        resetFriendsPanel()
         copiedCode = nil
+    }
+
+    private func resetFriendsPanel() {
+        friendsExpanded = false
+        recentExpanded = false
+        friendCode = ""
+        friendCodeFocused = false
     }
 
     private func text(_ key: String) -> String { L10n.text(key, context: localization) }
@@ -286,8 +439,23 @@ struct SettingsAPISection: View {
             if showFriends {
                 actions.append(.init(id: friendsRowID, title: "Friends", rowID: friendsRowID, activate: toggleFriends))
                 if friendsExpanded {
-                    actions.append(.init(id: linksRowID, title: openProfile.title, rowID: linksRowID,
-                                         secondary: (openProfile.title, openProfile.action), activate: addFriend.action))
+                    actions.append(.init(id: addRowID, title: "Add a friend", rowID: addRowID, isEnabled: canUpdateFriends,
+                                         secondary: ("Add", sendFriendCode)) { friendCodeFocused = true })
+                    for player in friendData?.requests ?? [] {
+                        actions.append(friendActionRow(requestRowID(player.id), buttons: requestButtons(player.id)))
+                    }
+                    actions.append(.init(id: recentRowID, title: "Recently played with", rowID: recentRowID, activate: toggleRecent))
+                    if recentExpanded {
+                        for player in friendData?.recentPlayers ?? [] {
+                            if let button = recentButton(player) {
+                                actions.append(friendActionRow(recentPlayerRowID(player.id), buttons: [button]))
+                            }
+                        }
+                    }
+                    for friend in friends ?? [] {
+                        actions.append(friendActionRow(friendRowID(friend.id), buttons: [removeButton(friend)]))
+                    }
+                    actions.append(.init(id: linksRowID, title: openProfile.title, rowID: linksRowID, activate: openProfile.action))
                 }
             }
             actions.append(.init(id: "nextendoClientID", title: "Nextendo client ID", rowID: advancedRowID, isEnabled: !nextendo.isBusy) {
@@ -295,6 +463,11 @@ struct SettingsAPISection: View {
             })
         }
         onActions(actions)
+    }
+
+    private func friendActionRow(_ row: String, buttons: [NextendoButton]) -> SettingsRowAction {
+        .init(id: row, title: buttons[0].title, rowID: row, isEnabled: canUpdateFriends,
+              secondary: buttons.dropFirst().first.map { ($0.title, $0.action) }, activate: buttons[0].action)
     }
 }
 
@@ -332,13 +505,12 @@ private struct NextendoPresence: View {
     }
 }
 
-private struct NextendoFriendLine: View {
+private struct NextendoFriendLine<Trailing: View>: View {
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.nxAppLocale) private var locale
-    @State private var resolvedGame: (key: String, title: String)?
     let friend: NextendoAccountSnapshot.Friend
     let revision: UUID
-    private var gameKey: String { "\(friend.gameID ?? "")|\(locale.language.rawValue)" }
+    @ViewBuilder var trailing: () -> Trailing
 
     var body: some View {
         HStack(spacing: canvas.u(8)) {
@@ -349,22 +521,16 @@ private struct NextendoFriendLine: View {
                     .accessibilityLabel(L10n.text("Favorite", context: locale))
             }
             Spacer(minLength: canvas.u(8))
-            if friend.presence == .playing, let game = friend.game ?? (resolvedGame?.key == gameKey ? resolvedGame?.title : nil) {
-                NextendoValue(text: game).help(game)
+            if friend.presence == .playing {
+                NextendoGameTitle(name: friend.game, id: friend.gameID)
             }
             NextendoPresence(text: L10n.text(status, context: locale), color: color)
+            trailing()
         }
         .padding(.horizontal, canvas.u(8))
         .padding(.vertical, canvas.u(4))
         .background(SeleneTheme.glass.opacity(0.75))
         .clipShape(RoundedRectangle(cornerRadius: canvas.u(7), style: .continuous))
-        .accessibilityElement(children: .combine)
-        .task(id: gameKey) {
-            guard friend.game == nil, let id = friend.gameID,
-                  let title = try? await NextendoAccountService().gameTitle(id: id, language: locale.language),
-                  !Task.isCancelled else { return }
-            resolvedGame = (gameKey, title)
-        }
     }
 
     private var status: String {
@@ -380,6 +546,28 @@ private struct NextendoFriendLine: View {
         case .offline: return SeleneTheme.ink60
         case .online: return SeleneTheme.success
         case .playing: return SeleneTheme.glyph
+        }
+    }
+}
+
+private struct NextendoGameTitle: View {
+    @Environment(\.nxAppLocale) private var locale
+    @State private var resolved: (key: String, title: String)?
+    let name: String?
+    let id: String?
+    private var key: String { "\(id ?? "")|\(locale.language.rawValue)" }
+
+    var body: some View {
+        Group {
+            if let title = name ?? (resolved?.key == key ? resolved?.title : nil) {
+                NextendoValue(text: title).help(title)
+            }
+        }
+        .task(id: key) {
+            guard name == nil, let id,
+                  let title = try? await NextendoAccountService().gameTitle(id: id, language: locale.language),
+                  !Task.isCancelled else { return }
+            resolved = (key, title)
         }
     }
 }
