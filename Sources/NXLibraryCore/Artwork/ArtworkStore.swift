@@ -247,7 +247,7 @@ public final class ArtworkStore: ObservableObject {
         return safe.isEmpty ? "unknown" : safe
     }
 
-    static func downsample(_ data: Data, maxPixelSize: CGFloat, png: Bool = false) -> Data? {
+    package static func downsample(_ data: Data, maxPixelSize: CGFloat, png: Bool = false) -> Data? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,

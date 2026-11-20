@@ -337,7 +337,7 @@ struct AddGameView: View {
                   viewModel.gameToClose == nil,
                   viewModel.gameToRemove == nil,
                   viewModel.gameWithInstallFailure == nil,
-                  !viewModel.isUpdateOfferOpen,
+                  !viewModel.shellDialogOwnsInput,
                   !viewModel.isWelcomeOpen,
                   viewModel.alertMessage == nil, viewModel.settingsNotice == nil,
                   let window = event.window,

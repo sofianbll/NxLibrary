@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 import Combine
 import NXLibraryCore
+import ArcanePorting
 
 struct AppShellView: View {
     @StateObject var viewModel: AppViewModel
@@ -31,6 +32,7 @@ struct AppShellView: View {
     @State var welcomeDismissed = false
     /// Dismisses the Close Game confirmation when its game quits by itself.
     @State var closeGameWatch: AnyCancellable?
+    @State var homeMenuFocus: SeleneConfirmButton = .cancel
     @State var sharedBackdrop: SeleneBackdropRequest?
 
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
@@ -79,7 +81,17 @@ struct AppShellView: View {
 
     /// The Close Game confirmation is open; menu commands and the dialog's input wait for it.
     var isCloseGameOpen: Bool {
-        viewModel.gameToClose != nil || viewModel.gameToRemove != nil || showsUpdateOffer || showsInstallFailure || showsSettingsNotice
+        viewModel.gameToClose != nil || viewModel.gameToRemove != nil || showsUpdateOffer || showsInstallFailure
+            || showsSettingsNotice || homeMenuGame != nil
+    }
+    /// Keep the paused state while an already-open panel owns input.
+    var homeMenuGame: PortedGame? {
+        guard !viewModel.showSetupCheck, !showsWelcome, !router.isScreenshotViewerOpen,
+              !router.isSearchPresented, !router.isMenuPresented, !viewModel.isGameOptionsOpen,
+              viewModel.launchOverlay == nil, viewModel.gameToClose == nil, viewModel.gameToRemove == nil,
+              !showsInstallFailure, !showsUpdateOffer, !showsSettingsNotice,
+              let id = runningGames.pausedGameIDs.first else { return nil }
+        return viewModel.libraryGames.first { $0.id == id }
     }
     var showsInstallFailure: Bool {
         viewModel.gameWithInstallFailure != nil && !viewModel.showSetupCheck
@@ -222,6 +234,8 @@ struct AppShellView: View {
         .onExitCommand {
             if router.isScreenshotViewerOpen {
                 // The viewer's key monitor closes it.
+            } else if homeMenuGame != nil {
+                homeMenuFocus = .cancel
             } else if showsSettingsNotice {
                 finishSettingsNotice(choice: 0)
             } else if showsInstallFailure {

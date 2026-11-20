@@ -12,7 +12,8 @@ extension AppViewModel {
         guard launchingGameId == nil, launchOverlay == nil else { return }
         // A running game is brought forward, never started a second time.
         if let running = RunningGameMonitor.runningApplication(for: game) {
-            RunningGameMonitor.activate(running)
+            if let runningGameMonitor { Task { @MainActor in runningGameMonitor.resume(game) } }
+            else { RunningGameMonitor.activate(running) }
             return
         }
         guard savesPermitPlay(game) else { return }
@@ -139,8 +140,19 @@ extension AppViewModel {
         // Play can come straight from the row. Reconcile removed mod folders before the game reads its overlay.
         if let store = modStore(for: game) { _ = performModChange { try store.sync() } }
 
-        launchService.launch(appURL: game.url,
-                             environment: gameSettings == nil ? config.toEnvironmentDict() : environment) { [weak self] success, error in
+        Task { @MainActor in
+            let appURL = game.url
+            let supported = await Task.detached(priority: .utility) { HomeMenu.supported(by: appURL) }.value
+            let homeMenu = HomeMenu.environment(supported: supported, launcherBundleID: Bundle.main.bundleIdentifier)
+            let overrides = (gameSettings == nil ? config.toEnvironmentDict() : environment)
+                .merging(homeMenu) { _, launcher in launcher }
+            openGame(game, titleId: titleId, token: saveLaunchToken, environment: overrides)
+        }
+    }
+
+    private func openGame(_ game: PortedGame, titleId: String, token saveLaunchToken: UUID,
+                          environment: [String: String]) {
+        launchService.launch(appURL: game.url, environment: environment) { [weak self] success, error in
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.saveGate.end(titleID: titleId, token: saveLaunchToken)

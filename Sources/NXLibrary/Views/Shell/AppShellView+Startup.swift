@@ -18,6 +18,7 @@ extension AppShellView {
         if settings.settings.checkEngineAtLaunch && !AppData.profile.isDevelopment { SetupCheckModel.checkAtLaunch(viewModel: viewModel) }
         runningGames.start(sessions: playSessions)
         runningGames.setGames(viewModel.libraryGames)
+        viewModel.runningGameMonitor = runningGames
         // Steam's playtime first: a Steam game already running starts a session at once, and trimming needs Steam's last values.
         SteamPlaytimeCoordinator.shared.setGames(viewModel.catalogGames, sources: viewModel.catalogSourceConfigurations)
         SteamPlaytimeCoordinator.shared.start(sessions: playSessions)
@@ -71,6 +72,10 @@ extension AppShellView {
         GameControllerService.shared.onAction = { [weak viewModel, weak router] action in
             guard let viewModel, let router else { return }
             guard !nativeMenus.isTracking, !nativeDialogOwnsInput else { return }
+            if let game = homeMenuGame {
+                homeMenuInput(action, game: game)
+                return
+            }
             if viewModel.showSetupCheck {
                 // The Setup check owns the controller; Menu does nothing there (as in Selene).
                 NotificationCenter.default.post(name: .nxSetupCheckGamepadAction, object: action)

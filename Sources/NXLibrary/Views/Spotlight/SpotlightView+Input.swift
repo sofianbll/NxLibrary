@@ -430,7 +430,7 @@ extension SpotlightView {
                   !viewModel.isGameOptionsOpen,
                   viewModel.gameToClose == nil,
                   viewModel.gameToRemove == nil,
-                  !viewModel.isUpdateOfferOpen,
+                  !viewModel.shellDialogOwnsInput,
                   !viewModel.isWelcomeOpen,
                   !viewModel.showSetupCheck,
                   let window = event.window,

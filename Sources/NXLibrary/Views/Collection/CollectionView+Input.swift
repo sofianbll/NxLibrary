@@ -88,7 +88,7 @@ extension CollectionView {
                   !viewModel.isGameOptionsOpen,
                   viewModel.gameToClose == nil,
                   viewModel.gameToRemove == nil,
-                  !viewModel.isUpdateOfferOpen,
+                  !viewModel.shellDialogOwnsInput,
                   !viewModel.isWelcomeOpen,
                   !viewModel.showSetupCheck,
                   !router.isScreenshotViewerOpen,

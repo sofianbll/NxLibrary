@@ -155,7 +155,7 @@ struct SettingsView: View {
             if showingControls {
                 ControlsView(canHandleInput: {
                     !router.isMenuPresented && !viewModel.showSetupCheck
-                        && !viewModel.isUpdateOfferOpen && !viewModel.isWelcomeOpen && !NativeMenuCommands.shared.isTracking
+                        && !viewModel.shellDialogOwnsInput && !viewModel.isWelcomeOpen && !NativeMenuCommands.shared.isTracking
                         && viewModel.settingsNotice == nil && viewModel.gameWithInstallFailure == nil
                 }) { showingControls = false }
             }
@@ -164,7 +164,7 @@ struct SettingsView: View {
             if let mode = localePicker {
                 LocalePicker(mode: mode, settings: settings, canHandleInput: {
                     !router.isMenuPresented && !NativeMenuCommands.shared.isTracking
-                        && !viewModel.showSetupCheck && !viewModel.isUpdateOfferOpen && !viewModel.isWelcomeOpen
+                        && !viewModel.showSetupCheck && !viewModel.shellDialogOwnsInput && !viewModel.isWelcomeOpen
                         && viewModel.settingsNotice == nil && NSApp.modalWindow == nil
                 }) { localePicker = nil }
             }
@@ -343,7 +343,7 @@ struct SettingsView: View {
         guard keyMonitor == nil else { return }
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             guard case .settings = router.route,
-                  !viewModel.isUpdateOfferOpen,
+                  !viewModel.shellDialogOwnsInput,
                   !viewModel.isWelcomeOpen,
                   !NativeMenuCommands.shared.isTracking,
                   !router.isMenuPresented,

@@ -149,6 +149,9 @@ public struct ModStore {
         return observed.map { $0.item }
     }
 
+    /// The overlay value for enabled mods, top first; nil when none is on.
+    public func overlayValue() -> String? { overlay(for: mods()) }
+
     /// The records of mods installed from GameBanana whose folder still exists, by GameBanana mod id.
     public func gameBananaRecords() -> [Int: ModRecord] {
         gameBananaRecords(entries: entries, records: loadRecords())

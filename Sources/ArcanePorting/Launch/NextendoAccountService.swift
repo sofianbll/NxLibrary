@@ -1,4 +1,5 @@
 import Foundation
+import NXLibraryCore
 
 public struct NextendoAccountSnapshot {
     public enum Presence: Equatable { case offline, online, playing }

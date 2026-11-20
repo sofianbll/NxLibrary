@@ -137,6 +137,40 @@ extension AppShellView {
         }
     }
 
+    // MARK: - Paused game
+
+    func homeMenuOverlay(_ game: PortedGame) -> some View {
+        let quitting = runningGames.quittingPausedGameIDs.contains(game.id)
+        return ZStack {
+            SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle()).onTapGesture {}
+            SeleneConfirmDialog(title: quitting ? "Quitting…" : "Game paused",
+                                message: game.name + "\n" + L10n.text("Unsaved progress in the game will be lost."),
+                                confirmTitle: "Quit", cancelTitle: "Resume", focus: $homeMenuFocus,
+                                onCancel: { homeMenuInput(.confirm, game: game, choice: .cancel) },
+                                onConfirm: { homeMenuInput(.confirm, game: game, choice: .confirm) })
+                .allowsHitTesting(!quitting)
+                .disabled(quitting)
+        }
+    }
+
+    func homeMenuInput(_ action: GamepadAction, game: PortedGame, choice: SeleneConfirmButton? = nil) {
+        guard runningGames.pausedGameIDs.contains(game.id),
+              !runningGames.quittingPausedGameIDs.contains(game.id) else { return }
+        switch action {
+        case .navigateLeft, .navigateRight, .cancel:
+            let next: SeleneConfirmButton = action == .navigateRight ? .confirm : .cancel
+            if homeMenuFocus != next {
+                homeMenuFocus = next
+                SoundEffectService.shared.play(.focus)
+            }
+        case .confirm:
+            SoundEffectService.shared.play(.click)
+            if (choice ?? homeMenuFocus) == .confirm { runningGames.close(game) }
+            else { runningGames.resume(game) }
+        default: break
+        }
+    }
+
     // MARK: - Close Game confirmation
 
     func closeGameOverlay(_ game: PortedGame) -> some View {

@@ -63,7 +63,7 @@ final class AppViewModel: ObservableObject {
     @Published var defaultInstallPath: String = ""
 
     /// The update dialog is up (set by the shell); screens leave input to it.
-    var isUpdateOfferOpen = false
+    var shellDialogOwnsInput = false
     /// "Welcome to Arcane" is on screen, until its fade has ended: screens' own keyboard monitors let Return and
     /// the arrows go to it, and Spotlight holds its entrance until it has gone.
     @Published var isWelcomeOpen = false
@@ -232,6 +232,7 @@ final class AppViewModel: ObservableObject {
     /// Sizes of built apps are remembered between launches, so a scan walks only new or rebuilt apps.
     lazy var importService = ImportService(sizeCache: AppSizeCache(file: core.appendingPathComponent("app-sizes.json")))
     let launchService = LaunchService()
+    weak var runningGameMonitor: RunningGameMonitor?
     let developmentOperations = DevelopmentOperationStore()
     lazy var storageManager = StorageManager()
     let sourceCatalog = SourceCatalog()
