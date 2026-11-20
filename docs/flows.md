@@ -86,6 +86,10 @@ flowchart TD
     M --> G["LaunchService apre l'app (NSWorkspace)"]
     G --> H["LaunchCoverWindow + LaunchMotion<br/>finché LaunchReadinessProbe vede una finestra"]
     H --> I["RunningGameMonitor · PlaySessionStore (heartbeat)"]
+    I -->|"Home → Back to console mode (build compatibile)"| PZ["Notifica del PID di dmhost → Arcane davanti<br/>card Selene Game paused"]
+    PZ -->|"Resume → richiesta e attivazione"| I
+    PZ -->|"Quit → richiesta, SIGTERM dopo 5 s se serve"| J
+    PZ -->|"Uscita del processo mentre è in pausa"| J
     I --> J["Fine: sessione salvata → SessionCard<br/>GameFocus/LibraryWindow riportano la libreria davanti"]
     J --> K["Dopo la chiusura: icone, installazioni in attesa"]
 ```

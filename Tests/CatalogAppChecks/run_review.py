@@ -203,6 +203,7 @@ final class NativeMenus { var isTracking = false }
     var showsSettingsNotice = false
     var showsInstallFailure = false
     var showsUpdateOffer = false
+    var homeMenuGame: PortedGame?
     var dialogActions: [GamepadAction] = []
     var isHomeRoute: Bool { router.route == .library || router.route == .collection }
     func availability() -> NativeMenuAvailability { nativeMenuAvailability }
@@ -216,6 +217,7 @@ final class NativeMenus { var isTracking = false }
     func closeGameInput(_ action: GamepadAction) { dialogActions.append(action) }
     func removeGameInput(_ action: GamepadAction) { dialogActions.append(action) }
     func updateOfferInput(_ action: GamepadAction) { dialogActions.append(action) }
+    func homeMenuInput(_ action: GamepadAction, game: PortedGame) { dialogActions.append(action) }
     func menuInput(_ action: GamepadAction) { dialogActions.append(action) }
     // ACTUAL_DIALOG
     // ACTUAL_MENU
@@ -382,6 +384,19 @@ final class NativeMenus { var isTracking = false }
         GameControllerService.shared.onAction?(.confirm)
         require(input.dialogActions == [.confirm] && received.actions.isEmpty,
                 "An internal update dialog must still receive input when no native window is open")
+        input.showsUpdateOffer = false
+        input.dialogActions = []
+        input.homeMenuGame = PortedGame(name: "Paused fixture", url: URL(fileURLWithPath: "/tmp/Paused.app"),
+                                       platform: .macApp, sizeBytes: 1, modificationDate: Date())
+        NSApp.modalWindow = 1
+        GameControllerService.shared.onAction?(.confirm)
+        require(input.dialogActions.isEmpty && received.actions.isEmpty,
+                "The pause card must not receive input underneath a native dialog")
+        NSApp.modalWindow = nil
+        GameControllerService.shared.onAction?(.navigateRight)
+        GameControllerService.shared.onAction?(.confirm)
+        require(input.dialogActions == [.navigateRight, .confirm] && received.actions.isEmpty,
+                "The pause card must receive its own controller actions, not send them to Spotlight")
         if failures > 0 { exit(1) }
         print("Actual app review checks passed: achievement startup, logo platform, wheel focus, Mods reads, Steam launch, native dialogs and input routing.")
     }

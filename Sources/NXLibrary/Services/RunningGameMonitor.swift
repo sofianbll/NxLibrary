@@ -16,6 +16,28 @@ final class RunningGameMonitor: ObservableObject {
     @Published private(set) var runningGameIDs: Set<UUID> = []
     /// The latest play session a game's quit ended, for the session card (nil when it was too short for one).
     @Published private(set) var endedSession: SessionSummary?
+    /// Most recently paused first, so switching between several running games never loses their state.
+    @Published private(set) var pausedGameIDs: [UUID] = []
+    @Published private(set) var quittingPausedGameIDs: Set<UUID> = []
+
+    private final class HomeMenuWatch {
+        let app: NSRunningApplication
+        var lookup: Task<Void, Never>?
+        var quit: Task<Void, Never>?
+        var host: HomeMenu.Host?
+        var session: HomeMenu.Session?
+        var notifications: [NSObjectProtocol] = []
+        var exit: DispatchSourceProcess?
+
+        init(app: NSRunningApplication) { self.app = app }
+
+        deinit {
+            lookup?.cancel()
+            quit?.cancel()
+            exit?.cancel()
+            for token in notifications { DistributedNotificationCenter.default().removeObserver(token) }
+        }
+    }
 
     private let center: NotificationCenter
     private var tokens: [NSObjectProtocol] = []
@@ -27,6 +49,7 @@ final class RunningGameMonitor: ObservableObject {
     private var closeTasks: [String: Task<Void, Never>] = [:]
     private var focus = GameFocus()
     private var focusToken: NSObjectProtocol?
+    private var homeMenus: [UUID: HomeMenuWatch] = [:]
 
     init(center: NotificationCenter = NSWorkspace.shared.notificationCenter) {
         self.center = center
@@ -71,6 +94,9 @@ final class RunningGameMonitor: ObservableObject {
         processListObservation = nil
         for task in closeTasks.values { task.cancel() }
         closeTasks = [:]
+        homeMenus.removeAll()
+        pausedGameIDs = []
+        quittingPausedGameIDs = []
     }
 
     /// The library changed: new and removed games are matched again.
@@ -85,6 +111,16 @@ final class RunningGameMonitor: ObservableObject {
 
     /// Brings a running game's app forward. Never starts a second copy.
     func resume(_ game: PortedGame) {
+        if let watch = homeMenus[game.id], let host = watch.host, host.isAlive {
+            guard let request = watch.session?.resumeRequest else { return }
+            let app = NSRunningApplication(processIdentifier: host.pid) ?? watch.app
+            if #available(macOS 14, *), let bundleID = game.effectiveBundleId {
+                NSApp.yieldActivation(toApplicationWithBundleIdentifier: bundleID)
+            }
+            Self.postHomeMenu(request)
+            Self.activate(app)
+            return
+        }
         guard let app = Self.runningApplication(for: game) else { return }
         Self.activate(app)
     }
@@ -92,6 +128,10 @@ final class RunningGameMonitor: ObservableObject {
     /// Asks the game to quit; after 5 s it is force-quit if it is still running.
     /// The caller asks the player first (Close Game confirmation).
     func close(_ game: PortedGame) {
+        if pausedGameIDs.contains(game.id) {
+            quitPaused(game.id)
+            return
+        }
         guard let bundleID = game.effectiveBundleId,
               let app = Self.runningApplication(for: game) else {
             // Nothing to close: the game ended without being noticed. Read the process list again.
@@ -191,5 +231,107 @@ final class RunningGameMonitor: ObservableObject {
     private func recompute() {
         let ids = RunningGames.matchingIDs(in: games, runningBundleIDs: tracker?.running ?? [])
         if ids != runningGameIDs { runningGameIDs = ids }
+        reconcileHomeMenus(ids)
+    }
+
+    // MARK: - Engine Home menu
+
+    private func reconcileHomeMenus(_ ids: Set<UUID>) {
+        for (id, watch) in homeMenus where !ids.contains(id) || watch.app.isTerminated {
+            // LaunchServices can register the host instead of the wrapper when its window appears.
+            if ids.contains(id), watch.host?.isAlive == true { continue }
+            stopHomeMenu(id)
+        }
+        for game in games where ids.contains(game.id) && homeMenus[game.id] == nil {
+            guard let app = Self.runningApplication(for: game),
+                  let url = app.bundleURL else { continue }
+            let watch = HomeMenuWatch(app: app)
+            homeMenus[game.id] = watch
+            let id = game.id
+            let pid = app.processIdentifier
+            watch.lookup = Task { [weak self, weak watch] in
+                guard await Task.detached(priority: .utility, operation: { HomeMenu.supported(by: url) }).value else { return }
+                let executable = HomeMenu.hostExecutable(in: url)
+                // The launcher may take a while to start its child (first launch / external disk).
+                for attempt in 0..<140 {
+                    guard !Task.isCancelled, let self, let watch, self.homeMenus[id] === watch,
+                          !watch.app.isTerminated else { return }
+                    if let host = HomeMenu.Host.find(appPID: pid, executable: executable) {
+                        self.observeHomeMenu(host, for: id, watch: watch)
+                        return
+                    }
+                    try? await Task.sleep(nanoseconds: attempt < 20 ? 250_000_000 : 1_000_000_000)
+                }
+            }
+        }
+    }
+
+    private func observeHomeMenu(_ host: HomeMenu.Host, for id: UUID, watch: HomeMenuWatch) {
+        watch.host = host
+        watch.session = .init(pid: host.pid)
+        let source = DispatchSource.makeProcessSource(identifier: host.pid, eventMask: .exit, queue: .main)
+        source.setEventHandler { [weak self, weak watch] in
+            guard let self, let watch, self.homeMenus[id] === watch else { return }
+            self.stopHomeMenu(id)
+        }
+        watch.exit = source
+        source.resume()
+
+        let events: [(String, HomeMenu.Session.Event)] = [("paused", .paused), ("resumed", .resumed)]
+        watch.notifications = events.map { name, event in
+            let notification = Notification.Name(HomeMenu.notification(name, pid: host.pid))
+            return DistributedNotificationCenter.default().addObserver(forName: notification, object: nil, queue: .main) {
+                [weak self, weak watch] _ in
+                MainActor.assumeIsolated {
+                    guard let self, let watch, self.homeMenus[id] === watch, host.isAlive else { return }
+                    watch.session?.receive(event, from: host.pid)
+                    if watch.session?.phase == .paused, !self.pausedGameIDs.contains(id) {
+                        self.pausedGameIDs.insert(id, at: 0)
+                        self.comeForward()
+                    } else if watch.session?.phase == .running {
+                        self.clearPausedGame(id)
+                        watch.quit?.cancel()
+                    }
+                }
+            }
+        }
+        if !host.isAlive { stopHomeMenu(id) }
+    }
+
+    private func quitPaused(_ id: UUID) {
+        guard let watch = homeMenus[id], let host = watch.host, host.isAlive else {
+            stopHomeMenu(id)
+            return
+        }
+        guard let request = watch.session?.requestQuit() else { return }
+        quittingPausedGameIDs.insert(id)
+        Self.postHomeMenu(request)
+        watch.quit?.cancel()
+        watch.quit = Task { [weak self, weak watch] in
+            try? await Task.sleep(nanoseconds: Self.forceQuitDelay)
+            guard !Task.isCancelled, let self, let watch, self.homeMenus[id] === watch,
+                  watch.session?.phase == .quitting else { return }
+            guard host.isAlive else { self.stopHomeMenu(id); return }
+            host.terminate()
+            watch.session?.quitTimedOut()
+            self.quittingPausedGameIDs.remove(id)
+        }
+    }
+
+    private func stopHomeMenu(_ id: UUID) {
+        if let watch = homeMenus.removeValue(forKey: id), let host = watch.host {
+            watch.session?.receive(.exited, from: host.pid)
+        }
+        clearPausedGame(id)
+    }
+
+    private func clearPausedGame(_ id: UUID) {
+        if pausedGameIDs.contains(id) { pausedGameIDs.removeAll { $0 == id } }
+        if quittingPausedGameIDs.contains(id) { quittingPausedGameIDs.remove(id) }
+    }
+
+    private static func postHomeMenu(_ name: String) {
+        DistributedNotificationCenter.default().postNotificationName(Notification.Name(name), object: nil,
+                                                                       userInfo: nil, deliverImmediately: true)
     }
 }

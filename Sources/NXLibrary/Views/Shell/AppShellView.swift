@@ -27,6 +27,7 @@ public struct AppShellView: View {
     @State private var welcomeDismissed = false
     /// Dismisses the Close Game confirmation when its game quits by itself.
     @State private var closeGameWatch: AnyCancellable?
+    @State private var homeMenuFocus: SeleneConfirmButton = .cancel
     @State private var sharedBackdrop: SeleneBackdropRequest?
 
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
@@ -73,7 +74,17 @@ public struct AppShellView: View {
 
     /// The Close Game confirmation is open; menu commands and the dialog's input wait for it.
     private var isCloseGameOpen: Bool {
-        viewModel.gameToClose != nil || viewModel.gameToRemove != nil || showsUpdateOffer || showsInstallFailure || showsSettingsNotice
+        viewModel.gameToClose != nil || viewModel.gameToRemove != nil || showsUpdateOffer || showsInstallFailure
+            || showsSettingsNotice || homeMenuGame != nil
+    }
+    /// Keep the paused state while an already-open panel owns input.
+    private var homeMenuGame: PortedGame? {
+        guard !viewModel.showSetupCheck, !showsWelcome, !router.isScreenshotViewerOpen,
+              !router.isSearchPresented, !router.isMenuPresented, !viewModel.isGameOptionsOpen,
+              viewModel.launchOverlay == nil, viewModel.gameToClose == nil, viewModel.gameToRemove == nil,
+              !showsInstallFailure, !showsUpdateOffer, !showsSettingsNotice,
+              let id = runningGames.pausedGameIDs.first else { return nil }
+        return viewModel.libraryGames.first { $0.id == id }
     }
     private var showsInstallFailure: Bool {
         viewModel.gameWithInstallFailure != nil && !viewModel.showSetupCheck
@@ -263,6 +274,11 @@ public struct AppShellView: View {
                     .transition(.opacity)
                     .zIndex(4)
             }
+            if let game = homeMenuGame {
+                homeMenuOverlay(game)
+                    .transition(.opacity)
+                    .zIndex(4)
+            }
             if router.isMenuPresented {
                 Group {
                     if router.isThemePickerOpen {
@@ -359,6 +375,7 @@ public struct AppShellView: View {
                    value: viewModel.gameWithInstallFailure?.id)
         .animation(reduceMotion ? nil : SeleneTheme.quick, value: viewModel.settingsNotice?.id)
         .animation(reduceMotion ? nil : SeleneTheme.quick, value: showsUpdateOffer)
+        .animation(reduceMotion ? nil : SeleneTheme.quick, value: homeMenuGame?.id)
         .environment(\.seleneReduceMotion, reduceMotion)
         .environment(\.seleneBackdropStyle, backdropStyle)
         .environment(\.seleneSharesBackdrop, true)
@@ -413,6 +430,10 @@ public struct AppShellView: View {
         .onReceive(runningGames.$endedSession) { summary in
             sessionCard.ended(summary, enabled: settings.settings.showsSessionCard)
         }
+        .onReceive(runningGames.$pausedGameIDs) { ids in
+            // A game can reach Home before the launch cover has faded, especially across Spaces.
+            if let launch = viewModel.launchOverlay, ids.contains(launch.game.id) { viewModel.dismissLaunchOverlay() }
+        }
         .onReceive(SteamPlayCoordinator.shared.$endedSession) { summary in
             sessionCard.ended(summary, enabled: settings.settings.showsSessionCard)
         }
@@ -443,7 +464,8 @@ public struct AppShellView: View {
         .onChange(of: settings.settings.showsSessionCard) { on in
             if !on { sessionCard.clear() }
         }
-        .onChange(of: showsUpdateOffer) { viewModel.isUpdateOfferOpen = $0 }
+        .onChange(of: showsUpdateOffer || homeMenuGame != nil) { viewModel.shellDialogOwnsInput = $0 }
+        .onChange(of: homeMenuGame?.id) { _ in homeMenuFocus = .cancel }
         // Closing clears it once the fade has ended (`closeWelcome`), so nothing under it moves or takes input before.
         .onChange(of: showsWelcome) { if $0 { viewModel.isWelcomeOpen = true } }
         .onChange(of: router.route) { route in
@@ -567,6 +589,8 @@ public struct AppShellView: View {
         .onExitCommand {
             if router.isScreenshotViewerOpen {
                 // The viewer's key monitor closes it.
+            } else if homeMenuGame != nil {
+                homeMenuFocus = .cancel
             } else if showsSettingsNotice {
                 finishSettingsNotice(choice: 0)
             } else if showsInstallFailure {
@@ -680,6 +704,7 @@ public struct AppShellView: View {
         if settings.settings.checkEngineAtLaunch && !AppData.profile.isDevelopment { SetupCheckModel.checkAtLaunch(viewModel: viewModel) }
         runningGames.start(sessions: playSessions)
         runningGames.setGames(viewModel.libraryGames)
+        viewModel.runningGameMonitor = runningGames
         // Steam's playtime first: a Steam game already running starts a session at once, and trimming needs Steam's last values.
         SteamPlaytimeCoordinator.shared.setGames(viewModel.catalogGames, sources: viewModel.catalogSourceConfigurations)
         SteamPlaytimeCoordinator.shared.start(sessions: playSessions)
@@ -733,6 +758,10 @@ public struct AppShellView: View {
         GameControllerService.shared.onAction = { [weak viewModel, weak router] action in
             guard let viewModel, let router else { return }
             guard !nativeMenus.isTracking, !nativeDialogOwnsInput else { return }
+            if let game = homeMenuGame {
+                homeMenuInput(action, game: game)
+                return
+            }
             if viewModel.showSetupCheck {
                 // The Setup check owns the controller; Menu does nothing there (as in Selene).
                 NotificationCenter.default.post(name: .nxSetupCheckGamepadAction, object: action)
@@ -935,6 +964,41 @@ public struct AppShellView: View {
         }
     }
 
+    // MARK: - Paused game
+
+    private func homeMenuOverlay(_ game: PortedGame) -> some View {
+        let quitting = runningGames.quittingPausedGameIDs.contains(game.id)
+        return ZStack {
+            SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle()).onTapGesture {}
+            SeleneConfirmDialog(title: quitting ? "Quitting…" : "Game paused",
+                                message: game.name + "\n" + L10n.text("Unsaved progress in the game will be lost."),
+                                confirmTitle: "Quit", cancelTitle: "Resume", focus: $homeMenuFocus,
+                                onCancel: { homeMenuInput(.confirm, game: game, choice: .cancel) },
+                                onConfirm: { homeMenuInput(.confirm, game: game, choice: .confirm) })
+                .allowsHitTesting(!quitting)
+                .disabled(quitting)
+        }
+    }
+
+    private func homeMenuInput(_ action: GamepadAction, game: PortedGame, choice: SeleneConfirmButton? = nil) {
+        guard runningGames.pausedGameIDs.contains(game.id),
+              !runningGames.quittingPausedGameIDs.contains(game.id) else { return }
+        switch action {
+        case .navigateLeft, .navigateRight, .cancel:
+            let next: SeleneConfirmButton = action == .navigateRight ? .confirm : .cancel
+            if homeMenuFocus != next {
+                homeMenuFocus = next
+                SoundEffectService.shared.play(.focus)
+            }
+        case .confirm:
+            SoundEffectService.shared.play(.click)
+            if (choice ?? homeMenuFocus) == .confirm { runningGames.close(game) }
+            else { runningGames.resume(game) }
+        default:
+            break
+        }
+    }
+
     // MARK: - Close Game confirmation
 
     private func closeGameOverlay(_ game: PortedGame) -> some View {
@@ -1075,6 +1139,17 @@ public struct AppShellView: View {
                 return event
             }
             let mods = event.modifierFlags.intersection([.command, .control, .option, .shift])
+            if let game = homeMenuGame, mods.isEmpty {
+                switch event.keyCode {
+                case 123: homeMenuInput(.navigateLeft, game: game)
+                case 124: homeMenuInput(.navigateRight, game: game)
+                case 36, 76, 49:
+                    if !event.isARepeat { homeMenuInput(.confirm, game: game) }
+                case 53: homeMenuInput(.cancel, game: game)
+                default: break
+                }
+                return nil
+            }
             // The Setup check and the welcome take the keyboard: arrows, Return, Space and Esc go to them.
             if viewModel.showSetupCheck || (showsWelcome && !showsSettingsNotice && !showsInstallFailure
                                             && !showsUpdateOffer && viewModel.gameToClose == nil
