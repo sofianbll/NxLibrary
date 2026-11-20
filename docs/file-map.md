@@ -247,21 +247,21 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../CONTRIBUTING.md), [SECURIT
 | [Sources/NXLibraryCore/Services/CheatStore.swift](../Sources/NXLibraryCore/Services/CheatStore.swift) | Legge e modifica cheats, file enabled, master switch e metadati della build corrente. |
 | [Sources/NXLibraryCore/Services/ModStore.swift](../Sources/NXLibraryCore/Services/ModStore.swift) | Ordine, interruttori, conflitti, Cestino e overlay delle mod RomFS. Ferma la riconciliazione se cartella o record non si leggono. |
 | [Sources/NXLibraryCore/Services/ModFolderScanner.swift](../Sources/NXLibraryCore/Services/ModFolderScanner.swift) | Elenca cartelle, archivi e file RomFS. La lettura stretta distingue una cartella vuota da una scansione fallita durante la riconciliazione. |
-| [Sources/NXLibraryCore/Services/GameBanana/GameBananaAPI.swift](../Sources/NXLibraryCore/Services/GameBanana/GameBananaAPI.swift) | URL, host fidati, modelli delle risposte di GameBanana e testo semplice dalle descrizioni HTML. |
-| [Sources/NXLibraryCore/Services/GameBanana/GameBananaClient.swift](../Sources/NXLibraryCore/Services/GameBanana/GameBananaClient.swift) | Richieste a GameBanana con User-Agent, limite di 4 alla volta e cache su disco. |
+| [Sources/NXLibraryCore/Services/GameBanana/GameBananaAPI.swift](../Sources/NXLibraryCore/Services/GameBanana/GameBananaAPI.swift) | URL per gioco e ricerca mod, ID dai link, host fidati, risposte GameBanana e testo dalle descrizioni HTML. |
+| [Sources/NXLibraryCore/Services/GameBanana/GameBananaClient.swift](../Sources/NXLibraryCore/Services/GameBanana/GameBananaClient.swift) | Richieste e ricerche mod su GameBanana con User-Agent, limite di 4 alla volta e cache su disco. |
 | [Sources/NXLibraryCore/Services/GameBanana/GameBananaImageCache.swift](../Sources/NXLibraryCore/Services/GameBanana/GameBananaImageCache.swift) | Cache su disco delle immagini delle mod dal CDN di GameBanana. |
 | [Sources/NXLibraryCore/Services/GameBanana/GameBananaMatch.swift](../Sources/NXLibraryCore/Services/GameBanana/GameBananaMatch.swift) | Abbina un gioco alla sua pagina GameBanana per nome e ricorda la scelta. |
 | [Sources/NXLibraryCore/Services/GameBanana/ModSupport.swift](../Sources/NXLibraryCore/Services/GameBanana/ModSupport.swift) | Quali file di mod funzionano (solo RomFS), dov'è la loro cartella `romfs`, nomi di cartella sicuri. |
-| [Sources/NXLibraryCore/Services/GameBanana/AvailableModsFinder.swift](../Sources/NXLibraryCore/Services/GameBanana/AvailableModsFinder.swift) | Cerca le mod di un gioco che funzionano e capisce quando una mod installata ha un aggiornamento. |
+| [Sources/NXLibraryCore/Services/GameBanana/AvailableModsFinder.swift](../Sources/NXLibraryCore/Services/GameBanana/AvailableModsFinder.swift) | Verifica compatibilità da lista popolare, ricerca o link; indica quando la lista può continuare e quando una mod ha un aggiornamento. |
 | [Sources/NXLibraryCore/Services/GameBanana/ModInstaller.swift](../Sources/NXLibraryCore/Services/GameBanana/ModInstaller.swift) | Controlla, estrae con `bsdtar` e installa una mod scaricata nella cartella del gioco. |
-| [Sources/NXLibraryCore/Services/GameBanana/GameBananaBandModel.swift](../Sources/NXLibraryCore/Services/GameBanana/GameBananaBandModel.swift) | Stato della fascia Mods di un gioco: abbinamento, mod che funzionano, installazioni. |
+| [Sources/NXLibraryCore/Services/GameBanana/GameBananaBandModel.swift](../Sources/NXLibraryCore/Services/GameBanana/GameBananaBandModel.swift) | Stato della fascia Mods: abbinamento, risultati di ricerca, paginazione e installazioni. |
 | [Sources/NXLibraryCore/Services/GameBanana/ModCatalog.swift](../Sources/NXLibraryCore/Services/GameBanana/ModCatalog.swift) | Categorie nostre, ordinamenti e sezioni della pagina dello store (altezze fisse). |
 | [Sources/NXLibraryCore/Services/GameBanana/ModCatalogSnapshots.swift](../Sources/NXLibraryCore/Services/GameBanana/ModCatalogSnapshots.swift) | Le mod di ogni gioco salvate su disco, per aprire lo store subito; solo link GameBanana. |
 | [Sources/NXLibraryCore/Services/GameBanana/ModStoreModel.swift](../Sources/NXLibraryCore/Services/GameBanana/ModStoreModel.swift) | Dati dello store: apre dalle copie su disco, aggiorna in background due giochi alla volta, abbina solo se sicuro. |
 | [Sources/NXLibraryCore/Models/ModStoreFocus.swift](../Sources/NXLibraryCore/Models/ModStoreFocus.swift) | Focus nella pagina dello store, ancorato al tipo di sezione; ogni sezione ricorda la sua tessera. |
 | [Sources/NXLibraryCore/Services/GameBanana/GameBananaFindModel.swift](../Sources/NXLibraryCore/Services/GameBanana/GameBananaFindModel.swift) | Stato della ricerca per nome: campo, risultati, None of these. |
 | [Sources/NXLibraryCore/Services/GameBanana/ModDownload.swift](../Sources/NXLibraryCore/Services/GameBanana/ModDownload.swift) | Scarica un file di GameBanana con avanzamento e Cancel, solo da host fidati. |
-| [Sources/NXLibraryCore/Models/ModsBandLayout.swift](../Sources/NXLibraryCore/Models/ModsBandLayout.swift) | Ordine delle tessere della fascia Mods e movimento nella sua griglia (sei per riga). |
+| [Sources/NXLibraryCore/Models/ModsBandLayout.swift](../Sources/NXLibraryCore/Models/ModsBandLayout.swift) | Ordine delle tessere della fascia Mods, Search accanto a Manage e movimento nella griglia (sei per riga). |
 | [Sources/NXLibraryCore/Services/EnvFileEditor.swift](../Sources/NXLibraryCore/Services/EnvFileEditor.swift) | Cambia una sola variabile di un `env.txt` lasciando intatte le altre righe. |
 | [Sources/NXLibraryCore/Models/LocalMod.swift](../Sources/NXLibraryCore/Models/LocalMod.swift) | Una cartella della cartella mods di un gioco, con il suo `romfs` e lo stato. |
 
@@ -414,7 +414,7 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 | [Sources/NXLibraryCore/Models/AppLocale.swift](../Sources/NXLibraryCore/Models/AppLocale.swift) | Sei lingue, risoluzione delle preferenze e regione indipendente; nomi e ricerca delle regioni. |
 | [Sources/NXLibraryCore/Models/GameGenre.swift](../Sources/NXLibraryCore/Models/GameGenre.swift) | Generi noti tradotti alla presentazione; dati originali e generi personali conservati. |
 | [Sources/NXLibraryCore/Services/AppLocalization.swift](../Sources/NXLibraryCore/Services/AppLocalization.swift) | Contesto osservabile, lookup portabile delle risorse e interpolazioni/plurali. |
-| [Sources/NXLibraryCore/Resources/Localizable.xcstrings](../Sources/NXLibraryCore/Resources/Localizable.xcstrings) | Testi condivisi e traduzioni en/it/fr/de/es/pt-BR, incluse le etichette Network e della scheda Nextendo. |
+| [Sources/NXLibraryCore/Resources/Localizable.xcstrings](../Sources/NXLibraryCore/Resources/Localizable.xcstrings) | Testi condivisi e traduzioni en/it/fr/de/es/pt-BR, incluse le azioni di ricerca della fascia Mods. |
 
 ## Core · profilo dei dati
 
@@ -438,7 +438,7 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 
 | File | Responsabilità |
 |---|---|
-| [Sources/NXLibrary/Views/Spotlight/SpotlightView.swift](../Sources/NXLibrary/Views/Spotlight/SpotlightView.swift) | Compone home e tessere da una lista filtrata per render. Monta Dettagli, Mods e correlati quando sale la pagina. |
+| [Sources/NXLibrary/Views/Spotlight/SpotlightView.swift](../Sources/NXLibrary/Views/Spotlight/SpotlightView.swift) | Compone home, Dettagli, Mods e correlati; riallinea il focus quando la fascia Mods si accorcia. |
 | [Sources/NXLibrary/Views/Spotlight/SpotlightView+Input.swift](../Sources/NXLibrary/Views/Spotlight/SpotlightView+Input.swift) | Traduce input, card, azioni, screenshot e riordino. Le frecce sulla riga usano solo le tessere, prima di costruire i dati della pagina. |
 | [Sources/NXLibrary/Views/Spotlight/SpotlightView+Entrance.swift](../Sources/NXLibrary/Views/Spotlight/SpotlightView+Entrance.swift) | Coordina l’entrata su moonlight condiviso: coperture e fullscreen, pausa, attesa dell’arte, effetti di volo e dissolvenza, barra in alto e hint per ultimi, atterraggio di sicurezza; nessun input salta l’entrata. |
 | [Sources/NXLibrary/Views/Spotlight/SpotlightRowView.swift](../Sources/NXLibrary/Views/Spotlight/SpotlightRowView.swift) | Disegna la riga di tile con finestra visibile, focus e titoli; la faccia della card Mods (`ModsCardCover`). |
@@ -463,7 +463,7 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 | [Sources/NXLibrary/Views/Detail/GameDetailView+Input.swift](../Sources/NXLibrary/Views/Detail/GameDetailView+Input.swift) | Gestisce azioni, screenshot, navigazione e passaggio ai giochi correlati da Details. |
 | [Sources/NXLibrary/Views/Detail/DetailsBackground.swift](../Sources/NXLibrary/Views/Detail/DetailsBackground.swift) | Compone hero e maschere dello sfondo dedicato alla pagina Details. |
 | [Sources/NXLibrary/Views/Detail/DetailsTopBlock.swift](../Sources/NXLibrary/Views/Detail/DetailsTopBlock.swift) | Mostra logo, crediti, azioni, statistiche, generi e descrizione del gioco. |
-| [Sources/NXLibrary/Views/Detail/DetailsBands.swift](../Sources/NXLibrary/Views/Detail/DetailsBands.swift) | Disegna screenshot, mod e fascia correlati condivisa, con copertine Switch o Steam secondo la fonte. |
+| [Sources/NXLibrary/Views/Detail/DetailsBands.swift](../Sources/NXLibrary/Views/Detail/DetailsBands.swift) | Disegna screenshot, tessere Mods incluse ricerca e Show more, e giochi correlati con copertine Switch o Steam. |
 | [Sources/NXLibrary/Views/Detail/DetailsPanel.swift](../Sources/NXLibrary/Views/Detail/DetailsPanel.swift) | Pannello Details uguale per ogni fonte: righe con icona, voto della critica in ultima riga e link in `SeleneActionGrid`; carica solo il voto del gioco mostrato. |
 | [Sources/NXLibrary/Views/Detail/CriticRatingValue.swift](../Sources/NXLibrary/Views/Detail/CriticRatingValue.swift) | Valore della riga Critic score: cinque stelle, numero /100 e fonte, senza finestre aggiuntive; caricamento e assenza espliciti. |
 | [Sources/NXLibrary/ViewModels/IGDBSettings.swift](../Sources/NXLibrary/ViewModels/IGDBSettings.swift) | Configurazione IGDB facoltativa: verifica prima del salvataggio, rimozione e invalidazione delle richieste/voti precedenti. |
@@ -481,11 +481,11 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 | [Sources/NXLibrary/Views/GameOptions/CheatsPanel.swift](../Sources/NXLibrary/Views/GameOptions/CheatsPanel.swift) | Presenta file, master switch, codici, importazione, rimozione e stato di scrittura dei cheats. |
 | [Sources/NXLibrary/Views/GameOptions/ModsPanel.swift](../Sources/NXLibrary/Views/GameOptions/ModsPanel.swift) | Game options → Mods: accende, ordina e sposta nel Cestino le mod RomFS, apre la cartella mods. |
 | [Sources/NXLibrary/Views/Detail/ModDetailPanel.swift](../Sources/NXLibrary/Views/Detail/ModDetailPanel.swift) | Dettaglio di una mod GameBanana: immagini, autore, versione, descrizione, Install/Update e link. |
-| [Sources/NXLibrary/Views/Detail/GameBananaFindPanel.swift](../Sources/NXLibrary/Views/Detail/GameBananaFindPanel.swift) | Cerca su GameBanana la pagina del gioco quando l'abbinamento automatico non basta. |
+| [Sources/NXLibrary/Views/Detail/GameBananaFindPanel.swift](../Sources/NXLibrary/Views/Detail/GameBananaFindPanel.swift) | Pannelli per trovare il gioco e cercare le sue mod, con lo stesso campo GameBanana. |
 | [Sources/NXLibrary/ViewModels/ModStoreHost.swift](../Sources/NXLibrary/ViewModels/ModStoreHost.swift) | Store della card Mods: mantiene la cover fra schermate, rivalida abbinamenti e snapshot; rilegge i badge a ogni apertura e scarta i risultati di generazioni precedenti. |
 | [Sources/NXLibrary/Views/Store/ModStorePage.swift](../Sources/NXLibrary/Views/Store/ModStorePage.swift) | Pagina dello store: barra di ordinamento, banner Featured, righe di tessere; disegna solo le sezioni vicine al focus. |
 | [Sources/NXLibrary/Views/Store/GameBananaBlur.swift](../Sources/NXLibrary/Views/Store/GameBananaBlur.swift) | Arte di una mod rimpicciolita e sfocata una volta, fuori dal main thread, e tenuta in memoria: sfondo del Featured. |
-| [Sources/NXLibrary/ViewModels/ModsBandHost.swift](../Sources/NXLibrary/ViewModels/ModsBandHost.swift) | Fascia Mods condivisa da Spotlight e Details. Legge mod installate, coordina GameBanana e pannelli, svuota i dati del gioco precedente sulla riga Spotlight. |
+| [Sources/NXLibrary/ViewModels/ModsBandHost.swift](../Sources/NXLibrary/ViewModels/ModsBandHost.swift) | Fascia Mods condivisa da Spotlight e Details: mod installate, pannelli GameBanana, input e cambio gioco. |
 | [Sources/NXLibrary/ViewModels/GameBananaServices.swift](../Sources/NXLibrary/ViewModels/GameBananaServices.swift) | Client, cache delle immagini e abbinamenti GameBanana condivisi da tutta l'app. |
 | [Sources/NXLibrary/Views/GameOptions/SavesPanel.swift](../Sources/NXLibrary/Views/GameOptions/SavesPanel.swift) | Presenta azioni sui save, anteprime, errori e popup di successo a scomparsa automatica. |
 | [Sources/NXLibrary/Views/GameOptions/MoreSettingsPanel.swift](../Sources/NXLibrary/Views/GameOptions/MoreSettingsPanel.swift) | Mostra le impostazioni del launcher.json senza riga dedicata: interruttori, scelte e intervalli; le righe fissate da env.txt restano attenuate. |
@@ -664,17 +664,17 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 | [Tests/NXLibraryCoreTests/ModStoreTests.swift](../Tests/NXLibraryCoreTests/ModStoreTests.swift) | Ordine, acceso/spento, limite dell'overlay, conflitti, Cestino e righe dell'`env.txt` delle mod. |
 | [Tests/NXLibraryCoreTests/ModFolderScannerTests.swift](../Tests/NXLibraryCoreTests/ModFolderScannerTests.swift) | Voci della cartella mods, layout `romfs`/Atmosphère, symlink, file relativi e file nascosti. |
 | [Tests/NXLibraryCoreTests/EnvFileEditorTests.swift](../Tests/NXLibraryCoreTests/EnvFileEditorTests.swift) | Modifica di una chiave dell'`env.txt`: commenti, duplicati, CRLF, merge al lancio. |
-| [Tests/NXLibraryCoreTests/GameBananaAPITests.swift](../Tests/NXLibraryCoreTests/GameBananaAPITests.swift) | Decodifica tollerante delle risposte, URL, host fidati, contenuto degli archivi e testo dalle descrizioni. |
-| [Tests/NXLibraryCoreTests/GameBananaClientTests.swift](../Tests/NXLibraryCoreTests/GameBananaClientTests.swift) | User-Agent, durata della cache, rete assente, errori del server, limite di richieste e cache immagini. |
-| [Tests/NXLibraryCoreTests/GameBananaBandModelTests.swift](../Tests/NXLibraryCoreTests/GameBananaBandModelTests.swift) | Cambio di gioco, avanzi di installazione, ricerca per nome con controller, mod in due gruppi con l'arte pronta. |
+| [Tests/NXLibraryCoreTests/GameBananaAPITests.swift](../Tests/NXLibraryCoreTests/GameBananaAPITests.swift) | Risposte, URL di ricerca e link delle mod, host fidati, elenchi degli archivi e testo delle descrizioni. |
+| [Tests/NXLibraryCoreTests/GameBananaClientTests.swift](../Tests/NXLibraryCoreTests/GameBananaClientTests.swift) | User-Agent, cache anche della ricerca per gioco, rete assente, errori, limite di richieste e cache immagini. |
+| [Tests/NXLibraryCoreTests/GameBananaBandModelTests.swift](../Tests/NXLibraryCoreTests/GameBananaBandModelTests.swift) | Cambio di gioco, ricerca e annullamento, pagina successiva e retry, residui di installazione e arrivo delle tessere. |
 | [Tests/NXLibraryCoreTests/TextScrollTests.swift](../Tests/NXLibraryCoreTests/TextScrollTests.swift) | Descrizione dopo Read more, limiti dello scorrimento, riga mostrata intera e passo Su/Giù tra le righe. |
 | [Tests/NXLibraryCoreTests/GameBananaMatchTests.swift](../Tests/NXLibraryCoreTests/GameBananaMatchTests.swift) | Abbinamento per nome, voci per piattaforma e memoria della scelta. |
 | [Tests/NXLibraryCoreTests/ModSupportTests.swift](../Tests/NXLibraryCoreTests/ModSupportTests.swift) | Quali archivi funzionano, radice `romfs`, title ID, visibilità e nomi di cartella. |
-| [Tests/NXLibraryCoreTests/AvailableModsFinderTests.swift](../Tests/NXLibraryCoreTests/AvailableModsFinderTests.swift) | Mod che funzionano in ordine, limiti di ricerca, rete assente e aggiornamenti. |
+| [Tests/NXLibraryCoreTests/AvailableModsFinderTests.swift](../Tests/NXLibraryCoreTests/AvailableModsFinderTests.swift) | Compatibilità da lista, ricerca e link, riuso delle pagine, limiti, rete assente e aggiornamenti. |
 | [Tests/NXLibraryCoreTests/ModInstallerTests.swift](../Tests/NXLibraryCoreTests/ModInstallerTests.swift) | Installazione con archivi veri: MD5, percorsi pericolosi, mod di codice, errori, gioco aperto, spazio, nomi, aggiornamenti. |
 | [Tests/NXLibraryCoreTests/CloudSavesTests.swift](../Tests/NXLibraryCoreTests/CloudSavesTests.swift) | Cartelle cloud, preferenze per gioco e decodifica delle impostazioni precedenti. |
 | [Tests/NXLibraryCoreTests/CompatibilityCheckerTests.swift](../Tests/NXLibraryCoreTests/CompatibilityCheckerTests.swift) | Commit, modifiche ammesse nel checkout, Metal, CLI e override del gate. |
-| [Tests/NXLibraryCoreTests/DetailsFocusTests.swift](../Tests/NXLibraryCoreTests/DetailsFocusTests.swift) | Spostamento nelle bande di Details, limiti e sezioni vuote. |
+| [Tests/NXLibraryCoreTests/DetailsFocusTests.swift](../Tests/NXLibraryCoreTests/DetailsFocusTests.swift) | Spostamento nelle bande di Details, accesso a ricerca e Show more nella griglia Mods, limiti e sezioni vuote. |
 | [Tests/NXLibraryCoreTests/DirectorySizeTests.swift](../Tests/NXLibraryCoreTests/DirectorySizeTests.swift) | Somma dei file regolari ignorando nascosti e collegamenti; cartella mancante a zero. |
 | [Tests/NXLibraryCoreTests/DiagnosticsReportTests.swift](../Tests/NXLibraryCoreTests/DiagnosticsReportTests.swift) | Rimozione di percorsi personali e chiavi e contenuto delle sezioni diagnostiche. |
 | [Tests/NXLibraryCoreTests/EngineLocationTests.swift](../Tests/NXLibraryCoreTests/EngineLocationTests.swift) | Percorso predefinito, cartella scelta e fallback quando scompare. |

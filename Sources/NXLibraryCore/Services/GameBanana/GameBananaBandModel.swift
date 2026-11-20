@@ -22,6 +22,14 @@ public final class GameBananaBandModel: ObservableObject {
         case done(String?)
     }
 
+    public enum SearchPanel: Equatable {
+        case editing, loading, empty, invalidLink, offline, failed
+    }
+
+    public enum MoreState: Equatable {
+        case hidden, available, loading, failed
+    }
+
     @Published public private(set) var phase: Phase = .idle {
         didSet { if phase != oldValue { Self.log.notice("phase \(String(describing: self.phase), privacy: .public) available \(self.available.count, privacy: .public)") } }
     }
@@ -31,6 +39,22 @@ public final class GameBananaBandModel: ObservableObject {
     /// The file each mod's install is for, while it runs and once it has ended.
     @Published public private(set) var installFiles: [Int: Int] = [:]
     @Published public private(set) var match: GameBananaChoice?
+    @Published public private(set) var moreState: MoreState = .hidden
+    @Published public private(set) var searchPanel: SearchPanel?
+    @Published public private(set) var searchResults: [AvailableMod]?
+    @Published public var modQuery = "" {
+        didSet {
+            guard let searchPanel, searchPanel != .editing, oldValue != modQuery else { return }
+            searchTask?.cancel()
+            self.searchPanel = .editing
+        }
+    }
+
+    public var displayedMods: [AvailableMod] { searchResults ?? available }
+    public var canSearchMods: Bool { startedFor != nil && matchedPage != nil }
+    public var canSubmitModSearch: Bool {
+        searchPanel != nil && searchPanel != .loading && !modQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     /// Runs after an install changed the mods folder (the page re-reads its mods).
     public var onInstalled: (() -> Void)?
@@ -45,6 +69,10 @@ public final class GameBananaBandModel: ObservableObject {
     private var names: [String] = []
     private var store: ModStore?
     private var task: Task<Void, Never>?
+    private var searchTask: Task<Void, Never>?
+    private var want = GameBananaBandModel.pageSize
+    private static let pageSize = 12
+    private static let scanLimit = 60
     private var downloads: [Int: ModDownload] = [:]
     private var cancelled: Set<Int> = []
     /// The download attempt in progress for each mod.
@@ -95,6 +123,7 @@ public final class GameBananaBandModel: ObservableObject {
         cancelled = []
         startedFor = nil
         available = []
+        resetBrowsing()
         installs = [:]
         installFiles = [:]
         match = nil
@@ -157,6 +186,7 @@ public final class GameBananaBandModel: ObservableObject {
         task?.cancel()
         try? matches.set(.noPage, titleID: store.titleID)
         match = .noPage
+        resetBrowsing()
         available = []
         phase = .noPage
     }
@@ -182,9 +212,10 @@ public final class GameBananaBandModel: ObservableObject {
     private func look() {
         guard let store, case .game(let id, _, let page) = match else { return }
         task?.cancel()
+        resetBrowsing()
         available = []
         phase = .looking
-        let finder = AvailableModsFinder(client: self.client, titleID: store.titleID,
+        let finder = AvailableModsFinder(client: client, titleID: store.titleID, want: want, maxScanned: Self.scanLimit,
                                          installed: store.gameBananaRecords().keys.sorted())
         task = Task { [weak self] in
             // The mods show in two groups at most, each with its art: a row's worth beside Add mods as soon as
@@ -192,7 +223,7 @@ public final class GameBananaBandModel: ObservableObject {
             // filled in later, and the band shifted under the player's eyes.
             var waiting: [AvailableMod] = []
             do {
-                for try await mod in finder.stream(gameID: id) {
+                let hasMore = try await finder.load(gameID: id) { mod in
                     guard let self, !Task.isCancelled else { return }
                     waiting.append(mod)
                     if self.available.isEmpty, waiting.count >= Self.firstGroup {
@@ -201,6 +232,7 @@ public final class GameBananaBandModel: ObservableObject {
                     }
                 }
                 guard let self, await self.show(waiting) else { return }
+                self.moreState = hasMore ? .available : .hidden
                 self.phase = self.available.isEmpty ? .noneWork(page) : .ready
             } catch {
                 guard let self, await self.show(waiting) else { return }
@@ -213,7 +245,82 @@ public final class GameBananaBandModel: ObservableObject {
         }
     }
 
-    /// The first group: the first row beside Add mods.
+    public func loadMoreMods() {
+        guard (moreState == .available || moreState == .failed), searchResults == nil,
+              let store, case .game(let id, _, _) = match else { return }
+        moreState = .loading
+        let nextWant = min(want + Self.pageSize, Self.scanLimit)
+        let finder = AvailableModsFinder(client: client, titleID: store.titleID, want: nextWant, maxScanned: Self.scanLimit,
+                                         installed: store.gameBananaRecords().keys.sorted())
+        let seen = Set(available.map(\.id))
+        task = Task { [weak self] in
+            do {
+                var added: [AvailableMod] = []
+                let hasMore = try await finder.load(gameID: id) { mod in
+                    if !seen.contains(mod.id) { added.append(mod) }
+                }
+                guard let self, await self.show(added) else { return }
+                self.want = nextWant
+                self.moreState = hasMore && nextWant < Self.scanLimit ? .available : .hidden
+            } catch {
+                guard !Task.isCancelled else { return }
+                self?.moreState = .failed
+            }
+        }
+    }
+
+    public func openModSearch() {
+        guard canSearchMods else { return }
+        searchPanel = .editing
+    }
+
+    public func closeModSearch() {
+        searchTask?.cancel()
+        searchTask = nil
+        searchPanel = nil
+    }
+
+    public func clearModSearch() {
+        closeModSearch()
+        searchResults = nil
+        modQuery = ""
+    }
+
+    private func resetBrowsing() {
+        clearModSearch()
+        want = Self.pageSize
+        moreState = .hidden
+    }
+
+    public func submitModSearch() {
+        guard canSubmitModSearch, let store, case .game(let id, _, _) = match else { return }
+        let query = modQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Don't send a pasted URL as free text to GameBanana, even when it isn't a valid mod link.
+        let address = URLComponents(string: query.contains("://") ? query : "https://" + query)
+        if GameBananaAPI.modID(from: query) == nil,
+           (query.contains("://") || (address?.host?.contains(".") == true && address?.path.isEmpty == false)) {
+            self.searchPanel = .invalidLink
+            return
+        }
+        self.searchPanel = .loading
+        let finder = AvailableModsFinder(client: client, titleID: store.titleID)
+        searchTask = Task { [weak self] in
+            do {
+                let mods = try await finder.search(query, gameID: id)
+                guard let self, !Task.isCancelled else { return }
+                guard !mods.isEmpty else { self.searchPanel = .empty; return }
+                await self.readyArt(of: mods)
+                guard !Task.isCancelled else { return }
+                self.searchResults = mods
+                self.closeModSearch()
+            } catch {
+                guard !Task.isCancelled else { return }
+                self?.searchPanel = (error as? GameBananaError) == .offline ? .offline : .failed
+            }
+        }
+    }
+
+    /// The first group of online mod tiles.
     static let firstGroup = 5
 
     /// Shows `group` once its art is decoded (or `imageWait` has passed); false when the search was replaced
@@ -246,26 +353,32 @@ public final class GameBananaBandModel: ObservableObject {
     }
 
     /// The band's status line, under its title.
-    public var statusLine: String? {
+    public func statusLine(context: AppLocale) -> String? {
+        if searchResults != nil { return L10n.text("Search results", context: context) }
+        if moreState == .loading { return L10n.text("Looking for mods that work…", context: context) }
+        if moreState == .failed { return L10n.text("Couldn't load more mods. Try again.", context: context) }
         switch phase {
-        case .looking: return L10n.text("Looking for mods that work…")
-        case .ask: return L10n.text("Is this the right game?")
-        case .noPage: return L10n.text("No GameBanana page found")
-        case .noneWork: return L10n.text("No mods for this game work with Arcane yet")
-        case .offline: return L10n.text("No connection. Mods you installed still work.")
-        case .failed: return L10n.text("GameBanana didn't answer. Try again in a moment.")
+        case .looking: return L10n.text("Looking for mods that work…", context: context)
+        case .ask: return L10n.text("Is this the right game?", context: context)
+        case .noPage: return L10n.text("No GameBanana page found", context: context)
+        case .noneWork: return L10n.text("No mods for this game work with Arcane yet", context: context)
+        case .offline: return L10n.text("No connection. Mods you installed still work.", context: context)
+        case .failed: return L10n.text("GameBanana didn't answer. Try again in a moment.", context: context)
         case .idle, .matching, .ready: return nil
         }
     }
 
     /// The status tiles after the mods.
     public var statusTiles: [ModsBandAction] {
+        if searchResults != nil { return [.clearModSearch, .wrongGame] }
         switch phase {
         case .ask(let candidates): return candidates.map { .candidate($0.id) } + [.noneOfThese]
         case .noPage: return [.findGame]
         case .noneWork(let page): return [.openPage(page), .wrongGame]
         case .offline, .failed: return [.retry]
-        case .ready, .looking: return matchedName == nil ? [] : [.wrongGame]
+        case .ready, .looking:
+            guard matchedName != nil else { return [] }
+            return moreState == .hidden ? [.wrongGame] : [.wrongGame, .moreMods]
         case .idle, .matching: return []
         }
     }

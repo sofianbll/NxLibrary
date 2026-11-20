@@ -24,23 +24,11 @@ struct GameBananaFindPanel: View {
                     .seleneFont(32)
                     .foregroundColor(SeleneTheme.ink)
                     .lineLimit(2)
-                HStack(spacing: canvas.u(10)) {
-                    MaterialIconView(.search, size: 22).foregroundColor(SeleneTheme.ink60)
-                    TextField("", text: $model.query, prompt: Text(L10n.text("Game name")).foregroundColor(SeleneTheme.ink60))
-                        .textFieldStyle(.plain)
-                        .seleneFont(18)
-                        .foregroundColor(SeleneTheme.ink)
-                        .focused($fieldFocused)
-                        .onSubmit {
-                            model.editing = true
-                            model.confirm(using: band)
-                        }
-                        .onExitCommand { close() }
-                }
-                .padding(.horizontal, canvas.u(16))
-                .padding(.vertical, canvas.u(10))
-                .background(Capsule().fill(SeleneTheme.glassSolid))
-                .overlay(Capsule().strokeBorder(SeleneTheme.focus, lineWidth: canvas.u(2.5)).opacity(model.editing ? 1 : 0))
+                GameBananaSearchField(prompt: L10n.text("Game name"), query: $model.query, focused: $fieldFocused,
+                                      onSubmit: {
+                                          model.editing = true
+                                          model.confirm(using: band)
+                                      }, onClose: close)
                 .onChange(of: model.editing) { if fieldFocused != $0 { fieldFocused = $0 } }
                 .onChange(of: fieldFocused) { if model.editing != $0 { model.editing = $0 } }
 
@@ -104,5 +92,92 @@ struct GameBananaFindPanel: View {
     private func close() {
         SoundEffectService.shared.play(.focus)
         model.close()
+    }
+}
+
+struct GameBananaModSearchPanel: View {
+    @ObservedObject var band: GameBananaBandModel
+    @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.nxAppLocale) private var localization
+    @FocusState private var fieldFocused: Bool
+
+    var body: some View {
+        ZStack {
+            SeleneTheme.scrim65.ignoresSafeArea().contentShape(Rectangle()).onTapGesture(perform: close)
+            VStack(alignment: .leading, spacing: canvas.u(14)) {
+                Text(L10n.text("GAMEBANANA", context: localization))
+                    .seleneFont(15, .semibold)
+                    .foregroundColor(SeleneTheme.ink60)
+                Text(L10n.text("Search mods", context: localization))
+                    .seleneFont(32)
+                    .foregroundColor(SeleneTheme.ink)
+                    .accessibilityAddTraits(.isHeader)
+                GameBananaSearchField(prompt: L10n.text("Mod name or GameBanana link", context: localization),
+                                      query: $band.modQuery, focused: $fieldFocused,
+                                      onSubmit: submit, onClose: close)
+                if let status {
+                    Text(status).seleneFont(16).foregroundColor(SeleneTheme.ink75)
+                }
+                HStack(spacing: canvas.u(18)) {
+                    SelenePillButton(title: "Cancel", focused: false, action: close)
+                    SelenePillButton(title: "Search", focused: false, enabled: band.canSubmitModSearch, action: submit)
+                        .disabled(!band.canSubmitModSearch)
+                }
+            }
+            .padding(canvas.u(36))
+            .frame(width: canvas.u(820), alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: canvas.u(22), style: .continuous).fill(SeleneTheme.glassSolid))
+        }
+        .onAppear { fieldFocused = true }
+    }
+
+    private var status: String? {
+        switch band.searchPanel {
+        case .loading: return L10n.text("Searching GameBanana…", context: localization)
+        case .empty: return L10n.text("No compatible mods found. Try another name or link.", context: localization)
+        case .invalidLink: return L10n.text("Paste a GameBanana mod link.", context: localization)
+        case .offline: return L10n.text("No connection. Mods you installed still work.", context: localization)
+        case .failed: return L10n.text("GameBanana didn't answer. Try again in a moment.", context: localization)
+        case .editing, nil: return nil
+        }
+    }
+
+    private func submit() {
+        guard band.canSubmitModSearch else { return }
+        SoundEffectService.shared.play(.click)
+        band.submitModSearch()
+    }
+
+    private func close() {
+        SoundEffectService.shared.play(.focus)
+        band.closeModSearch()
+    }
+}
+
+private struct GameBananaSearchField: View {
+    let prompt: String
+    @Binding var query: String
+    @FocusState.Binding var focused: Bool
+    let onSubmit: () -> Void
+    let onClose: () -> Void
+    @Environment(\.seleneCanvas) private var canvas
+
+    var body: some View {
+        HStack(spacing: canvas.u(10)) {
+            MaterialIconView(.search, size: 22).foregroundColor(SeleneTheme.ink60)
+                .accessibilityHidden(true)
+            TextField("", text: $query, prompt: Text(prompt).foregroundColor(SeleneTheme.ink60))
+                .textFieldStyle(.plain)
+                .seleneFont(18)
+                .foregroundColor(SeleneTheme.ink)
+                .focused($focused)
+                .onSubmit(onSubmit)
+                .onExitCommand(perform: onClose)
+                .accessibilityLabel(prompt)
+        }
+        .padding(.horizontal, canvas.u(16))
+        .padding(.vertical, canvas.u(10))
+        .background(Capsule().fill(SeleneTheme.glassSolid))
+        .overlay(Capsule().strokeBorder(SeleneTheme.focus, lineWidth: canvas.u(2.5)).opacity(focused ? 1 : 0))
     }
 }

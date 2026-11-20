@@ -94,6 +94,28 @@ final class GameBananaClientTests: XCTestCase {
         XCTAssertEqual(http.count("ProfilePage"), 2)
     }
 
+    func testModSearchCachesPerGameAndKeepsStaleResultsOffline() async throws {
+        http.serve("_idGameRow=23582", #"{"_aRecords":[{"_idRow":716848}]}"#)
+        http.serve("_idGameRow=1&", #"{"message":"try again"}"#)
+        let client = client()
+        let initial = try await client.searchMods(gameID: 23582, query: "Café")
+        XCTAssertEqual(initial.map(\.id), [716848])
+        do {
+            _ = try await client.searchMods(gameID: 1, query: "Café")
+            XCTFail("an unexpected object is not an empty successful search")
+        } catch {
+            XCTAssertEqual(error as? GameBananaError, .unavailable)
+        }
+        http.serve("_idGameRow=1&", #"{"_aRecords":[]}"#)
+        let empty = try await client.searchMods(gameID: 1, query: "Café")
+        XCTAssertTrue(empty.isEmpty)
+        clock.now += 6 * 3600 + 1
+        http.fail("Util/Search", URLError(.notConnectedToInternet))
+        let cached = try await client.searchMods(gameID: 23582, query: "Café")
+        XCTAssertEqual(cached, initial)
+        XCTAssertEqual(http.count("_idGameRow=23582"), 2)
+    }
+
     func testListingIsCachedForever() async throws {
         http.serve("itemid=7&", #"[["romfs/a"]]"#)
         let paths = try await client().archivePaths(fileID: 7)

@@ -119,6 +119,7 @@ struct DetailsMoreBand: View {
 struct DetailsModsBand: View {
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneReduceMotion) private var reduceMotion
+    @Environment(\.nxAppLocale) private var localization
 
     let mods: [LocalMod]
     /// GameBanana records of installed mods, by GameBanana mod id.
@@ -141,7 +142,8 @@ struct DetailsModsBand: View {
     }
 
     static func tiles(mods: [LocalMod], gameBanana: GameBananaBandModel) -> [ModsBandTile] {
-        ModsBandLayout.tiles(installed: mods.count, available: gameBanana.available.map(\.id), status: gameBanana.statusTiles)
+        ModsBandLayout.tiles(installed: mods.count, available: gameBanana.displayedMods.map(\.id),
+                             status: gameBanana.statusTiles, canSearch: gameBanana.canSearchMods)
     }
 
     /// A tile and the identity it is drawn under: its own, or for a status tile also its place.
@@ -161,7 +163,7 @@ struct DetailsModsBand: View {
         return VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline, spacing: canvas.u(18)) {
                 DetailsBandTitle(text: title)
-                if let line = gameBanana.statusLine {
+                if let line = gameBanana.statusLine(context: localization) {
                     Text(line)
                         .seleneFont(16, .medium)
                         .foregroundColor(SeleneTheme.ink60)
@@ -214,13 +216,15 @@ struct DetailsModsBand: View {
             tile(index: index, focused: focused) { manageFace }
                 .accessibilityLabel(mods.isEmpty ? L10n.text("Add mods") : L10n.text("Manage mods"))
         case .available(let id):
-            if let mod = gameBanana.available.first(where: { $0.id == id }) {
+            if let mod = gameBanana.displayedMods.first(where: { $0.id == id }) {
                 tile(index: index, focused: focused, bleed: true) { availableFace(mod) }
                     .accessibilityLabel(L10n.format("%@, by %@%@", [String(describing: (mod.name)), String(describing: (mod.author)), String(describing: (chip(for: mod).map { ", \($0)" } ?? ""))]))
             }
         case .status(let action):
             tile(index: index, focused: focused) { statusFace(action) }
                 .accessibilityLabel(statusText(action).title)
+                .accessibilityHint(statusText(action).about)
+                .accessibilityAction { onOpen(index) }
         }
     }
 
@@ -301,6 +305,16 @@ struct DetailsModsBand: View {
         case .noneOfThese: return (.close, L10n.text("None of these"), L10n.text("Pick the game by name"))
         case .findGame: return (.search, L10n.text("Find the game"), L10n.text("Search GameBanana by name"))
         case .wrongGame: return (.search, L10n.text("Wrong game?"), gameBanana.matchedName.map { L10n.format("GameBanana: %@", [String(describing: ($0))]) } ?? L10n.text("Pick another game"))
+        case .searchMods: return (.search, L10n.text("Search mods", context: localization), L10n.text("Mod name or GameBanana link", context: localization))
+        case .clearModSearch: return (.close, L10n.text("Clear search", context: localization), L10n.text("Back to popular mods", context: localization))
+        case .moreMods:
+            let title: String
+            switch gameBanana.moreState {
+            case .loading: title = L10n.text("Loading…", context: localization)
+            case .failed: title = L10n.text("Retry", context: localization)
+            case .available, .hidden: title = L10n.text("Show more", context: localization)
+            }
+            return (.add, title, L10n.text("More mods", context: localization))
         }
     }
 
