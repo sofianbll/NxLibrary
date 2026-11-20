@@ -13,16 +13,46 @@ public struct NextendoAccountSnapshot {
         public let gameID: String?
     }
 
+    public struct Player: Identifiable, Equatable {
+        public let id: UInt64
+        public let name: String
+        public let friendCode: String?
+        public let game: String?
+        public let gameID: String?
+    }
+
     public let name: String
+    public let username: String
     public let countryCode: String?
     public let friendCode: String?
     public let avatar: Data?
     public let avatarPID: UInt64?
     public let friends: [Friend]?
+    public let requests: [Player]?
+    public let sent: [Player]?
+    public let recentPlayers: [Player]?
     public let failure: NextendoError?
+
+    public func canAdd(_ player: Player) -> Bool {
+        guard let friends, let requests, let sent, let code = player.friendCode, code != friendCode else { return false }
+        return !friends.contains { $0.id == player.id }
+            && !requests.contains { $0.id == player.id }
+            && !sent.contains { $0.id == player.id }
+    }
 }
 
-/// A read-only snapshot. The only write is OAuth's rotation of the existing shared credential.
+public enum NextendoFriendAction {
+    case send(code: String), accept(pid: UInt64), decline(pid: UInt64), remove(pid: UInt64)
+}
+
+public enum NextendoFriendResult: Equatable {
+    case sent, already, accepted, declined, removed
+}
+
+public enum NextendoFriendError: Error, Equatable {
+    case invalidCode, unknownCode, ownCode, listFull, failed
+}
+
 public struct NextendoAccountService {
     private let oauth: NextendoOAuth
     private static let mediaGate = GameBananaGate(limit: 4)
@@ -38,6 +68,59 @@ public struct NextendoAccountService {
     public func signIn(_ attempt: NextendoAuthorization, code: String) async throws -> NextendoAccountSnapshot? {
         let session = try await oauth.signInSession(attempt, code: code)
         return try await snapshot(clientID: attempt.clientID, access: session.access, knownUser: session.user)
+    }
+
+    /// Do not replay a social write if its outcome is uncertain. A confirmed write and its reload have separate results.
+    public func updateFriend(_ action: NextendoFriendAction, username: String, clientID: String) async throws
+        -> (result: NextendoFriendResult, snapshot: NextendoAccountSnapshot?) {
+        let path: String, fields: [String: Any], result: NextendoFriendResult
+        switch action {
+        case .send(let code):
+            guard let code = Self.friendCode(code) else { throw NextendoFriendError.invalidCode }
+            (path, fields, result) = ("/api/friends", ["friend_code": code], .sent)
+        case .accept(let pid):
+            (path, fields, result) = ("/api/friends/accept", ["pid": pid], .accepted)
+        case .decline(let pid):
+            (path, fields, result) = ("/api/friends/decline", ["pid": pid], .declined)
+        case .remove(let pid):
+            (path, fields, result) = ("/api/friends/remove", ["pid": pid], .removed)
+        }
+        if let pid = fields["pid"] as? UInt64, pid == 0 { throw NextendoFriendError.failed }
+        guard let access = try await oauth.refreshAccess(clientID: clientID) else { throw NextendoError.expired }
+        try Task.checkCancellation()
+        // The game shares the credential and may have changed accounts since the card was loaded.
+        let user: NextendoOAuth.UserInfo
+        do { user = try await oauth.userInfo(clientID: clientID, access: access) }
+        catch NextendoHTTPError.unauthorized { throw NextendoError.expired }
+        guard user.username == username else { throw NextendoFriendError.failed }
+        let (body, status) = try await oauth.post(path, json: JSONSerialization.data(withJSONObject: fields),
+                                                 clientID: clientID, access: access)
+        switch (result, status) {
+        case (_, 401): throw NextendoError.expired
+        case (.sent, 400): throw NextendoFriendError.ownCode
+        case (.sent, 404): throw NextendoFriendError.unknownCode
+        case (.sent, 409): throw NextendoFriendError.listFull
+        default: break
+        }
+        guard (200..<300).contains(status), let reply = try? NextendoDocument(data: body) else {
+            throw NextendoFriendError.failed
+        }
+        let outcome: NextendoFriendResult
+        switch result {
+        case .sent, .accepted, .already:
+            let already = result == .sent && reply.bool("already") == true
+            guard already || reply.object("friend") != nil else { throw NextendoFriendError.failed }
+            outcome = already ? .already : result
+        case .declined, .removed:
+            guard reply.bool("ok") == true else { throw NextendoFriendError.failed }
+            outcome = result
+        }
+        do {
+            let refreshed = try await snapshot(clientID: clientID, access: access, knownUser: user)
+            return (outcome, refreshed?.username == username ? refreshed : nil)
+        }
+        catch is CancellationError { throw CancellationError() }
+        catch { return (outcome, nil) }
     }
 
     /// Public, same-origin image; never pass an OAuth or game bearer for an avatar.
@@ -81,8 +164,12 @@ public struct NextendoAccountService {
         async let profileSection = read("/api/profile", clientID: clientID, access: access)
         async let friendsSection = read("/api/friends", query: [.init(name: "images", value: "0")], clientID: clientID, access: access)
         async let online = onlineStatus(clientID: clientID, access: access)
+        async let recent = read("/api/recent-players", clientID: clientID, access: access)
         let sections = try await [me, profileSection, friendsSection, online]
-        if mayRefresh && sections.contains(where: { $0.unauthorized }) { throw NextendoHTTPError.unauthorized }
+        let recentSection = try await recent
+        if mayRefresh && (sections.contains(where: { $0.unauthorized }) || recentSection.unauthorized) {
+            throw NextendoHTTPError.unauthorized
+        }
         let account = sections[0].body?.object("account")
         if let pid = account?.pid, let userPID = user.pid, pid != userPID { throw NextendoError.service }
         let profile = sections[1].body?.object("profile")
@@ -99,11 +186,15 @@ public struct NextendoAccountService {
         } else {
             nil
         }
-        return NextendoAccountSnapshot(name: user.displayName ?? profile?.text("name") ?? user.username,
+        return NextendoAccountSnapshot(name: user.displayName ?? profile?.text("name") ?? user.username, username: user.username,
                                        countryCode: Self.country(account?.text("country")),
                                        friendCode: Self.friendCode(user.friendCode) ?? Self.friendCode(account?.text("friend_code")),
                                        avatar: avatar, avatarPID: hasAvatar ? user.pid ?? account?.pid : nil,
-                                       friends: friends, failure: failure)
+                                       friends: friends,
+                                       requests: sections[2].body?.objects("requests").map(Self.players),
+                                       sent: sections[2].body?.objects("sent").map(Self.players),
+                                       recentPlayers: recentSection.body?.objects("players").map(Self.players),
+                                       failure: failure)
     }
 
     private struct Section {
@@ -144,11 +235,22 @@ public struct NextendoAccountService {
     }
 
     private static func friendCode(_ value: String?) -> String? {
-        guard let value else { return nil }
-        let stripped = value.uppercased().replacingOccurrences(of: "SW-", with: "", options: .anchored)
+        guard let value, value.utf8.count <= 64 else { return nil }
+        let stripped = value.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+            .replacingOccurrences(of: "SW-", with: "", options: .anchored)
         let digits = stripped.filter { $0 != "-" && $0 != " " }
         guard digits.utf8.count == 12, digits.utf8.allSatisfy({ (48...57).contains($0) }) else { return nil }
         return "SW-\(digits.prefix(4))-\(digits.dropFirst(4).prefix(4))-\(digits.suffix(4))"
+    }
+
+    private static func players(_ rows: [NextendoDocument]) -> [NextendoAccountSnapshot.Player] {
+        var seen = Set<UInt64>()
+        return rows.compactMap { row in
+            guard let pid = row.pid, let name = row.text("name") ?? row.text("username"),
+                  seen.insert(pid).inserted else { return nil }
+            return .init(id: pid, name: name, friendCode: friendCode(row.text("friend_code")),
+                         game: row.text("jeu"), gameID: row.text("title_id"))
+        }
     }
 
     private static func sortedFriends(_ rows: [NextendoDocument]) -> [NextendoAccountSnapshot.Friend] {

@@ -74,6 +74,8 @@ Porting uses nxnative commit `99224562` with Xcode 27.2 and Metal 32023.922. Por
 
 Nextendo is a free community service for online play, not a Nintendo service. If your selected engine supports it, open **Settings → General → Online services → Nextendo** to sign in with a Nextendo account. Arcane builds with Nextendo when the selected engine supports `--nextendo` and a public client ID is configured in **Online services** or bundled with Arcane. Building does not require signing in. Rebuild a game that was built without Nextendo, then select **Nextendo (online)** under **Game Options → More settings → Network** if the game app offers it. The engine pin does not change.
 
+After signing in, open **Friends** to add someone by friend code, answer incoming requests, see pending requests or remove a friend. **Recently played with** shows recent players and lets you add them when their friend code is available.
+
 ## Getting started
 
 ### Requirements

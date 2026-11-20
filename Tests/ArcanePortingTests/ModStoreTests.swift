@@ -1,4 +1,5 @@
 import XCTest
+import os
 @testable import NXLibraryCore
 @testable import ArcanePorting
 
@@ -76,12 +77,13 @@ final class CodeModStoreTests: XCTestCase {
 }
 
 final class ModStoreConflictTests: XCTestCase {
-    private final class GitFixture: CommandRunning {
-        var calls: [[String]] = []
+    private final class GitFixture: CommandRunning, Sendable {
+        private let received = OSAllocatedUnfairLock(initialState: [[String]]())
+        var calls: [[String]] { received.withLock { $0 } }
 
         func run(_ executable: URL, _ arguments: [String], environment: [String: String]?,
                  currentDirectory: URL?) throws -> CommandResult {
-            calls.append(arguments)
+            received.withLock { $0.append(arguments) }
             let object = arguments.last ?? ""
             let status: Int32 = object == "4a2a3426" || object == "deadbee" || object.contains(":") ? 0 : 1
             let profile = object.hasPrefix("deadbee:") ? "off" : "on"

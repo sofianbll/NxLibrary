@@ -1,6 +1,236 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Accept": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Annehmen"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Accept"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Aceptar"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Accepter"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Accetta"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Aceitar"}}
+      }
+    },
+    "Could not confirm the friend action. Check status before trying again.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Die Aktion konnte nicht bestätigt werden. Prüfe den Status, bevor du es erneut versuchst."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Could not confirm the friend action. Check status before trying again."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se pudo confirmar la acción. Comprueba el estado antes de volver a intentarlo."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Impossible de confirmer l’action. Vérifie l’état avant de réessayer."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Impossibile confermare l’azione. Controlla lo stato prima di riprovare."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível confirmar a ação. Verifique o status antes de tentar novamente."}}
+      }
+    },
+    "Could not refresh the lists. Use Check status.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Die Listen konnten nicht aktualisiert werden. Wähle „Status prüfen“."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Could not refresh the lists. Use Check status."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se pudieron actualizar las listas. Elige «Comprobar estado»."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Impossible d’actualiser les listes. Sélectionne « Vérifier l’état »."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Impossibile aggiornare gli elenchi. Scegli «Controlla stato»."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível atualizar as listas. Selecione «Verificar status»."}}
+      }
+    },
+    "Decline": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Ablehnen"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Decline"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Rechazar"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Refuser"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Rifiuta"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Recusar"}}
+      }
+    },
+    "Enter a 12-digit friend code.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Gib einen zwölfstelligen Freundescode ein."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Enter a 12-digit friend code."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Introduce un código de amigo de 12 dígitos."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Saisis un code ami à 12 chiffres."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Inserisci un codice amico di 12 cifre."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Digite um código de amigo de 12 dígitos."}}
+      }
+    },
+    "Friend code": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Freundescode"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Friend code"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Código de amigo"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Code ami"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Codice amico"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Código de amigo"}}
+      }
+    },
+    "Friend removed.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Kontakt entfernt."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Friend removed."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Amigo eliminado."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ami retiré."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Amico rimosso."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Amigo removido."}}
+      }
+    },
+    "Friend request accepted.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Freundschaftsanfrage angenommen."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Friend request accepted."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Solicitud de amistad aceptada."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Demande d’ami acceptée."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Richiesta di amicizia accettata."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Solicitação de amizade aceita."}}
+      }
+    },
+    "Friend request declined.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Freundschaftsanfrage abgelehnt."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Friend request declined."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Solicitud de amistad rechazada."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Demande d’ami refusée."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Richiesta di amicizia rifiutata."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Solicitação de amizade recusada."}}
+      }
+    },
+    "Friend request sent.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Freundschaftsanfrage gesendet."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Friend request sent."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Solicitud de amistad enviada."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Demande d’ami envoyée."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Richiesta di amicizia inviata."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Solicitação de amizade enviada."}}
+      }
+    },
+    "Friend requests unavailable": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Freundschaftsanfragen nicht verfügbar"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Friend requests unavailable"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Solicitudes de amistad no disponibles"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Demandes d’ami indisponibles"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Richieste di amicizia non disponibili"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Solicitações de amizade indisponíveis"}}
+      }
+    },
+    "No player has that friend code.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Zu diesem Freundescode wurde niemand gefunden."}},
+        "en": {"stringUnit": {"state": "translated", "value": "No player has that friend code."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ningún jugador tiene ese código de amigo."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Aucun joueur n’a ce code ami."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nessun giocatore ha questo codice amico."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nenhum jogador tem esse código de amigo."}}
+      }
+    },
+    "No recent players.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Keine kürzlichen Mitspieler."}},
+        "en": {"stringUnit": {"state": "translated", "value": "No recent players."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No has jugado con nadie recientemente."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Aucun joueur croisé récemment."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nessun giocatore incontrato di recente."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nenhum jogador encontrado recentemente."}}
+      }
+    },
+    "One of the friend lists is full.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Eine der Freundeslisten ist voll."}},
+        "en": {"stringUnit": {"state": "translated", "value": "One of the friend lists is full."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Una de las listas de amigos está llena."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "L’une des listes d’amis est pleine."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Una delle liste amici è piena."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Uma das listas de amigos está cheia."}}
+      }
+    },
+    "Pending": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Ausstehend"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Pending"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Pendiente"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "En attente"}},
+        "it": {"stringUnit": {"state": "translated", "value": "In attesa"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Pendente"}}
+      }
+    },
+    "Recent players unavailable": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Letzte Mitspieler nicht verfügbar"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Recent players unavailable"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Jugadores recientes no disponibles"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Joueurs récents indisponibles"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Giocatori recenti non disponibili"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Jogadores recentes indisponíveis"}}
+      }
+    },
+    "Recently played with": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Kürzlich getroffen"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Recently played with"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Jugadores recientes"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Joueurs croisés récemment"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Giocatori incontrati di recente"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Jogadores encontrados recentemente"}}
+      }
+    },
+    "Received requests": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Erhaltene Anfragen"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Received requests"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Solicitudes recibidas"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Demandes reçues"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Richieste ricevute"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Solicitações recebidas"}}
+      }
+    },
+    "Remove friend": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Kontakt entfernen"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Remove friend"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Eliminar amigo"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Retirer"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Rimuovi amico"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Remover amigo"}}
+      }
+    },
+    "Remove this friend?": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Diesen Kontakt entfernen?"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Remove this friend?"}},
+        "es": {"stringUnit": {"state": "translated", "value": "¿Eliminar a este amigo?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Retirer cet ami ?"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Rimuovere questo amico?"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Remover este amigo?"}}
+      }
+    },
+    "Sent requests": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Gesendete Anfragen"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Sent requests"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Solicitudes enviadas"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Demandes envoyées"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Richieste inviate"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Solicitações enviadas"}}
+      }
+    },
+    "You can’t add your own friend code.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Du kannst deinen eigenen Freundescode nicht hinzufügen."}},
+        "en": {"stringUnit": {"state": "translated", "value": "You can’t add your own friend code."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No puedes añadir tu propio código de amigo."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Tu ne peux pas ajouter ton propre code ami."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Non puoi aggiungere il tuo codice amico."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não é possível adicionar seu próprio código de amigo."}}
+      }
+    },
+    "You’re already friends or a request is pending.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Ihr seid schon befreundet oder eine Anfrage steht noch aus."}},
+        "en": {"stringUnit": {"state": "translated", "value": "You’re already friends or a request is pending."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ya sois amigos o hay una solicitud pendiente."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vous êtes déjà amis ou une demande est en attente."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Siete già amici o c’è una richiesta in attesa."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Vocês já são amigos ou há uma solicitação pendente."}}
+      }
+    },
     "%@ needs an exefs folder with .pchtxt or .ips files only, without links.": {
       "comment": "AppViewModel+Mods.swift",
       "localizations": {
