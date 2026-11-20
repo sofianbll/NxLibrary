@@ -51,7 +51,7 @@ public enum ModStoreError: Error, Equatable {
 }
 
 /// A game's RomFS and ExeFS mods share one ordered record. RomFS applies through `DM_ROMFS_OVERLAY` on Play;
-/// ExeFS applies through an ordered snapshot of enabled patches on Rebuild.
+/// ExeFS builds use a snapshot of enabled patches; Play can switch the built group on or off together.
 /// Every change requires `canWrite`, and removed mods go to the Trash.
 public struct ModStore {
     /// The Mac launcher reads `env.txt` lines into a 4096-byte buffer: `DM_ROMFS_OVERLAY=` (17) + value + newline
@@ -417,15 +417,44 @@ public struct ModStore {
 
     // MARK: - Code mods at build time
 
-    /// Compared against the engine's built-in metadata rather than the last attempted build, so a failed,
-    /// cancelled or pending install cannot clear the Rebuild notice.
-    public func codeModsNeedRebuild(app: URL) -> Bool {
-        let metadata = app.appendingPathComponent("Contents/Resources/dm/mods")
-        let installed = ModFolderScanner.entries(in: metadata).filter {
-            FileManager.default.fileExists(atPath: $0.appendingPathComponent("dm_code.tsv").path)
-        }.map(\.lastPathComponent)
-        guard let selected = try? codeMods(enabledCodeMods(), stage: nil) else { return true }
-        return selected != installed
+    /// The parent folder is the switch name. Like hle_mods.c, use dm_code.tsv as a marker:
+    /// its rows list applied patch files, not mod names, and the host does not read them.
+    public static func bundledCodeMods(in app: URL) -> [String]? {
+        let root = app.appendingPathComponent("Contents/Resources/dm/mods")
+        let fm = FileManager.default
+        let names = ((try? fm.contentsOfDirectory(atPath: root.path)) ?? []).filter {
+            !$0.hasPrefix(".") && fm.fileExists(atPath: root.appendingPathComponent($0).appendingPathComponent("dm_code.tsv").path)
+        }
+        return names.isEmpty ? nil : names.sorted()
+    }
+
+    public func codeModsNeedRebuild(app: URL, build: BuildRecord? = nil) -> Bool {
+        codeModState(app: app, build: build).needsRebuild
+    }
+
+    public func codeModsLaunchEnvironment(app: URL, build: BuildRecord? = nil) -> [String: String] {
+        guard let off = codeModState(app: app, build: build).off else { return [:] }
+        return ["DM_MODS_OFF": off]
+    }
+
+    private func codeModState(app: URL, build: BuildRecord?) -> (needsRebuild: Bool, off: String?) {
+        // Don't reuse a record for a moved app or an external replacement without a patched copy.
+        let built = Self.bundledCodeMods(in: app) ?? (
+            build?.outputPath == app.path && ModFolderScanner.isRealDirectory(app.appendingPathComponent("Contents/Resources/dm/codemods"))
+                ? build?.builtCodeMods ?? [] : []
+        )
+        guard let selected = try? codeMods(enabledCodeMods(), stage: nil) else { return (true, nil) }
+        if selected.isEmpty { return (false, built.first) } // One name switches the entire copy off.
+        guard Set(selected.map(Self.codeModIdentity)) == Set(built.map(Self.codeModIdentity)) else { return (true, nil) }
+        return (false, "") // Even an empty launch value takes precedence over env.txt.
+    }
+
+    private static func codeModIdentity(_ name: String) -> Substring {
+        // The engine rejects overlapping patches, so changing only list order doesn't change the built code.
+        let position = name.prefix(8)
+        guard position.utf8.count == 8, position.utf8.allSatisfy({ (48...57).contains($0) }),
+              name.dropFirst(8).first == "-" else { return name[...] }
+        return name.dropFirst(9)
     }
 
     func enabledCodeMods() throws -> [LocalMod] {

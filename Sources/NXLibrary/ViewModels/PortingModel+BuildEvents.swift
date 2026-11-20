@@ -138,7 +138,7 @@ extension PortingModel {
     }
 
     func finishBuild(_ result: BuildResult, gameID: UUID,
-                     finalApp: URL, tempDir: URL, nextendoRequested: Bool) {
+                     finalApp: URL, tempDir: URL, nextendoRequested: Bool, stagedCodeMods: [String]?) {
         stopStageElapsedTimer()
         currentBuildCacheURL = nil
         app.portingProgress?.finish(success: result.success)
@@ -164,6 +164,9 @@ extension PortingModel {
                 xcodeVersion: toolchain.xcodeVersion,
                 toolchainVerified: verified,
                 nextendoRequested: nextendoRequested ? true : nil,
+                builtCodeMods: (result.outputURL ?? result.heldApp).map {
+                    ModStore.bundledCodeMods(in: $0) ?? stagedCodeMods ?? []
+                },
                 cancelled: result.cancelled
             )
 

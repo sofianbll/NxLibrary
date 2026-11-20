@@ -138,14 +138,19 @@ extension AppViewModel {
         }
 
         // Play can come straight from the row. Reconcile removed mod folders before the game reads its overlay.
-        if let store = modStore(for: game) { _ = performModChange { try store.sync() } }
+        let store = modStore(for: game)
+        if let store { _ = performModChange { try store.sync() } }
 
         Task { @MainActor in
             let appURL = game.url
             let supported = await InstalledEngineCapabilities.shared.supportsHomeMenu(in: appURL, engineFolder: setup.nxnativePath)
             let homeMenu = HomeMenu.environment(supported: supported, launcherBundleID: Bundle.main.bundleIdentifier)
+            let codeMods = await Task.detached(priority: .userInitiated) {
+                store?.codeModsLaunchEnvironment(app: appURL, build: game.lastBuild) ?? [:]
+            }.value
             let overrides = (gameSettings == nil ? config.toEnvironmentDict() : environment)
                 .merging(homeMenu) { _, launcher in launcher }
+                .merging(codeMods) { _, mods in mods }
             openGame(game, titleId: titleId, token: saveLaunchToken, environment: overrides)
         }
     }

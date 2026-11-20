@@ -361,6 +361,7 @@ extension PortingModel {
         } catch let error as ModStoreError {
             throw NXLibraryError.environmentBlocked(AppViewModel.modMessage(error))
         }
+        let stagedCodeMods = try codeMods.map { try FileManager.default.contentsOfDirectory(atPath: $0.path).sorted() }
         let command = BuildCommandBuilder.make(
             repo: repo,
             toolchain: toolchain,
@@ -439,7 +440,7 @@ extension PortingModel {
                 DispatchQueue.main.async {
                     self?.finishBuild(result, gameID: target.id,
                                       finalApp: finalApp, tempDir: tempRoot,
-                                      nextendoRequested: nextendoRequested)
+                                      nextendoRequested: nextendoRequested, stagedCodeMods: stagedCodeMods)
                 }
             }
         )
