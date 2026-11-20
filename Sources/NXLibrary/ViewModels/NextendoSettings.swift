@@ -15,6 +15,10 @@ import NXLibraryCore
     @Published private(set) var failure: NextendoError?
     private(set) var revision = UUID()
     @Published var isEditingClient = false
+    @Published var friendToRemove: NextendoAccountSnapshot.Friend?
+    @Published private(set) var friendMessage: (key: String, isError: Bool)?
+    @Published private(set) var friendsNeedRefresh = false
+    @Published private(set) var submittedFriendCode: String?
     private var operation: Task<Void, Never>?
     private var ticket = UUID()
     private var isSigningOut = false
@@ -29,6 +33,49 @@ import NXLibraryCore
                 try Task.checkCancellation()
                 if hasToken { throw NextendoError.clientID }
                 try model.apply(nil)
+            }
+        }
+    }
+
+    func updateFriend(_ action: NextendoFriendAction, clientID: String?) {
+        guard status == .signedIn, !friendsNeedRefresh, let username = account?.username, let clientID else { return }
+        run(friendAction: true) { model in
+            model.friendMessage = nil
+            model.submittedFriendCode = nil
+            do {
+                let update = try await model.service.updateFriend(action, username: username, clientID: clientID)
+                try Task.checkCancellation()
+                if let snapshot = update.snapshot { try model.apply(snapshot) }
+                model.friendsNeedRefresh = update.snapshot?.friends == nil
+                    || update.snapshot?.requests == nil || update.snapshot?.sent == nil
+                let key: String = switch update.result {
+                case .sent: "Friend request sent."
+                case .already: "You’re already friends or a request is pending."
+                case .accepted: "Friend request accepted."
+                case .declined: "Friend request declined."
+                case .removed: "Friend removed."
+                }
+                model.friendMessage = (key, false)
+                if case .send(let code) = action { model.submittedFriendCode = code }
+            } catch let error as NextendoFriendError {
+                try Task.checkCancellation()
+                let key: String = switch error {
+                case .invalidCode: "Enter a 12-digit friend code."
+                case .unknownCode: "No player has that friend code."
+                case .ownCode: "You can’t add your own friend code."
+                case .listFull: "One of the friend lists is full."
+                case .failed: "Could not confirm the friend action. Check status before trying again."
+                }
+                if error == .failed { model.friendsNeedRefresh = true }
+                model.friendMessage = (key, true)
+            } catch NextendoError.expired {
+                throw NextendoError.expired
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                try Task.checkCancellation()
+                model.friendsNeedRefresh = true
+                model.friendMessage = ("Could not confirm the friend action. Check status before trying again.", true)
             }
         }
     }
@@ -65,6 +112,10 @@ import NXLibraryCore
         account = nil
         accountName = nil
         failure = nil
+        friendToRemove = nil
+        friendMessage = nil
+        friendsNeedRefresh = false
+        submittedFriendCode = nil
     }
 
     func clientChanged() {
@@ -75,6 +126,7 @@ import NXLibraryCore
     private func apply(_ snapshot: NextendoAccountSnapshot?) throws {
         try Task.checkCancellation()
         revision = UUID()
+        friendsNeedRefresh = false
         account = snapshot
         accountName = snapshot?.name
         status = snapshot == nil ? .signedOut : .signedIn
@@ -89,13 +141,13 @@ import NXLibraryCore
         catch { throw NextendoError.browser }
     }
 
-    private func run(checking: Bool = false, signingOut: Bool = false,
+    private func run(checking: Bool = false, signingOut: Bool = false, friendAction: Bool = false,
                      _ work: @escaping @MainActor (NextendoSettings) async throws -> Void) {
         guard !isBusy else { return }
         let ticket = UUID()
         self.ticket = ticket
         isSigningOut = signingOut
-        failure = nil
+        if !friendAction { failure = nil; friendMessage = nil }
         isBusy = true
         operation = Task { [weak self] in
             guard let self else { return }

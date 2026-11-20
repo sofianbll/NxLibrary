@@ -54,7 +54,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../CONTRIBUTING.md), [SECURIT
 | [LICENSE](../LICENSE) | Contiene la licenza MIT di Arcane. |
 | [NOTICE](../NOTICE) | Conserva attribuzioni del motore al pin corrente, dei componenti, dei loghi e delle altre risorse riutilizzate. |
 | [Package.swift](../Package.swift) | Dichiara i target SwiftPM, le loro dipendenze e il deployment macOS minimo. |
-| [README.md](../README.md) | Presenta Arcane come libreria e launcher Mac, con guide, requisiti, sostegno volontario, crediti e note legali. |
+| [README.md](../README.md) | Presenta Arcane come libreria e launcher Mac, con guide (anche gioco online e amici Nextendo), requisiti, sostegno, crediti e note legali. |
 | [runtime.lock](../runtime.lock) | Fissa versioni, download e hash del runtime Python e degli strumenti inclusi nel bundle. |
 | [VERSION](../VERSION) | Versione in sviluppo usata dal packaging e verificata dalla procedura di release. |
 
@@ -93,7 +93,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../CONTRIBUTING.md), [SECURIT
 | [Sources/NXLibrary/ViewModels/AppViewModel+Toolchain.swift](../Sources/NXLibrary/ViewModels/AppViewModel+Toolchain.swift) | Espone il riepilogo del gate della toolchain per l’interfaccia. |
 | [Sources/NXLibrary/ViewModels/SavePanelModel.swift](../Sources/NXLibrary/ViewModels/SavePanelModel.swift) | Gestisce refresh, anteprime, backup, importazione, ripristino, errori e conferma temporanea di successo. |
 | [Sources/NXLibrary/ViewModels/SetupCheckModel.swift](../Sources/NXLibrary/ViewModels/SetupCheckModel.swift) | Esegue probe e installazioni del Setup in background, con avanzamento e ricontrollo periodico. |
-| [Sources/NXLibrary/ViewModels/NextendoSettings.swift](../Sources/NXLibrary/ViewModels/NextendoSettings.swift) | Pubblica la scheda e lo stato Nextendo in memoria e coordina verifica annullabile, accesso e disconnessione locale. |
+| [Sources/NXLibrary/ViewModels/NextendoSettings.swift](../Sources/NXLibrary/ViewModels/NextendoSettings.swift) | Pubblica la scheda, la sessione e l'esito delle azioni sugli amici in memoria; coordina verifica annullabile, accesso e disconnessione. |
 
 ## Modelli dello stato applicativo
 
@@ -205,8 +205,8 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../CONTRIBUTING.md), [SECURIT
 | [Sources/NXLibraryCore/Models/LauncherSettings.swift](../Sources/NXLibraryCore/Models/LauncherSettings.swift) | Legge launcher.json e verifica i controlli supportati, con fallback per le build precedenti. |
 | [Sources/NXLibraryCore/Models/NextendoLaunch.swift](../Sources/NXLibraryCore/Models/NextendoLaunch.swift) | Rileva il flag di porting e il supporto Nextendo del checkout e della build; valida la sessione online e compone il solo ID client nel lancio. |
 | [Sources/NXLibraryCore/Models/HomeMenu.swift](../Sources/NXLibraryCore/Models/HomeMenu.swift) | Rileva il protocollo Home nel bundle, compone l'ambiente e nomina le notifiche; identifica il processo `dmhost` e modella pausa, ripresa, richiesta di uscita e termine. |
-| [Sources/NXLibraryCore/Services/NextendoAccountService.swift](../Sources/NXLibraryCore/Services/NextendoAccountService.swift) | Legge scheda account, profilo, stato di gioco online e amici ordinati; risolve ritratti e titoli pubblici senza bearer. |
-| [Sources/NXLibraryCore/Services/NextendoOAuth.swift](../Sources/NXLibraryCore/Services/NextendoOAuth.swift) | Genera la richiesta PKCE, valida la callback, scambia e ruota i token, legge userinfo e offre trasporto Nextendo limitato. |
+| [Sources/NXLibraryCore/Services/NextendoAccountService.swift](../Sources/NXLibraryCore/Services/NextendoAccountService.swift) | Legge account, profilo, disponibilità online, amici, richieste e giocatori recenti; esegue le azioni sociali e rilegge le liste; risolve ritratti e titoli pubblici senza bearer. |
+| [Sources/NXLibraryCore/Services/NextendoOAuth.swift](../Sources/NXLibraryCore/Services/NextendoOAuth.swift) | Genera la richiesta PKCE, valida la callback, scambia e ruota i token, legge userinfo e offre trasporto GET e POST JSON Nextendo limitato. |
 | [Sources/NXLibraryCore/Services/NextendoTokenStore.swift](../Sources/NXLibraryCore/Services/NextendoTokenStore.swift) | Legge, sostituisce e rimuove il refresh token condiviso sotto il lock nxnative, con permessi privati. |
 | [Sources/NXLibraryCore/Models/AppIconProgress.swift](../Sources/NXLibraryCore/Models/AppIconProgress.swift) | Stati e testi della preparazione icona, con esito informativo aggiunto al log della build conclusa. |
 | [Sources/NXLibraryCore/Models/IconLaunchWait.swift](../Sources/NXLibraryCore/Models/IconLaunchWait.swift) | Conserva una richiesta Play durante la firma dell'icona e la revoca su annullamento, errore o chiusura del dialogo. |
@@ -416,7 +416,7 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 | [Sources/NXLibraryCore/Models/AppLocale.swift](../Sources/NXLibraryCore/Models/AppLocale.swift) | Sei lingue, risoluzione delle preferenze e regione indipendente; nomi e ricerca delle regioni. |
 | [Sources/NXLibraryCore/Models/GameGenre.swift](../Sources/NXLibraryCore/Models/GameGenre.swift) | Generi noti tradotti alla presentazione; dati originali e generi personali conservati. |
 | [Sources/NXLibraryCore/Services/AppLocalization.swift](../Sources/NXLibraryCore/Services/AppLocalization.swift) | Contesto osservabile, lookup portabile delle risorse e interpolazioni/plurali. |
-| [Sources/NXLibraryCore/Resources/Localizable.xcstrings](../Sources/NXLibraryCore/Resources/Localizable.xcstrings) | Testi condivisi e traduzioni en/it/fr/de/es/pt-BR, incluse ricerca mod, mod di codice, scheda Nextendo e stato del gioco in pausa. |
+| [Sources/NXLibraryCore/Resources/Localizable.xcstrings](../Sources/NXLibraryCore/Resources/Localizable.xcstrings) | Testi condivisi e traduzioni en/it/fr/de/es/pt-BR, incluse ricerca mod, mod di codice, account e amici Nextendo e stato del gioco in pausa. |
 
 ## Core · profilo dei dati
 
@@ -470,7 +470,7 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 | [Sources/NXLibrary/Views/Detail/CriticRatingValue.swift](../Sources/NXLibrary/Views/Detail/CriticRatingValue.swift) | Valore della riga Critic score: cinque stelle, numero /100 e fonte, senza finestre aggiuntive; caricamento e assenza espliciti. |
 | [Sources/NXLibrary/ViewModels/IGDBSettings.swift](../Sources/NXLibrary/ViewModels/IGDBSettings.swift) | Configurazione IGDB facoltativa: verifica prima del salvataggio, rimozione e invalidazione delle richieste/voti precedenti. |
 | [Sources/NXLibrary/Views/Components/IGDBCredentialsDialog.swift](../Sources/NXLibrary/Views/Components/IGDBCredentialsDialog.swift) | Guida sintetica in cinque passi, Client ID, Client Secret nascosto, verifica/salvataggio e annullamento; input Settings sospeso. |
-| [Sources/NXLibrary/Views/Settings/SettingsAPISection.swift](../Sources/NXLibrary/Views/Settings/SettingsAPISection.swift) | Pagina generale Online services: IGDB, SteamGridDB e scheda Nextendo con profilo, stato e pannello amici, con azioni e focus condivisi. |
+| [Sources/NXLibrary/Views/Settings/SettingsAPISection.swift](../Sources/NXLibrary/Views/Settings/SettingsAPISection.swift) | Pagina generale Online services: IGDB, SteamGridDB e scheda Nextendo con profilo, stato, richieste, amici e giocatori recenti, con azioni e focus condivisi. |
 | [Sources/NXLibrary/Views/Settings/NextendoClientDialog.swift](../Sources/NXLibrary/Views/Settings/NextendoClientDialog.swift) | Dialogo Selene per scegliere e validare l’ID pubblico o riprendere il default incluso nella build. |
 
 ## UI · Game Options, cheats e salvataggi
@@ -497,7 +497,7 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 
 | File | Responsabilità |
 |---|---|
-| [Sources/NXLibrary/Views/Settings/SettingsView.swift](../Sources/NXLibrary/Views/Settings/SettingsView.swift) | Compone sidebar e gruppo attivo, rileva la capacità Nextendo del checkout e coordina focus di righe e pulsanti, input, dialoghi e reset. |
+| [Sources/NXLibrary/Views/Settings/SettingsView.swift](../Sources/NXLibrary/Views/Settings/SettingsView.swift) | Compone sidebar e gruppo attivo, rileva la capacità Nextendo del checkout e coordina focus, input, reset e dialoghi, inclusa la conferma per rimuovere un amico. |
 | [Sources/NXLibrary/Views/Settings/SettingsSidebar.swift](../Sources/NXLibrary/Views/Settings/SettingsSidebar.swift) | Disegna intestazione e sezioni sotto le intestazioni di gruppo (General, Switch, Steam, System). |
 | [Sources/NXLibrary/Views/Settings/SettingsSectionContent.swift](../Sources/NXLibrary/Views/Settings/SettingsSectionContent.swift) | Instrada il gruppo selezionato e passa alle sezioni interessate la capacità Nextendo. |
 | [Sources/NXLibrary/Views/Settings/SettingsSearchSection.swift](../Sources/NXLibrary/Views/Settings/SettingsSearchSection.swift) | Presenta ricerca e Changed, con apertura del gruppo della riga selezionata e rispetto della capacità Nextendo. |
@@ -713,7 +713,7 @@ Giochi in download: `SteamLibrarySource` (StateFlags senza il bit 4 → `.downlo
 | [Tests/NXLibraryCoreTests/NewestEngineTests.swift](../Tests/NXLibraryCoreTests/NewestEngineTests.swift) | Lock e Metal di main, validità della scelta, comandi git del cambio, gate Newest engine, scheda Setup e frase. |
 | [Tests/NXLibraryCoreTests/NUPSourceCatalogTests.swift](../Tests/NXLibraryCoreTests/NUPSourceCatalogTests.swift) | NUP storici, multiprogramma e soli update; identità DLC, JSON, capacità checkout, programma zero nei vecchi record e argv coerenti. |
 | [Tests/NXLibraryCoreTests/NXNativeGameSettingsTests.swift](../Tests/NXLibraryCoreTests/NXNativeGameSettingsTests.swift) | Build senza adattatore, migrazione, chiavi fissate, precedenza al lancio e scrittura dei soli valori diversi dal default. |
-| [Tests/NXLibraryCoreTests/NextendoAccountServiceTests.swift](../Tests/NXLibraryCoreTests/NextendoAccountServiceTests.swift) | Risposte sintetiche account e amici, presenza, ordinamento, errori senza credenziali, 401, annullamento e richieste pubbliche. |
+| [Tests/NXLibraryCoreTests/NextendoAccountServiceTests.swift](../Tests/NXLibraryCoreTests/NextendoAccountServiceTests.swift) | Risposte e scritture sintetiche per account, amici, richieste e giocatori recenti; corpi JSON, aggiornamento delle liste, errori, 401, annullamento e richieste pubbliche. |
 | [Tests/NXLibraryCoreTests/NextendoLaunchTests.swift](../Tests/NXLibraryCoreTests/NextendoLaunchTests.swift) | Capacità dichiarate, scelta Network generica, visibilità in Settings, blocco senza sessione e ambiente in Play. |
 | [Tests/NXLibraryCoreTests/NextendoOAuthTests.swift](../Tests/NXLibraryCoreTests/NextendoOAuthTests.swift) | PKCE RFC 7636, callback loopback, scambio e rotazione sintetici, scadenza ed errore temporaneo. |
 | [Tests/NXLibraryCoreTests/NextendoTokenStoreTests.swift](../Tests/NXLibraryCoreTests/NextendoTokenStoreTests.swift) | Permessi, sostituzione atomica, flock POSIX, annullamento, disconnessione e link rifiutati su dati sintetici. |

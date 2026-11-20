@@ -41,6 +41,7 @@ public struct SettingsView: View {
     @ObservedObject private var theme = ThemeStore.shared
     @ObservedObject private var igdb = IGDBSettings.shared
     @ObservedObject private var nextendo = NextendoSettings.shared
+    @State private var nextendoRemovalFocus: SeleneConfirmButton = .cancel
     @State private var nextendoEngine: EngineSelection?
     private struct EngineSelection: Equatable {
         let path: String
@@ -103,6 +104,7 @@ public struct SettingsView: View {
         .onDisappear { igdb.isEditing = false }
         .onDisappear {
             nextendo.isEditingClient = false
+            nextendo.friendToRemove = nil
             nextendo.cancelBrowser()
         }
         .task(id: engine) {
@@ -144,6 +146,22 @@ public struct SettingsView: View {
         .overlay {
             if supportsNextendo && nextendo.isEditingClient {
                 NextendoClientDialog(settings: settings) { nextendo.isEditingClient = false }
+            }
+        }
+        .disabled(nextendo.friendToRemove != nil)
+        .accessibilityHidden(nextendo.friendToRemove != nil)
+        .overlay {
+            if supportsNextendo, let friend = nextendo.friendToRemove {
+                ZStack {
+                    SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle())
+                        .onTapGesture { nextendo.friendToRemove = nil }
+                    SeleneConfirmDialog(title: L10n.text("Remove this friend?", context: localization), message: friend.name,
+                                        confirmTitle: L10n.text("Remove friend", context: localization),
+                                        cancelTitle: L10n.text("Cancel", context: localization), focus: $nextendoRemovalFocus,
+                                        onCancel: { nextendo.friendToRemove = nil },
+                                        onConfirm: confirmNextendoRemoval)
+                }
+                .onAppear { nextendoRemovalFocus = .cancel }
             }
         }
         .opacity(showingControls ? 0.001 : 1)
@@ -243,7 +261,7 @@ public struct SettingsView: View {
             rowFocus.index = index
         }
         rowFocus.move(by: 0, count: rowActions.count)
-        if focusedButtonCount != focusedRow?.buttonCount { rowButton = 0 }
+        if focusedID != focusedRow?.id || focusedButtonCount != focusedRow?.buttonCount { rowButton = 0 }
         if rowActions.isEmpty, focusArea == .rows { focusArea = .sidebar }
     }
 
@@ -400,6 +418,16 @@ public struct SettingsView: View {
     private func handleGamepad(_ action: GamepadAction) {
         // The key dialog takes the controller while it is open.
         if viewModel.isEditingSteamGridDBKey || igdb.isEditing || nextendo.isEditingClient { return }
+        if nextendo.friendToRemove != nil {
+            switch action {
+            case .navigateLeft: nextendoRemovalFocus = .cancel
+            case .navigateRight: nextendoRemovalFocus = .confirm
+            case .confirm where nextendoRemovalFocus == .confirm: confirmNextendoRemoval()
+            case .confirm, .cancel: nextendo.friendToRemove = nil
+            default: break
+            }
+            return
+        }
         if localePicker != nil {
             NotificationCenter.default.post(name: .nxLocalePickerGamepadAction, object: action)
             return
@@ -429,6 +457,12 @@ public struct SettingsView: View {
         default:
             break
         }
+    }
+
+    private func confirmNextendoRemoval() {
+        guard let friend = nextendo.friendToRemove else { return }
+        nextendo.friendToRemove = nil
+        nextendo.updateFriend(.remove(pid: friend.id), clientID: settings.settings.nextendoClientID ?? NextendoLaunch.buildClientID)
     }
 
     /// B or Esc: steps back one level. Typing in Search, it closes the field and stays on Search.
