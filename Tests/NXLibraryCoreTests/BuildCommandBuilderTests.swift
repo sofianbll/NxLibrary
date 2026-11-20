@@ -49,8 +49,20 @@ final class BuildCommandBuilderTests: XCTestCase {
         XCTAssertTrue(cmd.arguments.contains("--progress"))
         XCTAssertTrue(cmd.arguments.contains("json"))
         XCTAssertFalse(cmd.arguments.contains("--show-fps"))
+        XCTAssertFalse(cmd.arguments.contains("--mods"))
         XCTAssertFalse(cmd.arguments.contains("--allow-other-metal"))
         XCTAssertTrue(cmd.environment["DEVELOPER_DIR"]?.contains("Xcode-beta") == true)
+    }
+
+    func testCodeModsFolderIsOneMacBuildArgument() throws {
+        let repo = URL(fileURLWithPath: "/tmp/repo")
+        let folder = repo.appendingPathComponent("Code mods")
+        let command = BuildCommandBuilder.make(
+            repo: repo, toolchain: EngineToolchain.resolve(runtime: nil, repo: repo), workspace: repo,
+            keys: nil, output: repo.appendingPathComponent("Game.app"), developerDir: repo, codeModsFolder: folder
+        )
+        let index = try XCTUnwrap(command.arguments.firstIndex(of: "--mods"))
+        XCTAssertEqual(command.arguments[index + 1], folder.path)
     }
 
     func testUntestedToolchainOverrideReachesTheEngine() {

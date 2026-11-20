@@ -28,6 +28,23 @@ public struct BuildResult: Equatable {
 }
 
 public final class BuildService {
+    /// A build reads only enabled patches, copied out of the live folders so later edits target the next build.
+    public static func stageCodeMods(_ store: ModStore?, in temp: URL, engineSupportsMods: Bool) throws -> URL? {
+        guard let store else { return nil }
+        let selected = try store.enabledCodeMods()
+        guard !selected.isEmpty else { return nil }
+        guard engineSupportsMods else {
+            throw ModStoreError.writeFailed(L10n.text("The selected engine cannot build code mods. Switch engines or turn them off."))
+        }
+        // nxnative splits --mods on commas, and the patch paths on colons.
+        let folder = temp.appendingPathComponent("code-mods")
+        guard !folder.path.contains(","), folder.path.rangeOfCharacter(from: ModSupport.patchSeparators) == nil else {
+            throw ModStoreError.writeFailed(L10n.text("Code mods can't build in a path containing a comma, colon or line break."))
+        }
+        _ = try store.codeMods(selected, stage: folder)
+        return folder
+    }
+
     private let fm: FileManager
     private let ioQueue = DispatchQueue(label: L10n.text("local.nxlibrary.build.io"))
     private let stateLock = NSLock()

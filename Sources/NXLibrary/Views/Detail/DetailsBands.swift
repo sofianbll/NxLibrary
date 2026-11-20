@@ -203,7 +203,7 @@ struct DetailsModsBand: View {
         return on == 0 ? L10n.text("Mods") : L10n.format("Mods · %@ on", [String(describing: (on))])
     }
 
-    static func state(_ mod: LocalMod) -> String { mod.romfs == nil ? L10n.text("Not a mod") : mod.isOn ? "On" : "Off" }
+    static func state(_ mod: LocalMod) -> String { !mod.isMod ? L10n.text("Not a mod") : mod.isOn ? "On" : "Off" }
 
     @ViewBuilder
     private func tileView(_ kind: ModsBandTile, index: Int, focused: Bool) -> some View {

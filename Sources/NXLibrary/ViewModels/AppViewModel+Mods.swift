@@ -1,9 +1,7 @@
 import AppKit
 import NXLibraryCore
 
-/// Mods: a game's RomFS mods in its data folder (`~/Library/Application Support/nxnative/<title ID>/mods`), the
-/// order and on/off state NX Library keeps for them, and the overlay line the game's launcher reads. Changes go
-/// through `ModStore`, only while the game is not running.
+/// Mods: the game's RomFS and ExeFS folders, their order and on/off state, and the RomFS overlay the game reads.
 extension AppViewModel {
     /// Nil when the game's app has no valid title ID.
     func modStore(for game: PortedGame) -> ModStore? {
@@ -18,7 +16,9 @@ extension AppViewModel {
     }
 
     func modsRowValue(for game: PortedGame) -> String {
-        guard let mods = modStore(for: game)?.mods() else { return "None" }
+        guard let store = modStore(for: game) else { return "None" }
+        if store.codeModsNeedRebuild(app: game.url) { return L10n.text("Rebuild") }
+        let mods = store.mods()
         return ModStore.rowValue(on: mods.filter(\.isOn).count, total: mods.count)
     }
 
@@ -37,9 +37,11 @@ extension AppViewModel {
     nonisolated static func modMessage(_ error: ModStoreError) -> String {
         switch error {
         case .notAllowed: return "Quit the game to change its mods."
-        case .notAMod(let name): return "\(name) isn't a mod: it needs a romfs folder."
+        case .notAMod: return L10n.text("Not a mod: needs romfs or exefs patches.")
         case .colonInName(let name): return "Rename the folder \(name): its name can't contain ':'."
         case .overlayTooLong: return "Too many mods are on for one game. Turn one off first."
+        case .invalidCodeMod(let name):
+            return L10n.format("%@ needs an exefs folder with .pchtxt or .ips files only, without links.", [name])
         case .writeFailed(let reason): return "The mods could not be saved: \(reason)"
         }
     }

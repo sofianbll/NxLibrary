@@ -1,6 +1,79 @@
 import XCTest
 @testable import NXLibraryCore
 
+final class CodeModStoreTests: XCTestCase {
+    func testCopiesAndPersistsSelectionAndOnlyStagesEnabledModsInOrder() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("CodeModStore-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let support = root.appendingPathComponent("game")
+        let records = root.appendingPathComponent("records.json")
+        func store() -> ModStore {
+            ModStore(supportFolder: support, recordsFile: records, titleID: "0100000000010000",
+                     canWrite: { true }, trash: { try FileManager.default.removeItem(at: $0) },
+                     allowsAutomaticMaintenance: false)
+        }
+        for name in ["First", "Second", "Third"] {
+            let source = root.appendingPathComponent(name)
+            let patch = source.appendingPathComponent("exefs/version.pchtxt")
+            try FileManager.default.createDirectory(at: patch.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try Data(name.utf8).write(to: patch)
+            try store().importCodeMod(from: source)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: patch.path), "Import copies; the original stays put")
+        }
+        let existingEnv = "DM_LANG=en\nDM_ROMFS_OVERLAY=/manual\n"
+        try Data(existingEnv.utf8).write(to: store().envFile)
+        try store().setOn(false, folderName: "Third")
+        try store().move(folderName: "Second", by: -1)
+        try store().sync(automatic: false)
+        XCTAssertEqual(store().mods().map(\.folderName), ["Second", "First", "Third"])
+        XCTAssertEqual(store().mods().map(\.isOn), [true, true, false])
+        XCTAssertEqual(try String(contentsOf: store().envFile, encoding: .utf8), existingEnv)
+
+        let app = root.appendingPathComponent("Game.app")
+        XCTAssertTrue(store().codeModsNeedRebuild(app: app))
+        let build = root.appendingPathComponent("Build")
+        let unsupported = root.appendingPathComponent("Other build")
+        XCTAssertThrowsError(try BuildService.stageCodeMods(store(), in: unsupported, engineSupportsMods: false))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: unsupported.path))
+        let staged = try XCTUnwrap(BuildService.stageCodeMods(store(), in: build, engineSupportsMods: true))
+        let names = try FileManager.default.contentsOfDirectory(atPath: staged.path).sorted()
+        XCTAssertEqual(names.count, 2)
+        for (index, source) in zip(names, ["Second", "First"]) {
+            let copied = staged.appendingPathComponent("\(index)/exefs/version.pchtxt")
+            XCTAssertEqual(try String(contentsOf: copied, encoding: .utf8), source)
+            let marker = app.appendingPathComponent("Contents/Resources/dm/mods/\(index)/dm_code.tsv")
+            try FileManager.default.createDirectory(at: marker.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try Data("version.pchtxt\n".utf8).write(to: marker)
+        }
+        XCTAssertFalse(store().codeModsNeedRebuild(app: app))
+        try Data("changed".utf8).write(to: store().codeModsFolder.appendingPathComponent("Second/exefs/version.pchtxt"))
+        XCTAssertTrue(store().codeModsNeedRebuild(app: app))
+        try store().setOn(false, folderName: "First")
+        try store().remove(folderName: "Second")
+        XCTAssertNil(try BuildService.stageCodeMods(store(), in: root.appendingPathComponent("Empty"), engineSupportsMods: false))
+        XCTAssertTrue(store().codeModsNeedRebuild(app: app), "Removing the final enabled code mod also needs a rebuild")
+    }
+
+    func testLocalImportRejectsLinksAndReplacementPrograms() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("CodeModStore-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("Source")
+        let exefs = source.appendingPathComponent("exefs")
+        try FileManager.default.createDirectory(at: exefs, withIntermediateDirectories: true)
+        let store = ModStore(supportFolder: root.appendingPathComponent("game"), recordsFile: root.appendingPathComponent("mods.json"),
+                             titleID: "0100000000010000", canWrite: { true }, trash: { _ in XCTFail() })
+        let patch = exefs.appendingPathComponent("patch.pchtxt")
+        try Data("patch".utf8).write(to: patch)
+        let descriptor = exefs.appendingPathComponent("main.npdm")
+        try Data("not a patch".utf8).write(to: descriptor)
+        XCTAssertThrowsError(try store.importCodeMod(from: source))
+        try FileManager.default.removeItem(at: descriptor)
+        try FileManager.default.createSymbolicLink(at: exefs.appendingPathComponent("linked.ips"), withDestinationURL: patch)
+        XCTAssertThrowsError(try store.importCodeMod(from: source))
+        XCTAssertTrue(store.mods().isEmpty)
+    }
+}
+
 final class ModStoreLayoutTests: XCTestCase {
     private func mod(_ id: Int, downloads: Int = 0, likes: Int = 0, added: TimeInterval = 0, updated: TimeInterval = 0,
                      category: String = "Skins", image: Bool = true) -> AvailableMod {
