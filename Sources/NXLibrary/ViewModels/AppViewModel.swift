@@ -147,7 +147,7 @@ public final class AppViewModel: ObservableObject {
     var lastPortingCommand: [String] = []
     /// Set by a failed porting's notification: the next Add game opens on that failure.
     var reviewsFailureOnAddGame = false
-    /// A shell dialog owns input (update or paused game); screens leave the keyboard to it.
+    /// The shell's update dialog owns input; screens leave the keyboard to it.
     var shellDialogOwnsInput = false
     /// "Welcome to Arcane" is on screen, until its fade has ended: screens' own keyboard monitors let Return and
     /// the arrows go to it, and Spotlight holds its entrance until it has gone.

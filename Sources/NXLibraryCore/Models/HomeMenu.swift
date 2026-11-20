@@ -94,8 +94,8 @@ public enum HomeMenu {
             }
         }
 
-        public var resumeRequest: String? {
-            guard phase == .running || phase == .paused else { return nil }
+        public func resumeRequest(hostIsHidden: Bool = false) -> String? {
+            guard phase == .paused || (phase == .running && hostIsHidden) else { return nil }
             return HomeMenu.notification("resume", pid: pid)
         }
 

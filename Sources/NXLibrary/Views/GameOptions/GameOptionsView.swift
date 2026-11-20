@@ -189,7 +189,7 @@ struct GameOptionsView: View {
             }
 
             if modsOpen {
-                ModsPanel(viewModel: viewModel, game: current, onRebuild: {
+                ModsPanel(viewModel: viewModel, game: current, settings: snapshot, onRebuild: {
                     rebuild(current)
                 }, onClose: {
                     modsOpen = false
