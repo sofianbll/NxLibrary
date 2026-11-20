@@ -83,7 +83,7 @@ flowchart TD
     N -->|"no"| E["LauncherSettings migra launcher.json<br/>oppure LaunchService aggiorna env.txt"]
     E --> F["CloudSavesPreferences applica la scelta cloud"]
     F --> M["ModStore riconcilia le cartelle prima di Play"]
-    M --> G["LaunchService apre l'app (NSWorkspace)"]
+    M --> G["LaunchService apre l'app (NSWorkspace)<br/>DM_MODS_OFF controlla il gruppo ExeFS già nel bundle"]
     G --> H["LaunchCoverWindow + LaunchMotion<br/>finché LaunchReadinessProbe vede una finestra"]
     H --> I["RunningGameMonitor · PlaySessionStore (heartbeat)"]
     I -->|"Home → Back to console mode (build compatibile)"| PZ["Notifica del PID di dmhost → Arcane davanti nella schermata corrente"]
@@ -169,7 +169,9 @@ flowchart TD
     G -->|"RomFS"| H["EnvFileEditor scrive DM_ROMFS_OVERLAY in env.txt"]
     G --> C2["ModsPanel: controlla DMCommit e profilo Z-A in background<br/>esclude solo arc/data.trpfd se la fusione è attiva"]
     H --> I["L'engine legge le mod al prossimo avvio del gioco"]
-    G -->|"ExeFS"| R["Rebuild se la selezione differisce dal bundle installato"]
+    G -->|"ExeFS"| C3{"Selezione vuota o uguale al gruppo nel bundle?"}
+    C3 -->|"sì"| I
+    C3 -->|"no"| R["Mostra Rebuild"]
     G -->|"Mod di codice accese e Network = Online (Nextendo)"| NX["ModsPanel: avviso in alto e badge Inactive online"]
     R --> P["BuildService: patch accese in ordine → --mods"]
 ```

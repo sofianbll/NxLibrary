@@ -82,4 +82,11 @@ final class LaunchServiceTests: XCTestCase {
         XCTAssertEqual(launcher.environment["DM_HOME_MENU_LAUNCHER"], "1")
         XCTAssertEqual(launcher.environment["DM_LAUNCHER_BUNDLE_ID"], "local.arcane")
     }
+
+    func testEmptyCodeModsOverrideReachesTheEngineForReactivation() {
+        let launcher = FakeLauncher()
+        LaunchService(launcher: launcher).launch(appURL: URL(fileURLWithPath: "/tmp/G.app"),
+                                                  environment: ["DM_MODS_OFF": ""]) { _, _ in }
+        XCTAssertEqual(launcher.environment["DM_MODS_OFF"], "")
+    }
 }

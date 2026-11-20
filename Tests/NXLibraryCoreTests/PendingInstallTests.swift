@@ -8,12 +8,15 @@ final class PendingInstallTests: XCTestCase {
         try fm.createDirectory(at: chosen, withIntermediateDirectories: true)
         var p = pending()
         p.finalApp = chosen.appendingPathComponent("Game.app")
+        p.record.builtCodeMods = ["New mods"]
         try makeApp(p.tempApp, version: "2.0.0")
         var g = game()
+        g.lastBuild = BuildRecord(builtCodeMods: ["Old mods"])
         g.pendingInstall = p
         try fm.removeItem(at: chosen)
         XCTAssertThrowsError(try PendingInstaller.install(&g))
         XCTAssertEqual(g.pendingInstall, p)
+        XCTAssertEqual(g.lastBuild?.builtCodeMods, ["Old mods"])
         XCTAssertTrue(fm.fileExists(atPath: p.tempApp.path))
         XCTAssertFalse(fm.fileExists(atPath: chosen.path))
         guard g.pendingInstall != nil else { return }
@@ -21,6 +24,7 @@ final class PendingInstallTests: XCTestCase {
         XCTAssertEqual(try PendingInstaller.install(&g), .installed)
         XCTAssertEqual(g.url, p.finalApp)
         XCTAssertEqual(g.versionString, "2.0.0")
+        XCTAssertEqual(g.lastBuild?.builtCodeMods, ["New mods"])
     }
 
     private var root: URL!

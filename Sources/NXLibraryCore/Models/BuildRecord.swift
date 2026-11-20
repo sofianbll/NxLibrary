@@ -11,13 +11,16 @@ public struct BuildRecord: Codable, Equatable {
     public var xcodeVersion: String?
     public var toolchainVerified: Bool
     public var nextendoRequested: Bool?
+    /// Engine switch names for this build, never the current mod selection.
+    public var builtCodeMods: [String]?
     public var cancelled: Bool
 
     public init(startedAt: Date = Date(), endedAt: Date? = nil,
                 exitCode: Int32? = nil, logPath: String? = nil,
                 outputPath: String? = nil, engineCommit: String? = nil,
                 metalVersion: String? = nil, xcodeVersion: String? = nil,
-                toolchainVerified: Bool = false, nextendoRequested: Bool? = nil, cancelled: Bool = false) {
+                toolchainVerified: Bool = false, nextendoRequested: Bool? = nil,
+                builtCodeMods: [String]? = nil, cancelled: Bool = false) {
         self.startedAt = startedAt
         self.endedAt = endedAt
         self.exitCode = exitCode
@@ -28,6 +31,7 @@ public struct BuildRecord: Codable, Equatable {
         self.xcodeVersion = xcodeVersion
         self.toolchainVerified = toolchainVerified
         self.nextendoRequested = nextendoRequested
+        self.builtCodeMods = builtCodeMods
         self.cancelled = cancelled
     }
 }

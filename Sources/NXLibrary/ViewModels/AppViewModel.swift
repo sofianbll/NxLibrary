@@ -1490,14 +1490,19 @@ public final class AppViewModel: ObservableObject {
         }
 
         // Play can come straight from the row. Reconcile removed mod folders before the game reads its overlay.
-        if let store = modStore(for: game) { _ = performModChange { try store.sync() } }
+        let store = modStore(for: game)
+        if let store { _ = performModChange { try store.sync() } }
 
         Task { @MainActor in
             let appURL = game.url
             let supported = await InstalledEngineCapabilities.shared.supportsHomeMenu(in: appURL, engineFolder: nxnativePath)
             let homeMenu = HomeMenu.environment(supported: supported, launcherBundleID: Bundle.main.bundleIdentifier)
+            let codeMods = await Task.detached(priority: .userInitiated) {
+                store?.codeModsLaunchEnvironment(app: appURL, build: game.lastBuild) ?? [:]
+            }.value
             let overrides = (gameSettings == nil ? config.toEnvironmentDict() : environment)
                 .merging(homeMenu) { _, launcher in launcher }
+                .merging(codeMods) { _, mods in mods }
             openGame(game, titleId: titleId, token: saveLaunchToken, environment: overrides)
         }
     }
@@ -2675,6 +2680,7 @@ public final class AppViewModel: ObservableObject {
         } catch let error as ModStoreError {
             throw NXLibraryError.environmentBlocked(Self.modMessage(error))
         }
+        let stagedCodeMods = try codeMods.map { try FileManager.default.contentsOfDirectory(atPath: $0.path).sorted() }
         let command = BuildCommandBuilder.make(
             repo: repo,
             toolchain: toolchain,
@@ -2753,7 +2759,7 @@ public final class AppViewModel: ObservableObject {
                 DispatchQueue.main.async {
                     self?.finishBuild(result, gameID: target.id,
                                       finalApp: finalApp, tempDir: tempRoot,
-                                      nextendoRequested: nextendoRequested)
+                                      nextendoRequested: nextendoRequested, stagedCodeMods: stagedCodeMods)
                 }
             }
         )
@@ -2934,7 +2940,7 @@ public final class AppViewModel: ObservableObject {
     }
 
     private func finishBuild(_ result: BuildResult, gameID: UUID,
-                             finalApp: URL, tempDir: URL, nextendoRequested: Bool) {
+                             finalApp: URL, tempDir: URL, nextendoRequested: Bool, stagedCodeMods: [String]?) {
         stopStageElapsedTimer()
         currentBuildCacheURL = nil
         portingProgress?.finish(success: result.success)
@@ -2960,6 +2966,9 @@ public final class AppViewModel: ObservableObject {
                 xcodeVersion: toolchain.xcodeVersion,
                 toolchainVerified: verified,
                 nextendoRequested: nextendoRequested ? true : nil,
+                builtCodeMods: (result.outputURL ?? result.heldApp).map {
+                    ModStore.bundledCodeMods(in: $0) ?? stagedCodeMods ?? []
+                },
                 cancelled: result.cancelled
             )
 

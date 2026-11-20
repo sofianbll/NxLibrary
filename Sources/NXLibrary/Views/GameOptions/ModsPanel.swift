@@ -271,7 +271,7 @@ struct ModsPanel: View {
         running = RunningGameMonitor.runningApplication(for: game) != nil
         let store = store
         mods = store?.mods() ?? []
-        needsRebuild = store?.codeModsNeedRebuild(app: game.url) == true
+        needsRebuild = store?.codeModsNeedRebuild(app: game.url, build: game.lastBuild) == true
         focus = min(focus, max(rows.count - 1, 0))
         conflictRefresh?.cancel()
         guard let store else { conflicts = []; return }
