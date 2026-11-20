@@ -199,6 +199,20 @@ final class DetailsFocusTests: XCTestCase {
         XCTAssertEqual(focus.mod, 18)
     }
 
+    func testSearchAndMoreAreReachableThroughTheModsGrid() {
+        let tiles = ModsBandLayout.tiles(installed: 0, available: [40, 41, 42, 43, 44, 45],
+                                         status: [.wrongGame, .moreMods], canSearch: true)
+        let bands = DetailsFocus.Bands(mods: tiles.count)
+        var focus = DetailsFocus()
+        focus.focus(zone: DetailsFocus.modsZone, index: 0, in: bands)
+        XCTAssertTrue(focus.right(in: bands))
+        XCTAssertEqual(tiles[focus.mod], .status(.searchMods))
+        XCTAssertTrue(focus.down(in: bands))
+        XCTAssertTrue(focus.right(in: bands))
+        XCTAssertTrue(focus.right(in: bands))
+        XCTAssertEqual(tiles[focus.mod], .status(.moreMods))
+    }
+
     func testModsGridMovesByRowsAndLeavesFromItsEdges() {
         // Fourteen tiles, six to a row: 0-5 / 6-11 / 12-13.
         let bands = DetailsFocus.Bands(screenshots: 3, mods: 14, actions: 1, more: 2)

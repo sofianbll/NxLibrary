@@ -10,6 +10,9 @@ public enum ModsBandAction: Hashable, Sendable {
     /// "No GameBanana page found": search GameBanana by name.
     case findGame
     case wrongGame
+    case searchMods
+    case clearModSearch
+    case moreMods
 }
 
 public enum ModsBandTile: Hashable, Sendable {
@@ -26,8 +29,10 @@ public enum ModsBandTile: Hashable, Sendable {
 public enum ModsBandLayout {
     public static let maxInstalled = 5
 
-    public static func tiles(installed: Int, available: [Int], status: [ModsBandAction]) -> [ModsBandTile] {
+    public static func tiles(installed: Int, available: [Int], status: [ModsBandAction],
+                             canSearch: Bool = false) -> [ModsBandTile] {
         (0..<min(max(installed, 0), maxInstalled)).map(ModsBandTile.installed) + [.manage]
+            + (canSearch ? [.status(.searchMods)] : [])
             + available.map(ModsBandTile.available) + status.map(ModsBandTile.status)
     }
 

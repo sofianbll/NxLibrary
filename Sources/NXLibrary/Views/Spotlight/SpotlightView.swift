@@ -233,6 +233,10 @@ public struct SpotlightView: View {
         .onAppear { storeHost.loadCover(titleIDs: Set(storeGames.compactMap { viewModel.modStore(for: $0)?.titleID })) }
         .onAppear { mutate { $0.setPillLimit(selectedPillCount) } }
         .onChange(of: selectedPillCount) { count in mutate { $0.setPillLimit(count) } }
+        .onChange(of: modsHost.tiles.count) { count in
+            guard viewModel.spotlight.focus == .mods, viewModel.spotlight.modsIndex >= count else { return }
+            mutate { $0.modsIndex = max(0, count - 1) }
+        }
         // A re-read can remove the tile (the files went away): the focus leaves it for the screenshots.
         .onChange(of: selectedAchievements == nil) { gone in
             guard gone else { return }

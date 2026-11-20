@@ -34,7 +34,7 @@ final class GameBananaBandModelTests: XCTestCase {
                         titleID: gameA)
         http.serve("_nPage=1&", #"{"_aMetadata": {"_bIsComplete": true}, "_aRecords": [{"_idRow": 1, "_sName": "Mod 1", "_aSubmitter": {"_sName": "A"}}]}"#)
         http.serve("Mod/1/ProfilePage", #"""
-        {"_idRow": 1, "_sName": "Mod 1", "_sProfileUrl": "https://gamebanana.com/mods/1", "_aSubmitter": {"_sName": "A"},
+        {"_idRow": 1, "_sName": "Mod 1", "_sProfileUrl": "https://gamebanana.com/mods/1", "_aSubmitter": {"_sName": "A"}, "_aGame": {"_idRow": 6376},
          "_aFiles": [{"_idRow": 11, "_sFile": "f.zip", "_nFilesize": 10, "_tsDateAdded": 1700000000,
                       "_sDownloadUrl": "https://gamebanana.com/dl/11", "_sMd5Checksum": "x"}]}
         """#)
@@ -43,7 +43,7 @@ final class GameBananaBandModelTests: XCTestCase {
     }
 
     /// Game A with twelve mods that work, six on each of two pages, each with its art.
-    private func serveTwelveMods() throws {
+    private func serveTwelveMods(more: Bool = false) throws {
         try matches.set(.game(id: 6376, name: "A", profileURL: URL(string: "https://gamebanana.com/games/6376")!),
                         titleID: gameA)
         func page(_ ids: ClosedRange<Int>, number: Int, complete: Bool) {
@@ -51,8 +51,9 @@ final class GameBananaBandModelTests: XCTestCase {
             http.serve("_nPage=\(number)&", #"{"_aMetadata": {"_bIsComplete": \#(complete)}, "_aRecords": [\#(records.joined(separator: ","))]}"#)
         }
         page(1...6, number: 1, complete: false)
-        page(7...12, number: 2, complete: true)
-        for id in 1...12 {
+        page(7...12, number: 2, complete: !more)
+        if more { page(13...18, number: 3, complete: true) }
+        for id in 1...(more ? 18 : 12) {
             http.serve("Mod/\(id)/ProfilePage", #"""
             {"_idRow": \#(id), "_sName": "Mod \#(id)", "_sProfileUrl": "https://gamebanana.com/mods/\#(id)", "_aSubmitter": {"_sName": "A"},
              "_aPreviewMedia": {"_aImages": [{"_sBaseUrl": "https://images.gamebanana.com/img/ss/mods", "_sFile": "\#(id).jpg", "_sFile220": "220-\#(id).jpg"}]},
@@ -108,6 +109,72 @@ final class GameBananaBandModelTests: XCTestCase {
         model.stop()
         XCTAssertEqual(model.available.map(\.id), [])
         XCTAssertNil(model.match)
+    }
+
+    func testSearchReplacesOnlyOnlineTilesAndCanReturnToPopularMods() async throws {
+        try serveGameA()
+        http.serve("_sSearchString=Bench", #"{"_aRecords": [{"_idRow": 2, "_sName": "Bench"}]}"#)
+        http.serve("Mod/2/ProfilePage", #"{"_idRow": 2, "_sName": "Bench", "_aGame": {"_idRow": 6376}, "_aFiles": [{"_idRow": 21}]}"#)
+        http.serve("itemid=21&", #"[["romfs/bench.bin"]]"#)
+        let model = band()
+        model.start(names: ["A"], store: store(gameA))
+        await waitUntil { model.phase == .ready }
+
+        model.openModSearch()
+        model.modQuery = "https://example.test/private"
+        model.submitModSearch()
+        XCTAssertEqual(model.searchPanel, .invalidLink)
+        XCTAssertEqual(http.count("Util/Search"), 0)
+
+        model.modQuery = "Bench"
+        model.submitModSearch()
+        await waitUntil { model.searchPanel == nil }
+        XCTAssertEqual(model.displayedMods.map(\.id), [2])
+        XCTAssertEqual(model.available.map(\.id), [1])
+        XCTAssertEqual(model.statusTiles, [.clearModSearch, .wrongGame])
+
+        model.clearModSearch()
+        XCTAssertEqual(model.displayedMods.map(\.id), [1])
+        XCTAssertEqual(model.modQuery, "")
+    }
+
+    func testClosingSearchDiscardsItsInFlightResult() async throws {
+        try serveGameA()
+        let model = band()
+        model.start(names: ["A"], store: store(gameA))
+        await waitUntil { model.phase == .ready }
+        http.serve("_sSearchString=Bench", #"{"_aRecords": [{"_idRow": 1}]}"#)
+        http.delayNanoseconds = 80_000_000
+
+        model.openModSearch()
+        model.modQuery = "Bench"
+        model.submitModSearch()
+        await waitUntil { http.count("Util/Search") == 1 }
+        model.closeModSearch()
+        try await Task.sleep(nanoseconds: 120_000_000)
+        XCTAssertNil(model.searchPanel)
+        XCTAssertNil(model.searchResults)
+    }
+
+    func testMoreKeepsExistingTilesWhenTheNextPageFailsAndCanRetry() async throws {
+        try serveTwelveMods(more: true)
+        let model = band()
+        model.start(names: ["A"], store: store(gameA))
+        await waitUntil { model.phase == .ready }
+        XCTAssertEqual(model.statusTiles.last, .moreMods)
+        XCTAssertEqual(model.available.map(\.id), Array(1...12))
+
+        http.fail("_nPage=3&", URLError(.notConnectedToInternet))
+        model.loadMoreMods()
+        await waitUntil { model.moreState == .failed }
+        XCTAssertEqual(model.available.map(\.id), Array(1...12))
+        XCTAssertEqual(model.statusTiles.last, .moreMods)
+
+        http.clearFailures()
+        model.loadMoreMods()
+        await waitUntil { model.moreState == .hidden }
+        XCTAssertEqual(model.available.map(\.id), Array(1...18))
+        XCTAssertFalse(model.statusTiles.contains(.moreMods))
     }
 
     func testStartClearsLeftoversOfAnInterruptedInstall() async throws {

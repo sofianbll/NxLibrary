@@ -430,11 +430,11 @@ I percorsi completi sono in [flows.md](flows.md#3-play-di-un-gioco-switch-nxnati
 
 **GameBanana** (`Services/GameBanana/`).
 - `GameBananaClient` parla con l'API pubblica (apiv11 e, per il contenuto degli archivi, la vecchia Core API). Usa un solo User-Agent, al massimo 4 richieste insieme, e una cache su disco in `~/Library/Caches/NXLibrary/gamebanana`:
-  - ricerche 1 giorno, pagine delle mod 6 ore;
+  - ricerca dei giochi 1 giorno, ricerche e pagine delle mod 6 ore;
   - contenuto degli archivi per sempre, tranne un elenco vuoto, perché GameBanana può ancora leggere un file nuovo;
   - senza rete usa anche le voci scadute.
 - `GameBananaMatch` abbina il gioco per nome (preferisce la voce "(Switch)" e chiede quando non è sicuro); `GameBananaMatchStore` ricorda la scelta per title ID in `Application Support/NXLibrary/gamebanana/matches.json`.
-- `AvailableModsFinder` scorre le mod più scaricate e tiene solo quelle che `ModSupport` riconosce: un'unica cartella `romfs` per questo title ID, niente exefs, IPS o pchtxt, niente mod obsolete, private o con content rating.
+- `AvailableModsFinder` legge le mod più scaricate o la prima pagina della ricerca per pertinenza; per un link legge direttamente il profilo. Le ricerche e i link verificano anche l'ID GameBanana del gioco. Tutti i percorsi usano lo stesso controllo `ModSupport`: un'unica cartella `romfs` per questo title ID, niente exefs, IPS o pchtxt, niente mod obsolete, private o con content rating.
 - `ModInstaller` scarica con `ModDownload` (solo host `*.gamebanana.com`) e controlla dimensione e MD5. Legge e controlla l'archivio con `/usr/bin/bsdtar`, rifiuta percorsi `..`, symlink e hard link prima di estrarre, lo estrae in una cartella nascosta dentro `mods` e passa l'albero a `ModStore.adopt`. Un aggiornamento manda la versione vecchia nel Cestino e tiene posto e stato.
 - I link presi dall'API valgono solo se sono `https` su un host GameBanana. Ogni mod mostra autore e link alla sua pagina, e la fascia dice "Mod data provided by GameBanana".
 
@@ -444,12 +444,13 @@ I percorsi completi sono in [flows.md](flows.md#3-play-di-un-gioco-switch-nxnati
 - `ModsBandHost` tiene per entrambe le pagine mod installate, GameBanana e pannelli. In Spotlight legge le mod all'apertura della pagina del gioco. Cambiare selezione sulla riga svuota la fascia precedente senza leggere quella successiva, così la lettura delle mod resta fuori dallo scorrimento.
   Le [misure dei primi cambi gioco](reviews/2026-11-18-spotlight-glide.md) mostrano il costo della lettura prima e dopo.
 - Play riconcilia le cartelle delle mod prima di avviare il gioco, anche dalla riga. Se la cartella o i record non si leggono, `ModStore.sync` conserva entrambi i file di stato. La Dev mantiene il divieto di manutenzione automatica dell'overlay.
-- `GameBananaBandModel` coordina abbinamento, ricerca e installazioni. Cambiando gioco dimentica le mod del precedente; alla prima apertura di un gioco in ogni avvio toglie gli avanzi di un'installazione interrotta (`ModStore.removeLeftoverInstalls`). `GameBananaFindModel` tiene lo stato della ricerca per nome.
-- Le mod trovate entrano al massimo in due gruppi: le prime cinque, accanto ad Add mods, appena ci sono, poi tutte le altre a ricerca finita. Ogni gruppo aspetta (al massimo 1,2 s, `imageWait`) che la sua arte sia decodificata (`prepareImages`, cioè `GameBananaImageView.prepare`, in parallelo) ed entra con un'unica dissolvenza. Una tessera di stato spinta più in là sfuma nel nuovo posto invece di attraversare la griglia.
+- `GameBananaBandModel` coordina abbinamento, ricerca delle mod e installazioni. Cambiando gioco dimentica le mod del precedente; alla prima apertura di un gioco in ogni avvio toglie gli avanzi di un'installazione interrotta (`ModStore.removeLeftoverInstalls`). `GameBananaFindModel` tiene lo stato della ricerca del gioco per nome.
+- **Search mods**, accanto a Manage mods, accetta il nome o il link GameBanana della mod. I risultati usano le stesse tessere della fascia; le mod locali restano visibili e **Clear search** torna alla lista popolare. **Show more** aumenta il traguardo di 12 mod a ogni attivazione, entro 60 voci esaminate, senza togliere quelle già visibili. Le pagine già lette passano dalla stessa cache del client.
+- Le mod popolari entrano al massimo in due gruppi: le prime cinque appena ci sono, poi le altre a scansione finita. Ogni gruppo aspetta (al massimo 1,2 s, `imageWait`) che la sua arte sia decodificata (`prepareImages`, cioè `GameBananaImageView.prepare`, in parallelo) ed entra con un'unica dissolvenza. Una tessera di stato spinta più in là sfuma nel nuovo posto invece di attraversare la griglia.
 - Un'installazione è per un file (`GameBananaBandModel.installFiles`): solo la sua riga mostra avanzamento ed esito, le altre aspettano che finisca.
 
 **Pannello della mod.**
-- `ModDetailPanel` e `GameBananaFindPanel` sono i pannelli sopra la pagina.
+- `ModDetailPanel`, `GameBananaFindPanel` e `GameBananaModSearchPanel` si aprono sopra la pagina. I due pannelli GameBanana condividono il campo Selene; nella ricerca mod si scrive o si incolla con la tastiera, Invio/A cerca ed Esc/B chiude.
 - La descrizione mostra otto righe con Read more subito sotto; Read more la apre tutta (`TextScroll.windowHeight`) e i file, sotto il titolo Files, scendono.
 - La colonna (intestazione, descrizione, file) scorre dentro il pannello quando è più alta, al massimo 980 unità. Si scorre con rotella o trackpad, e con Su/Giù, che prima leggono a passi quello che c'è prima della riga seguente e poi spostano il fuoco e mostrano la riga intera (`TextScroll.step`). I bordi sfumano dove c'è altro, e una barra sottile dice dove si è.
 - Lo scorrimento sta in `ModsBandHost.detailScroll`, un oggetto a parte, così muoverlo ridisegna solo il pannello e non la pagina sotto.

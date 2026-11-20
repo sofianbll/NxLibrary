@@ -39,10 +39,13 @@ final class ModsBandHost: ObservableObject {
         gameBanana.$available.sink { _ in changed() }.store(in: &forwards)
         gameBanana.$phase.sink { _ in changed() }.store(in: &forwards)
         gameBanana.$match.sink { _ in changed() }.store(in: &forwards)
+        gameBanana.$searchPanel.sink { _ in changed() }.store(in: &forwards)
+        gameBanana.$searchResults.sink { _ in changed() }.store(in: &forwards)
+        gameBanana.$moreState.sink { _ in changed() }.store(in: &forwards)
         find.$isOpen.sink { _ in changed() }.store(in: &forwards)
     }
 
-    var isPanelOpen: Bool { detail != nil || find.isOpen }
+    var isPanelOpen: Bool { detail != nil || find.isOpen || gameBanana.searchPanel != nil }
 
     /// Installed mods, Manage mods, the GameBanana mods and the status tiles, left to right.
     var tiles: [ModsBandTile] {
@@ -100,7 +103,7 @@ final class ModsBandHost: ObservableObject {
         case .installed, .manage:
             openMods()
         case .available(let id):
-            guard let mod = gameBanana.available.first(where: { $0.id == id }) else { return }
+            guard let mod = gameBanana.displayedMods.first(where: { $0.id == id }) else { return }
             SoundEffectService.shared.play(.click)
             detailFocus = ModDetailPanel.rows(for: mod).firstIndex { if case .file = $0 { return true } else { return false } } ?? 0
             detailExpanded = false
@@ -113,6 +116,9 @@ final class ModsBandHost: ObservableObject {
             case .candidate(let id): if let match = gameBanana.candidate(id) { gameBanana.confirm(match) }
             case .noneOfThese: gameBanana.noneOfThese()
             case .findGame, .wrongGame: find.open(name: game.name, using: gameBanana)
+            case .searchMods: gameBanana.openModSearch()
+            case .clearModSearch: gameBanana.clearModSearch()
+            case .moreMods: gameBanana.loadMoreMods()
             }
         }
     }
@@ -162,6 +168,17 @@ final class ModsBandHost: ObservableObject {
                                         expanded: expanded)
             case .cancel, .menu:
                 closeDetail()
+            default: break
+            }
+        } else if gameBanana.searchPanel != nil {
+            switch action {
+            case .confirm:
+                guard gameBanana.canSubmitModSearch else { return }
+                SoundEffectService.shared.play(.click)
+                gameBanana.submitModSearch()
+            case .cancel, .menu:
+                SoundEffectService.shared.play(.focus)
+                gameBanana.closeModSearch()
             default: break
             }
         } else if find.isOpen {
@@ -245,7 +262,7 @@ final class DetailScroll: ObservableObject {
     }
 }
 
-/// The mod detail or Find the game panel over a game page.
+/// The mod detail or GameBanana search panel over a game page.
 struct ModsBandOverlay: View {
     @ObservedObject var host: ModsBandHost
     @ObservedObject var find: GameBananaFindModel
@@ -261,9 +278,13 @@ struct ModsBandOverlay: View {
             } else if find.isOpen {
                 GameBananaFindPanel(model: find, band: host.gameBanana, gameName: game.name)
                     .transition(.opacity)
+            } else if host.gameBanana.searchPanel != nil {
+                GameBananaModSearchPanel(band: host.gameBanana)
+                    .transition(.opacity)
             }
         }
         .animation(.easeOut(duration: 0.2), value: find.isOpen)
+        .animation(.easeOut(duration: 0.2), value: host.gameBanana.searchPanel != nil)
         .animation(.easeOut(duration: 0.2), value: host.detail?.id)
     }
 }
