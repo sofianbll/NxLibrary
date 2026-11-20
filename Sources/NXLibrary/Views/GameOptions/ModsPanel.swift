@@ -2,9 +2,7 @@ import SwiftUI
 import AppKit
 import NXLibraryCore
 
-/// Game options → Mods: this game's RomFS mods (`<data folder>/mods`), switched and ordered here while the game is
-/// not running; the next launch reads the ones that are on, top first (ModStore). Top to bottom: the header, notices,
-/// the mods, conflicts, the actions and a help line.
+/// Game options → Mods: RomFS applies on Play; ExeFS applies on Rebuild. Both use the same ordered list.
 ///
 /// Input: Up/Down move, A (Return, Space) switches a mod or activates an action, Left/Right move the focused mod up or
 /// down, Y (Delete, or a click on the Remove hint) moves it to the Trash after a confirmation, B (or Esc) returns. A
@@ -12,10 +10,13 @@ import NXLibraryCore
 struct ModsPanel: View {
     @ObservedObject var viewModel: AppViewModel
     let game: PortedGame
+    let onRebuild: () -> Void
     let onClose: () -> Void
 
     @State private var mods: [LocalMod] = []
     @State private var conflicts: [ModConflict] = []
+    @State private var needsRebuild = false
+    @State private var importing = false
     @State private var running: Bool
     @State private var focus = 0
     @State private var confirmRemove: String?
@@ -26,22 +27,26 @@ struct ModsPanel: View {
 
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneReduceMotion) private var reduceMotion
+    @Environment(\.nxAppLocale) private var locale
 
     enum Row: Hashable {
         case mod(String)
+        case importCode
         case openFolder
+        case rebuild
     }
 
-    init(viewModel: AppViewModel, game: PortedGame, onClose: @escaping () -> Void) {
+    init(viewModel: AppViewModel, game: PortedGame, onRebuild: @escaping () -> Void, onClose: @escaping () -> Void) {
         self.viewModel = viewModel
         self.game = game
+        self.onRebuild = onRebuild
         self.onClose = onClose
         _running = State(initialValue: RunningGameMonitor.runningApplication(for: game) != nil)
     }
 
     private var store: ModStore? { viewModel.modStore(for: game) }
 
-    private var rows: [Row] { mods.map { .mod($0.folderName) } + [.openFolder] }
+    private var rows: [Row] { mods.map { .mod($0.folderName) } + [.importCode, .openFolder] + (needsRebuild ? [.rebuild] : []) }
 
     private var focusedMod: LocalMod? {
         guard rows.indices.contains(focus), case .mod(let name) = rows[focus] else { return nil }
@@ -113,12 +118,13 @@ struct ModsPanel: View {
     private var hints: [HintItem] {
         guard let mod = focusedMod else { return [HintItem(.a, L10n.text("Select"))] }
         var items = [HintItem(nil, L10n.text("◂ ▸  Move")), HintItem(.y, L10n.text("Remove"), action: askRemove)]
-        items.append(HintItem(.a, mod.romfs == nil ? L10n.text("Select") : mod.isOn ? L10n.text("Turn off") : L10n.text("Turn on")))
+        items.append(HintItem(.a, !mod.isMod ? L10n.text("Select") : mod.isOn ? L10n.text("Turn off") : L10n.text("Turn on")))
         return items
     }
 
     @ViewBuilder private var noticeArea: some View {
-        let notices = running ? [ModsCopy.running(gameName: game.name)] : []
+        let notices = (running ? [ModsCopy.running(gameName: game.name)] : [])
+            + (needsRebuild ? [L10n.text("Rebuild to apply code mod changes.", context: locale)] : [])
         if !notices.isEmpty || message != nil || !conflicts.isEmpty {
             VStack(alignment: .leading, spacing: canvas.u(8)) {
                 ForEach(notices, id: \.self) { notice in
@@ -165,6 +171,13 @@ struct ModsPanel: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, canvas.u(10))
                         .padding(.top, canvas.u(10))
+                    if mods.contains(where: { $0.exefs != nil }) {
+                        Text(L10n.text("If code mods patch the main module, Nextendo mode takes priority and none of the code mods load."))
+                            .seleneFont(14)
+                            .foregroundColor(SeleneTheme.ink60)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, canvas.u(10))
+                    }
                 }
                 .padding(.top, canvas.u(6))
                 .padding(.bottom, canvas.u(24))
@@ -180,15 +193,19 @@ struct ModsPanel: View {
 
     private func rowView(_ row: Row, focused: Bool) -> some View {
         let text = describe(row)
+        let code: Bool
+        if case .mod(let name) = row { code = mods.first { $0.folderName == name }?.exefs != nil }
+        else { code = false }
         return SeleneOptionRow(icon: text.icon, title: text.title, about: text.about, focused: focused,
                                enabled: text.enabled) {
+            if code { SeleneValueChip(text: L10n.text("Code", context: locale)) }
             if let isOn = text.isOn {
                 SeleneSwitch(isOn: .constant(isOn)).allowsHitTesting(false)
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel([text.title, text.about].compactMap { $0 }.joined(separator: ". "))
-        .accessibilityValue(text.isOn.map { $0 ? "On" : "Off" } ?? "")
+        .accessibilityLabel([text.title, code ? L10n.text("Code") : nil, text.about].compactMap { $0 }.joined(separator: ". "))
+        .accessibilityValue(text.isOn.map { $0 ? L10n.text("On") : L10n.text("Off") } ?? "")
         .accessibilityAddTraits(.isButton)
     }
 
@@ -196,14 +213,19 @@ struct ModsPanel: View {
         switch row {
         case .mod(let name):
             guard let mod = mods.first(where: { $0.folderName == name }) else { return (nil, name, nil, nil, false) }
-            if mod.romfs == nil {
+            if !mod.isMod {
                 let isFolder = (try? mod.folder.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
                 return (.puzzle, name, isFolder ? ModsCopy.notAMod : ModsCopy.notAFolder, nil, false)
             }
             if name.contains(":") { return (.puzzle, name, ModsCopy.colon, nil, false) }
-            return (.puzzle, name, nil, mod.isOn, !running)
+            return (.puzzle, name, nil, mod.isOn, !running && !importing)
+        case .importCode:
+            return (.folder, L10n.text("Import code mod"), L10n.text("Copy a folder with exefs patches. The original stays in place."), nil, !running && !importing)
         case .openFolder:
             return (.folder, L10n.text("Open mods folder"), L10n.text("Put each mod in its own folder here."), nil, true)
+        case .rebuild:
+            return (.build, L10n.text("Rebuild"), L10n.text("Build a new app; the old app stays if the build fails."), nil,
+                    !running && !importing && GameResourceState.sourcesAvailable(for: game))
         }
     }
 
@@ -226,11 +248,13 @@ struct ModsPanel: View {
         running = RunningGameMonitor.runningApplication(for: game) != nil
         mods = store?.mods() ?? []
         conflicts = store?.conflicts() ?? []
+        needsRebuild = store?.codeModsNeedRebuild(app: game.url) == true
         focus = min(focus, max(rows.count - 1, 0))
     }
 
     /// Re-reads the folder and lets the store drop mods that are gone (only while the game is not running).
     private func sync() {
+        guard !importing else { return }
         if let store, let failure = viewModel.performModChange({ try store.sync() }) { message = failure }
         reload()
     }
@@ -241,6 +265,8 @@ struct ModsPanel: View {
         case .mod(let name):
             guard let mod = mods.first(where: { $0.folderName == name }) else { return }
             change(click: true) { try $0.setOn(!mod.isOn, folderName: name) }
+        case .importCode:
+            importCodeMod()
         case .openFolder:
             guard let folder = store?.modsFolder else {
                 SoundEffectService.shared.play(.error)
@@ -249,6 +275,40 @@ struct ModsPanel: View {
             SoundEffectService.shared.play(.click)
             try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             viewModel.revealInFinder(url: folder)
+        case .rebuild:
+            guard !running, !importing, GameResourceState.sourcesAvailable(for: game) else {
+                SoundEffectService.shared.play(.error)
+                return
+            }
+            onRebuild()
+        }
+    }
+
+    private func importCodeMod() {
+        guard let store, store.isWritable, !importing else {
+            SoundEffectService.shared.play(.error)
+            return
+        }
+        let panel = NSOpenPanel()
+        panel.title = L10n.text("Import code mod")
+        panel.prompt = L10n.text("Add")
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        guard panel.runModal() == .OK, let folder = panel.url else { return }
+
+        importing = true
+        Task { @MainActor in
+            let outcome = Task.detached(priority: .userInitiated) { () -> String? in
+                do { try store.importCodeMod(from: folder); return nil }
+                catch let error as ModStoreError { return AppViewModel.modMessage(error) }
+                catch { return ModInstallError.writeFailed(error.localizedDescription).message }
+            }
+            let error = await outcome.value
+            importing = false
+            message = error
+            reload()
+            if error == nil { SoundEffectService.shared.play(.success) }
+            else { SoundEffectService.shared.play(.error) }
         }
     }
 
@@ -266,8 +326,8 @@ struct ModsPanel: View {
     private func askRemove() {
         guard let mod = focusedMod else { return }
         message = nil
-        guard !running, RunningGameMonitor.runningApplication(for: game) == nil else {
-            running = true
+        guard !running, !importing, RunningGameMonitor.runningApplication(for: game) == nil else {
+            reload()
             SoundEffectService.shared.play(.error)
             return
         }
@@ -290,7 +350,7 @@ struct ModsPanel: View {
     /// True when the change is on disk.
     @discardableResult
     private func change(click: Bool, _ edit: (ModStore) throws -> Void) -> Bool {
-        guard let store else {
+        guard let store, !importing else {
             SoundEffectService.shared.play(.error)
             return false
         }
@@ -386,17 +446,17 @@ enum ModsCopy {
         switch (on, total) {
         case (_, 0): return L10n.text("No mods in this game's folder")
         case (0, _): return total == 1 ? "1 mod, off" : L10n.format("%@ mods, all off", [String(describing: (total))])
-        default: return L10n.format("%@ of %@ on · the upper mod wins when two change the same file", [String(describing: (on)), String(describing: (total))])
+        default: return L10n.format("%@ of %@ on", [String(on), String(total)])
         }
     }
 
     static func running(gameName: String) -> String { L10n.format("%@ is running. Quit it to change its mods.", [String(describing: (gameName))]) }
 
     static var empty: String {
-        L10n.text("Open the mods folder and put each mod in its own folder, with a romfs folder inside.")
+        L10n.text("Open the mods folder to add RomFS mods, or import a code mod.")
     }
     static var notAMod: String {
-        L10n.text("Not a mod: needs a romfs folder.")
+        L10n.text("Not a mod: needs romfs or exefs patches.")
     }
     static var notAFolder: String {
         L10n.text("Not a mod: unzip it into its own folder first.")
@@ -405,7 +465,6 @@ enum ModsCopy {
         L10n.text("Rename this folder: its name can't contain ':'.")
     }
     static var help: String {
-        L10n.text("Mods change the game's files only: mods that patch code (exefs, such as 60 fps patches) don't work. ")
-        + L10n.text("Changes apply at the next launch. If a mod changes nothing, rebuild the game.")
+        L10n.text("RomFS changes apply at the next launch. Code mods apply after a rebuild.")
     }
 }

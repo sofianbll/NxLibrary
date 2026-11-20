@@ -1,26 +1,64 @@
 import Foundation
 
-/// Which GameBanana mods can work with the engine: only file (RomFS) mods, read through `DM_ROMFS_OVERLAY`. Code
-/// mods (exefs, IPS and pchtxt patches) cannot, because nxnative recompiles the game's code at build time.
+/// One RomFS tree, one ExeFS patch tree, or both side by side.
 public enum ModSupport {
-    /// The archive path up to and including its RomFS folder ("romfs", "Pack 1.4/romfs",
-    /// "atmosphere/contents/<TID>/romfs"), or nil when the file cannot work: no RomFS, more than one RomFS root
-    /// (variants in one archive), any code (exefs, exefs_patches, .pchtxt, .ips, main.npdm), or a RomFS meant for
-    /// another title ID. Paths under a top-level `cheats` folder are ignored.
-    public static func romfsRoot(in paths: [String], titleID: String) -> String? {
-        var roots = Set<String>()
+    public struct Layout: Equatable, Sendable {
+        public let romfs: String?
+        public let exefs: String?
+    }
+
+    /// The actual paths up to each tree, keeping the archive's spelling. Top-level cheats are ignored.
+    public static func layout(in paths: [String], titleID: String) throws -> Layout {
+        var romfs = Set<String>(), exefs = Set<String>()
         for path in paths {
-            let parts = path.split(separator: "/", omittingEmptySubsequences: true).map(String.init)
-            guard let first = parts.first, first.lowercased() != "cheats" else { continue }
-            if parts.contains(where: isCode) { return nil }
-            guard let index = parts.firstIndex(where: { $0.lowercased() == "romfs" }) else { continue }
-            let prefix = Array(parts[...index])
-            if prefix.contains("..") { return nil }
-            if index >= 2, prefix[index - 2].lowercased() == "contents",
-               prefix[index - 1].lowercased() != titleID.lowercased() { return nil }
-            roots.insert(prefix.joined(separator: "/"))
+            let parts = path.split(separator: "/").filter { $0 != "." }.map(String.init)
+            guard let first = parts.first else { continue }
+            guard !path.hasPrefix("/"), !parts.contains("..") else { throw ModInstallError.unsafe }
+            let lower = parts.map { $0.lowercased() }
+            guard !lower.contains("main.npdm") else { throw ModInstallError.unsupportedLayout }
+            guard lower[0] != "cheats" else { continue }
+            guard !lower.contains("exefs_patches") else {
+                throw ModInstallError.unsupportedLayout
+            }
+            let index = lower.firstIndex { $0 == "romfs" || $0 == "exefs" }
+            let prefix = index.map { lower.prefix($0) } ?? lower[...]
+            for component in prefix where component.utf8.count == 16 && UInt64(component, radix: 16) != nil {
+                guard component.caseInsensitiveCompare(titleID) == .orderedSame else { throw ModInstallError.unsupportedLayout }
+            }
+            if let contents = prefix.firstIndex(of: "contents"), prefix.indices.contains(contents + 1),
+               prefix[contents + 1].caseInsensitiveCompare(titleID) != .orderedSame {
+                throw ModInstallError.unsupportedLayout
+            }
+            guard let index else {
+                if isPatch(first) || isPatch(parts.last ?? "") { throw ModInstallError.unsupportedLayout }
+                continue
+            }
+            let root = parts[...index].joined(separator: "/")
+            let suffix = parts.dropFirst(index + 1)
+            let hasPatch = lower.contains(where: isPatch)
+            if lower[index] == "romfs" {
+                guard !hasPatch, !suffix.contains(where: { $0.lowercased() == "exefs" }) else {
+                    throw ModInstallError.unsupportedLayout
+                }
+                romfs.insert(root)
+            } else if !suffix.isEmpty, !suffix.contains(where: { $0.hasPrefix(".") }) {
+                guard !suffix.contains(where: { $0.lowercased() == "romfs" }),
+                      !parts[index...].contains(where: { $0.rangeOfCharacter(from: patchSeparators) != nil }) else {
+                    throw ModInstallError.unsupportedLayout
+                }
+                if !path.hasSuffix("/") {
+                    guard let name = suffix.last, isPatch(name) else { throw ModInstallError.unsupportedLayout }
+                    exefs.insert(root)
+                }
+            }
         }
-        return roots.count == 1 ? roots.first : nil
+        guard romfs.count <= 1, exefs.count <= 1 else { throw ModInstallError.unsupportedLayout }
+        if let resources = romfs.first, let code = exefs.first,
+           resources.split(separator: "/").dropLast() != code.split(separator: "/").dropLast() {
+            throw ModInstallError.unsupportedLayout
+        }
+        guard !romfs.isEmpty || !exefs.isEmpty else { throw ModInstallError.noRomFS }
+        return Layout(romfs: romfs.first, exefs: exefs.first)
     }
 
     public static func isVisible(_ summary: GameBananaModSummary) -> Bool {
@@ -32,10 +70,11 @@ public enum ModSupport {
             && profile.contentRatings.isEmpty && !ModRequirements.needsTool(profile.requirements)
     }
 
-    private static func isCode(_ component: String) -> Bool {
+    static let patchSeparators = CharacterSet(charactersIn: ":\t\n\r")
+
+    static func isPatch(_ component: String) -> Bool {
         let name = component.lowercased()
-        return name == "exefs" || name == "exefs_patches" || name == "main.npdm"
-            || name.hasSuffix(".pchtxt") || name.hasSuffix(".ips")
+        return name.hasSuffix(".pchtxt") || name.hasSuffix(".ips")
     }
 }
 

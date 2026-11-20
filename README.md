@@ -240,13 +240,15 @@ Cheats change values while you play, for one game version only. New items, looks
 
 ### Mods
 
-Arcane manages file mods for games ported with nxnative.
+Arcane manages RomFS mods and, with an nxnative checkout that supports `--mods`, ExeFS code patches for Mac builds.
 
 - **Mod store.** The **Mods** card in Spotlight opens a store of the GameBanana mods that work with your games: a featured banner, the most popular, a row per category and a row per game, sorted by Popular, Most liked, Newest or Recently updated. Hide the card in **Settings → Spotlight**.
 - **A game's Mods band.** Each game page lists its GameBanana mods and the ones you installed. Open a mod for its images, author, version and requirements, then press **Install**; **Update** appears when the author replaces the file. If the game's GameBanana page is uncertain, the band asks once, and **Wrong game?** picks another.
-- **Your own mods.** File mods (a folder with `romfs` inside) go into the game's mods folder. Turn them on in the band or in **Game Options → Mods**; the order decides which mod wins when two change the same file. **Remove** moves a mod to the Trash.
+- **Your own mods.** Put RomFS mods into the game's mods folder. For a folder with `exefs` containing `.pchtxt` or `.ips` patches, use **Game Options → Mods → Import code mod** to copy it. The original stays in place. Manage switches and order in the same panel; **Remove** moves an installed copy to the Trash.
 
-Mods apply at the next launch, without a rebuild. The engine reads file mods only: mods that patch code (`exefs`, such as 60 fps patches) or need a loader or PC tool (exlaunch, Skyline, ARCropolis, mod managers) don't work, and the store leaves them out.
+RomFS changes apply at the next launch, with the top mod winning when two change the same file. ExeFS changes show **Rebuild**: nxnative puts all selected patches into one copy of the game code and cannot switch individual patches at launch. Patches must match the game version, and overlapping patches fail the build. If a patch changes the main module, Nextendo mode takes precedence and skips the entire code mod set.
+
+GameBanana archives can contain RomFS, ExeFS, or both side by side under one root for this game. Arcane rejects archives with multiple variants in different roots, replacement modules and mods that require external loaders or tools (exlaunch, Skyline, ARCropolis, mod managers). Install code mods only from sources you trust.
 
 ![The mod store with a featured mod, sort choices and rows of popular mods and characters](docs/media/mod-store.webp)
 
@@ -321,7 +323,7 @@ The [upgrade notes](docs/upstream-upgrades/README.md) record each engine review 
 
 ### Data and cleanup
 
-App data lives in `~/Library/Application Support/NXLibrary/`. Local game data uses `~/Library/Application Support/nxnative/<title ID>/`, with mods in its `mods` folder. Backups are stored under `NXLibrary/SaveBackups/<title ID>/`.
+App data lives in `~/Library/Application Support/NXLibrary/`. Local game data uses `~/Library/Application Support/nxnative/<title ID>/`: RomFS-only mods use `mods/<name>/romfs`, and code or mixed mods use `code-mods/<name>/exefs` (and `romfs` beside it for mixed mods). Backups are stored under `NXLibrary/SaveBackups/<title ID>/`.
 
 **Settings → Porting → Storage** shows app, build cache and log sizes for every library entry, including hidden games, with the largest caches first. **Delete cache** permanently removes only the chosen game's build cache after confirmation. Its app, original game files, saves and logs stay in place. The next rebuild may take longer. Shared cache confirmations list the other affected entries. Connect unavailable drives or check folder access, then choose **Recalculate**.
 

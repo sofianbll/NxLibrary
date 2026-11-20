@@ -2648,11 +2648,20 @@ public final class AppViewModel: ObservableObject {
 
         let tempRoot = scratch.temp.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+        var started = false
+        defer { if !started { try? FileManager.default.removeItem(at: tempRoot) } }
         let tempApp = tempRoot.appendingPathComponent(finalApp.lastPathComponent)
         let logURL = core.appendingPathComponent("Logs").appendingPathComponent("\(titleId).log")
         try FileManager.default.createDirectory(at: logURL.deletingLastPathComponent(),
                                                 withIntermediateDirectories: true)
 
+        let capabilities = engineSourceCapabilities
+        let codeMods: URL?
+        do {
+            codeMods = try BuildService.stageCodeMods(modStore(for: target), in: tempRoot, engineSupportsMods: capabilities.codeMods)
+        } catch let error as ModStoreError {
+            throw NXLibraryError.environmentBlocked(Self.modMessage(error))
+        }
         let command = BuildCommandBuilder.make(
             repo: repo,
             toolchain: toolchain,
@@ -2663,13 +2672,14 @@ public final class AppViewModel: ObservableObject {
             appName: target.name,
             bundleId: target.bundleId ?? "org.nxnative.\(titleId.lowercased())",
             language: loadRuntimeConfig(for: target).languageForBuild,
-            titleId: engineSourceCapabilities.titleSelection ? titleId : nil,
+            titleId: capabilities.titleSelection ? titleId : nil,
             programIndex: SourceSelection.programIndex(for: target.sources, titleID: titleId,
-                                                       nupPrograms: engineSourceCapabilities.nupPrograms),
-            packageVersion: engineSourceCapabilities.titleSelection
+                                                       nupPrograms: capabilities.nupPrograms),
+            packageVersion: capabilities.titleSelection
                 ? SourceSelection.packageVersion(for: target.sources, stagedSelection: !workspace.links.isEmpty) : nil,
             allowUntestedToolchain: allowUntestedToolchain,
             nextendoClientID: settingsStore?.settings.nextendoClientID ?? NextendoLaunch.buildClientID,
+            codeModsFolder: codeMods,
             extraArguments: extraArguments
         )
         lastPortingCommand = [command.executable.path] + command.arguments
@@ -2714,6 +2724,7 @@ public final class AppViewModel: ObservableObject {
 
         let service = BuildService()
         buildService = service
+        started = true
         service.start(
             command: command,
             logURL: logURL,

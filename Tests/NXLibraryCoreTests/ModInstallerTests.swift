@@ -171,9 +171,22 @@ final class ModInstallerTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: support.appendingPathComponent("romfs").path))
     }
 
-    func testCodeModArchiveIsNoRomFS() throws {
-        try assertInstallFails(.noRomFS, archive: try archive(["exefs/main.npdm": "code"]))
+    func testReplacementCodeArchiveIsRejected() throws {
+        try assertInstallFails(.unsupportedLayout, archive: try archive(["exefs/main.npdm": "code"]))
         XCTAssertEqual(newEntries(), [])
+    }
+
+    func testInstallsCodeAndSimpleMixedArchives() throws {
+        let code = try archive(["exefs/abcd.ips": "patch"], name: "code.zip")
+        let mixed = try archive(["Pack/exefs/version.pchtxt": "patch", "Pack/romfs/data.bin": "romfs"], name: "mixed.zip")
+        XCTAssertEqual(try installer().install(archive: code, file: file(for: code), mod: mod("Code")), .on("Code"))
+        XCTAssertNil(envText())
+        XCTAssertEqual(try installer().install(archive: mixed, file: file(for: mixed), mod: mod("Mixed", id: 2)), .on("Mixed"))
+        let local = try XCTUnwrap(store().mods().first { $0.folderName == "Mixed" })
+        XCTAssertEqual(local.exefs?.path, store().codeModsFolder.appendingPathComponent("Mixed/exefs").path)
+        XCTAssertEqual(store().mods().first { $0.folderName == "Code" }?.exefs?.path,
+                       store().codeModsFolder.appendingPathComponent("Code/exefs").path)
+        XCTAssertEqual(envText(), "DM_ROMFS_OVERLAY=\(try XCTUnwrap(local.romfs).path)\n")
     }
 
     func testFailedExtractLeavesNothing() throws {
@@ -218,5 +231,20 @@ final class ModInstallerTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: mods.appendingPathComponent("Pack/romfs/a.bin"), encoding: .utf8), "new")
         XCTAssertEqual(store().gameBananaRecords()[49049]?.gameBananaFileID, 2)
         XCTAssertEqual(trashed, ["Pack"])
+    }
+
+    func testUpdateCanChangeKindWithoutResurrectingDisabledMod() throws {
+        let first = try archive(["romfs/data.bin": "old"], name: "romfs.zip")
+        XCTAssertEqual(try installer().install(archive: first, file: file(for: first), mod: mod()), .on("Pack"))
+        try store().setOn(false, folderName: "Pack")
+        let second = try archive(["exefs/abcd.ips": "patch"], name: "exefs.zip")
+        XCTAssertEqual(try installer().install(archive: second, file: file(for: second, id: 2), mod: mod("Different name")), .off("Pack"))
+        XCTAssertEqual(newEntries(), [])
+        XCTAssertEqual(trashed, ["Pack"])
+        XCTAssertNil(store().overlayValue())
+        let installed = try XCTUnwrap(store().mods().first)
+        XCTAssertEqual(installed.folderName, "Pack")
+        XCTAssertNotNil(installed.exefs)
+        XCTAssertEqual(store().gameBananaRecords()[49049]?.gameBananaFileID, 2)
     }
 }

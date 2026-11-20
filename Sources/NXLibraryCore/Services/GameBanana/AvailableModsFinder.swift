@@ -1,6 +1,6 @@
 import Foundation
 
-/// A GameBanana mod confirmed to work with the engine: at least one of its files is a single RomFS tree for this game.
+/// A GameBanana mod with at least one installable RomFS or ExeFS archive for this game.
 public struct AvailableMod: Equatable, Identifiable, Sendable {
     public let id: Int
     /// Position in GameBanana's most-downloaded order, so tiles keep that order.
@@ -139,7 +139,7 @@ public struct AvailableModsFinder: Sendable {
         for file in profile.files {
             do {
                 let paths = try await client.archivePaths(fileID: file.id)
-                if ModSupport.romfsRoot(in: paths, titleID: titleID) != nil { files.append(file) }
+                if (try? ModSupport.layout(in: paths, titleID: titleID)) != nil { files.append(file) }
             } catch GameBananaError.unavailable {
                 continue
             }

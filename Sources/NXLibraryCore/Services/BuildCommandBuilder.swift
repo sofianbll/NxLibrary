@@ -20,6 +20,7 @@ public enum BuildCommandBuilder {
         packageVersion: String? = nil,
         allowUntestedToolchain: Bool = false,
         nextendoClientID: String? = nil,
+        codeModsFolder: URL? = nil,
         extraArguments: [String] = []
     ) -> BuildCommand {
         var args = [
@@ -45,6 +46,7 @@ public enum BuildCommandBuilder {
         // Metal compiler unless this flag is present. Keep it tied to the
         // app's explicit, persisted override.
         if allowUntestedToolchain { args.append("--allow-other-metal") }
+        if let codeModsFolder { args += ["--mods", codeModsFolder.path] }
         args += extraArguments.filter { $0 != NextendoLaunch.buildFlag }
 
         var env = toolchain.environment(base: ProcessInfo.processInfo.environment, developerDir: developerDir)

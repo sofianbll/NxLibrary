@@ -152,13 +152,16 @@ flowchart TD
 ```mermaid
 flowchart TD
     A["Fascia Mods o card Mods (store)"] --> B["GameBananaMatch: pagina del gioco"]
-    B --> C["AvailableModsFinder + ModSupport<br/>solo mod RomFS che funzionano"]
+    B --> C["AvailableModsFinder + ModSupport<br/>RomFS, patch ExeFS o entrambi affiancati"]
     C --> D["ModDetailPanel: Install"]
     D --> E["ModDownload (host GameBanana) · dimensione e MD5"]
     E --> F["ModInstaller: bsdtar, niente .. / link"]
     F --> G["ModStore.adopt: ordine e stato in mods/TID.json"]
-    G --> H["EnvFileEditor scrive DM_ROMFS_OVERLAY in env.txt"]
+    L["Game options → Mods → Import code mod<br/>copia exefs senza spostare l'originale"] --> G
+    G -->|"RomFS"| H["EnvFileEditor scrive DM_ROMFS_OVERLAY in env.txt"]
     H --> I["L'engine legge le mod al prossimo avvio del gioco"]
+    G -->|"ExeFS"| R["Rebuild se la selezione differisce dal bundle installato"]
+    R --> P["BuildService: patch accese in ordine → --mods"]
 ```
 
 ## 8. Cambiare un'impostazione

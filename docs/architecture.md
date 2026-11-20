@@ -421,12 +421,14 @@ I percorsi completi sono in [flows.md](flows.md#3-play-di-un-gioco-switch-nxnati
 ## Mod
 
 **Mod locali.**
-- Le mod di file (RomFS) di un gioco stanno in `~/Library/Application Support/nxnative/<title ID>/mods/<cartella>/romfs`.
+- Sotto `~/Library/Application Support/nxnative/<title ID>/`, le mod solo RomFS usano `mods/<cartella>/romfs`. Le mod di codice usano `code-mods/<cartella>/exefs`, con `romfs` accanto se la mod è mista. Tenere il codice fuori da `mods` distingue i patch della build dall'overlay di lancio.
 - `ModFolderScanner` trova le cartelle e il loro `romfs`, anche nel formato Atmosphère. Un file lasciato lì (per esempio un archivio non estratto) compare come "non è una mod"; i file nascosti come `.DS_Store` non contano per i conflitti.
-- `ModStore` tiene ordine e stato acceso/spento in `~/Library/Application Support/NXLibrary/mods/<TID>.json`. Nell'`env.txt` del gioco scrive solo la riga `DM_ROMFS_OVERLAY` (con `EnvFileEditor`), che il motore legge al lancio: le mod accese, la prima vince, senza rebuild. Il valore non supera 4077 byte, il buffer di riga del launcher.
+- `ModStore` tiene ordine e stato acceso/spento in `~/Library/Application Support/NXLibrary/mods/<TID>.json`. Per le mod con RomFS scrive solo `DM_ROMFS_OVERLAY` nell'`env.txt`: il motore legge le mod accese al lancio, la prima vince, senza rebuild. Il valore non supera 4077 byte, il buffer di riga del launcher.
+- `BuildService` copia le sole patch ExeFS accese in uno snapshot temporaneo nell'ordine scelto e `BuildCommandBuilder` passa `--mods` al checkout che lo supporta. Il motore raggruppa le patch in una sola copia del codice: `DM_MODS_OFF` può spegnerle soltanto tutte insieme. `ModStore` confronta i nomi ordinati e le impronte delle patch con il `dm_code.tsv` di ciascuna mod nel bundle installato, così un build fallito o non ancora installato non cancella l'avviso Rebuild.
+- Il motore rifiuta patch incompatibili con la versione del gioco e sovrapposizioni fra file di patch. Nextendo ha priorità e disattiva tutto il set di codice della sessione se le patch toccano `main`.
 - Remove sposta la cartella nel Cestino. Niente modifiche mentre il gioco è aperto.
-- All'apertura della pagina e del pannello, `sync()` toglie dalla riga le mod sparite. Finché Arcane non ha mai gestito le mod di un gioco, non tocca una riga `DM_ROMFS_OVERLAY` scritta a mano.
-- `AppViewModel+Mods` crea lo store e traduce gli errori; `ModsPanel` (Game options → Mods; `GameOptionsFiles` legge configurazione, impostazioni, cheat e mod una volta per apertura) e la fascia Mods della pagina (`DetailsModsBand`) presentano lo stato. Le mod che modificano il codice (exefs) non funzionano con il motore.
+- All'apertura della pagina e del pannello, `sync()` toglie le mod sparite. I record delle sole mod di codice non toccano una riga `DM_ROMFS_OVERLAY` scritta a mano.
+- `AppViewModel+Mods` crea lo store e traduce gli errori. `ModsPanel` (Game options → Mods) copia i patch locali, distingue le mod con il badge Code e mostra Rebuild quando la selezione ExeFS differisce dal bundle. `GameOptionsFiles` legge il valore per la riga Mods. La fascia Mods della pagina (`DetailsModsBand`) mostra le mod installate.
 
 **GameBanana** (`Services/GameBanana/`).
 - `GameBananaClient` parla con l'API pubblica (apiv11 e, per il contenuto degli archivi, la vecchia Core API). Usa un solo User-Agent, al massimo 4 richieste insieme, e una cache su disco in `~/Library/Caches/NXLibrary/gamebanana`:
@@ -434,8 +436,8 @@ I percorsi completi sono in [flows.md](flows.md#3-play-di-un-gioco-switch-nxnati
   - contenuto degli archivi per sempre, tranne un elenco vuoto, perché GameBanana può ancora leggere un file nuovo;
   - senza rete usa anche le voci scadute.
 - `GameBananaMatch` abbina il gioco per nome (preferisce la voce "(Switch)" e chiede quando non è sicuro); `GameBananaMatchStore` ricorda la scelta per title ID in `Application Support/NXLibrary/gamebanana/matches.json`.
-- `AvailableModsFinder` scorre le mod più scaricate e tiene solo quelle che `ModSupport` riconosce: un'unica cartella `romfs` per questo title ID, niente exefs, IPS o pchtxt, niente mod obsolete, private o con content rating.
-- `ModInstaller` scarica con `ModDownload` (solo host `*.gamebanana.com`) e controlla dimensione e MD5. Legge e controlla l'archivio con `/usr/bin/bsdtar`, rifiuta percorsi `..`, symlink e hard link prima di estrarre, lo estrae in una cartella nascosta dentro `mods` e passa l'albero a `ModStore.adopt`. Un aggiornamento manda la versione vecchia nel Cestino e tiene posto e stato.
+- `AvailableModsFinder` tiene solo le mod che `ModSupport` riconosce: una radice per il title ID corretto con `romfs`, `exefs` (solo `.pchtxt` o `.ips`) o entrambi affiancati. Varianti in radici diverse, `main.npdm`, sostituzioni del codice e mod obsolete, private o con content rating restano escluse.
+- `ModInstaller` scarica con `ModDownload` (solo host `*.gamebanana.com`) e controlla dimensione e MD5. Controlla l'archivio con `/usr/bin/bsdtar`, rifiuta percorsi `..`, link e file speciali prima di estrarre, lo estrae in una cartella nascosta dentro `mods` e affida le radici a `ModStore.adopt`. Un aggiornamento manda la versione vecchia nel Cestino e tiene posto e stato.
 - I link presi dall'API valgono solo se sono `https` su un host GameBanana. Ogni mod mostra autore e link alla sua pagina, e la fascia dice "Mod data provided by GameBanana".
 
 **Fascia Mods della pagina.**

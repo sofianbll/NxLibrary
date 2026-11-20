@@ -2,7 +2,7 @@ import Foundation
 import CryptoKit
 
 public enum ModInstallError: Error, Equatable {
-    case notAllowed, download, damaged, unreadable, unsafe, noRomFS, noSpace
+    case notAllowed, download, damaged, unreadable, unsafe, noRomFS, unsupportedLayout, noSpace
     case writeFailed(String)
 
     public var message: String {
@@ -12,7 +12,9 @@ public enum ModInstallError: Error, Equatable {
         case .damaged: return L10n.text("The download was damaged. Try again.")
         case .unreadable: return L10n.text("This archive can't be opened.")
         case .unsafe: return L10n.text("This archive has files outside its folder, so it wasn't installed.")
-        case .noRomFS: return L10n.text("This file has no romfs folder, so it can't work.")
+        case .noRomFS: return L10n.text("This archive needs a romfs folder or an exefs folder with patches.")
+        case .unsupportedLayout:
+            return L10n.text("Use one mod for this game, with romfs and exefs side by side if it has both. Replacement code files aren't supported.")
         case .noSpace: return L10n.text("There isn't enough space to install this mod.")
         // The reason stays out of the sentence: the player gets plain words, not a system error.
         case .writeFailed: return L10n.text("The mod couldn't be copied into the game's folder. Try again.")
@@ -89,17 +91,13 @@ public struct ModInstaller {
         if let free = freeSpace(store.modsFolder), free < 3 * file.size { throw ModInstallError.noSpace }
 
         let listing = try tar(["-tf", archive.path])
-        let paths = listing.split(separator: "\n").map { line in
-            line.split(separator: "/", omittingEmptySubsequences: true).filter { $0 != "." }.joined(separator: "/")
-        }.filter { !$0.isEmpty }
-        let raw = listing.split(separator: "\n").map(String.init)
-        guard !raw.contains(where: { $0.hasPrefix("/") }),
-              !paths.contains(where: { $0.split(separator: "/").contains("..") }) else { throw ModInstallError.unsafe }
-        guard let root = ModSupport.romfsRoot(in: paths, titleID: store.titleID) else { throw ModInstallError.noRomFS }
+        let layout = try ModSupport.layout(in: listing.split(separator: "\n").map(String.init), titleID: store.titleID)
         // Links of any kind are refused before anything is unpacked: bsdtar -tv starts a symlink's line with `l` and
         // ends a hard link's with `link to <target>`.
         let verbose = try tar(["-tvf", archive.path]).split(separator: "\n")
-        guard !verbose.contains(where: { $0.hasPrefix("l") || $0.contains(" link to ") }) else { throw ModInstallError.unsafe }
+        guard verbose.allSatisfy({ ($0.hasPrefix("-") || $0.hasPrefix("d")) && !$0.contains(" link to ") }) else {
+            throw ModInstallError.unsafe
+        }
 
         let fm = FileManager.default
         let staging = store.modsFolder.appendingPathComponent(".installing-\(UUID().uuidString)")
@@ -109,30 +107,27 @@ public struct ModInstaller {
 
         _ = try tar(["-xf", archive.path, "-C", staging.path])
         if Self.containsSymlink(staging) { throw ModInstallError.unsafe }
-        let tree = staging.appendingPathComponent(root)
-        var isDirectory: ObjCBool = false
-        guard fm.fileExists(atPath: tree.path, isDirectory: &isDirectory), isDirectory.boolValue else {
-            throw ModInstallError.noRomFS
-        }
+        let romfs = layout.romfs.map { staging.appendingPathComponent($0) }
+        let exefs = layout.exefs.map { staging.appendingPathComponent($0) }
+        guard [romfs, exefs].compactMap({ $0 }).allSatisfy(ModFolderScanner.isRealDirectory) else { throw ModInstallError.unsupportedLayout }
 
         let isUpdate = store.gameBananaRecords()[mod.id] != nil
-        let existing = Set(ModFolderScanner.entries(in: store.modsFolder).map(\.lastPathComponent))
-        let name = ModFolderName.make(from: mod.name, modID: mod.id, existing: existing)
-        let record = ModRecord(folderName: name, isOn: false, gameBananaModID: mod.id, gameBananaFileID: file.id,
+        let record = ModRecord(folderName: mod.name, isOn: false, gameBananaModID: mod.id, gameBananaFileID: file.id,
                                md5: file.md5.lowercased(), installedAt: now())
-        let on: Bool
+        let local: LocalMod
         do {
-            on = try store.adopt(staged: tree, folderName: name, record: record, turnOn: true)
+            local = try store.adopt(romfs: romfs, exefs: exefs, name: mod.name, record: record)
         } catch ModStoreError.notAllowed {
             throw ModInstallError.notAllowed
+        } catch ModStoreError.invalidCodeMod {
+            throw ModInstallError.unsupportedLayout
         } catch let ModStoreError.writeFailed(reason) {
             throw ModInstallError.writeFailed(reason)
         } catch {
             throw ModInstallError.writeFailed(error.localizedDescription)
         }
-        let folder = store.gameBananaRecords()[mod.id]?.folderName ?? name
-        if on { return .on(folder) }
-        return isUpdate ? .off(folder) : .installedOff(folder)
+        if local.isOn { return .on(local.folderName) }
+        return isUpdate ? .off(local.folderName) : .installedOff(local.folderName)
     }
 
     private func tar(_ arguments: [String]) throws -> String {
