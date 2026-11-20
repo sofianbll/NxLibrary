@@ -81,7 +81,7 @@ struct GameDetailView {
     var currentModel: (mods: [LocalMod]?, bands: DetailsFocus.Bands) {
         ([], DetailsFocus.Bands(mods: modsHost.tiles.count))
     }
-''' + excerpt('Detail/GameDetailView.swift', '    private var pageMask:', '    private func page(') + r'''
+''' + excerpt('Detail/GameDetailView.swift', '    private var pageMask:', '    private func aboutLookup(') + r'''
     @MainActor func viewport(_ band: DetailsModsBand) -> some View {
         Color.clear.overlay(alignment: .topLeading) {
             band.offset(x: canvas.u(110), y: canvas.u(Self.modsBandTop + pageShift))

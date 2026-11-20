@@ -41,6 +41,7 @@ Come si aggiorna:
 | Parte | Stato | Prove ancora da fare |
 |---|---|---|
 | Pausa Home e ritorno ad Arcane | in attesa | Con una build compatibile, scegliere Home → Back to console mode. Provare ritorno senza dialogo, Resume dalla libreria con audio e fullscreen, Close Game e uscita esterna. Riprovare Resume dopo il riavvio di Arcane e con un gioco non in pausa. |
+| Connettore rclone del Core | in attesa | Con un remote Drive e dati di prova, verificare configurazione, movimento nativo, impronte e annullamento. Non c'è ancora un percorso nell'interfaccia. |
 | Apertura immediata di Game Options con Y | in attesa | A freddo, premere subito Y su un gioco portato con un checkout nxnative personalizzato; verificare che Game Options si apra senza crash e che la riga Cheats sia corretta. |
 | Mod di codice ExeFS | in attesa | Con un engine `--mods`, importare due mod per la versione del gioco. Verificare originali intatti, badge Code, Rebuild e patch offline. Spegnere e riaccendere l’intero gruppo: a ogni Play si usa la copia giusta senza Rebuild. Selezioni parziali, patch nuove o modificate richiedono Rebuild; se fallisce, bundle e avviso restano. Provare l’avviso Nextendo, una mod RomFS, una mista e un archivio sbagliato. |
 | Sezioni File mods e Code mods | in attesa | Provare tastiera/controller, salto delle intestazioni, limiti del riordino, interruttori, mod mista in Code mods, Import code mod da vuoto e indicazione della mod prioritaria fra sezioni. |

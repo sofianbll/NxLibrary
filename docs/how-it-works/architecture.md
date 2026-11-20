@@ -72,6 +72,8 @@ Il checkout nxnative fornisce estrattore, rewriter, shader, profili dei giochi e
 
 `SystemCommandRunner` drena stdout e stderr in parallelo e attende la fine del processo e dei due stream senza eseguire il run loop chiamante. *Perché:* un comando sincrono, come il controllo Git dei cheat in Game Options, non deve far rientrare SwiftUI durante un aggiornamento della vista.
 
+La variante asincrona attende su una coda utility e invia SIGTERM al sottoprocesso quando si annulla il task. Può leggere solo stderr per la progressione, lasciando stdout al risultato del comando.
+
 ## Avvio e stato dell'app
 
 **Finestra e menu.**
@@ -594,6 +596,12 @@ Il percorso completo è in [flows.md](flows.md#6-importare-o-ripristinare-un-sal
 - Misura e pulizia girano sulla coda utility. `isCleaningStorage` blocca nuove pulizie, build e installazioni dell'updater; i giochi già installati restano avviabili.
 - Una misura superata da cambi di libreria o destinazione si ripete. A fine pulizia si pubblica l'esito, si mostrano gli eventuali errori e si ricalcolano le dimensioni.
 - Le righe dei giochi hanno identità UUID stabili per mouse, tastiera e controller.
+
+**Oggetti remoti (Core).**
+- `StorageBackend` espone chiavi relative a una radice, dimensioni, hash disponibili, errori e trasferimenti annullabili con avanzamento in byte. Non ha chiamanti nell'interfaccia e non interviene sui salvataggi.
+- `RcloneStorageBackend` esegue rclone senza shell, con binario esplicito oppure trovato in `/opt/homebrew/bin` e nel `PATH`. Usa un remote e una radice espliciti; la configurazione e lo sblocco restano a rclone. Ignora le scorciatoie Drive perché possono puntare fuori dalla radice.
+- L'invio scrive sotto `.arcane-upload`, escluso dall'elenco. Confronta dimensione e hash comuni, oppure rilegge i byte con SHA-256. Pubblica con un movimento nativo senza ripiego su copia e verifica la chiave finale. L'annullamento tenta di pulire soltanto la chiave temporanea; se avviene durante la pubblicazione, occorre verificare la chiave finale prima di riprovare.
+- L'invio non è un compare-and-swap: chi scrive serializza le operazioni per chiave e verifica un oggetto già presente prima di riusarlo. Il download scrive in staging accanto alla destinazione, non sostituisce file esistenti e non verifica un manifest.
 
 ## Artwork, metadati e voti
 
