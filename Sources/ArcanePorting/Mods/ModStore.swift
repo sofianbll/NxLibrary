@@ -172,7 +172,7 @@ public struct ModStore {
         let on = mods().filter { $0.isOn }.compactMap { mod in
             mod.romfs.map { romfs in
                 var files = ModFolderScanner.files(under: romfs)
-                if mergesTrpfd && titleID == "0100F43008C44000" { files.remove("arc/data.trpfd") }
+                if mergesTrpfd && titleID == InstalledEngineCapabilities.trpfdTitleID { files.remove("arc/data.trpfd") }
                 return (mod.folderName, files)
             }
         }

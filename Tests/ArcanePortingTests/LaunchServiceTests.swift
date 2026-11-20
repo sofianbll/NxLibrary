@@ -75,8 +75,12 @@ final class LaunchServiceTests: XCTestCase {
     func testLaunchSkipsTheEnginesSettingsWindow() {
         let launcher = FakeLauncher()
         LaunchService(launcher: launcher).launch(appURL: URL(fileURLWithPath: "/tmp/G.app"),
-                                                 environment: ["DM_FPS_TARGET": "30"]) { _, _ in }
+                                                 environment: ["DM_FPS_TARGET": "30", "DM_MODS_OFF": "Some mod"]
+                                                    .merging(HomeMenu.environment(supported: true, launcherBundleID: "local.arcane")) { _, new in new }) { _, _ in }
         XCTAssertEqual(launcher.environment["DM_LAUNCHER"], "0")
         XCTAssertEqual(launcher.environment["DM_FPS_TARGET"], "30")
+        XCTAssertEqual(launcher.environment["DM_MODS_OFF"], "Some mod")
+        XCTAssertEqual(launcher.environment["DM_HOME_MENU_LAUNCHER"], "1")
+        XCTAssertEqual(launcher.environment["DM_LAUNCHER_BUNDLE_ID"], "local.arcane")
     }
 }

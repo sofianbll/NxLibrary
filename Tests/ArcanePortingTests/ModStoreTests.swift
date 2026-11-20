@@ -76,6 +76,65 @@ final class CodeModStoreTests: XCTestCase {
 }
 
 final class ModStoreConflictTests: XCTestCase {
+    private final class GitFixture: CommandRunning {
+        var calls: [[String]] = []
+
+        func run(_ executable: URL, _ arguments: [String], environment: [String: String]?,
+                 currentDirectory: URL?) throws -> CommandResult {
+            calls.append(arguments)
+            let object = arguments.last ?? ""
+            let status: Int32 = object == "4a2a3426" || object == "deadbee" || object.contains(":") ? 0 : 1
+            let profile = object.hasPrefix("deadbee:") ? "off" : "on"
+            return CommandResult(status: status, stdout: "title_id\t0100F43008C44000\r\ntrpfd_merge\t\(profile)\r\n", stderr: "")
+        }
+    }
+
+    func testInstalledRevisionAndProfileGateDescriptorMerge() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("ModCapability-\(UUID())")
+        let app = root.appendingPathComponent("Fixture.app")
+        let plist = app.appendingPathComponent("Contents/Info.plist")
+        try FileManager.default.createDirectory(at: plist.deletingLastPathComponent(), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        func metadata(_ commit: String, _ title: String = "0100F43008C44000") throws {
+            let data = try PropertyListSerialization.data(fromPropertyList: ["DMCommit": commit, "DMTitleID": title],
+                                                          format: .xml, options: 0)
+            try data.write(to: plist)
+        }
+        let git = GitFixture()
+        let capabilities = InstalledEngineCapabilities(runner: git)
+        func merges(_ environment: [String: String] = [:]) async -> Bool {
+            await capabilities.mergesTrpfd(in: app, engineFolder: root.path, gameData: root, environment: environment)
+        }
+
+        try metadata("4a2a3426")
+        let enabled = await merges()
+        let cached = await merges()
+        XCTAssertTrue(enabled)
+        XCTAssertTrue(cached)
+        XCTAssertEqual(git.calls.count, 2)
+        XCTAssertEqual(git.calls[0].suffix(4), ["merge-base", "--is-ancestor", "2aaaa33b5969815bd8692b4a1af42e78b06869d4", "4a2a3426"])
+        XCTAssertEqual(git.calls[1].last, "4a2a3426:dm/games/0100F43008C44000/game.tsv")
+
+        try Data("# options\r\nDM_TRPFD_MERGE=0\r\n".utf8).write(to: root.appendingPathComponent("env.txt"))
+        let disabled = await merges()
+        let overridden = await merges(["DM_TRPFD_MERGE": "1"])
+        XCTAssertFalse(disabled)
+        XCTAssertTrue(overridden)
+
+        try metadata("e4fddb32")
+        let olderBuild = await merges()
+        XCTAssertFalse(olderBuild)
+        try metadata("deadbee")
+        let disabledProfile = await merges(["DM_TRPFD_MERGE": "1"])
+        XCTAssertFalse(disabledProfile)
+        try metadata("4a2a3426", "0100000000000000")
+        let otherGame = await merges()
+        XCTAssertFalse(otherGame)
+        try metadata("4a2a3426+dirty")
+        let unknownBuild = await merges()
+        XCTAssertFalse(unknownBuild)
+    }
+
     func testMergedDescriptorIsIgnoredOnlyForZAAndRealConflictsRemain() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("ModStore-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
@@ -83,13 +142,15 @@ final class ModStoreConflictTests: XCTestCase {
         let records = root.appendingPathComponent("records.json")
         let store = ModStore(supportFolder: support, recordsFile: records, titleID: "0100f43008c44000",
                              canWrite: { true }, trash: { _ in XCTFail("Unexpected trash") })
-        for name in ["A", "B"] {
+        let first = "Exclusive Mega Stones in Shop"
+        let second = "Added Café and Bench Animations"
+        for name in [first, second] {
             let arc = store.modsFolder.appendingPathComponent("\(name)/romfs/arc")
             try FileManager.default.createDirectory(at: arc, withIntermediateDirectories: true)
             try Data().write(to: arc.appendingPathComponent("data.trpfd"))
             try store.setOn(true, folderName: name)
         }
-        let conflict = ModConflict(upper: "A", lower: "B")
+        let conflict = ModConflict(upper: first, lower: second)
         XCTAssertEqual(store.conflicts(), [conflict])
         XCTAssertEqual(store.conflicts(mergesTrpfd: true), [])
 
@@ -97,13 +158,13 @@ final class ModStoreConflictTests: XCTestCase {
                              canWrite: { true }, trash: { _ in XCTFail("Unexpected trash") })
         XCTAssertEqual(other.conflicts(mergesTrpfd: true), [conflict])
 
-        for name in ["A", "B"] {
+        for name in [first, second] {
             try Data().write(to: store.modsFolder.appendingPathComponent("\(name)/romfs/arc/shared.bin"))
         }
         XCTAssertEqual(store.conflicts(mergesTrpfd: true), [conflict])
-        try store.setOn(false, folderName: "B")
+        try store.setOn(false, folderName: second)
         XCTAssertEqual(store.conflicts(mergesTrpfd: true), [])
-        XCTAssertFalse(try XCTUnwrap(store.overlayValue()).contains("/B/"))
+        XCTAssertFalse(try XCTUnwrap(store.overlayValue()).contains("/\(second)/"))
     }
 }
 
