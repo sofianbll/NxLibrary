@@ -10,7 +10,7 @@ public struct LocalMod: Equatable, Sendable {
     /// The ExeFS patch tree passed to the engine at build time, if any.
     public let exefs: URL?
     public var isMod: Bool { romfs != nil || exefs != nil }
-    var isCodeMod: Bool { exefs != nil }
+    package var isCodeMod: Bool { exefs != nil }
     public var isOn: Bool
 
     public init(folderName: String, folder: URL, romfs: URL?, exefs: URL? = nil, isOn: Bool) {

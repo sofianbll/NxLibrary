@@ -310,7 +310,7 @@ extension GameDetailView {
         }
     }
 
-    /// The wheel moves between bands, except while the description is open: then it scrolls the text.
+    /// The wheel follows Up/Down, including the Mods grid's rows. An expanded description takes the wheel at the top.
     private func handleWheel(_ event: NSEvent) -> NSEvent? {
         if modsHost.isPanelOpen {
             // The mod panel's description scrolls under the wheel; nothing reaches the page beneath.
@@ -321,7 +321,7 @@ extension GameDetailView {
             }
             return nil
         }
-        guard !expanded else { return event }
+        guard !expanded || focus.zone != DetailsFocus.topZone else { return event }
         let dy = event.scrollingDeltaY
         guard abs(dy) > abs(event.scrollingDeltaX), event.momentumPhase.isEmpty else { return nil }
         let threshold: CGFloat = event.hasPreciseScrollingDeltas ? 6 : 1

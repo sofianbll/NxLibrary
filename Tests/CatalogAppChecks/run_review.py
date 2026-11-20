@@ -92,6 +92,7 @@ struct ArtworkPicks {
 struct SpotlightPageModel { var links = [1]; var more: [Int] = [] }
 @MainActor final class ModsHost {
     var localMods: Int?
+    var tiles: [ModsBandTile] = []
     var game: PortedGame?
     var reloads: [UUID] = []
     func reload(_ game: PortedGame, viewModel: ViewModel) {
@@ -131,9 +132,12 @@ struct SpotlightPageModel { var links = [1]; var more: [Int] = [] }
     let modsHost = ModsHost()
     var scroll: Double = -200
     var holdScroll = false
-    func offset(for area: SpotlightFocusArea) -> Double {
-        [.pills: 0, .strip: -100, .achievements: -200, .actions: -300, .mods: -400, .more: -500][area]!
+    var visibleMod: Int?
+    func offset(for area: SpotlightFocusArea, modsIndex: Int = 0) -> Double {
+        if area == .mods { return -400 - Double(modsIndex / ModsBandLayout.columns) * 50 }
+        return [.pills: 0, .strip: -100, .achievements: -200, .actions: -300, .more: -500][area]!
     }
+    func visibleModIndex(at offset: Double, keeping index: Int, count: Int) -> Int? { visibleMod }
     func mutate(_ change: (inout SpotlightState) -> Void) { change(&viewModel.spotlight) }
     func settle() { settleFocusOnScroll() }
     // ACTUAL_SCROLL
@@ -308,6 +312,18 @@ final class NativeMenus { var isTracking = false }
         scroll.selectedAchievements = nil
         scroll.settle()
         require(scroll.viewModel.spotlight.focus == .actions, "A missing achievements card must not take focus")
+        scroll.modsHost.tiles = Array(repeating: .manage, count: 28)
+        scroll.scroll = -600
+        scroll.visibleMod = 24
+        scroll.settle()
+        require(scroll.viewModel.spotlight.focus == .mods && scroll.viewModel.spotlight.modsIndex == 24,
+                "Wheel settling enters Mods on a visible row, not the first row")
+        scroll.holdScroll = false
+        scroll.visibleMod = 18
+        scroll.scroll = -570
+        scroll.settle()
+        require(scroll.viewModel.spotlight.modsIndex == 18 && scroll.holdScroll,
+                "Within Mods, focus follows the visible row without a second glide")
 
         let menu = MenuHost()
         menu.viewModel.currentFocusedCatalogGame = .init(nxnative: PortedGame(name: "Fixture", url: root.appendingPathComponent("Game.app"),

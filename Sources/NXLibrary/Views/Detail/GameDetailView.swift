@@ -224,8 +224,7 @@ struct GameDetailView: View {
 
     /// Selene's band pitch (230), and 100 more for the tall last band so its covers clear the hints. The Mods band,
     /// when there is one, sits between Details and More like this and pushes More like this one pitch down,
-    /// plus one tile row for each row of its grid after the first; focused, it rises by those rows too, so its last
-    /// row rests where a one-row band would.
+    /// plus one tile row for each row of its grid after the first.
     var pageShift: CGFloat {
         let mods = modsBandShift
         // These fixed band positions were laid out for a 16-unit footer inset. Move a focused band up
@@ -234,7 +233,13 @@ struct GameDetailView: View {
         switch focus.zone {
         case DetailsFocus.screenshotsZone: return -footerLift
         case DetailsFocus.actionsZone: return -230 - footerLift
-        case DetailsFocus.modsZone: return -460 - modsGridExtra - footerLift
+        case DetailsFocus.modsZone:
+            // Fit as much of the grid as possible without scrolling its title off the stage on entry.
+            // If the focused row lies farther down, lift it to the same line as a single row.
+            let firstRow = -460 - footerLift
+            let showTitle = max(firstRow - modsGridExtra, -Self.modsBandTop)
+            let focusedRow = DetailsModsBand.extraHeight(tileCount: min(focus.mod + 1, currentModel.bands.mods))
+            return min(showTitle, firstRow - focusedRow)
         case DetailsFocus.moreZone: return -560 - mods - footerLift
         default: return 0
         }
@@ -242,9 +247,9 @@ struct GameDetailView: View {
 
     var modsBandShift: CGFloat { currentModel.mods == nil ? 0 : 230 + modsGridExtra }
 
-    var modsGridExtra: CGFloat {
-        currentModel.mods == nil ? 0 : DetailsModsBand.extraHeight(tileCount: modsHost.tiles.count)
-    }
+    var modsGridExtra: CGFloat { DetailsModsBand.extraHeight(tileCount: currentModel.bands.mods) }
+
+    private static let modsBandTop: CGFloat = 1200
 
     private func aboutLookup(_ model: Model) -> WikipediaAboutLookup? {
         WikipediaAboutLookup(presentation: model.presentation, query: CriticRatingQuery(game: game, name: metadata?.name))
@@ -303,7 +308,7 @@ struct GameDetailView: View {
                             activateModsTile(index)
                         })
                 }
-                .offset(x: canvas.u(110), y: canvas.u(1200))
+                .offset(x: canvas.u(110), y: canvas.u(Self.modsBandTop))
             }
 
             band(zone: DetailsFocus.actionsZone) {
@@ -337,7 +342,7 @@ struct GameDetailView: View {
                             selectOnSpotlight(model.more[index])
                         })
                 }
-                .offset(x: canvas.u(110), y: canvas.u(1200 + modsBandShift))
+                .offset(x: canvas.u(110), y: canvas.u(Self.modsBandTop + modsBandShift))
             }
         }
     }

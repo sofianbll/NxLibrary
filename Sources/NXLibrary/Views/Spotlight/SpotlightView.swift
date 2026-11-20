@@ -15,6 +15,11 @@ import ArcanePorting
 /// from the row shifts everything up (the row and the bar fade away, the logo
 /// rises to the top) and keeps going section by section; Up comes back.
 struct SpotlightView: View {
+    private struct PageFocus: Equatable {
+        let area: SpotlightFocusArea
+        let modRow: Int?
+    }
+
     @ObservedObject var viewModel: AppViewModel
     /// The Setup (`SetupModel`): Rebuild follows the Metal gate.
     @ObservedObject var setup: SetupModel
@@ -247,7 +252,13 @@ struct SpotlightView: View {
         .onChange(of: isCovered) { _, covered in if !covered { uncoverEntrance() } }
         .onChange(of: reduceMotion) { _, reduced in if reduced { landEntrance() } }
         // A resize mid-flight lands it; before the flight the starts follow the window (the launch can still size it).
-        .onChange(of: canvas) { if entrance == .playing { landEntrance() } }
+        .onChange(of: canvas) {
+            if entrance == .playing { landEntrance() }
+            // The wheel monitor captures the canvas used for its scroll bounds.
+            removeKeyMonitor()
+            installKeyMonitor()
+            if viewModel.spotlight.focus == .mods { syncPage() }
+        }
         .onAppear { storeHost.loadCover(titleIDs: Set(storeGames.compactMap { viewModel.modStore(for: $0)?.titleID })) }
         .onAppear { mutate { $0.setPillLimit(selectedPillCount) } }
         .onChange(of: selectedPillCount) { _, count in mutate { $0.setPillLimit(count) } }
@@ -283,7 +294,8 @@ struct SpotlightView: View {
 
     /// The library, the filter, the selection and the page.
     private func libraryChanges(on content: some View) -> some View {
-        content
+        let state = viewModel.spotlight
+        return content
         .onChange(of: viewModel.catalogGames) { gamesChanged() }
         .onChange(of: viewModel.catalogSourceConfigurations) { gamesChanged() }
         .onChange(of: filter) { _, newFilter in
@@ -296,10 +308,10 @@ struct SpotlightView: View {
             aboutExpanded = false
             selectionChanged()
         }
-        .onChange(of: viewModel.spotlight.focus) { _, focus in
+        .onChange(of: PageFocus(area: state.focus, modRow: state.focus == .mods ? state.modsIndex / ModsBandLayout.columns : nil)) {
             syncPage()
-            startModsOnline(focus)
         }
+        .onChange(of: state.focus) { _, focus in startModsOnline(focus) }
         // Game options (its Mods panel) closing, or Arcane coming back from Finder, re-reads the mods.
         .onChange(of: !viewModel.isGameOptionsOpen) { _, closed in if closed { reloadMods() } }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in reloadMods() }

@@ -493,6 +493,7 @@ I percorsi completi sono in [flows.md](flows.md#3-play-di-un-gioco-switch-nxnati
 **Fascia Mods della pagina.**
 - Compare sia nella pagina del gioco della Spotlight sia in Details, tra Details e More like this (focus `.mods` in `SpotlightState`, `DetailsFocus.modsZone`).
 - È una griglia di sei tessere per riga che non scorre di lato (`ModsBandLayout`): Sinistra e Destra restano nella riga, Giù scende di riga e dall'ultima passa a More like this.
+- La pagina segue la riga a fuoco con il suo scorrimento animato e lascia l'anello fuori dalla sfumatura dei comandi. In Spotlight la rotella e il trackpad scorrono fino all'ultima riga anche senza giochi correlati; alla fine del gesto, il focus va su una riga interamente visibile. In Details la rotella segue Su/Giù, anche dentro la griglia.
 - `ModsBandHost` tiene per entrambe le pagine mod installate, GameBanana e pannelli. In Spotlight legge le mod all'apertura della pagina del gioco. Cambiare selezione sulla riga svuota la fascia precedente senza leggere quella successiva, così la lettura delle mod resta fuori dallo scorrimento.
   Le [misure dei primi cambi gioco](../history/reviews/2026-11-18-spotlight-glide.md) mostrano il costo della lettura prima e dopo.
 - Play riconcilia le cartelle delle mod prima di avviare il gioco, anche dalla riga. Se la cartella o i record non si leggono, `ModStore.sync` conserva entrambi i file di stato. La Dev mantiene il divieto di manutenzione automatica dell'overlay.

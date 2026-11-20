@@ -4,10 +4,16 @@ import NXLibraryCore
 extension GameOptionsBuildSettings {
     /// What a ported build's saved settings decide about the rows.
     public init(_ snapshot: GameSettingsSnapshot) {
+        var choiceNotes: [String: String] = [:]
+        for key in GameOptionsRow.settingRows.filter(\.isChoice).compactMap(\.settingKey) {
+            guard let setting = snapshot.setting(key), setting.optionNotes != nil,
+                  let note = setting.note(for: snapshot.value(key) ?? setting.defaultValue ?? ""), !note.isEmpty else { continue }
+            choiceNotes[key] = note
+        }
         self.init(fixed: snapshot.fixed,
                   visible: Set(GameOptionsRow.settingRows.compactMap(\.settingKey).filter(snapshot.visible)),
                   offersRenderScale: snapshot.isOffered("DM_RENDER_SCALE"),
-                  hasMoreSettings: !snapshot.extraSettings.isEmpty)
+                  hasMoreSettings: !snapshot.extraSettings.isEmpty, choiceNotes: choiceNotes)
     }
 }
 

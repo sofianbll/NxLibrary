@@ -9,6 +9,12 @@ extension SpotlightView {
     /// How far the page rises once the focus leaves the row: the logo goes from 420 to 96.
     static let pageTravel: CGFloat = 324
 
+    private var stripBottom: CGFloat {
+        canvas.u(420) + [SpotlightPageBlock.head, .genres, .strip].reduce(0) { $0 + (blocks[$1] ?? 0) }
+    }
+
+    private var modsBottom: CGFloat { stripBottom + (blocks[.description] ?? 0) + (blocks[.mods] ?? 0) }
+
     /// The page's scroll for the focus, in points. The pills and the strip
     /// share the first shift (the strip only moves further if it would sit
     /// under the hints); Details brings About this game and the column
@@ -16,13 +22,12 @@ extension SpotlightView {
     /// page's end sits above the hints, never further (`SpotlightPageScroll`).
     /// Positions add up the blocks' heights from the column's top at 420.
     func pageOffset(_ state: SpotlightState) -> CGFloat {
-        offset(for: state.focus)
+        offset(for: state.focus, modsIndex: state.modsIndex)
     }
 
-    func offset(for area: SpotlightFocusArea) -> CGFloat {
+    func offset(for area: SpotlightFocusArea, modsIndex: Int = 0) -> CGFloat {
         let first = -canvas.u(Self.pageTravel)
         let h = { (block: SpotlightPageBlock) in blocks[block] ?? 0 }
-        let stripBottom = canvas.u(420) + h(.head) + h(.genres) + h(.strip)
         // The description block includes its 44 top padding.
         let aboutTop = stripBottom + canvas.u(44)
         // The Mods band (its top gap included) sits between About this game and More like this.
@@ -41,7 +46,7 @@ extension SpotlightView {
         case .about, .actions, .mods, .more, .achievements:
             // The bands report a height only when they are shown.
             let more = h(.more) > 0
-            let pageBottom = stripBottom + h(.description) + h(.mods) + (more ? h(.more) : 0)
+            let pageBottom = modsBottom + (more ? h(.more) : 0)
             let rest = SpotlightPageScroll.resting(
                 first: first, aboutTop: aboutTop, moreTop: more ? moreTop : nil, pageBottom: pageBottom,
                 top: canvas.u(150), viewport: canvas.size.height, bottomInset: canvas.u(Self.pageBottomInset))
@@ -49,18 +54,39 @@ extension SpotlightView {
             case .actions, .achievements: return rest.actions
             case .more: return rest.more
             case .mods:
-                // The band's title rises to the top line, as More like this does, unless the page ends first.
                 guard h(.mods) > 0 else { return rest.actions }
-                return SpotlightPageScroll.resting(
+                // Start at the title, then lift farther only if the focused row meets the fade.
+                let title = SpotlightPageScroll.resting(
                     first: first, aboutTop: aboutTop, moreTop: modsTop,
                     pageBottom: pageBottom, top: canvas.u(150), viewport: canvas.size.height,
                     bottomInset: canvas.u(Self.pageBottomInset)).more
+                let row = DetailsModsBand.focusedRow(modsIndex, count: modsHost.tiles.count, bandBottom: modsBottom, canvas: canvas)
+                return SpotlightPageScroll.revealing(title, bottom: row.upperBound,
+                                                    viewport: canvas.size.height, bottomInset: canvas.u(Self.pageEdge.bottom.solid))
             default:
                 // Read more (or Show less, under the whole text) comes into view.
                 return SpotlightPageScroll.revealing(rest.actions, bottom: aboutTop + h(.about),
                                                      viewport: canvas.size.height, bottomInset: canvas.u(Self.pageBottomInset))
             }
         }
+    }
+
+    func pageScrollEnd(hasMore: Bool) -> CGFloat {
+        let mods = modsHost.tiles.count
+        return min(offset(for: .about), offset(for: hasMore ? .more : .actions),
+                   mods > 0 ? offset(for: .mods, modsIndex: mods - 1) : .infinity)
+    }
+
+    /// After free scrolling, keep the selection column and choose the nearest row that is fully visible.
+    func visibleModIndex(at offset: CGFloat, keeping index: Int, count: Int) -> Int? {
+        guard (blocks[.mods] ?? 0) > 0 else { return nil }
+        let columns = ModsBandLayout.columns
+        return stride(from: 0, to: count, by: columns).compactMap { start -> Int? in
+            let row = DetailsModsBand.focusedRow(start, count: count, bandBottom: modsBottom, canvas: canvas)
+            guard row.lowerBound + offset >= canvas.u(Self.pageEdge.top.solid),
+                  row.upperBound + offset <= canvas.size.height - canvas.u(Self.pageEdge.bottom.solid) + 0.5 else { return nil }
+            return min(start + index % columns, count - 1)
+        }.min(by: { abs($0 - index) < abs($1 - index) })
     }
 
     /// The page's edges, in canvas units: clear up to `clear` from the window's

@@ -166,10 +166,13 @@ public struct GameOptionsBuildSettings: Equatable, Sendable {
     public var visible: Set<String>
     public var offersRenderScale: Bool
     public var hasMoreSettings: Bool
+    public var choiceNotes: [String: String]
 
-    public init(fixed: Set<String>, visible: Set<String>, offersRenderScale: Bool, hasMoreSettings: Bool) {
+    public init(fixed: Set<String>, visible: Set<String>, offersRenderScale: Bool, hasMoreSettings: Bool,
+                choiceNotes: [String: String] = [:]) {
         self.fixed = fixed; self.visible = visible
         self.offersRenderScale = offersRenderScale; self.hasMoreSettings = hasMoreSettings
+        self.choiceNotes = choiceNotes
     }
 }
 
@@ -268,9 +271,7 @@ public struct GameOptionsPresentation: Equatable {
     /// The row's one-line description, when it has one.
     public func about(_ row: GameOptionsRow) -> String? {
         if isFixed(row) { return L10n.text("Set in env.txt") }
-        if row.isChoice, let settings, let key = row.settingKey, let setting = settings.setting(key),
-           setting.optionNotes != nil,
-           let note = setting.note(for: settings.value(key) ?? setting.defaultValue ?? ""), !note.isEmpty {
+        if row.isChoice, let key = row.settingKey, let note = buildSettings?.choiceNotes[key] {
             return L10n.text(note)
         }
         switch row {
