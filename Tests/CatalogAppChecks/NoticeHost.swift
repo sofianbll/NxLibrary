@@ -22,6 +22,7 @@ final class AppViewModel {
     }
     func applyCatalog(_ document: CatalogDocument) {}
     func presentInstallFailure(for: PortedGame, error: String) {}
+    func refreshCloudLibrary(_ game: PortedGame) async {}
 }
 func require(_ ok: @autoclosure () -> Bool, _ message: String) throws {
     if !ok() { throw NSError(domain: "NoticeProbe", code: 1, userInfo: [NSLocalizedDescriptionKey: message]) }

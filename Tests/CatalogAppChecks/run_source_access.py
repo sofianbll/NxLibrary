@@ -67,6 +67,8 @@ final class NSOpenPanel {
     func runModal() -> Response { Self.openedAt = directoryURL; return Self.response }
 }
 
+enum L10n { static func text(_ key: String) -> String { key } }
+
 final class SourceHost {
     private var keepsRememberedGameFolder = false
     private var restoringGameFolder = false
@@ -87,6 +89,7 @@ final class SourceHost {
     // ACTUAL_REMEMBERED_FOLDER
     // ACTUAL_FOLDER_PICKER
     // ACTUAL_FILE_PICKER
+    // ACTUAL_FILE_CHOOSER
     func restoreBuildInputs(automatic: Bool) {}
     func refreshCompatibility() {}
     func startNewAddGame(defaults: GameRuntimeConfig) { selectedGameFolder = nil }
@@ -148,6 +151,7 @@ for marker, signature in (
     ('// ACTUAL_REMEMBERED_FOLDER', '    var gameFilesFolder:'),
     ('// ACTUAL_FOLDER_PICKER', '    func selectGameFolder('),
     ('// ACTUAL_FILE_PICKER', '    func selectGameFiles('),
+    ('// ACTUAL_FILE_CHOOSER', '    func chooseGameFiles('),
 ):
     host = host.replace(marker + '\n', declaration(signature, porting_source) + '\n')
 host = host.replace('// ACTUAL_STARTUP', startup)
