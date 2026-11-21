@@ -74,13 +74,9 @@ extension GameDetailView {
             DetailsLink.openCloud(for: game, viewModel: viewModel)
             return
         }
-        if index == 0, pills != .porting, downloadsCloudApp, let state = viewModel.cloudLibrary.states[game.id] {
-            guard state.action == nil, !state.refreshing, viewModel.canChangeCloudLibrary(game) else {
-                SoundEffectService.shared.play(.error)
-                return
-            }
+        if index == 0, pills != .porting, downloadsCloudApp {
             SoundEffectService.shared.play(.click)
-            viewModel.performCloudLibrary(.restore(.app), for: game)
+            viewModel.downloadCloudApp(game)
             return
         }
         switch pills {

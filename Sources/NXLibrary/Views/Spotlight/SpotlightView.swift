@@ -31,6 +31,7 @@ struct SpotlightView: View {
     /// Steam Play phases drive the A hint.
     @ObservedObject var steamPlayer = SteamPlayCoordinator.shared
     @ObservedObject var runningGames: RunningGameMonitor
+    @ObservedObject var cloud: CloudLibraryModel
     @ObservedObject var artwork: ArtworkStore
 
     @Environment(\.seleneCanvas) var canvas
@@ -47,6 +48,7 @@ struct SpotlightView: View {
     /// Only traits are retained for the cache pass, without artwork, screenshots or descriptions.
     @State var cachedSteamRelated: (request: SteamRelatedRequest, traits: [UInt32: MoreLikeThis.Traits])?
     @State var keyMonitor: Any?
+    @FocusState var sortFocused: Bool
     @State var hadGames = false
     /// The card Y menu: which card and the focused row.
     @State var cardMenu: CardMenuState?
@@ -125,6 +127,7 @@ struct SpotlightView: View {
         self.settings = settings
         self.playSessions = playSessions
         self.runningGames = runningGames
+        self.cloud = viewModel.cloudLibrary
         self.artwork = artwork
         self.storeHost = storeHost
         // Held hidden from the first frame (the opening, or under the welcome); `entranceAppear` lands it when not due.
@@ -192,15 +195,19 @@ struct SpotlightView: View {
     /// One pill while the selected game ports, three otherwise.
     var selectedPillCount: Int {
         guard let selectedGame else { return SpotlightState.pillCount }
-        return viewModel.portingPills(selectedGame).count + (showsCloudPill(selectedGame) ? 1 : 0)
+        return spotlightPills(selectedGame).count + (showsCloudPill(selectedGame) ? 1 : 0)
     }
 
     func showsCloudPill(_ game: PortedGame) -> Bool {
-        guard settings.settings.showsCloudPlayIcon, viewModel.showsCloudLibrary(game) else { return false }
-        switch viewModel.portingPills(game) {
-        case .normal, .queued, .normalAfterFailure, .unavailable: return true
-        case .porting, .failed: return false
-        }
+        settings.settings.showsCloudPlayIcon && viewModel.showsCloudLibrary(game)
+    }
+
+    func spotlightPills(_ game: PortedGame) -> PortingPills {
+        viewModel.portingPills(game).detailsPresentation(cloudOnly: downloadsCloudApp(game))
+    }
+
+    func downloadsCloudApp(_ game: PortedGame) -> Bool {
+        return cloud.archive != nil && cloud.states[game.id]?.appIsCloudOnly == true && !runningGames.isRunning(game)
     }
 
     var screenshotCount: Int {

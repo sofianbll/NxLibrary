@@ -17,6 +17,7 @@ struct CollectionView: View {
     @ObservedObject var settings: AppSettingsStore
     @ObservedObject var playSessions: PlaySessionStore
     @ObservedObject var artwork: ArtworkStore
+    @ObservedObject var cloud: CloudLibraryModel
 
     @Environment(\.seleneCanvas) var canvas
 
@@ -26,6 +27,7 @@ struct CollectionView: View {
     /// Steam Play phases drive the A hint.
     @ObservedObject var steamPlayer = SteamPlayCoordinator.shared
     @State var keyMonitor: Any?
+    @FocusState var sortFocused: Bool
 
     init(viewModel: AppViewModel, router: AppRouter, settings: AppSettingsStore,
                 playSessions: PlaySessionStore, artwork: ArtworkStore) {
@@ -35,6 +37,7 @@ struct CollectionView: View {
         self.settings = settings
         self.playSessions = playSessions
         self.artwork = artwork
+        self.cloud = viewModel.cloudLibrary
     }
 
     // MARK: - Model
@@ -106,11 +109,7 @@ struct CollectionView: View {
     private func stage(games: [CatalogGame], game: PortedGame?) -> some View {
         ZStack(alignment: .topLeading) {
             SpotlightTopBar(filter: filter, sort: settings.settings.librarySort, showClock: settings.settings.showClock,
-                            onSelect: { setFilter($0) }, onCycleSort: {
-                                settings.settings.librarySort = settings.settings.librarySort.stepped(1)
-                                reconcile()
-                                SoundEffectService.shared.play(.tabSwitch)
-                            })
+                            sortFocus: $sortFocused, onSelect: { setFilter($0) }, onCycleSort: cycleSort)
 
             if let game {
                 CollectionInfoView(game: game, logo: art.logo(for: game),
@@ -185,19 +184,26 @@ struct CollectionView: View {
     // MARK: - Hints
 
     private func contextHints(_ game: PortedGame?) -> [HintItem] {
+        if sortFocused { return [HintItem(.a, "Sort"), HintItem(.b, "Back")] }
         if let steam = selectedCatalogGame, steam.integration == .steam {
             return SteamPlayCoordinator.shared.hint(for: steam)
-                + [HintItem(.y, L10n.text("Game options")), HintItem(.rs, L10n.text("Filter"))]
+                + [HintItem(.y, L10n.text("Game options"))]
         }
         guard let game else {
             if viewModel.isScanningLibrary { return [] }
-            return hasAnyGame ? [HintItem(.rs, L10n.text("Filter"))] : [HintItem(.a, L10n.text("Add game"))]
+            return hasAnyGame ? [] : [HintItem(.a, L10n.text("Add game"))]
         }
-        let filterHint = HintItem(.rs, L10n.text("Filter"))
+        if downloadsCloudApp(game) {
+            return [HintItem(.a, "Download"), HintItem(.x, "Details"), HintItem(.y, "Game options")]
+        }
         if game.isPlayableLocally {
-            return [HintItem(.a, L10n.text("Play")), HintItem(.x, L10n.text("Details")), HintItem(.y, L10n.text("Game options")), filterHint]
+            return [HintItem(.a, L10n.text("Play")), HintItem(.x, L10n.text("Details")), HintItem(.y, L10n.text("Game options"))]
         }
-        return [HintItem(.a, L10n.text("Details")), HintItem(.y, L10n.text("Game options")), filterHint]
+        return [HintItem(.a, L10n.text("Details")), HintItem(.y, L10n.text("Game options"))]
+    }
+
+    func downloadsCloudApp(_ game: PortedGame) -> Bool {
+        cloud.archive != nil && cloud.states[game.id]?.appIsCloudOnly == true
     }
 
     // MARK: - Selection
@@ -227,6 +233,12 @@ struct CollectionView: View {
     func setFilter(_ next: LibraryFilter) {
         guard next != filter else { return }
         viewModel.librarySelection.query.filter = next
+        reconcile()
+        SoundEffectService.shared.play(.tabSwitch)
+    }
+
+    func cycleSort() {
+        settings.settings.librarySort = settings.settings.librarySort.stepped(1)
         reconcile()
         SoundEffectService.shared.play(.tabSwitch)
     }

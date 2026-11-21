@@ -26,9 +26,7 @@ struct GamePrimaryActions: View {
             }
             pill(1, SelenePillButton(title: secondaryTitle, height: 52, focused: focused == 1) { onAction(1) })
             if let cloud {
-                pill(2, SelenePillButton(title: nil, icon: cloud.pillIcon, iconSize: 20, minWidth: 52, height: 52,
-                                        horizontalPadding: 0, focused: focused == 2) { onAction(2) })
-                    .accessibilityLabel(L10n.text("Cloud library"))
+                pill(2, CloudLibraryPill(indicator: cloud, focused: focused == 2) { onAction(2) })
             }
             let favorite = cloud == nil ? 2 : 3
             pill(favorite, SelenePillButton(title: nil, icon: isFavorite ? .favorite : .favoriteBorder,

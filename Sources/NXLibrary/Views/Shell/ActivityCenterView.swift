@@ -107,15 +107,17 @@ struct ActivityCenterView: View {
                         SelenePillButton(title: "Clear all", focused: focused == row) { onOpen(row) }
                     case .result(let id):
                         if let item = result(id) {
-                            let status = status(item.outcome)
+                            let status = status(item.outcome, job: item.job)
                             ActivityRow(title: title(item.job, name: item.name), detail: status.detail,
-                                        fraction: nil, status: status.key, color: status.color, focused: focused == row,
+                                        fraction: nil, cloud: isCloud(item.job), status: status.key, color: status.color, focused: focused == row,
                                         open: nil, cancel: nil, retry: item.canRetry ? { onOpen(row) } : nil,
                                         clear: { onCancel(row) })
                         }
                     default:
                         let job = liveJob(row)
                         ActivityRow(title: job.title, detail: job.detail, fraction: job.fraction,
+                                    cloud: !row.opensPorting, indeterminate: job.active && !row.opensPorting,
+                                    indicator: transferIndicator(row),
                                     status: job.active ? "In progress" : "Queued",
                                     color: job.active ? SeleneTheme.ink : SeleneTheme.ink60,
                                     focused: focused == row, open: row.opensPorting ? { onOpen(row) } : nil,
@@ -154,8 +156,9 @@ struct ActivityCenterView: View {
             let progress = cloudLibrary.states[request.id]?.progress
             let fraction = CloudLibraryProgressView.fraction(progress)
             let stage = text(progress.map(CloudLibraryProgressView.phaseKey) ?? "Preparing cloud operation…")
+            let estimate = CloudLibraryProgressView.estimate(progress, context: localization, compact: true)
             return (title(.cloud(request.entry), name: request.name),
-                    detail(stage, fraction, CloudLibraryProgressView.estimate(progress, context: localization, compact: true)),
+                    fraction == nil ? nil : detail(stage, nil, estimate),
                     fraction, true)
         case .queuedCloud(let token):
             guard let request = cloudLibrary.queue.first(where: { $0.token == token }) else {
@@ -188,6 +191,25 @@ struct ActivityCenterView: View {
         viewModel.activityResults.entries.first { $0.id == id }
     }
 
+    private func isCloud(_ job: ActivityHistory.Job) -> Bool {
+        if case .build = job { return false }
+        return true
+    }
+
+    private func transferIndicator(_ row: ActivityCenterFocus.Row) -> CloudLibraryIndicator? {
+        let request: CloudLibraryModel.Request?
+        switch row {
+        case .cloud: request = cloudLibrary.active?.request
+        case .queuedCloud(let token): request = cloudLibrary.queue.first { $0.token == token }
+        default: return nil
+        }
+        guard let request else { return nil }
+        var state = cloudLibrary.states[request.id] ?? CloudLibraryState()
+        state.action = request.action
+        if case .queuedCloud = row { state.queued = true; state.progress = nil }
+        return .init(state: state, item: state.activeItem)
+    }
+
     private func title(_ job: ActivityHistory.Job, name: String?) -> String {
         let key: String
         switch job {
@@ -196,10 +218,10 @@ struct ActivityCenterView: View {
         case .cloud(let request):
             switch request.action {
             case .upload(.app): key = "Send app"
-            case .upload(.cache): key = "Send cache"
-            case .upload(nil): key = "Send app and cache"
+            case .upload(.cache): key = "Send build cache"
+            case .upload(nil): key = "Send app and build cache"
             case .restore(.app): key = "Download app"
-            case .restore(.cache), .restoreBuildCache: key = "Download cache"
+            case .restore(.cache), .restoreBuildCache: key = "Download build cache"
             case .uploadSources: key = "Send game files"
             case .downloadSources: key = "Download game files"
             case .free: key = "Free up space"
@@ -212,9 +234,13 @@ struct ActivityCenterView: View {
         [text(key), name].compactMap { $0 }.joined(separator: " · ")
     }
 
-    private func status(_ outcome: ActivityHistory.Outcome) -> (key: String, color: Color, detail: String?) {
+    private func status(_ outcome: ActivityHistory.Outcome, job: ActivityHistory.Job) -> (key: String, color: Color, detail: String?) {
         switch outcome {
-        case .succeeded: return ("Succeeded", SeleneTheme.statusOK, nil)
+        case .succeeded:
+            if case .cloud(let request) = job, case .upload = request.action {
+                return ("Published", SeleneTheme.statusOK, nil)
+            }
+            return ("Succeeded", SeleneTheme.statusOK, nil)
         case .failed(let reason): return ("Failed", SeleneTheme.danger, reason)
         case .cancelled: return ("Cancelled", SeleneTheme.ink60, nil)
         }
@@ -229,6 +255,9 @@ private struct ActivityRow: View {
     let title: String
     let detail: String?
     let fraction: Double?
+    var cloud = false
+    var indeterminate = false
+    var indicator: CloudLibraryIndicator? = nil
     let status: String
     let color: Color
     let focused: Bool
@@ -249,7 +278,13 @@ private struct ActivityRow: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                SeleneStatusDot(text: L10n.text(status, context: localization), color: color).fixedSize()
+                if cloud {
+                    CloudLibraryBadge(indicator: indicator, showsLabel: true,
+                                      status: indicator == nil ? L10n.text(status, context: localization) : nil,
+                                      statusColor: color)
+                } else {
+                    SeleneStatusDot(text: L10n.text(status, context: localization), color: color).fixedSize()
+                }
                 if let retry {
                     SelenePillButton(title: "Retry", minWidth: 0, height: 44, horizontalPadding: 16,
                                      focused: focused, action: retry)
@@ -268,8 +303,8 @@ private struct ActivityRow: View {
                 }
             }
             .frame(minHeight: canvas.u(44))
-            if let fraction, fraction > 0 {
-                AchievementProgressBar(fraction: fraction, height: 4)
+            if indeterminate || fraction.map({ $0 > 0 }) == true {
+                SeleneProgressBar(progress: fraction)
             }
         }
         .modifier(SeleneOptionRowSurface(focused: focused))

@@ -14,6 +14,17 @@ extension SpotlightView {
         if cardMenu != nil { return handleCardMenu(action) }
         if modsHost.isPanelOpen { return modsHost.handlePanel(action) }
         if storeHost.isPanelOpen { return storeHost.panel.handlePanel(action) }
+        if sortFocused {
+            switch action {
+            case .confirm, .rightStickPress: cycleSort(); return
+            case .navigateDown, .cancel: sortFocused = false; return
+            default: sortFocused = false
+            }
+        } else if action == .navigateUp, viewModel.spotlight.focus == .row {
+            sortFocused = true
+            SoundEffectService.shared.play(.focus)
+            return
+        }
         if viewModel.spotlight.focus == .store {
             if handleStore(action) { return }
             // Y (the card's menu), X and the row's jumps belong to the row, not the store.
@@ -336,9 +347,13 @@ extension SpotlightView {
 
     func pressPill(_ index: Int, game: PortedGame) {
         SoundEffectService.shared.play(.click)
-        let pills = viewModel.portingPills(game)
+        let pills = spotlightPills(game)
         if pills.cancelsQueuedBuild(at: index) {
             viewModel.porting.cancelQueuedBuild(game.id)
+            return
+        }
+        if showsCloudPill(game), index == pills.detailsCloudIndex {
+            DetailsLink.openCloud(for: game, viewModel: viewModel)
             return
         }
         switch pills {
@@ -354,16 +369,12 @@ extension SpotlightView {
             }
             return
         case .unavailable:
-            if index == 0, !runningGames.isRunning(game) {
+            if index == 0, !runningGames.isRunning(game), !downloadsCloudApp(game) {
                 SoundEffectService.shared.play(.error)
                 return
             }
         case .normal, .queued, .normalAfterFailure:
             break
-        }
-        if showsCloudPill(game), index == 2 {
-            DetailsLink.openCloud(for: game, viewModel: viewModel)
-            return
         }
         switch index {
         case 0:
@@ -387,6 +398,10 @@ extension SpotlightView {
 
     /// Play, or Build for a game not built yet (as on the Details page); the page has no build button any more.
     private func play(_ game: PortedGame) {
+        if downloadsCloudApp(game) {
+            viewModel.downloadCloudApp(game)
+            return
+        }
         let step = GamePrimaryStep.decide(unavailable: viewModel.portingPills(game).unavailableReason != nil,
                                           playable: game.isPlayableLocally,
                                           sourcesAvailable: GameResourceState.sourcesAvailable(for: game)
@@ -512,11 +527,11 @@ extension SpotlightView {
             case 124: action = .navigateRight
             case 125: action = .navigateDown
             case 126: action = .navigateUp
-            case 36, 49: action = .confirm
+            case 36, 49, 76: action = .confirm
             case 53:
                 // On the row Esc falls through to the shell, which opens the Menu.
                 guard viewModel.spotlight.focus != .row || viewModel.spotlight.isLifted
-                        || cardMenu != nil else { return event }
+                        || cardMenu != nil || sortFocused else { return event }
                 action = .cancel
             case 7: action = .secondaryAction   // X
             case 16: action = .contextAction    // Y

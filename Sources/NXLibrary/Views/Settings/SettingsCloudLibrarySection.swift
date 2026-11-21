@@ -9,6 +9,7 @@ struct SettingsCloudLibrarySection: View {
     @ObservedObject var settings: AppSettingsStore
     @Binding var advanced: Bool
     let onEdit: () -> Void
+    let onEditLibrary: () -> Void
     let onEditSources: () -> Void
     let onActions: ([SettingsRowAction]) -> Void
     @Environment(\.seleneCanvas) private var canvas
@@ -23,8 +24,6 @@ struct SettingsCloudLibrarySection: View {
     @State private var inspecting = true
     @State private var inspection = 0
     @State private var testTask: Task<Void, Never>?
-    @State private var testPassed: Bool?
-    @State private var testFailure: CloudLibraryFailure?
 
     private struct Inspection: Equatable {
         let chosen: URL?
@@ -41,20 +40,27 @@ struct SettingsCloudLibrarySection: View {
     private var editable: Bool { viewModel.canConfigureCloudLibrary && testTask == nil }
     private var canTest: Bool { editable && !inspecting && connected != nil }
     private var canImport: Bool { editable && model.archive != nil && model.importTask == nil && !viewModel.isScanningLibrary }
-    private var recoveryFailure: CloudLibraryFailure? { testFailure ?? model.checkFailure }
+    private var recoveryFailure: CloudLibraryFailure? {
+        if let result = model.connectionCheck { return result.failure }
+        return model.checkFailure
+    }
     private var canRecover: Bool {
-        recoveryFailure?.action == .retry ? (testFailure != nil ? canTest : canImport) : editable
+        recoveryFailure?.action == .retry ? (model.connectionCheck?.explicit == true ? canTest : canImport) : editable
     }
     private var focusedToolButton: Int? { focusedRowID == "rclone" ? focusedButton : nil }
 
     private var serviceStatus: String {
-        if let failure = recoveryFailure {
-            return text(failure == .offline ? "Offline" : "Connection status unavailable")
-        }
-        switch connection {
-        case .connected: return text("Connected")
-        case .notConnected: return text("Not connected")
-        case .unknown: return text(inspecting ? "Checking…" : "Connection status unavailable")
+        if testTask != nil { return text("Checking…") }
+        if selection.remote == nil { return text("Not connected") }
+        guard let result = model.connectionCheck else { return text("Connection not tested") }
+        if result.failure != nil { return text(result.failure == .offline ? "Offline" : "Connection status unavailable") }
+        return text("Connection OK")
+    }
+
+    private var lastTest: String? {
+        model.connectionCheck.map {
+            L10n.format("Last test: %@", [$0.date.formatted(.dateTime.year().month().day().hour().minute()
+                .locale(localization.formatLocale))], context: localization)
         }
     }
 
@@ -68,38 +74,40 @@ struct SettingsCloudLibrarySection: View {
 
     var body: some View {
         VStack(spacing: canvas.u(8)) {
-            SettingsSubheading("Connection")
-            if let remote = selection.remote {
+            SettingsSubheading("Status")
+            let provider = connected.flatMap { $0.type == "drive" ? nil : $0.type } ?? text("Google Drive")
+            SeleneRow(selection.remote.map { "\(provider) · \($0)" } ?? text("Cloud service"),
+                      subtitle: lastTest, verbatimTitle: true, verbatimSubtitle: true) {
+                SeleneStatusDot(text: serviceStatus, color: testTask == nil && model.connectionCheck?.failure == nil
+                    && model.connectionCheck != nil ? SeleneTheme.statusOK : SeleneTheme.ink60)
+            }
+            if let failure = recoveryFailure {
+                SeleneButtonRow(failure.messageKey, id: "cloudRecovery", buttonTitle: failure.action.titleKey, action: recover)
+                    .disabled(!canRecover)
+            }
+            if selection.remote != nil {
                 SeleneToggleRow("Enable cloud library", subtitle: "Cloud storage for ported apps and build caches, separate from saves.",
                                 isOn: Binding(get: { selection.enabled }, set: setEnabled))
                     .disabled(!editable)
-
-                let provider = connected.flatMap { $0.type == "drive" ? nil : $0.type } ?? text("Google Drive")
-                SeleneRow("\(provider) · \(remote)", verbatimTitle: true) {
-                    SeleneStatusDot(text: serviceStatus, color: connected == nil || recoveryFailure != nil
-                                    ? SeleneTheme.ink60 : SeleneTheme.statusOK)
-                }
-
-                if let failure = recoveryFailure {
-                    SeleneButtonRow(failure.messageKey, id: "cloudRecovery", buttonTitle: failure.action.titleKey, action: recover)
-                        .disabled(!canRecover)
-                }
-                // shortcut: the assistant starts at the account step until it accepts a folder entry point.
-                SeleneButtonRow("Folder", subtitle: selection.storage, verbatimSubtitle: true, truncateSubtitleInMiddle: true,
-                                buttonTitle: "Edit", action: onEdit)
-                    .disabled(!editable)
-                SeleneButtonRow("Game files folder", id: "cloudSourcesRoot", subtitle: selection.sourcesStorage,
-                                verbatimSubtitle: true, truncateSubtitleInMiddle: true, buttonTitle: "Edit", action: onEditSources)
-                    .disabled(!editable)
-                SeleneButtonRow("Change Google credentials", buttonTitle: "Edit", action: onEdit)
-                    .disabled(!editable)
-                SeleneButtonRow("Import games from the cloud", id: "cloudLibraryImport",
-                                subtitle: model.importTask == nil ? nil : "Checking…", buttonTitle: "Import", action: importGames)
-                    .disabled(!canImport)
             } else {
                 SeleneButtonRow("Configure cloud library", buttonTitle: "Open", action: onEdit)
                     .disabled(!editable)
             }
+
+            SettingsSubheading("Folders")
+            HStack(spacing: canvas.u(8)) {
+                SeleneButtonRow("Library folder", id: "cloudLibraryFolder", subtitle: selection.storage,
+                                verbatimSubtitle: true, truncateSubtitleInMiddle: true, buttonTitle: "Edit", action: onEditLibrary)
+                SeleneButtonRow("Game files folder", id: "cloudSourcesRoot", subtitle: selection.sourcesStorage,
+                                verbatimSubtitle: true, truncateSubtitleInMiddle: true, buttonTitle: "Edit", action: onEditSources)
+            }
+            .disabled(!editable || selection.remote == nil)
+
+            SettingsSubheading("Import")
+            SeleneButtonRow("Import games from the cloud", id: "cloudLibraryImport",
+                            subtitle: model.importTask == nil ? nil : "Checking…", buttonTitle: "Import", action: importGames)
+                .disabled(!canImport)
+            if model.importTask != nil { SeleneProgressBar(progress: nil) }
 
             SettingsSubheading("Appearance")
             SeleneToggleRow("Icon next to Play", isOn: $settings.settings.showsCloudPlayIcon)
@@ -119,12 +127,16 @@ struct SettingsCloudLibrarySection: View {
             publishActions()
         }
         .onChange(of: recoveryFailure) { publishActions() }
-        .onChange(of: selection) { testPassed = nil; testFailure = nil }
+        .onChange(of: model.connectionCheck?.explicit) { publishActions() }
         .onDisappear { testTask?.cancel() }
     }
 
     private var advancedRows: some View {
         Group {
+            if selection.remote != nil {
+                SeleneButtonRow("Change Google credentials", id: "cloudLibraryConnect", buttonTitle: "Edit", action: onEdit)
+                    .disabled(!editable)
+            }
             SeleneRow("rclone", subtitle: toolSubtitle, verbatimSubtitle: true) {
                 SelenePillButton(title: "Choose…", minWidth: 96, height: 34, horizontalPadding: 14,
                                  focused: focusedToolButton == 0, enabled: editable, action: chooseTool)
@@ -143,19 +155,13 @@ struct SettingsCloudLibrarySection: View {
             }
 
             if selection.remote != nil {
-                SeleneButtonRow("Test connection", subtitle: testSubtitle, buttonTitle: "Test", action: test)
+                SeleneButtonRow("Test connection", subtitle: "Lists the cloud folder without changing its files.", buttonTitle: "Test", action: test)
                     .disabled(!canTest)
                 SeleneButtonRow("Disconnect", subtitle: "Removes only the local connection. Cloud files stay where they are.",
                                 buttonTitle: "Disconnect", action: confirmDisconnect)
                     .disabled(!canTest)
             }
         }
-    }
-
-    private var testSubtitle: String {
-        if testTask != nil { return "Checking…" }
-        if testPassed == true { return "Connection OK" }
-        return "Lists the cloud folder without changing its files."
     }
 
     private func toggleAdvanced() {
@@ -171,14 +177,14 @@ struct SettingsCloudLibrarySection: View {
         if selection.remote != nil {
             actions = [
                 .init(id: "cloudLibraryEnabled", title: "Enable cloud library", isEnabled: editable) { setEnabled(!selection.enabled) },
-                .init(id: "cloudLibraryFolder", title: "Folder", isEnabled: editable, activate: onEdit),
+                .init(id: "cloudLibraryFolder", title: "Library folder", rowID: "cloudLibraryFolder",
+                      isEnabled: editable, activate: onEditLibrary),
                 .init(id: "cloudSourcesRoot", title: "Game files folder", rowID: "cloudSourcesRoot",
                       isEnabled: editable, activate: onEditSources),
-                .init(id: "cloudLibraryConnect", title: "Change Google credentials", isEnabled: editable, activate: onEdit),
                 .init(id: "cloudLibraryImport", title: "Import games from the cloud", isEnabled: canImport, activate: importGames),
             ]
             if let failure = recoveryFailure {
-                actions.insert(.init(id: "cloudRecovery", title: failure.messageKey, isEnabled: canRecover, activate: recover), at: 1)
+                actions.insert(.init(id: "cloudRecovery", title: failure.messageKey, isEnabled: canRecover, activate: recover), at: 0)
             }
         } else {
             actions = [.init(id: "cloudLibrarySetup", title: "Configure cloud library", isEnabled: editable, activate: onEdit)]
@@ -190,6 +196,10 @@ struct SettingsCloudLibrarySection: View {
             .init(id: "cloudLibraryAdvanced", title: "Connection tools", activate: toggleAdvanced),
         ]
         if advanced {
+            if selection.remote != nil {
+                actions.append(.init(id: "cloudLibraryConnect", title: "Change Google credentials", rowID: "cloudLibraryConnect",
+                                     isEnabled: editable, activate: onEdit))
+            }
             let automatic = model.chosenExecutable != nil
             actions.append(.init(id: "cloudLibraryTool", title: "rclone", isEnabled: editable,
                                  secondary: automatic ? ("Automatic", useAutomaticTool) : ("Refresh", refresh),
@@ -214,8 +224,9 @@ struct SettingsCloudLibrarySection: View {
 
     private func recover() {
         guard canRecover, let failure = recoveryFailure else { return }
-        viewModel.recoverCloud(failure.action, sourceFolder: testFailure == nil && model.checkFailureOnSources) {
-            if testFailure != nil { test() } else { viewModel.retryCloudCheck() }
+        let result = model.connectionCheck
+        viewModel.recoverCloud(failure.action, sourceFolder: result?.onSources ?? model.checkFailureOnSources) {
+            if result?.explicit == true { test() } else { viewModel.retryCloudCheck() }
         }
     }
 
@@ -243,7 +254,7 @@ struct SettingsCloudLibrarySection: View {
 
     private func inspect() async {
         inspecting = true
-        version = nil; remotes = nil; issue = nil; testPassed = nil; testFailure = nil
+        version = nil; remotes = nil; issue = nil
         defer { if !Task.isCancelled { inspecting = false } }
         do {
             let chosen = model.chosenExecutable
@@ -267,19 +278,19 @@ struct SettingsCloudLibrarySection: View {
     private func test() {
         guard canTest, let tool else { return }
         let preference = selection
-        testPassed = nil
-        testFailure = nil
         testTask = Task { @MainActor in
             defer { testTask = nil }
+            let failure: CloudLibraryFailure?
             do {
                 try await RcloneConfiguration(executable: tool).test(preference)
-                if !Task.isCancelled { testPassed = true }
+                failure = nil
+            } catch is CancellationError {
+                return
             } catch {
-                if !Task.isCancelled {
-                    testFailure = (error as? CloudLibraryFailure) ?? .unavailable
-                    testPassed = false
-                }
+                failure = (error as? CloudLibraryFailure) ?? .unavailable
             }
+            guard !Task.isCancelled, preference == selection else { return }
+            model.connectionCheck = .init(date: .now, failure: failure, explicit: true)
         }
     }
 
@@ -301,64 +312,6 @@ struct SettingsCloudLibrarySection: View {
                     }
                 }
             }
-    }
-
-    private func text(_ key: String) -> String { L10n.text(key, context: localization) }
-}
-
-struct CloudSourcesFolderDialog: View {
-    @State var draft: String
-    let onSave: (String) -> Void
-    let onClose: () -> Void
-    @State private var focus: SeleneConfirmButton = .confirm
-    @FocusState private var fieldFocused: Bool
-    @Environment(\.seleneCanvas) private var canvas
-    @Environment(\.nxAppLocale) private var localization
-
-    private var path: String { draft.trimmingCharacters(in: .whitespacesAndNewlines) }
-    private var valid: Bool { CloudLibraryPreference.validSourcesRoot(path) }
-
-    var body: some View {
-        ZStack {
-            SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle()).onTapGesture(perform: onClose)
-            SeleneConfirmDialog(title: text("Game files folder"),
-                                message: text("Choose a path on the same cloud service. No files are moved."),
-                                confirmTitle: "Save", confirmEnabled: valid, focus: $focus,
-                                onCancel: onClose, onConfirm: save) {
-                TextField(text("Game files folder"), text: $draft, prompt: Text(verbatim: "Games/GameFiles"))
-                    .textFieldStyle(.plain)
-                    .focused($fieldFocused)
-                    .onSubmit(save)
-                    .onExitCommand(perform: onClose)
-                    .seleneFont(17)
-                    .foregroundColor(SeleneTheme.ink)
-                    .padding(canvas.u(16))
-                    .background(RoundedRectangle(cornerRadius: canvas.u(12)).fill(SeleneTheme.glassLight))
-                    .padding(.top, canvas.u(24))
-                if !valid {
-                    Text(text("Enter a folder path such as Games or Archive/Games."))
-                        .foregroundColor(SeleneTheme.danger)
-                        .seleneFont(15)
-                }
-            }
-        }
-        .onAppear { fieldFocused = true }
-        .onReceive(NotificationCenter.default.publisher(for: .nxSettingsGamepadAction)) { note in
-            guard let action = note.object as? GamepadAction else { return }
-            switch action {
-            case .navigateLeft: focus = .cancel
-            case .navigateRight: focus = .confirm
-            case .confirm: focus == .confirm ? save() : onClose()
-            case .cancel: onClose()
-            default: break
-            }
-        }
-    }
-
-    private func save() {
-        guard valid else { return }
-        onSave(path)
-        onClose()
     }
 
     private func text(_ key: String) -> String { L10n.text(key, context: localization) }

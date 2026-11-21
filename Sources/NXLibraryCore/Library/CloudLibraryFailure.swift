@@ -13,7 +13,7 @@ public enum CloudLibraryFailure: LocalizedError, Hashable, Sendable {
             case .reconnect: return "Reconnect"
             case .chooseFolder: return "Choose a folder"
             case .manageDriveStorage: return "Manage Google storage"
-            case .freeMacStorage: return "Free up space"
+            case .freeMacStorage: return "Open Storage"
             case .dismiss: return "Close"
             }
         }

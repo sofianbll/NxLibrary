@@ -6,6 +6,13 @@ import ArcanePorting
 /// Collection's controller, keyboard and pointer input.
 extension CollectionView {
     func handle(_ action: GamepadAction) {
+        if sortFocused {
+            switch action {
+            case .confirm, .rightStickPress: cycleSort(); return
+            case .navigateDown, .cancel: sortFocused = false; return
+            default: sortFocused = false
+            }
+        }
         var moved = false
         let all = viewModel.visibleCatalogGames
         switch action {
@@ -14,8 +21,10 @@ extension CollectionView {
             viewModel.librarySelection.moveCatalog(by: action == .navigateLeft ? -1 : 1,
                                             in: all, history: playSessions)
             moved = viewModel.librarySelection.selectedGameID != before
-        case .navigateUp, .navigateDown:
-            break
+        case .navigateUp:
+            sortFocused = true
+            SoundEffectService.shared.play(.focus)
+        case .navigateDown: break
         case .jumpToStart, .jumpToEnd:
             let before = viewModel.librarySelection.selectedGameID
             viewModel.librarySelection.jumpCatalog(toEnd: action == .jumpToEnd, in: all, history: playSessions)
@@ -25,7 +34,7 @@ extension CollectionView {
         case .tabNext:
             setFilter(filter.shifted(by: 1))
         case .rightStickPress:
-            setFilter(filter.cycled())
+            cycleSort()
         case .confirm:
             if let record = selectedCatalogGame {
                 activateCatalog(record)
@@ -66,7 +75,9 @@ extension CollectionView {
     /// A on a cover: plays, or opens Details when the game is not built (Spotlight's rule).
     func play(_ game: PortedGame) {
         SoundEffectService.shared.play(.click)
-        if game.isPlayableLocally {
+        if downloadsCloudApp(game) {
+            viewModel.downloadCloudApp(game)
+        } else if game.isPlayableLocally {
             viewModel.launchGame(game)
         } else {
             router.showDetail(game.id)
@@ -84,6 +95,7 @@ extension CollectionView {
                   !NativeMenuCommands.shared.isTracking,
                   !router.isSearchPresented,
                   router.route == .collection,
+                  viewModel.cloudLibraryGameID == nil,
                   viewModel.alertMessage == nil, viewModel.settingsNotice == nil,
                   !viewModel.isGameOptionsOpen,
                   viewModel.gameToClose == nil,
@@ -103,7 +115,10 @@ extension CollectionView {
             switch event.keyCode {
             case 123: action = .navigateLeft
             case 124: action = .navigateRight
-            case 36, 49: action = .confirm
+            case 125 where sortFocused: action = .navigateDown
+            case 126: action = .navigateUp
+            case 36, 49, 76: action = .confirm
+            case 53 where sortFocused: action = .cancel
             case 7: action = .secondaryAction   // X
             case 16: action = .contextAction    // Y
             case 12: action = .tabPrevious      // Q

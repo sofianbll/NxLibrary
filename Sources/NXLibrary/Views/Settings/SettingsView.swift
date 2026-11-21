@@ -19,8 +19,8 @@ struct SettingsView: View {
     @State private var searchFieldRequest = 0
     @State private var section: SettingsSection
     @State private var showingControls = false
-    @State private var showingCloudAssistant = false
-    @State private var editingCloudSources = false
+    @State private var cloudAssistant: CloudSetupAssistant.Entry?
+    private var showingCloudAssistant: Bool { cloudAssistant != nil }
     @State private var cloudAdvanced = false
     @State private var localePicker: LocalePickerMode?
     @State private var focusArea: SettingsFocusArea = .sidebar
@@ -108,12 +108,13 @@ struct SettingsView: View {
         }
         .onDisappear(perform: removeKeyMonitor)
         .onDisappear { igdb.isEditing = false }
-        .onDisappear { showingCloudAssistant = false; editingCloudSources = false }
+        .onDisappear { cloudAssistant = nil }
         .onReceive(viewModel.cloudLibrary.$recovery) { action in
             guard let action, router.route == .settings(.cloudLibrary) else { return }
             switch action {
-            case .reconnect, .archiveFolder: showingCloudAssistant = true
-            case .sourceFolder: editingCloudSources = true
+            case .reconnect: cloudAssistant = .credentials
+            case .archiveFolder: cloudAssistant = .library
+            case .sourceFolder: cloudAssistant = .sources
             }
             Task { @MainActor in viewModel.cloudLibrary.recovery = nil }
         }
@@ -164,16 +165,13 @@ struct SettingsView: View {
                 NextendoClientDialog(settings: settings) { nextendo.isEditingClient = false }
             }
         }
-        .disabled(showingCloudAssistant || editingCloudSources)
-        .accessibilityHidden(showingCloudAssistant || editingCloudSources)
+        .disabled(showingCloudAssistant)
+        .accessibilityHidden(showingCloudAssistant)
         .overlay {
-            if showingCloudAssistant {
-                CloudSetupAssistant(viewModel: viewModel, model: viewModel.cloudLibrary) { showingCloudAssistant = false }
-            } else if editingCloudSources {
-                CloudSourcesFolderDialog(draft: viewModel.cloudLibrary.preference.sourcesRoot, onSave: { root in
-                    guard viewModel.canConfigureCloudLibrary else { return }
-                    viewModel.cloudLibrary.chooseSourcesRoot(root)
-                }, onClose: { editingCloudSources = false })
+            if let cloudAssistant {
+                CloudSetupAssistant(viewModel: viewModel, model: viewModel.cloudLibrary, entry: cloudAssistant) {
+                    self.cloudAssistant = nil
+                }
             }
         }
         .disabled(nextendo.friendToRemove != nil)
@@ -237,8 +235,9 @@ struct SettingsView: View {
                         onSearchSubmit: enterRows,
                         searchFieldRequest: searchFieldRequest,
                         cloudAdvanced: $cloudAdvanced,
-                        onEditCloud: { showingCloudAssistant = true },
-                        onEditCloudSources: { editingCloudSources = true },
+                        onEditCloud: { cloudAssistant = viewModel.cloudLibrary.preference.remote == nil ? .account : .credentials },
+                        onEditCloudLibraryFolder: { cloudAssistant = .library },
+                        onEditCloudSources: { cloudAssistant = .sources },
                         onActions: updateActions
                     )
                 }
@@ -367,6 +366,14 @@ struct SettingsView: View {
         case .sidebar:
             if delta > 0 { enterSection() }
         case .rows:
+            if section == .cloudLibrary,
+               focusedRow?.id == (delta > 0 ? "cloudLibraryFolder" : "cloudSourcesRoot"),
+               let sibling = rowActions.firstIndex(where: { $0.id == (delta > 0 ? "cloudSourcesRoot" : "cloudLibraryFolder") }) {
+                rowFocus.index = sibling
+                rowButton = 0
+                SoundEffectService.shared.play(.focus)
+                return
+            }
             if let cycle = focusedRow?.cycle, focusedRow?.isEnabled == true {
                 cycle(delta)
                 SoundEffectService.shared.play(.focus)
@@ -396,7 +403,7 @@ struct SettingsView: View {
                   !router.isMenuPresented,
                   !viewModel.showSetupCheck,
                   !showingControls, localePicker == nil, !viewModel.isEditingSteamGridDBKey, !igdb.isEditing,
-                  !nextendo.isEditingClient, !showingCloudAssistant, !editingCloudSources,
+                  !nextendo.isEditingClient, !showingCloudAssistant,
                   viewModel.alertMessage == nil, viewModel.settingsNotice == nil,
                   viewModel.gameWithInstallFailure == nil,
                   let window = event.window,
@@ -449,7 +456,7 @@ struct SettingsView: View {
 
     private func handleGamepad(_ action: GamepadAction) {
         // The key dialog takes the controller while it is open.
-        if viewModel.isEditingSteamGridDBKey || igdb.isEditing || nextendo.isEditingClient || showingCloudAssistant || editingCloudSources { return }
+        if viewModel.isEditingSteamGridDBKey || igdb.isEditing || nextendo.isEditingClient || showingCloudAssistant { return }
         if nextendo.friendToRemove != nil {
             switch action {
             case .navigateLeft: nextendoRemovalFocus = .cancel

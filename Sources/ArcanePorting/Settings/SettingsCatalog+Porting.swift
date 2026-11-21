@@ -19,7 +19,7 @@ extension SettingsCatalog {
     }
 
     public static func opensCloudAdvanced(_ id: String) -> Bool {
-        ["cloudLibraryAdvanced", "cloudLibraryTool", "cloudLibraryTest", "cloudLibraryDisconnect"].contains(id)
+        ["cloudLibraryAdvanced", "cloudLibraryConnect", "cloudLibraryTool", "cloudLibraryTest", "cloudLibraryDisconnect"].contains(id)
     }
 
     private static func visible(supportsNextendo: Bool, cloudConfigured: Bool) -> [SettingDescriptor] {
@@ -93,15 +93,15 @@ extension SettingsCatalog {
         action("cloudLibrarySetup", .cloudLibrary, "Configure cloud library", "Connect Google Drive."),
         action("cloudLibraryEnabled", .cloudLibrary, "Enable cloud library",
                "Cloud storage for ported apps and build caches, separate from saves."),
-        action("cloudLibraryService", .cloudLibrary, "Cloud service", "Google Drive"),
-        action("cloudLibraryFolder", .cloudLibrary, "Folder", "Folder for game apps and build caches."),
+        action("cloudLibraryService", .cloudLibrary, "Cloud service", "Last connection test and recovery for Google Drive."),
+        action("cloudLibraryFolder", .cloudLibrary, "Library folder", "Folder for game apps and build caches."),
         action("cloudSourcesRoot", .cloudLibrary, "Game files folder", "Choose a path on the same cloud service. No files are moved."),
-        action("cloudLibraryConnect", .cloudLibrary, "Change Google credentials", "Sign in with your own Google OAuth client in your browser."),
         action("cloudLibraryImport", .cloudLibrary, "Import games from the cloud", "Add missing games without downloading their apps."),
         row("showsCloudPlayIcon", .cloudLibrary, "Icon next to Play", "Show the cloud icon by the play button.") { $0.showsCloudPlayIcon },
         row("showsCloudDetailsLink", .cloudLibrary, "Link in Details", "Show the cloud library link in Details.") { $0.showsCloudDetailsLink },
         row("cloudTileBadges", .cloudLibrary, "Tile badges", "Show cloud status on game covers.") { $0.cloudTileBadges },
         action("cloudLibraryAdvanced", .cloudLibrary, "Connection tools", "Advanced"),
+        action("cloudLibraryConnect", .cloudLibrary, "Change Google credentials", "Sign in with your own Google OAuth client in your browser."),
         action("cloudLibraryTool", .cloudLibrary, "Cloud tool", "Choose the executable or use the detected one."),
         action("cloudLibraryTest", .cloudLibrary, "Test connection", "Lists the cloud folder without changing its files."),
         action("cloudLibraryDisconnect", .cloudLibrary, "Disconnect", "Removes only the local connection. Cloud files stay where they are."),

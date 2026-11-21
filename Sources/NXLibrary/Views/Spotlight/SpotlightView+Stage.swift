@@ -61,7 +61,7 @@ extension SpotlightView {
         let items = model.items
         return ZStack(alignment: .topLeading) {
             SpotlightTopBar(filter: filter, sort: settings.settings.librarySort, showClock: settings.settings.showClock,
-                            sortUsesRightStick: true,
+                            sortFocus: $sortFocused,
                             onSelect: { if !state.isLifted { setFilter($0) } }, onCycleSort: cycleSort)
                 // Comes in last with the hints (`finishEntrance`).
                 .opacity(rowShown && controlsShown ? 1 : 0)
@@ -180,9 +180,11 @@ extension SpotlightView {
                         guard !state.isLifted, state.focus == .pills, !isGliding else { return }
                         mutate { $0.pillIndex = index }
                     },
-                    pillSet: viewModel.portingPills(game),
+                    pillSet: spotlightPills(game),
                     cloud: viewModel.cloudLibrary,
                     showsCloudPill: showsCloudPill(game),
+                    downloadsApp: downloadsCloudApp(game),
+                    downloadEnabled: viewModel.canChangeCloudLibrary(game),
                     canCheckCloudSources: viewModel.canCheckCloudSources(for: game),
                     etaText: viewModel.portingETAText,
                     onOpenLog: { viewModel.revealLog(for: game) }

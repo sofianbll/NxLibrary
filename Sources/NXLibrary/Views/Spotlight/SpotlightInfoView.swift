@@ -24,6 +24,8 @@ struct SpotlightGameInfoView: View {
     var pillSet: PortingPills = .normal
     @ObservedObject var cloud: CloudLibraryModel
     var showsCloudPill = false
+    var downloadsApp = false
+    var downloadEnabled = false
     var canCheckCloudSources = false
     /// "About 8 min left" under the Porting pill.
     var etaText: String? = nil
@@ -55,14 +57,21 @@ struct SpotlightGameInfoView: View {
                         .padding(.leading, canvas.u(4))
                         .padding(.top, canvas.u(20))
                 }
-                if let reason = pillSet.unavailableReason {
+                if let reason = pillSet.unavailableReason, !downloadsApp {
                     Text(reason.title)
                         .seleneFont(19, .semibold)
                         .foregroundColor(SeleneTheme.ink75)
                         .padding(.leading, canvas.u(4))
                         .padding(.top, canvas.u(20))
                 }
-                pills
+                HStack(spacing: canvas.u(14)) {
+                    pills
+                    if showsCloudPill && (pillSet == .porting || pillSet.isFailed) {
+                        let index = pillSet.detailsCloudIndex
+                        pill(index, CloudLibraryPill(indicator: .init(state: cloud.states[game.id] ?? .init()),
+                                                     focused: focusedPill == index) { onPill(index) })
+                    }
+                }
                     .padding(.leading, canvas.u(2))
                     .padding(.top, canvas.u(pillSet.isFailed ? 10 : 18))
                 portingNote
@@ -107,10 +116,12 @@ struct SpotlightGameInfoView: View {
                     .seleneFont(15)
                     .foregroundColor(SeleneTheme.ink60)
             }
-        case .unavailable(let reason):
+        case .unavailable(let reason) where !downloadsApp:
             Text(reason.detail).seleneFont(15).foregroundColor(SeleneTheme.ink60)
-        case .normal:
-            if !canCheckCloudSources && !game.sources.isEmpty && !GameResourceState.sourcesAvailable(for: game) {
+        case .normal, .unavailable:
+            if downloadsApp {
+                EmptyView()
+            } else if !canCheckCloudSources && !game.sources.isEmpty && !GameResourceState.sourcesAvailable(for: game) {
                 Text(L10n.text("Game files not found · Rebuild unavailable"))
                     .seleneFont(15).foregroundColor(SeleneTheme.ink60)
             } else if !game.isPlayableLocally {
@@ -141,7 +152,9 @@ struct SpotlightGameInfoView: View {
         GamePrimaryActions(primaryTitle: primaryTitle,
                            secondaryTitle: isRunning ? "Close Game" : "Options",
                            isFavorite: game.isFavorite, focused: focusedPill,
-                           primaryEnabled: isRunning || pillSet.unavailableReason == nil,
+                           primaryEnabled: isRunning || (downloadsApp
+                               ? downloadEnabled && cloud.states[game.id]?.action == nil && cloud.states[game.id]?.refreshing != true
+                               : pillSet.unavailableReason == nil),
                            primaryQueued: pillSet == .queued,
                            cloud: showsCloudPill ? CloudLibraryIndicator(state: cloud.states[game.id] ?? CloudLibraryState()) : nil,
                            onAction: onPill, onHover: onHoverPill)
@@ -149,6 +162,7 @@ struct SpotlightGameInfoView: View {
 
     private var primaryTitle: String {
         if isRunning { return L10n.text("Resume") }
+        if downloadsApp { return "Download" }
         if pillSet.unavailableReason != nil { return L10n.text("Unavailable") }
         return game.isPlayableLocally ? L10n.text("Play") : "Build"
     }

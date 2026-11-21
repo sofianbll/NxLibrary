@@ -140,6 +140,12 @@ struct CloudWorkScope: Equatable {
 
 final class CloudLibraryModel: ObservableObject {
     enum Recovery { case reconnect, archiveFolder, sourceFolder }
+    struct ConnectionCheck {
+        let date: Date
+        let failure: CloudLibraryFailure?
+        var explicit = false
+        var onSources = false
+    }
     struct Request {
         var token = UUID()
         let id: UUID
@@ -167,6 +173,7 @@ final class CloudLibraryModel: ObservableObject {
     }
     @Published var importTask: Task<Void, Never>?
     @Published var checkFailure: CloudLibraryFailure?
+    @Published var connectionCheck: ConnectionCheck?
     @Published var queueFailure: CloudLibraryFailure?
     @Published var startupFailure: CloudLibraryFailure?
     @Published var recovery: Recovery?
@@ -271,6 +278,7 @@ final class CloudLibraryModel: ObservableObject {
         catalogCheck?.task.cancel()
         catalogChecked = false
         checkFailure = nil
+        connectionCheck = nil
         startupFailure = nil
         checkFailedDuringImport = false
         checkFailureOnSources = false
@@ -321,8 +329,13 @@ extension AppViewModel {
                 }
             }
             let title = L10n.text("Import games from the cloud")
+            var listedCloud = false
             do {
                 let manifests = try await archive.latestManifests()
+                try Task.checkCancellation()
+                guard self.cloudLibrary.archive === archive else { return }
+                listedCloud = true
+                self.cloudLibrary.connectionCheck = .init(date: .now, failure: nil)
                 let knownTitles = Set(self.libraryGames.compactMap { $0.titleId?.uppercased() })
                 let missingNames = manifests.filter {
                     !knownTitles.contains($0.titleID) && $0.gameName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false
@@ -365,6 +378,7 @@ extension AppViewModel {
                 let message = self.cloudMessage(for: error)
                 self.logs.append(LogEntry(level: .warning, message: message))
                 let failure = self.cloudFailure(for: error) ?? .unavailable
+                if !listedCloud { self.cloudLibrary.connectionCheck = .init(date: .now, failure: failure) }
                 self.cloudLibrary.checkFailedDuringImport = true
                 self.cloudLibrary.checkFailure = failure
                 if manually {
@@ -409,6 +423,7 @@ extension AppViewModel {
                 !Task.isCancelled && self.cloudLibrary.catalogCheck?.token == token && self.cloudLibrary.archive === archive
             }
             var checkingSources = false
+            var checkedCloud = false
             do {
                 try await CloudGameArchive.checkCatalogAvailability(games, titleID: \.titleId) { game in
                     guard let title = game.titleId, self.libraryGames.contains(game),
@@ -419,6 +434,7 @@ extension AppViewModel {
                     checkingSources = false
                     let availability = try await archive.availability(.init(titleID: title, locations: locations),
                                                                       expectingArchive: game.cloudImportPending == true)
+                    checkedCloud = true
                     guard current(), self.libraryGames.contains(game),
                           self.porting.cloudBuildScope?.title != title.uppercased() else { return }
                     self.cloudLibrary.update(game.id) { $0.availability = availability }
@@ -430,11 +446,15 @@ extension AppViewModel {
                         self.cloudLibrary.update(game.id) { $0.sourceAvailability = sources }
                     }
                 }
-                if current() { self.cloudLibrary.catalogChecked = true }
+                if current() {
+                    self.cloudLibrary.catalogChecked = true
+                    if checkedCloud { self.cloudLibrary.connectionCheck = .init(date: .now, failure: nil) }
+                }
             } catch is CancellationError {
             } catch {
                 if current() {
                     let failure = self.cloudFailure(for: error) ?? .unavailable
+                    self.cloudLibrary.connectionCheck = .init(date: .now, failure: failure, onSources: checkingSources)
                     self.cloudLibrary.checkFailureOnSources = checkingSources
                     self.cloudLibrary.checkFailure = failure
                     self.cloudLibrary.startupFailure = failure
@@ -488,6 +508,15 @@ extension AppViewModel {
 
     func showsCloudLibrary(_ game: PortedGame) -> Bool {
         game.platform == .macApp
+    }
+
+    @MainActor func downloadCloudApp(_ game: PortedGame) {
+        guard let state = cloudLibrary.states[game.id], state.appIsCloudOnly, state.action == nil,
+              !state.refreshing, canChangeCloudLibrary(game) else {
+            SoundEffectService.shared.play(.error)
+            return
+        }
+        performCloudLibrary(.restore(.app), for: game)
     }
 
     @MainActor func openCloudLibrary(for game: PortedGame) {
@@ -552,7 +581,7 @@ extension AppViewModel {
                     throw NXLibraryError.missingSources
                 case .downloadCache:
                     await release()
-                    if request != nil { porting.finishActivityBuild(.failed(L10n.text("Build needs a verified cache."))) }
+                    if request != nil { porting.finishActivityBuild(.failed(L10n.text("Build needs a verified build cache."))) }
                     guard !cloudLibrary.isQuitting else { return }
                     showCloudBuildNotice(for: target, archive: archive, extraArguments: extraArguments,
                                          onStarted: onStarted, canDownload: true)
@@ -633,7 +662,7 @@ extension AppViewModel {
         let confirmOverride: () -> Void = { [weak self] in
             self?.showSettingsNotice(title: title,
                 message: L10n.text("Rebuild from the original game files without using the existing cache? This can take much longer."),
-                actionTitle: "Rebuild without cache", cancelTitle: "Cancel") { [weak self] in
+                actionTitle: "Rebuild without build cache", cancelTitle: "Cancel") { [weak self] in
                     guard let self else { return }
                     guard self.cloudLibrary.archive === archive else {
                         self.porting.presentBuildError(CloudArchiveError.busy)
@@ -645,7 +674,7 @@ extension AppViewModel {
         if canDownload {
             showSettingsNotice(title: title,
                 message: L10n.text("The build cache in the cloud has no verified local copy. Download it before rebuilding. Any existing cache is kept as a backup."),
-                actionTitle: "Download cache", cancelTitle: "Cancel") { [weak self] in
+                actionTitle: "Download build cache", cancelTitle: "Cancel") { [weak self] in
                     guard let self else { return }
                     self.performCloudLibrary(.restoreBuildCache, for: game)
                     if self.cloudLibrary.states[game.id]?.action == .restoreBuildCache {
@@ -654,11 +683,11 @@ extension AppViewModel {
                         self.showSettingsNotice(title: title, message: self.cloudMessage(for: CloudArchiveError.busy))
                     }
                 }
-            settingsNotice?.alternative = ("Rebuild without cache", confirmOverride)
+            settingsNotice?.alternative = ("Rebuild without build cache", confirmOverride)
         } else {
             showSettingsNotice(title: title,
                 message: L10n.text("Arcane could not check the cloud manifest. Check rclone and try again."),
-                actionTitle: "Rebuild without cache", cancelTitle: "Cancel", retry: confirmOverride)
+                actionTitle: "Rebuild without build cache", cancelTitle: "Cancel", retry: confirmOverride)
         }
     }
 

@@ -16,6 +16,7 @@ struct SettingsSectionContent: View {
     let searchFieldRequest: Int
     @Binding var cloudAdvanced: Bool
     let onEditCloud: () -> Void
+    let onEditCloudLibraryFolder: () -> Void
     let onEditCloudSources: () -> Void
     let onActions: ([SettingsRowAction]) -> Void
 
@@ -49,7 +50,8 @@ struct SettingsSectionContent: View {
             SettingsCloudSavesSection(viewModel: viewModel, settings: settings, onActions: onActions)
         case .cloudLibrary:
             SettingsCloudLibrarySection(viewModel: viewModel, model: viewModel.cloudLibrary, settings: settings, advanced: $cloudAdvanced,
-                                        onEdit: onEditCloud, onEditSources: onEditCloudSources, onActions: onActions)
+                                        onEdit: onEditCloud, onEditLibrary: onEditCloudLibraryFolder,
+                                        onEditSources: onEditCloudSources, onActions: onActions)
         case .controllers:
             SettingsControllersSection(settings: settings, onActions: onActions,
                                        onViewControls: onViewControls)

@@ -1,0 +1,38 @@
+import SwiftUI
+import NXLibraryCore
+
+/// The stages of a Selene dialog, with the current stage also exposed to VoiceOver.
+struct SeleneStepper: View {
+    @Environment(\.seleneCanvas) private var canvas
+    let labels: [String]
+    let active: Int
+
+    var body: some View {
+        HStack(spacing: canvas.u(10)) {
+            ForEach(labels.indices, id: \.self) { index in
+                if index > 0 {
+                    Capsule().fill(SeleneTheme.ink15).frame(width: canvas.u(22), height: canvas.u(1))
+                }
+                Text("\(index + 1). \(labels[index])").seleneFont(15, .semibold)
+                    .foregroundColor(index == active ? SeleneTheme.onFocus : SeleneTheme.ink75)
+                    .padding(.horizontal, canvas.u(12)).padding(.vertical, canvas.u(6))
+                    .background(index == active ? SeleneTheme.focus : SeleneTheme.glass, in: Capsule())
+            }
+        }
+        .accessibilityElement(children: .ignore)
+    }
+}
+
+struct SeleneFieldSurface: ViewModifier {
+    @Environment(\.seleneCanvas) private var canvas
+    let focused: Bool
+
+    func body(content: Content) -> some View {
+        let radius = canvas.u(SeleneTheme.rowRadius)
+        content.textFieldStyle(.plain).seleneFont(17)
+            .foregroundColor(SeleneTheme.ink)
+            .padding(canvas.u(10))
+            .background(SeleneTheme.glassLight, in: RoundedRectangle(cornerRadius: radius))
+            .seleneRowFocus(focused, radius: radius)
+    }
+}

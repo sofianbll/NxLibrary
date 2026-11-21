@@ -4,14 +4,28 @@ import ArcanePorting
 import SwiftUI
 
 struct CloudSetupAssistant: View {
+    enum Entry { case account, library, sources, credentials }
     @ObservedObject var viewModel: AppViewModel
     @ObservedObject var model: CloudLibraryModel
+    let entry: Entry
     let onClose: () -> Void
 
-    init(viewModel: AppViewModel, model: CloudLibraryModel, onClose: @escaping () -> Void) {
+    init(viewModel: AppViewModel, model: CloudLibraryModel, entry: Entry = .account, onClose: @escaping () -> Void) {
         self.viewModel = viewModel
         self.model = model
+        self.entry = entry
         self.onClose = onClose
+        _editingCredentials = State(initialValue: entry == .credentials)
+        if let remote = model.preference.remote, entry == .sources || entry == .library {
+            var draft = CloudSetupAssistantDraft()
+            draft.chooseAccount(remote)
+            draft.browse(model.preference.root.split(separator: "/").joined(separator: "/"))
+            _draft = State(initialValue: draft)
+            if entry == .sources {
+                _selectingSources = State(initialValue: true)
+                _sourcesPath = State(initialValue: model.preference.sourcesRoot)
+            }
+        }
     }
 
     @Environment(\.seleneCanvas) private var canvas
@@ -57,8 +71,8 @@ struct CloudSetupAssistant: View {
         return model.libraryMove
     }
     private var existing: RcloneRemote? {
-        remotes?.first { $0.type == "drive" && $0.name == model.preference.remote }
-            ?? remotes?.first { $0.type == "drive" }
+        let selected = remotes?.first { $0.type == "drive" && $0.name == model.preference.remote }
+        return selected ?? (entry == .credentials ? nil : remotes?.first { $0.type == "drive" })
     }
     private var canEdit: Bool { viewModel.canConfigureCloudLibrary }
     private let bundledClient = CloudGoogleClient.bundled
@@ -84,6 +98,7 @@ struct CloudSetupAssistant: View {
         }
     }
     private var primaryTitle: String {
+        if entry == .sources { return "Save" }
         switch draft.step {
         case .account: return showCredentials || existing == nil ? "Sign in" : "Keep this account"
         case .folder: return selectingSources ? "Continue" : "Use this folder"
@@ -98,7 +113,9 @@ struct CloudSetupAssistant: View {
                 ? validID && RcloneConfiguration.validCredential(secret) : existing != nil || bundledClient != nil)
         case .folder:
             guard work?.kind != .discover, librarySuggestion == nil, sourcesSuggestion == nil else { return false }
-            if selectingSources { return manualSourcesPath.isEmpty || CloudLibraryPreference.validSourcesRoot(manualSourcesPath) }
+            if selectingSources {
+                return (entry != .sources && manualSourcesPath.isEmpty) || CloudLibraryPreference.validSourcesRoot(manualSourcesPath)
+            }
             return folderReady && folderControlsReady && !checkingMove
         case .verify: return work == nil && draft.verified
         }
@@ -143,7 +160,7 @@ struct CloudSetupAssistant: View {
                     }
                     HStack(spacing: canvas.u(14)) {
                         pill(.cancel, move != nil ? "Cancel" : draft.step == .verify || folderName != nil
-                             || selectingSources ? "Back" : "Cancel",
+                             || (selectingSources && entry != .sources) ? "Back" : "Cancel",
                              enabled: move?.isCancelling != true, action: cancel)
                         if folderName != nil {
                             pill(.create, "Continue", enabled: folderName.map(CloudDriveFolders.validName) == true,
@@ -157,7 +174,11 @@ struct CloudSetupAssistant: View {
                 .modifier(SeleneDialogCard())
             }
         }
-        .onAppear { inspect(); installAssistantKeys() }
+        .onAppear {
+            if entry == .sources { focus.select(.sourcesPath); field = .sourcesPath }
+            else { inspect() }
+            installAssistantKeys()
+        }
         .onDisappear { work?.task.cancel(); removeAssistantKeys(); secret = ""; replacement = nil }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
             work?.task.cancel()
@@ -188,24 +209,8 @@ struct CloudSetupAssistant: View {
 
     private var stepper: some View {
         let labels = ["Google account", "Folder", "Verify"]
-        return HStack(spacing: canvas.u(10)) {
-            ForEach(CloudSetupAssistantDraft.Step.allCases, id: \.rawValue) { step in
-                let active = draft.step == step
-                if step != .account {
-                    Capsule().fill(SeleneTheme.ink15).frame(width: canvas.u(22), height: canvas.u(1))
-                }
-                HStack(spacing: canvas.u(6)) {
-                    Text(String(step.rawValue + 1)).seleneFont(13, .semibold)
-                        .foregroundColor(active ? SeleneTheme.onFocus : SeleneTheme.ink60)
-                        .frame(width: canvas.u(24), height: canvas.u(24))
-                        .background(Circle().fill(active ? SeleneTheme.focus : SeleneTheme.glass))
-                    Text(text(labels[step.rawValue])).seleneFont(14, .semibold)
-                        .foregroundColor(active ? SeleneTheme.ink : SeleneTheme.ink60)
-                }
-            }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(format("Step %d of 3: %@", [draft.step.rawValue + 1, text(labels[draft.step.rawValue])]))
+        return SeleneStepper(labels: labels.map(text), active: draft.step.rawValue)
+            .accessibilityLabel(format("Step %d of 3: %@", [draft.step.rawValue + 1, text(labels[draft.step.rawValue])]))
     }
 
     private var account: some View {
@@ -284,8 +289,13 @@ struct CloudSetupAssistant: View {
                                   prompt: Text(verbatim: "\(draft.path)/GameFiles"))
                             .focused($field, equals: .sourcesPath).onSubmit(primary)
                     }
-                    Text(text("Leave blank to use the default GameFiles folder. No files are moved."))
+                    Text(text(entry == .sources ? "Choose a path on the same cloud service. No files are moved."
+                              : "Leave blank to use the default GameFiles folder. No files are moved."))
                         .seleneFont(15).foregroundColor(SeleneTheme.ink75)
+                    if entry == .sources && !CloudLibraryPreference.validSourcesRoot(manualSourcesPath) {
+                        Text(text("Enter a folder path such as Games or Archive/Games."))
+                            .seleneFont(15).foregroundColor(SeleneTheme.danger)
+                    }
                 }
             } else if folderName != nil {
                 Text(text("Folder name")).seleneFont(17)
@@ -315,14 +325,14 @@ struct CloudSetupAssistant: View {
                                 }
                             }
                         }
-                        .frame(height: canvas.u(CGFloat(min(folderNames.count * 39, 185))))
+                        .frame(height: canvas.u(CGFloat(min(folderNames.count * 64, 192))))
                         .onChange(of: focus.target) { _, target in if case .folder = target { proxy.scrollTo(target) } }
                     }
                     option(.newFolder, text("New folder…"), enabled: folderControlsReady && !checkingMove,
                            wide: true, action: nameFolder)
                 }
-                if listing == nil && work?.kind == .browse || work?.kind == .create { progress("Checking…") }
-                if listing == nil && work == nil { pill(.retry, "Try again") { browse(draft.path) } }
+                if (listing == nil && work != nil) || work?.kind == .create { progress("Checking…") }
+                if listing == nil && work == nil { pill(.retry, "Try again", action: retryFolder) }
                 if folderMissing { option(.newFolder, text("New folder…"), action: nameFolder) }
                 if let count, count > 0 {
                     SeleneStatusDot(text: format(count == 1 ? "Arcane library found: %d game" : "Arcane library found: %d games", [count]),
@@ -359,7 +369,7 @@ struct CloudSetupAssistant: View {
             }
             if let move {
                 SeleneStatusDot(text: text(move.isCancelling ? "Cancelling…" : "Moving games…"), color: SeleneTheme.focus)
-                AchievementProgressBar(fraction: move.fraction ?? 0, height: 4).accessibilityLabel(text("Moving games…"))
+                SeleneProgressBar(progress: move.fraction)
             } else if work != nil { progress("Checking…") }
             else if draft.verified { SeleneStatusDot(text: text("Connection OK"), color: SeleneTheme.statusOK) }
             else { pill(.retry, "Try again", action: verify) }
@@ -367,32 +377,24 @@ struct CloudSetupAssistant: View {
     }
 
     private func progress(_ key: String) -> some View {
-        HStack(spacing: canvas.u(10)) {
-            ProgressView().controlSize(.small).accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: canvas.u(8)) {
             Text(text(key)).seleneFont(16).foregroundColor(SeleneTheme.ink75)
+            SeleneProgressBar(progress: nil)
         }
     }
 
     private func input<V: View>(_ target: Target, @ViewBuilder content: () -> V) -> some View {
-        content().textFieldStyle(.plain).seleneFont(17).padding(canvas.u(8))
-            .background(RoundedRectangle(cornerRadius: canvas.u(7)).fill(SeleneTheme.glassLight))
-            .overlay(RoundedRectangle(cornerRadius: canvas.u(7))
-                .strokeBorder(focus.target == target ? SeleneTheme.focus : SeleneTheme.ink15))
+        content().modifier(SeleneFieldSurface(focused: focus.target == target))
     }
 
     private func option(_ target: Target, _ title: String, icon: MaterialIcon? = nil, checked: Bool? = nil, enabled: Bool = true,
                         wide: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: canvas.u(8)) {
-                if let icon { MaterialIconView(icon, size: 20).accessibilityHidden(true) }
-                if let checked { Image(systemName: checked ? "checkmark.square.fill" : "square").accessibilityHidden(true) }
-                Text(verbatim: title).seleneFont(16).lineLimit(1)
-                if wide { Spacer(minLength: 0) }
+            SeleneOptionRow(icon: icon, title: title, about: nil,
+                            focused: focus.target == target, enabled: enabled) {
+                if checked == true { MaterialIconView(.check, size: 20).accessibilityHidden(true) }
             }
-            .foregroundColor(focus.target == target ? SeleneTheme.onFocus : SeleneTheme.ink)
-            .padding(.horizontal, canvas.u(9)).frame(minHeight: canvas.u(34))
-            .background(RoundedRectangle(cornerRadius: canvas.u(8))
-                .fill(focus.target == target ? SeleneTheme.focus : SeleneTheme.glass))
+            .fixedSize(horizontal: !wide, vertical: true)
         }
         .buttonStyle(.plain).disabled(!enabled).onHover { if $0 && enabled { focus.select(target) } }
     }
@@ -441,7 +443,12 @@ struct CloudSetupAssistant: View {
             let listed = try await config.remotes()
             try Task.checkCancellation()
             remotes = listed
+            if entry == .library { browse(draft.path) }
         }
+    }
+
+    private func retryFolder() {
+        if remotes == nil { inspect() } else { browse(draft.path) }
     }
 
     private func selectAccount(_ name: String) {
@@ -622,6 +629,7 @@ struct CloudSetupAssistant: View {
             activated = true
             let sources = onboarding ? (manualSourcesPath.isEmpty ? nil : manualSourcesPath) : model.preference.sourcesRootOverride
             model.configure(remote: preference.remote, root: preference.root, enabled: true, sourcesRoot: sources, reload: replaced)
+            model.connectionCheck = .init(date: .now, failure: nil)
             onClose()
         } catch {
             issue = RcloneConfiguration.Failure.configuration.key
@@ -650,12 +658,12 @@ struct CloudSetupAssistant: View {
             if !selectingSources { browse(draft.path) }
             return
         }
-        if selectingSources {
+        if selectingSources && entry != .sources {
             selectingSources = false; sourcesSuggestion = nil; discoveryUnknown = false
             browse(draft.path)
             return
         }
-        if draft.step == .account && editingCredentials && work == nil {
+        if draft.step == .account && editingCredentials && work == nil && entry != .credentials {
             editingCredentials = false; client = ""; secret = ""; issue = nil
             return
         }
@@ -665,6 +673,11 @@ struct CloudSetupAssistant: View {
 
     private func primary() {
         guard primaryEnabled else { return }
+        if entry == .sources {
+            model.chooseSourcesRoot(manualSourcesPath)
+            onClose()
+            return
+        }
         switch draft.step {
         case .account:
             if !showCredentials, let existing { selectAccount(existing.name) }
@@ -724,7 +737,7 @@ struct CloudSetupAssistant: View {
         case .retry:
             switch draft.step {
             case .account: inspect()
-            case .folder: browse(draft.path)
+            case .folder: retryFolder()
             case .verify: verify()
             }
         case .breadcrumb(let path): browse(path)

@@ -13,7 +13,7 @@ struct SpotlightTopBar: View {
     let filter: LibraryFilter
     let sort: LibrarySort
     var showClock: Bool = true
-    var sortUsesRightStick = false
+    var sortFocus: FocusState<Bool>.Binding
     var onSelect: (LibraryFilter) -> Void = { _ in }
     let onCycleSort: () -> Void
 
@@ -27,9 +27,10 @@ struct SpotlightTopBar: View {
                 ForEach(LibraryFilter.allCases) { tab($0) }
                 badge(.rb)
                 HStack(spacing: 0) {
-                    if sortUsesRightStick && controller.isGamepadConnected { badge(.rs) }
+                    if controller.isGamepadConnected { badge(.rs) }
                     SelenePillButton(title: sort.title, icon: .swap, iconSize: 20, minWidth: 0, height: 34,
-                                     horizontalPadding: 16, focused: false, action: onCycleSort)
+                                     horizontalPadding: 16, focused: sortFocus.wrappedValue,
+                                     keyboardFocus: sortFocus, action: onCycleSort)
                         .accessibilityLabel(L10n.text("Sort games", context: locale))
                         .accessibilityValue(L10n.text(sort.title, context: locale))
                 }

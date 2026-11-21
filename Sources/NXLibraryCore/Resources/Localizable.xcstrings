@@ -1,6 +1,303 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Status": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Status"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Stato"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "État"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Status"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Estado"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Status"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "状态"}}
+      }
+    },
+    "Folders": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Folders"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cartelle"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Dossiers"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Ordner"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Carpetas"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Pastas"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "文件夹"}}
+      }
+    },
+    "Library folder": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Library folder"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cartella della libreria"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Dossier de la bibliothèque"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Bibliotheksordner"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Carpeta de la biblioteca"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Pasta da biblioteca"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "游戏库文件夹"}}
+      }
+    },
+    "Connection not tested": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Connection not tested"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Connessione non verificata"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Connexion non testée"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Verbindung nicht geprüft"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Conexión sin comprobar"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Conexão não testada"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "尚未测试连接"}}
+      }
+    },
+    "Last test: %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Last test: %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ultima verifica: %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Dernier test : %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Letzter Test: %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Última prueba: %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Último teste: %@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "上次测试：%@"}}
+      }
+    },
+    "Last connection test and recovery for Google Drive.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Last connection test and recovery for Google Drive."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ultima verifica della connessione a Google Drive e azione di recupero."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Dernier test de connexion à Google Drive et action de récupération."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Letzter Verbindungstest und Fehlerbehebung für Google Drive."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Última prueba de conexión a Google Drive y acción de recuperación."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Último teste de conexão com o Google Drive e ação de recuperação."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "Google 云端硬盘的上次连接测试和恢复操作。"}}
+      }
+    },
+    "Delete permanently": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Delete permanently"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Elimina definitivamente"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Supprimer définitivement"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Endgültig löschen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Eliminar definitivamente"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Excluir permanentemente"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "永久删除"}}
+      }
+    },
+    "Published": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Published"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Pubblicato"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Publié"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Veröffentlicht"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Publicado"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Publicado"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "已发布"}}
+      }
+    },
+    "Published %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Published %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Pubblicato %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Publié %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Veröffentlicht %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Publicado %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Publicado %@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "已发布：%@"}}
+      }
+    },
+    "Sending · published when the upload ends": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Sending · published when the upload ends"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invio in corso · pubblicazione a fine invio"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoi en cours · publication à la fin de l’envoi"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Upload läuft · Veröffentlichung nach Abschluss"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Envío en curso · se publica al terminar"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Envio em andamento · publicação ao concluir"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在上传 · 上传完成后发布"}}
+      }
+    },
+    "Send build cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Send build cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invia la cache di compilazione"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoyer le cache de compilation"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Build-Cache hochladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enviar la caché de compilación"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviar o cache de compilação"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "上传编译缓存"}}
+      }
+    },
+    "Send app and build cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Send app and build cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invia app e cache di compilazione"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoyer l’app et le cache de compilation"}},
+        "de": {"stringUnit": {"state": "translated", "value": "App und Build-Cache hochladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enviar la app y la caché de compilación"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviar o app e o cache de compilação"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "上传应用和编译缓存"}}
+      }
+    },
+    "Download build cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Download build cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scarica la cache di compilazione"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Télécharger le cache de compilation"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Build-Cache herunterladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Descargar la caché de compilación"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Baixar o cache de compilação"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "下载编译缓存"}}
+      }
+    },
+    "Archiving build cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Archiving build cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Archiviazione della cache di compilazione"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Archivage du cache de compilation"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Build-Cache wird archiviert"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Archivando la caché de compilación"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Arquivando o cache de compilação"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在归档编译缓存"}}
+      }
+    },
+    "Sending app": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Sending app"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invio dell’app"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoi de l’app"}},
+        "de": {"stringUnit": {"state": "translated", "value": "App wird hochgeladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enviando la app"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviando o app"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在上传应用"}}
+      }
+    },
+    "Sending build cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Sending build cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invio della cache di compilazione"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoi du cache de compilation"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Build-Cache wird hochgeladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enviando la caché de compilación"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviando o cache de compilação"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在上传编译缓存"}}
+      }
+    },
+    "Sending game files": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Sending game files"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invio dei file del gioco"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoi des fichiers du jeu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spieldateien werden hochgeladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enviando los archivos del juego"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviando os arquivos do jogo"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在上传游戏文件"}}
+      }
+    },
+    "Verifying build cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Verifying build cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Verifica della cache di compilazione"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vérification du cache de compilation"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Build-Cache wird geprüft"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Verificando la caché de compilación"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Verificando o cache de compilação"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在验证编译缓存"}}
+      }
+    },
+    "Downloading build cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Downloading build cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Download della cache di compilazione"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Téléchargement du cache de compilation"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Build-Cache wird heruntergeladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Descargando la caché de compilación"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Baixando o cache de compilação"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在下载编译缓存"}}
+      }
+    },
+    "Restoring build cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Restoring build cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ripristino della cache di compilazione"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Restauration du cache de compilation"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Build-Cache wird wiederhergestellt"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Restaurando la caché de compilación"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Restaurando o cache de compilação"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在恢复编译缓存"}}
+      }
+    },
+    "Checking the cloud build cache…": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Checking the cloud build cache…"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Verifica della cache di compilazione nel cloud…"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vérification du cache de compilation dans le cloud…"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Build-Cache in der Cloud wird geprüft…"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Comprobando la caché de compilación en la nube…"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Verificando o cache de compilação na nuvem…"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在检查云端编译缓存…"}}
+      }
+    },
+    "Rebuild without build cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Rebuild without build cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ricompila senza cache di compilazione"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Recompiler sans le cache de compilation"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Ohne Build-Cache neu bauen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Recompilar sin caché de compilación"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Recompilar sem cache de compilação"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "不使用编译缓存重新构建"}}
+      }
+    },
+    "Build needs a verified build cache.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Build needs a verified build cache."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Serve una cache di compilazione verificata."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "La compilation nécessite un cache de compilation vérifié."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Für die Kompilierung ist ein geprüfter Build-Cache nötig."}},
+        "es": {"stringUnit": {"state": "translated", "value": "La compilación necesita una caché de compilación verificada."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "A compilação precisa de um cache de compilação verificado."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "需要经过验证的编译缓存才能构建。"}}
+      }
+    },
+    "Delete this game's build cache?": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Delete this game's build cache?"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Eliminare la cache di compilazione di questo gioco?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Supprimer le cache de compilation de ce jeu ?"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Build-Cache dieses Spiels löschen?"}},
+        "es": {"stringUnit": {"state": "translated", "value": "¿Eliminar la caché de compilación de este juego?"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Excluir o cache de compilação deste jogo?"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "删除此游戏的编译缓存？"}}
+      }
+    },
+    "App: %@ · Build cache: %@ · Logs: %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "App: %@ · Build cache: %@ · Logs: %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "App: %@ · Cache di compilazione: %@ · Log: %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "App : %@ · Cache de compilation : %@ · Journaux : %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "App: %@ · Build-Cache: %@ · Protokolle: %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "App: %@ · Caché de compilación: %@ · Registros: %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "App: %@ · Cache de compilação: %@ · Logs: %@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "应用：%@ · 编译缓存：%@ · 日志：%@"}}
+      }
+    },
+    "\nBuild cache shared with %@.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "\nBuild cache shared with %@."}},
+        "it": {"stringUnit": {"state": "translated", "value": "\nCache di compilazione condivisa con %@."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "\nCache de compilation partagé avec %@."}},
+        "de": {"stringUnit": {"state": "translated", "value": "\nBuild-Cache gemeinsam mit %@ genutzt."}},
+        "es": {"stringUnit": {"state": "translated", "value": "\nCaché de compilación compartida con %@."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "\nCache de compilação compartilhado com %@."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "\n编译缓存与 %@ 共用。"}}
+      }
+    },
+    " This build cache is also used by %@; their next rebuilds may take longer too.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": " This build cache is also used by %@; their next rebuilds may take longer too."}},
+        "it": {"stringUnit": {"state": "translated", "value": " Anche %@ usa questa cache di compilazione; le relative ricompilazioni potrebbero richiedere più tempo."}},
+        "fr": {"stringUnit": {"state": "translated", "value": " Ce cache de compilation est aussi utilisé par %@ ; leurs prochaines recompilations peuvent prendre plus de temps."}},
+        "de": {"stringUnit": {"state": "translated", "value": " Auch %@ verwendet diesen Build-Cache; der nächste Build dieser Spiele kann ebenfalls länger dauern."}},
+        "es": {"stringUnit": {"state": "translated", "value": " %@ también utiliza esta caché de compilación; sus próximas recompilaciones pueden tardar más."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": " %@ também usa este cache de compilação; as próximas recompilações podem demorar mais."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": " %@ 也使用此编译缓存；它们下次重新构建可能会更久。"}}
+      }
+    },
     "Add ported app": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Add ported app"}},
@@ -2283,7 +2580,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Upload %@"}},
         "en": {"stringUnit": {"state": "translated", "value": "Sending %@"}},
         "es": {"stringUnit": {"state": "translated", "value": "Envío %@"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Envoi %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoi en cours · %@"}},
         "it": {"stringUnit": {"state": "translated", "value": "Invio %@"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Envio %@"}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在发送 %@"}}

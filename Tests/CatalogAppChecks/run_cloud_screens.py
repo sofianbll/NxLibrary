@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+"""Render real cloud views offscreen with synthetic states; never start the launcher."""
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+
+HOST = r'''
+import AppKit
+import CoreText
+import SwiftUI
+import NXLibraryCore
+import ArcanePorting
+
+@main struct CloudScreenProbe {
+    @MainActor static func main() throws {
+        let output = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
+        let font = URL(fileURLWithPath: CommandLine.arguments[2])
+        precondition(CTFontManagerRegisterFontsForURL(font as CFURL, .process, nil))
+        let data = AppData.supportRoot
+        let settings = AppSettingsStore(fileURL: data.appendingPathComponent("settings.json"))
+        let vm = AppViewModel(settingsStore: settings, catalog: .init(), repository: .init(store: .init(directory: data)))
+        let model = vm.cloudLibrary
+        let game = PortedGame(name: "Lunar Observatory", url: data.appendingPathComponent("Fixture.app"),
+                              platform: .macApp, sizeBytes: 0, modificationDate: .now, titleId: "0100000000001000")
+        model.update(game.id) {
+            $0.copies = [.app: .screenFixture(.cloudOnly), .cache: .screenFixture(.synchronized)]
+        }
+        // CONNECTION_FIXTURE
+        try render("panel", output, CloudLibraryPanel(viewModel: vm, model: model, game: game))
+        try render("settings", output, SettingsCloudLibrarySection(
+            viewModel: vm, model: model, settings: settings, advanced: .constant(false),
+            onEdit: {}, onEditSources: {}, onActions: { _ in })
+            .padding(24).frame(width: 1040))
+        try render("assistant", output, CloudSetupAssistant(viewModel: vm, model: model /* ENTRY */) {})
+        precondition(CloudLibraryTileBadge.artworkOpacity(model.states[game.id]) == 0.55)
+        try render("tile", output,
+            CollectionCoverRow(games: [.init(nxnative: game)], selectedID: game.id,
+                artwork: ArtworkStore(), boxArt: vm.boxArt, boxArtIndexVersion: 0,
+                officialName: { _ in nil }, needsMetadata: { _ in }, cloud: model,
+                showsCloudBadges: true, onSelect: { _ in }, onActivate: { _ in }),
+            size: .init(width: 400, height: 440))
+        let request = CloudLibraryModel.Request(id: game.id, name: game.name, action: .restore(.app),
+            storage: model.preference.storage, scope: .init(title: game.titleId!, urls: []),
+            importDestination: nil, sourceFiles: nil, onSuccess: nil)
+        model.active = (request, Task {})
+        model.update(game.id) {
+            $0.action = request.action
+            $0.progress = .init(.downloading, kind: .app, transfer: .init(bytesTransferred: 42_000_000, totalBytes: 100_000_000))
+        }
+        try render("activity", output, ActivityCenterView(
+            viewModel: vm, porting: vm.porting, cloudLibrary: model, focus: .init(),
+            onFocus: { _ in }, onOpen: { _ in }, onCancel: { _ in }, onClose: {}))
+    }
+
+    @MainActor static func render<V: View>(_ name: String, _ output: URL, _ view: V,
+                                          size: CGSize = .init(width: 1280, height: 1000)) throws {
+        let canvas = SeleneCanvas(size: .init(width: 1920, height: 1080))
+        let renderer = ImageRenderer(content: view.frame(width: size.width, height: size.height)
+            .background(Color(red: 0.09, green: 0.13, blue: 0.20))
+            .environment(\.colorScheme, .dark)
+            .environment(\.seleneCanvas, canvas)
+            .environment(\.seleneReduceMotion, true))
+        guard let image = renderer.cgImage,
+              let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
+        else { throw CocoaError(.fileWriteUnknown) }
+        try png.write(to: output.appendingPathComponent(name + ".png"))
+    }
+}
+'''
+
+
+def change(file, old, new):
+    text, count = re.subn(old, lambda _: new, file.read_text(), count=1, flags=re.S)
+    assert count == 1, (file, old)
+    file.write_text(text)
+
+
+def main():
+    output = Path(sys.argv[1]).resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="cloud-screen-", dir=output.parent) as temp:
+        package = Path(temp)
+        shutil.copyfile(ROOT / "Package.swift", package / "Package.swift")
+        shutil.copytree(ROOT / "Sources", package / "Sources")
+        for name in ("NXLibraryCoreTests", "ArcanePortingTests"):
+            folder = package / "Tests" / name
+            folder.mkdir(parents=True)
+            (folder / "Empty.swift").touch()
+        app = package / "Sources/NXLibrary"
+        change(app / "NXLibraryApp.swift", r"@main\nstruct", "struct")
+        change(app / "ViewModels/AppViewModel.swift", r"SteamGridDBKey\(\)\.load\(\) != nil", "false")
+        change(app / "ViewModels/AppViewModel.swift", r"        applyCatalog\(catalog\).*?\n    }\n\n    // MARK: - Dynamic",
+               "    }\n\n    // MARK: - Dynamic")
+        change(package / "Sources/NXLibraryCore/App/AppDataProfile.swift",
+               r'public static let profile = [^\n]*',
+               f'public static let profile = AppDataProfile(home: URL(fileURLWithPath: "{temp}"), isDevelopment: true)')
+        change(package / "Sources/NXLibraryCore/App/AppDataProfile.swift",
+               r'public static var preferences: UserDefaults \{ \.standard \}',
+               'public static let preferences = UserDefaults(suiteName: "local.arcane.screen-probe-' + package.name + '")!')
+        change(app / "ViewModels/AppViewModel+CloudLibrary.swift",
+               r'        let defaults = AppData\.preferences.*?(?=        rebuildArchive\(\))',
+               '        preference = .init(storage: "fixture:Games", enabled: true, sourcesRoot: nil)\n'
+               '        chosenExecutable = nil\n')
+        section = app / "Views/Settings/SettingsCloudLibrarySection.swift"
+        change(section,
+               r'        \.task\(id: Inspection.*?\n        }\n', "")
+        change(app / "Views/Detail/CloudLibraryPanel.swift",
+               r'        \.task\(id: ReadRequest.*?\n', "")
+        assistant = app / "Views/Settings/CloudSetupAssistant.swift"
+        change(assistant, r'        \.onAppear \{\s*.*?installAssistantKeys\(\)(?: \}|\n        })\n', "")
+        change(assistant, r'@State private var remotes: \[RcloneRemote\]\?', '@State private var remotes: [RcloneRemote]? = []')
+        # TextField is AppKit-backed and ImageRenderer shows a placeholder instead of its text.
+        change(assistant, r'TextField\(text\("Game files folder"\), text: \$sourcesPath,\s+'
+               r'prompt: Text\(verbatim: [^\n]+\)\)\s+\.focused\([^\n]+',
+               'Text(verbatim: sourcesPath).frame(maxWidth: .infinity, alignment: .leading)')
+        change(app / "Views/Components/SwitchBoxArtCover.swift",
+               r'        \.task\(id: coverKey.*?\n        \.task\(id: game.id[^\n]*\n', "")
+        activity = app / "Views/Shell/ActivityCenterView.swift"
+        # ImageRenderer does not draw AppKit-backed scrolling. Keep the real rows and their layout.
+        change(activity, r'                    ScrollViewReader \{ scroll in\n                        ScrollView \{\n', "")
+        change(activity, r'                        }\n                        \.frame\(maxHeight: canvas.u\(620\)\).*?\n                    }\n', "")
+        change(activity, r'        LazyVStack\(', '        VStack(')
+        host = HOST
+        if "onEditLibrary:" in section.read_text():
+            host = host.replace("onEdit: {}, onEditSources:", "onEdit: {}, onEditLibrary: {}, onEditSources:")
+            host = host.replace("/* ENTRY */", ", entry: .sources")
+            host = host.replace("// CONNECTION_FIXTURE",
+                '''model.connectionCheck = .init(date: Date(timeIntervalSince1970: 1_795_000_000), failure: .offline)
+        let en = AppLocale(language: .english, region: "US")
+        let fr = AppLocale(language: .french, region: "FR")
+        var uploading = CloudLibraryState()
+        uploading.action = .upload(nil)
+        uploading.progress = .init(.uploading, kind: .cache)
+        let pendingApp = CloudLibraryIndicator(state: uploading, item: .app)
+        precondition(pendingApp.label(context: en) == "Sending · published when the upload ends")
+        precondition(pendingApp.label(context: fr).hasPrefix("Envoi en cours"))
+        precondition(CloudLibraryIndicator(state: model.states[game.id]!).label(context: en) == "Cloud only")''')
+        else:
+            change(assistant, r'@State private var draft = CloudSetupAssistantDraft\(\)', '''
+    @State private var draft: CloudSetupAssistantDraft = {
+        var draft = CloudSetupAssistantDraft()
+        draft.chooseAccount("fixture")
+        draft.browse("Games")
+        return draft
+    }()
+'''.strip())
+            change(assistant, r'@State private var selectingSources = false', '@State private var selectingSources = true')
+            change(assistant, r'@State private var sourcesPath = ""', '@State private var sourcesPath = "Games/GameFiles"')
+        (app / "CloudScreenProbe.swift").write_text(host)
+        with (package / "Sources/ArcanePorting/Library/CloudGameArchive.swift").open("a") as swift:
+            swift.write('''
+extension CloudArtifactStatus {
+    public static func screenFixture(_ state: State) -> Self {
+        .init(state: state, hasLocalCopy: state == .synchronized, bytes: 100_000_000,
+              uploadedAt: Date(timeIntervalSince1970: 1_795_000_000), skippedRoots: [])
+    }
+}
+''')
+        font = ROOT / "Resources/Selene/Fonts/MaterialIcons-Regular.ttf"
+        subprocess.run(["swift", "run", "--package-path", str(package), "NXLibrary", str(output), str(font)],
+                       check=True, env=dict(os.environ, HOME=temp))
+
+
+if __name__ == "__main__":
+    main()

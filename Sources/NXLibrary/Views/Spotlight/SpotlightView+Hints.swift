@@ -12,7 +12,7 @@ extension SpotlightView {
     func hintReserve(_ state: SpotlightState) -> [[String]] {
         if state.isLifted || cardMenu != nil { return [] }
         switch state.focus {
-        case .row: return [[], ["Play", "Build", "Pick", "Open", "Show"]]
+        case .row: return [[], ["Play", "Download", "Build", "Pick", "Open", "Show"]]
         case .pills, .strip, .mods, .about, .actions, .more, .achievements: return [[], ["Select", "View", "Show", "Open", "Cancel"]]
         case .store: return [[], ["Sort", "View"]]
         case .topGames: return []
@@ -26,6 +26,7 @@ extension SpotlightView {
         if cardMenu != nil {
             return [HintItem(.a, L10n.text("Select")), HintItem(.b, L10n.text("Back"))]
         }
+        if sortFocused { return [HintItem(.a, "Sort"), HintItem(.b, "Back")] }
         switch state.focus {
         case .pills:
             let cancels = model.selectedGame.map { viewModel.portingPills($0).cancelsQueuedBuild(at: state.pillIndex) } ?? false
@@ -58,6 +59,9 @@ extension SpotlightView {
                 let pills = viewModel.portingPills(game)
                 if pills == .porting {
                     return [HintItem(.y, L10n.text("Options")), HintItem(.a, L10n.text("Porting"))]
+                }
+                if downloadsCloudApp(game), pills != .queued {
+                    return [HintItem(.y, "Options"), HintItem(.a, "Download")]
                 }
                 if pills.unavailableReason != nil, !runningGames.isRunning(game) {
                     return [HintItem(.y, L10n.text("Options"))]

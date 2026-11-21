@@ -23,6 +23,8 @@ struct SelenePillButton: View {
     var waveDots = false
     var tint: Color? = nil
     var queuedBuild = false
+    var accessory: AnyView? = nil
+    var keyboardFocus: FocusState<Bool>.Binding? = nil
     let action: () -> Void
 
     static func roundIcon(_ icon: MaterialIcon, focused: Bool = false, enabled: Bool = true,
@@ -41,6 +43,10 @@ struct SelenePillButton: View {
             pill.onHover { hovered = $0 }
                 .accessibilityLabel(L10n.text("Cancel queued build", context: localization))
                 .accessibilityValue(L10n.text("Queued", context: localization))
+        } else if let keyboardFocus {
+            pill.focusable(interactions: .activate)
+                .focusEffectDisabled()
+                .focused(keyboardFocus)
         } else {
             pill
         }
@@ -55,6 +61,7 @@ struct SelenePillButton: View {
         let solid = focused && enabled && tint == nil
         return Button(action: action) {
             HStack(spacing: canvas.u(10)) {
+                accessory
                 if let icon {
                     MaterialIconView(icon, size: iconSize)
                 }
