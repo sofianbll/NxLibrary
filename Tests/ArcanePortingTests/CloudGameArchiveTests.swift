@@ -385,6 +385,7 @@ final class CloudGameArchiveTests: XCTestCase {
         }
         let remote = try await f.backend.list()
         XCTAssertEqual(remote, [])
+        try assertNoStagedArchive(f)
     }
 
     func testResendDoesNotReplaceManifestWhenCachePermissionsChange() async throws {
@@ -407,24 +408,104 @@ final class CloudGameArchiveTests: XCTestCase {
         }
         let latest = try await service.latest(titleID: title)
         XCTAssertEqual(latest, before)
+        try assertNoStagedArchive(f)
     }
 
-    func testChecksSpaceBeforeArchiveOrRestore() async throws {
+    func testSameSizeMutationDuringCacheStreamDoesNotPublishEitherArtifact() async throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        try addLargeCacheFile(to: f)
+        let file = f.cache.appendingPathComponent("run.key")
+        let mutated = ProgressRecorder()
+        do {
+            _ = try await f.service.upload(f.game) { progress in
+                guard progress.phase == .uploading, progress.kind == .cache,
+                      let transfer = progress.transfer, transfer.bytesTransferred > 0,
+                      transfer.bytesTransferred < transfer.totalBytes, mutated.snapshot().isEmpty else { return }
+                mutated.record(progress)
+                do { try Data("cache-edit".utf8).write(to: file) }
+                catch { XCTFail("Could not mutate the fixture: \(error)") }
+            }
+            XCTFail("A same-size edit during an upload must not be published")
+        } catch { XCTAssertEqual(error as? CloudArchiveError, .localChanged) }
+        XCTAssertFalse(mutated.snapshot().isEmpty)
+        let objects = try await f.backend.list()
+        XCTAssertEqual(objects, [])
+        try assertNoStagedArchive(f)
+    }
+
+    func testCancelDuringCacheStreamRemovesBothStagedUploads() async throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        try addLargeCacheFile(to: f)
+        let inProgress = expectation(description: "Cache upload writes data")
+        let updates = ProgressRecorder()
+        let upload = Task {
+            try await f.service.upload(f.game) { update in
+                guard update.phase == .uploading, update.kind == .cache, updates.snapshot().isEmpty,
+                      let progress = update.transfer, progress.bytesTransferred > 0,
+                      progress.bytesTransferred < progress.totalBytes else { return }
+                updates.record(update)
+                inProgress.fulfill()
+            }
+        }
+        await fulfillment(of: [inProgress], timeout: 15)
+        upload.cancel()
+        do {
+            _ = try await upload.value
+            XCTFail("A cancelled upload must not publish")
+        } catch is CancellationError {}
+        let objects = try await f.backend.list()
+        XCTAssertEqual(objects, [])
+        try assertNoStagedArchive(f)
+        let lease = try await f.service.beginBuild(titleID: title)
+        await f.service.endBuild(titleID: title, token: lease)
+    }
+
+    func testExistingArchiveIsReusedWithoutReplacingIt() async throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let first = try await f.service.upload(f.game)
+        let url = f.remote.appendingPathComponent(first.artifacts[0].object(titleID: title).key.value)
+        let inode = try CloudArchiveInventory.node(at: url).st_ino
+        let again = try await f.service.upload(f.game, kinds: [.app])
+        XCTAssertEqual(again.artifacts, first.artifacts)
+        XCTAssertEqual(try CloudArchiveInventory.node(at: url).st_ino, inode)
+        try assertNoStagedArchive(f)
+    }
+
+    func testUploadDoesNotStageAnArchiveAndRestoreStillChecksSpace() async throws {
         let f = try fixture()
         defer { try? FileManager.default.removeItem(at: f.root) }
         let service = CloudGameArchive(backend: f.backend, capacity: { _ in 0 }, trash: { _ in })
-        do {
-            _ = try await service.upload(f.game)
-            XCTFail("Must refuse staging without space")
-        } catch { XCTAssertEqual(error as? CloudArchiveError, .insufficientSpace) }
-        let empty = try await service.latest(titleID: title)
-        XCTAssertNil(empty)
-        _ = try await f.service.upload(f.game)
+        _ = try await service.upload(f.game) { progress in
+            guard progress.phase == .uploading || progress.phase == .verifying else { return }
+            let local = try? FileManager.default.contentsOfDirectory(atPath: f.root.path)
+            XCTAssertFalse(local?.contains { $0.hasPrefix(".arcane-cloud-") } ?? true)
+            let fm = FileManager.default
+            let stages = (try? fm.contentsOfDirectory(at: fm.temporaryDirectory, includingPropertiesForKeys: nil)) ?? []
+            for stage in stages where stage.lastPathComponent.hasPrefix(".arcane-cloud-") {
+                XCTAssertFalse(fm.fileExists(atPath: stage.appendingPathComponent("item.aar").path))
+            }
+        }
         do {
             try await service.restore(.cache, for: f.game)
             XCTFail("Must refuse staging archive and extraction without space")
         } catch { XCTAssertEqual(error as? CloudArchiveError, .insufficientSpace) }
         XCTAssertEqual(try cacheContents(f.cache), "cache-data")
+    }
+
+    private func addLargeCacheFile(to fixture: Fixture) throws {
+        var bytes = Data(count: 12 << 20)
+        bytes.withUnsafeMutableBytes { arc4random_buf($0.baseAddress, $0.count) }
+        try bytes.write(to: fixture.cache.appendingPathComponent("large.bin"))
+    }
+
+    private func assertNoStagedArchive(_ fixture: Fixture) throws {
+        let directory = fixture.remote.appendingPathComponent(".arcane-upload")
+        if FileManager.default.fileExists(atPath: directory.path) {
+            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: directory.path), [])
+        }
     }
 
     func testInterruptedRestoreLeavesOriginalAndSuccessfulSwapKeepsPreviousCopy() async throws {

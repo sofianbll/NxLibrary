@@ -26,12 +26,55 @@ enum CloudArchiveInventory {
         var isSkippedOnly: Bool { entries.count == 1 && !skippedRoots.isEmpty && !hasExcludedFiles }
     }
 
+    struct ContentFingerprint {
+        private var hash = SHA256()
+        private var withoutRootMtime: SHA256?
+
+        init(kind: CloudArtifactKind, includeContents: Bool = true) {
+            withoutRootMtime = includeContents && kind == .cache ? SHA256() : nil
+        }
+
+        mutating func field(_ value: String, rootMtime: Bool = false) {
+            let data = Data(value.utf8)
+            let prefix = Data("\(data.count):".utf8)
+            hash.update(data: prefix)
+            hash.update(data: data)
+            if !rootMtime {
+                withoutRootMtime?.update(data: prefix)
+                withoutRootMtime?.update(data: data)
+            }
+        }
+
+        mutating func entry(_ entry: Entry, mtime: timespec) {
+            for value in [entry.path, entry.type, String(entry.mode)] { field(value) }
+            field(String(mtime.tv_sec), rootMtime: entry.path.isEmpty)
+            field(String(mtime.tv_nsec), rootMtime: entry.path.isEmpty)
+            field(entry.link ?? "")
+        }
+
+        mutating func contents(attributes: [(String, String)], fileSHA256: String?) {
+            field(String(attributes.count))
+            for (key, digest) in attributes { field(key); field(digest) }
+            if let fileSHA256 { field(fileSHA256) }
+        }
+
+        var digest: String { hex(hash.finalize()) }
+        var digestWithoutRootMtime: String? { withoutRootMtime.map { hex($0.finalize()) } }
+    }
+
     static let maximumEntries = 100_000
     static let cacheFingerprintOption = "cache_inventory_without_root_mtime"
     static let excludedNames = ["prod.keys", "title.keys", "dev.keys", "keys.txt"]
 
     static let excludedPaths = ["run/save", "Contents/Resources/run/save"]
+    // The stream reaches private remote staging before validation: exclude case variants at the producer too.
+    static let protectedArchiveExclusion = "(?i)(^|/)(\(excludedNames.map(NSRegularExpression.escapedPattern(for:)).joined(separator: "|")))(/|$)|^(\(excludedPaths.joined(separator: "|")))(/|$)"
     private static let skippedCacheRoots = ["obsolete", "nsp"]
+
+    static func archiveExclusions(_ kind: CloudArtifactKind) -> [String] {
+        ["-exclude-regex", protectedArchiveExclusion]
+            + (kind == .cache ? ["-exclude-regex", "(?i)^(\(skippedCacheRoots.joined(separator: "|")))(/|$)"] : [])
+    }
 
     static func isExcluded(_ path: String, _ kind: CloudArtifactKind) -> Bool {
         let lower = path.lowercased()
@@ -105,21 +148,10 @@ enum CloudArchiveInventory {
 
     private static func scan(_ root: URL, kind: CloudArtifactKind, includeContents: Bool) throws -> Snapshot {
         var entries: [Entry] = []
-        var hash = SHA256()
-        var withoutRootMtime = includeContents && kind == .cache ? SHA256() : nil
+        var fingerprint = ContentFingerprint(kind: kind, includeContents: includeContents)
         var hasExcludedFiles = false
         var skippedRoots: [String] = []
         let device = try node(at: root).st_dev
-        func field(_ value: String, rootMtime: Bool = false) {
-            let prefix = Data("\(value.utf8.count):".utf8)
-            let data = Data(value.utf8)
-            hash.update(data: prefix)
-            hash.update(data: data)
-            if !rootMtime {
-                withoutRootMtime?.update(data: prefix)
-                withoutRootMtime?.update(data: data)
-            }
-        }
         func visit(_ url: URL, path: String) throws {
             try Task.checkCancellation()
             if isExcluded(path, kind) {
@@ -143,24 +175,18 @@ enum CloudArchiveInventory {
             }
             guard !path.isEmpty || type == "D" else { throw CloudArchiveError.unsafePath }
             let link = type == "L" ? try FileManager.default.destinationOfSymbolicLink(atPath: url.path) : nil
-            entries.append(Entry(path: path, type: type, size: type == "F" ? st.st_size : nil,
-                                 link: link, mode: Int(st.st_mode & 0o777)))
-            for value in [path, type, String(st.st_mode & 0o777)] { field(value) }
-            field(String(st.st_mtimespec.tv_sec), rootMtime: path.isEmpty)
-            field(String(st.st_mtimespec.tv_nsec), rootMtime: path.isEmpty)
-            field(link ?? "")
+            let entry = Entry(path: path, type: type, size: type == "F" ? st.st_size : nil,
+                              link: link, mode: Int(st.st_mode & 0o777))
+            entries.append(entry)
+            fingerprint.entry(entry, mtime: st.st_mtimespec)
             if includeContents {
-                let attrs = try SaveFiles.attributes(url)
-                field(String(attrs.count))
-                for (key, data) in attrs.sorted(by: { $0.key < $1.key }) {
-                    field(key)
-                    field(hex(SHA256.hash(data: data)))
-                }
-                if type == "F" { field(try hashes(at: url, includeMD5: false)["sha256"]!) }
+                let attributes = attributeDigests(try SaveFiles.attributes(url))
+                fingerprint.contents(attributes: attributes,
+                                     fileSHA256: type == "F" ? try hashes(at: url, includeMD5: false)["sha256"] : nil)
             } else {
                 // ctime also catches xattr and same-size edits with a preserved mtime.
                 for value in [String(st.st_dev), String(st.st_ino), String(st.st_size),
-                              String(st.st_ctimespec.tv_sec), String(st.st_ctimespec.tv_nsec)] { field(value) }
+                              String(st.st_ctimespec.tv_sec), String(st.st_ctimespec.tv_nsec)] { fingerprint.field(value) }
             }
             if type == "D" {
                 for child in try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
@@ -171,7 +197,7 @@ enum CloudArchiveInventory {
         }
         try visit(root, path: "")
         return try Snapshot(entries: entries, bytes: validate(entries, kind: kind),
-                            sha256: hex(hash.finalize()), withoutRootMtime: withoutRootMtime.map { hex($0.finalize()) },
+                            sha256: fingerprint.digest, withoutRootMtime: fingerprint.digestWithoutRootMtime,
                             hasExcludedFiles: hasExcludedFiles, skippedRoots: skippedRoots)
     }
 
@@ -200,7 +226,11 @@ enum CloudArchiveInventory {
         return hashes
     }
 
-    private static func hex(_ bytes: some Sequence<UInt8>) -> String {
+    static func attributeDigests(_ attributes: [String: Data]) -> [(String, String)] {
+        attributes.sorted { $0.key < $1.key }.map { ($0.key, hex(SHA256.hash(data: $0.value))) }
+    }
+
+    static func hex(_ bytes: some Sequence<UInt8>) -> String {
         bytes.map { String(format: "%02x", $0) }.joined()
     }
 }

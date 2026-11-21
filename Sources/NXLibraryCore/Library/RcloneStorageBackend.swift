@@ -110,6 +110,67 @@ public struct RcloneStorageBackend: StorageBackend {
         try await put(source, as: object, md5Only: false, progress: progress)
     }
 
+    package struct ArchiveUpload: Sendable {
+        fileprivate let path: String
+    }
+
+    package func archiveUpload() throws -> ArchiveUpload {
+        try .init(path: objectPath("\(Self.staging)/\(UUID().uuidString)"))
+    }
+
+    package func archiveUploadProcess(to upload: ArchiveUpload) throws -> Process {
+        let sink = Process()
+        sink.executableURL = try binary()
+        let environment = RcloneConfiguration.environment()
+        sink.environment = environment
+        // An unsupported remote must fail rather than let rcat spool an unknown-size stream to disk.
+        sink.arguments = ["rcat", upload.path, "--temp-dir", "/dev/null", "--buffer-size", "0",
+                          "--streaming-upload-cutoff", "1M", "--drive-chunk-size", "8M", "--retries", "1"]
+            + Self.flags + RcloneConfiguration.flags(config: config, environment: environment)
+        return sink
+    }
+
+    package func verifyArchive(_ object: StorageObject, staged upload: ArchiveUpload) async throws {
+        try validateFingerprint(object)
+        try await verify(object, at: upload.path, md5Only: true)
+    }
+
+    package func publishArchive(_ object: StorageObject, staged upload: ArchiveUpload) async throws {
+        let final = try path(for: object.key)
+        if try await item(at: final) == nil {
+            if remote == ":local:" {
+                let destination = URL(fileURLWithPath: String(final.dropFirst(remote.count)))
+                try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(),
+                                                        withIntermediateDirectories: true)
+                try Task.checkCancellation()
+                if renamex_np(String(upload.path.dropFirst(remote.count)), destination.path, UInt32(RENAME_EXCL)) != 0,
+                   errno != EEXIST { throw StorageBackendError.publicationFailed }
+            } else {
+                _ = try await run(["moveto", upload.path, final, "--ignore-existing", "--immutable", "--checksum",
+                                   "--disable", "Copy", "--max-transfer", "0", "--retries", "1"])
+            }
+        }
+        try await verify(object, at: final, md5Only: true)
+        if remote != ":local:" {
+            let directory = StorageObjectKey(object.key.value.split(separator: "/").dropLast().joined(separator: "/"))
+            guard try await list(in: directory).filter({ $0.key == object.key }).count == 1 else {
+                throw StorageBackendError.invalidResponse
+            }
+        }
+        if try await item(at: upload.path) != nil {
+            _ = try await run(["deletefile", upload.path])
+        }
+    }
+
+    package func discardArchives(_ uploads: [ArchiveUpload]) async {
+        await Task.detached {
+            for upload in uploads {
+                _ = try? await run(["deletefile", upload.path, "--retries", "1", "--low-level-retries", "1",
+                                    "--contimeout", "5s", "--timeout", "5s"])
+            }
+        }.value
+    }
+
     package func putSource(_ source: URL, as object: StorageObject,
                    progress: (@Sendable (StorageProgress) -> Void)?) async throws {
         guard object.size >= 0, isHex(object.hashes["md5"], length: 32) else {
@@ -295,12 +356,16 @@ public struct RcloneStorageBackend: StorageBackend {
         return (remote == ":local:" ? remote : name + ":") + root
     }
 
-    private func run(_ arguments: [String], progress: (@Sendable (StorageProgress) -> Void)? = nil) async throws -> String {
-        try Task.checkCancellation()
+    private func binary() throws -> URL {
         guard let binary = executable ?? Self.findExecutable(), Self.isExecutable(binary) else {
             throw StorageBackendError.backendUnavailable
         }
+        return binary
+    }
 
+    private func run(_ arguments: [String], progress: (@Sendable (StorageProgress) -> Void)? = nil) async throws -> String {
+        try Task.checkCancellation()
+        let binary = try binary()
         let flags = ["--use-json-log", "--stats", "1s", "--stats-log-level", "NOTICE"] + Self.flags
         let environment = RcloneConfiguration.environment()
         let command = arguments + flags + RcloneConfiguration.flags(config: config, environment: environment)

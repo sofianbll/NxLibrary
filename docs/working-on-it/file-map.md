@@ -416,6 +416,7 @@ Cartella `Sources/ArcanePorting/Library/`.
 | [Sources/ArcanePorting/Library/CloudArchiveInventory.swift](../../Sources/ArcanePorting/Library/CloudArchiveInventory.swift) | Controlla gerarchia, link, esclusioni, hash e metadati prima e dopo l’estrazione. |
 | [Sources/ArcanePorting/Library/CloudGameArchive.swift](../../Sources/ArcanePorting/Library/CloudGameArchive.swift) | Archivia app e cache con manifest, anche separatamente; verifica firma, contenuti e cache prima di Rebuild e conserva le cartelle ignorate. |
 | [Sources/ArcanePorting/Library/CloudArchiveFingerprintCache.swift](../../Sources/ArcanePorting/Library/CloudArchiveFingerprintCache.swift) | Cache persistente e limitata delle impronte di app e cache, indicizzata da digest. |
+| [Sources/ArcanePorting/Library/CloudArchiveStream.swift](../../Sources/ArcanePorting/Library/CloudArchiveStream.swift) | Inoltra Apple Archive a rclone e al decodificatore senza archivio locale. |
 | [Sources/ArcanePorting/Library/CloudGameSources.swift](../../Sources/ArcanePorting/Library/CloudGameSources.swift) | Confronta, invia e ripristina le sorgenti selezionate senza sostituire copie esistenti. |
 | [Sources/ArcanePorting/Library/CloudTransferQueue.swift](../../Sources/ArcanePorting/Library/CloudTransferQueue.swift) | Salva le richieste cloud nel profilo e rimette il lavoro interrotto in testa. |
 | [Sources/ArcanePorting/Library/CloudDriveFolders.swift](../../Sources/ArcanePorting/Library/CloudDriveFolders.swift) | Elenca cartelle, conta gli archivi Porting e coordina il trasferimento fra radici. |

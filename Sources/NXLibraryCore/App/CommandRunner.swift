@@ -135,12 +135,13 @@ extension Process {
     }
 }
 
-private final class CommandCancellation: @unchecked Sendable {
+package final class CommandCancellation: @unchecked Sendable {
+    package init() {}
     private let lock = NSLock()
     private var process: Process?
     private var cancelled = false
 
-    func launch(_ process: Process) throws {
+    package func launch(_ process: Process) throws {
         try lock.withLock {
             if cancelled { throw CancellationError() }
             try process.run()
@@ -148,9 +149,9 @@ private final class CommandCancellation: @unchecked Sendable {
         }
     }
 
-    func finish() { lock.withLock { process = nil } }
+    package func finish() { lock.withLock { process = nil } }
 
-    func cancel() {
+    package func cancel() {
         lock.withLock {
             cancelled = true
             if let process, process.isRunning { process.terminate() }

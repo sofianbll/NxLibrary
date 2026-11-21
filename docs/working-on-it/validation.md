@@ -57,6 +57,7 @@ Come si aggiorna:
 | Importazione dalla libreria cloud | in attesa | Verificare import senza download, esclusioni dopo riavvio, cambio destinazione, ripristino e stato con remote irraggiungibile. |
 | Cloud library → cartelle separate e percorsi | in attesa | Verificare percorsi lunghi, modifiche senza spostamento, radice predefinita `GameFiles` e conservazione della radice esplicita. |
 | Cloud library → stato all'avvio e impronte | in attesa | Verificare badge all'avvio, precedenza del trasferimento e invalidazione dopo una modifica che mantiene dimensione e mtime. |
+| Cloud library → Send in streaming | in attesa | Con cache sintetica più grande dello spazio libero, verificare spazio, memoria, ripristino, annullamento e staging remoto dopo una mutazione concorrente. |
 | Gioco a distanza tramite ZeroTier | in attesa | Verificare LAN con ZeroTier univoco, ripiego con più VPN o senza app, precedenza della scelta per gioco e Nextendo invariato. |
 | Uscita dalla schermata del porting | in attesa | Provare B ed Esc dopo una build senza Review, il ritorno a Review con una bozza e Hide durante una build attiva. |
 | Centro attività | in attesa | Verificare progressi, focus, A/Invio/clic per aprire Porting, X per annullare una richiesta e sospensione dell'input sottostante. |

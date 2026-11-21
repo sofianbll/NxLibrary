@@ -399,6 +399,7 @@ public actor CloudGameArchive {
     public func upload(_ game: CloudArchiveGame, kinds: Set<CloudArtifactKind>, progress: Progress? = nil) async throws -> CloudGameManifest {
         let lease = try begin(game.titleID)
         defer { leases.end(game.titleID, token: lease) }
+        guard let uploader = backend as? RcloneStorageBackend else { throw StorageBackendError.backendUnavailable }
         let selected = CloudArtifactKind.allCases.filter { kinds.contains($0) }
         guard !selected.isEmpty else { throw CloudArchiveError.needsFullUpload }
         var artifacts: [Artifact] = []
@@ -420,57 +421,64 @@ public actor CloudGameArchive {
         let snapshots = try selected.map { kind in
             progress?(.init(.archiving, kind: kind))
             let source = try location(kind, for: game)
+            let parent = try CloudArchiveInventory.node(at: source.deletingLastPathComponent())
+            let signature = try CloudArchiveInventory.signature(source, kind: kind)
             let snapshot = try CloudArchiveInventory.scan(source, kind: kind)
-            guard !snapshot.hasExcludedFiles else { throw CloudArchiveError.excludedFiles }
+            guard !snapshot.hasExcludedFiles, !signature.hasExcludedFiles else { throw CloudArchiveError.excludedFiles }
             guard !snapshot.isSkippedOnly else { throw CloudArchiveError.localMissing }
-            return (source, snapshot)
+            return (source, parent, snapshot, signature.sha256)
         }
-        for (index, kind) in selected.enumerated() {
-            progress?(.init(.archiving, kind: kind))
-            let (source, initial) = snapshots[index]
-            let parent = source.deletingLastPathComponent()
-            let volume = try CloudArchiveInventory.node(at: parent)
-            try requireSpace(in: parent, bytes: initial.bytes, entries: initial.entries.count)
-            let stage = try staging(in: parent)
-            defer { try? FileManager.default.removeItem(at: stage) }
-            let archive = stage.appendingPathComponent("item.aar")
-            let exclusions = (CloudArchiveInventory.excludedPaths + initial.skippedRoots).flatMap { ["-exclude-path", $0] }
-                + CloudArchiveInventory.excludedNames.flatMap { ["-exclude-name", $0] }
-            _ = try await command("aa", ["archive", "-d", source.path, "-o", archive.path, "-a", "lzfse", "-x",
-                                         "-include-field", "siz"] + exclusions)
-            progress?(.init(.verifying, kind: kind))
-            let listed = try await inventory(in: archive, kind: kind)
-            if let (path, reason) = firstDifference(from: initial.entries, to: listed) {
-                throw CloudArchiveError.uploadMismatch(kind, path: path.isEmpty ? "." : path, reason: reason)
-            }
-            guard (try? sameDirectory(volume, at: parent)) == true else {
-                throw CloudArchiveError.uploadMismatch(kind, path: "..", reason: .parentDirectory)
-            }
-            try requireSpace(in: parent, bytes: initial.bytes, entries: initial.entries.count)
-            let check = stage.appendingPathComponent(source.lastPathComponent, isDirectory: true)
-            let info = try await unpack(archive, to: check, kind: kind, titleID: game.titleID,
-                                        listed: listed, fingerprint: initial.sha256)
-            if kind == .app {
-                gameName = info["CFBundleDisplayName"] ?? info["CFBundleName"]
-                    ?? source.deletingPathExtension().lastPathComponent
-                bundleName = source.lastPathComponent
-            }
-            let hashes = try CloudArchiveInventory.hashes(at: archive)
-            var options = info.filter { ["DMLanguage", "CFBundleShortVersionString"].contains($0.key) }
-            // A skipped directory can change the cache root mtime without changing the archived files.
-            options[CloudArchiveInventory.cacheFingerprintOption] = initial.withoutRootMtime
-            let artifact = Artifact(kind: kind, size: try CloudArchiveInventory.node(at: archive).st_size,
-                                    sha256: hashes["sha256"]!, md5: hashes["md5"]!,
-                                    unpackedSize: initial.bytes, entryCount: initial.entries.count,
-                                    inventorySHA256: initial.sha256, engineCommit: info["DMCommit"] ?? game.engineCommit,
-                                    shaderChain: shaderChain(at: check, kind: kind),
-                                    options: options)
-            let object = artifact.object(titleID: game.titleID)
-            let update = transfer(progress, phase: .uploading, kind: kind, total: object.size)
-            try await put(archive, object: object, progress: update, beforeVerify: {
+        var staged: [(RcloneStorageBackend.ArchiveUpload, Artifact)] = []
+        var pending: [RcloneStorageBackend.ArchiveUpload] = []
+        do {
+            for (index, kind) in selected.enumerated() {
+                progress?(.init(.archiving, kind: kind))
+                let (source, parent, initial, signature) = snapshots[index]
+                let temporary = try uploader.archiveUpload()
+                pending.append(temporary)
+                let update = transfer(progress, phase: .uploading, kind: kind, total: initial.bytes)
+                // Omit -o: aa treats a literal "-" as a filename, not stdout.
+                let stream = try await CloudArchiveStream.send(
+                    ["archive", "-d", source.path, "-a", "lzfse", "-t", "2", "-x", "-include-field", "siz"]
+                        + CloudArchiveInventory.archiveExclusions(kind),
+                    to: uploader.archiveUploadProcess(to: temporary), kind: kind, estimatedBytes: initial.bytes, progress: update)
                 progress?(.init(.verifying, kind: kind))
-            })
-            artifacts.append(artifact)
+                if let (path, reason) = firstDifference(from: initial.entries, to: stream.entries) {
+                    throw CloudArchiveError.uploadMismatch(kind, path: path.isEmpty ? "." : path, reason: reason)
+                }
+                guard (try? sameDirectory(parent, at: source.deletingLastPathComponent())) == true else {
+                    throw CloudArchiveError.uploadMismatch(kind, path: "..", reason: .parentDirectory)
+                }
+                guard stream.fingerprint == initial.sha256 else { throw CloudArchiveError.localChanged }
+                let info = kind == .app ? try await verifiedApp(source, titleID: game.titleID) : [:]
+                let chain = shaderChain(at: source, kind: kind)
+                try Task.checkCancellation()
+                guard try CloudArchiveInventory.signature(source, kind: kind).sha256 == signature else {
+                    throw CloudArchiveError.localChanged
+                }
+                if kind == .app {
+                    gameName = info["CFBundleDisplayName"] ?? info["CFBundleName"]
+                        ?? source.deletingPathExtension().lastPathComponent
+                    bundleName = source.lastPathComponent
+                }
+                var options = info.filter { ["DMLanguage", "CFBundleShortVersionString"].contains($0.key) }
+                // A skipped directory can change the cache root mtime without changing the archived files.
+                options[CloudArchiveInventory.cacheFingerprintOption] = initial.withoutRootMtime
+                let artifact = Artifact(kind: kind, size: stream.bytes, sha256: stream.sha256, md5: stream.md5,
+                                        unpackedSize: initial.bytes, entryCount: initial.entries.count,
+                                        inventorySHA256: initial.sha256, engineCommit: info["DMCommit"] ?? game.engineCommit,
+                                        shaderChain: chain, options: options)
+                try await uploader.verifyArchive(artifact.object(titleID: game.titleID), staged: temporary)
+                staged.append((temporary, artifact))
+                artifacts.append(artifact)
+            }
+            for (temporary, artifact) in staged {
+                try await uploader.publishArchive(artifact.object(titleID: game.titleID), staged: temporary)
+            }
+        } catch {
+            await uploader.discardArchives(pending)
+            if error as? StorageBackendError == .publicationFailed { throw CloudArchiveError.installFailed }
+            throw error
         }
         if artifacts[0].kind != .app { artifacts.swapAt(0, 1) }
         progress?(.init(.verifying))
@@ -740,11 +748,9 @@ public actor CloudGameArchive {
         return result.stdout
     }
 
-    private func put(_ file: URL, object: StorageObject, progress: (@Sendable (StorageProgress) -> Void)?,
-                     beforeVerify: () -> Void = {}) async throws {
+    private func put(_ file: URL, object: StorageObject, progress: (@Sendable (StorageProgress) -> Void)?) async throws {
         do { try await backend.put(file, as: object, progress: progress) }
         catch StorageBackendError.alreadyExists { /* Reuse only after checking the exact object. */ }
-        beforeVerify()
         try await backend.verify(object)
     }
 
