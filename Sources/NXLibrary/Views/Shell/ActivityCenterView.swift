@@ -99,7 +99,7 @@ struct ActivityCenterView: View {
                 : progress?.isUpdatingShaderCache == true ? text("Updating shader cache")
                 : BuildStageCopy.title(porting.currentStageName, context: localization)
             let eta = porting.isCancellingBuild ? nil : progress.flatMap {
-                PortingETA.text($0, lastFinishingSeconds: viewModel.lastPortingFinishSeconds,
+                PortingETA.text($0, lastFinishingSeconds: porting.lastPortingFinishSeconds,
                                 context: localization, compact: true)
             }
             return (gameName(id, fallback: "Compilation"), detail(stage, fraction, eta), fraction, true)

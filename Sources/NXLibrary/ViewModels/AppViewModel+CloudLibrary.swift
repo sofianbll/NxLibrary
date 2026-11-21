@@ -347,7 +347,7 @@ extension AppViewModel {
             await CloudGameArchive.checkCatalogAvailability(games, titleID: \.titleId) { game in
                 guard let title = game.titleId,
                       self.libraryGames.contains(game),
-                      self.cloudBuildScope?.title != title.uppercased() else { return }
+                      self.porting.cloudBuildScope?.title != title.uppercased() else { return }
                 var locations: [CloudArtifactKind: URL] = [:]
                 if game.cloudImportPending != true, game.url.pathExtension.lowercased() == "app" { locations[.app] = game.url }
                 if let path = game.buildCachePath, path.hasPrefix("/") { locations[.cache] = URL(fileURLWithPath: path) }
@@ -359,7 +359,7 @@ extension AppViewModel {
                 } else { sources = nil }
                 guard !Task.isCancelled, self.cloudLibrary.catalogCheck?.token == token,
                       self.cloudLibrary.archive === archive, self.libraryGames.contains(game),
-                      self.cloudBuildScope?.title != title.uppercased(),
+                      self.porting.cloudBuildScope?.title != title.uppercased(),
                       availability != nil || sources != nil else { return }
                 self.cloudLibrary.update(game.id) {
                     if let availability { $0.availability = availability }
