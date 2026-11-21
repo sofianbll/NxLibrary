@@ -85,11 +85,14 @@ final class RcloneRemoteControl: @unchecked Sendable {
         let payload = String(result.stdout[..<footer])
         switch result.stdout[result.stdout.index(after: footer)...] {
         case "200": return payload
-        case "404" where operation == "operations/list":
+        case "404":
             // An older server can also return 404 for an unsupported operation.
             struct Failure: Decodable { let error: String }
-            if (try? JSONDecoder().decode(Failure.self, from: Data(payload.utf8)))?.error
-                == "error in ListJSON: directory not found" { throw StorageBackendError.notFound }
+            let error = (try? JSONDecoder().decode(Failure.self, from: Data(payload.utf8)))?.error
+            if (operation == "operations/list" && error == "error in ListJSON: directory not found")
+                || (operation == "operations/stat" && error == "directory not found") {
+                throw StorageBackendError.notFound
+            }
             return nil
         default: return nil // The CLI preserves existing error classification without exposing the RC body.
         }

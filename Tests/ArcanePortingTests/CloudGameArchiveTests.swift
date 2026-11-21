@@ -178,6 +178,11 @@ final class CloudGameArchiveTests: XCTestCase {
         let f = try fixture(useSyntheticBackend: true)
         defer { try? FileManager.default.removeItem(at: f.root) }
         let service = f.service
+        let missingRoot = CloudGameArchive(backend: f.backend.atRoot(f.remote.appendingPathComponent("missing").path))
+        do {
+            _ = try await missingRoot.upload(f.game, kinds: [.app])
+            XCTFail("An absent root must not look like a title that has never been uploaded")
+        } catch { XCTAssertEqual(error as? CloudLibraryFailure, .folderMissing) }
         do {
             _ = try await service.upload(f.game, kinds: [.app])
             XCTFail("A first send must include the local cache when one exists")
@@ -797,12 +802,12 @@ final class CloudGameArchiveTests: XCTestCase {
             return result
         def item(p):
             data = p.read_bytes() if p.is_file() else b""
-            return dict(Path=p.name, Name=p.name, Size=len(data),
+            return dict(Path=p.name, Name=p.name, Size=len(data), IsDir=p.is_dir(),
                         Hashes={"md5": hashlib.md5(data).hexdigest(), "sha256": hashlib.sha256(data).hexdigest()})
         if cmd == "lsjson":
             p = path(args[0])
             if "--stat" in args:
-                print(json.dumps(item(p) if p.is_file() else None))
+                print(json.dumps(item(p) if p.exists() and ("--files-only" not in args or p.is_file()) else None))
             elif p.is_dir():
                 print(json.dumps([item(c) for c in p.iterdir() if c.is_dir() == ("--dirs-only" in args)]))
             else:

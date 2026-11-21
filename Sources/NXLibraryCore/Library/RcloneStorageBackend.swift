@@ -118,18 +118,29 @@ public struct RcloneStorageBackend: StorageBackend {
                                        listingFolder: true)
             items = try decode([Item].self, from: output)
         }
-        if items.isEmpty { try await checkDirectory(directory) }
+        if items.isEmpty { try await checkDirectory(try basePath(), prefix: prefix.value) }
         return items.map {
             StorageObject(key: StorageObjectKey(prefix.value + "/" + $0.name), size: $0.size, hashes: $0.hashes ?? [:])
         }
     }
 
-    private func checkDirectory(_ path: String) async throws {
+    private func checkDirectory(_ base: String, prefix: String = "") async throws {
         struct Directory: Decodable { let IsDir: Bool }
-        let output = try await run(["lsjson", path, "--stat", "--no-modtime", "--no-mimetype",
-                                    "--retries", "1", "--low-level-retries", "1", "--contimeout", "5s", "--timeout", "10s"],
-                                   listingFolder: true)
-        guard try decode(Directory?.self, from: output)?.IsDir == true else { throw CloudLibraryFailure.folderMissing }
+        let directory: Directory?
+        do {
+            if let output = try await rc("operations/stat", [
+                "fs": base, "remote": prefix, "opt": ["dirsOnly": true, "noModTime": true, "noMimeType": true],
+            ]) {
+                directory = try decode(StatResult<Directory>.self, from: output).item
+            } else {
+                let path = prefix.isEmpty ? base : base + (base.hasSuffix("/") ? "" : "/") + prefix
+                let output = try await run(["lsjson", path, "--stat", "--no-modtime", "--no-mimetype",
+                                            "--retries", "1", "--low-level-retries", "1", "--contimeout", "5s", "--timeout", "10s"],
+                                           listingFolder: true)
+                directory = try decode(Directory?.self, from: output)
+            }
+        } catch StorageBackendError.notFound { throw CloudLibraryFailure.folderMissing }
+        guard directory?.IsDir == true else { throw CloudLibraryFailure.folderMissing }
     }
 
     public func put(_ source: URL, as object: StorageObject,
@@ -324,7 +335,7 @@ public struct RcloneStorageBackend: StorageBackend {
         let relative = String(path.dropFirst(base.count + (base.hasSuffix("/") ? 0 : 1)))
         if let output = try await rc("operations/stat", [
             "fs": base, "remote": relative, "opt": ["filesOnly": true, "showHash": withHashes],
-        ]) { return try decode(StatResult.self, from: output).item }
+        ]) { return try decode(StatResult<Item>.self, from: output).item }
         let output = try await run(["lsjson", path, "--stat", "--files-only"] + (withHashes ? ["--hash"] : []))
         return try decode(Item?.self, from: output)
     }
@@ -459,11 +470,11 @@ public struct RcloneStorageBackend: StorageBackend {
     }
 
     private struct ListResult: Decodable { let list: [Item] }
-    private struct StatResult: Decodable {
-        let item: Item?
+    private struct StatResult<Entry: Decodable>: Decodable {
+        let item: Entry?
         private enum CodingKeys: CodingKey { case item }
         init(from decoder: Decoder) throws {
-            item = try decoder.container(keyedBy: CodingKeys.self).decode(Item?.self, forKey: .item)
+            item = try decoder.container(keyedBy: CodingKeys.self).decode(Entry?.self, forKey: .item)
         }
     }
 

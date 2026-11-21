@@ -101,6 +101,10 @@ final class RcloneStorageBackendTests: XCTestCase {
         XCTAssertEqual(children.map(\.key), [key])
         let pid = try XCTUnwrap(backend.control.processID)
         try await backend.verify(try XCTUnwrap(objects.first))
+        try FileManager.default.createDirectory(at: fixture.remote.appendingPathComponent("empty"),
+                                                withIntermediateDirectories: false)
+        let empty = try await backend.list(in: StorageObjectKey("empty"))
+        XCTAssertEqual(empty, [])
         do {
             _ = try await backend.list(in: StorageObjectKey("unknown"))
             XCTFail("A missing directory must not look empty")
@@ -127,9 +131,15 @@ final class RcloneStorageBackendTests: XCTestCase {
         let fixture = try Fixture(recordCommands: true, failDaemon: true)
         let before = try await fixture.backend.list()
         XCTAssertEqual(before, [])
-        let missing = try await fixture.backend.list(in: StorageObjectKey("unknown"))
-        XCTAssertEqual(missing, [])
-        XCTAssertEqual(try fixture.commands(), ["rcd", "lsjson", "lsjson"])
+        try FileManager.default.createDirectory(at: fixture.remote.appendingPathComponent("empty"),
+                                                withIntermediateDirectories: false)
+        let empty = try await fixture.backend.list(in: StorageObjectKey("empty"))
+        XCTAssertEqual(empty, [])
+        XCTAssertEqual(try fixture.commands(), ["rcd", "lsjson", "lsjson", "lsjson", "lsjson"])
+        do {
+            _ = try await fixture.backend.list(in: StorageObjectKey("unknown"))
+            XCTFail("A missing directory must not look empty in CLI fallback")
+        } catch { XCTAssertEqual(error as? CloudLibraryFailure, .folderMissing) }
     }
 
     func testCancellingRemoteControlReadKeepsDaemonReusable() async throws {
