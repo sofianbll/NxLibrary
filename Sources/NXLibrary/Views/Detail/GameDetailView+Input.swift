@@ -63,12 +63,12 @@ extension GameDetailView {
     }
 
     func runPill(_ index: Int) {
-        if index == queuedCancelIndex {
+        let pills = pillSet
+        if pills.cancelsQueuedBuild(at: index) {
             SoundEffectService.shared.play(.click)
             viewModel.porting.cancelQueuedBuild(game.id)
             return
         }
-        let pills = pillSet
         if showsCloudPill, index == pills.detailsCloudIndex {
             SoundEffectService.shared.play(.click)
             DetailsLink.openCloud(for: game, viewModel: viewModel)
@@ -85,6 +85,7 @@ extension GameDetailView {
         }
         switch pills {
         case .porting:
+            guard index == 0 else { return }
             SoundEffectService.shared.play(.click)
             router.openAddGame()
             return
@@ -104,7 +105,7 @@ extension GameDetailView {
                 SoundEffectService.shared.play(.error)
                 return
             }
-        case .normal, .normalAfterFailure:
+        case .normal, .queued, .normalAfterFailure:
             break
         }
         switch index {

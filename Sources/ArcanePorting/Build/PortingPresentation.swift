@@ -136,6 +136,8 @@ public enum PortingTileLook: Equatable {
 public enum PortingPills: Equatable {
     /// Play (or Build), Options, Favorite.
     case normal
+    /// Cancel replaces only the primary action; Options, Cloud and Favorite keep their indices.
+    case queued
     /// One "Porting" pill.
     case porting
     /// Try again, Open log, Delete.
@@ -145,8 +147,9 @@ public enum PortingPills: Equatable {
     /// Keep the entry and its options, with a disabled primary action and a short reason.
     case unavailable(GameUnavailableReason)
 
-    public static func make(game: PortedGame, portingGameID: UUID?) -> PortingPills {
+    public static func make(game: PortedGame, portingGameID: UUID?, queued: Bool = false) -> PortingPills {
         if game.id == portingGameID { return .porting }
+        if queued { return .queued }
         if let reason = GameResourceState.unavailableReason(for: game) { return .unavailable(reason) }
         guard let failure = game.portingFailure else { return .normal }
         return game.isPlayableLocally ? .normalAfterFailure(failure) : .failed(failure)
@@ -154,11 +157,13 @@ public enum PortingPills: Equatable {
 
     public var count: Int { self == .porting ? 1 : 3 }
 
+    public func cancelsQueuedBuild(at index: Int) -> Bool { self == .queued && index == 0 }
+
     /// Play and Options keep their positions. On special porting rows, Cloud follows their last action.
     public var detailsCloudIndex: Int {
         switch self {
         case .porting, .failed: return count
-        case .normal, .normalAfterFailure, .unavailable: return 2
+        case .normal, .queued, .normalAfterFailure, .unavailable: return 2
         }
     }
 

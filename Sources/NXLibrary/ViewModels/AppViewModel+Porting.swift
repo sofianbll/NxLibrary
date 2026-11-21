@@ -13,7 +13,7 @@ extension AppViewModel {
     }
 
     func portingPills(_ game: PortedGame) -> PortingPills {
-        let pills = PortingPills.make(game: game, portingGameID: portingGameID)
+        let pills = PortingPills.make(game: game, portingGameID: portingGameID, queued: buildQueue.contains(game.id))
         if pills == .unavailable(.sourcesMissing), canCheckCloudSources(for: game) { return .normal }
         return pills
     }

@@ -37,7 +37,6 @@ struct DetailsTopBlock: View {
     let showsCloudPill: Bool
     var downloadEnabled = false
     var canCheckCloudSources = false
-    var queuedCancelIndex: Int?
     var onPill: (Int) -> Void = { _ in }
     var onOpenLog: () -> Void = {}
 
@@ -71,11 +70,6 @@ struct DetailsTopBlock: View {
             HStack(spacing: canvas.u(14)) {
                 pills
                 if showsCloudPill && (pillSet == .porting || pillSet.isFailed) { cloudPill }
-                if let index = queuedCancelIndex {
-                    SelenePillButton(title: L10n.text("Cancel"), height: 52, focused: focusedPill == index) { onPill(index) }
-                        .onHover { if $0 { onHoverPill(index) } }
-                        .accessibilityLabel(L10n.text("Cancel queued build"))
-                }
             }
                 .padding(.top, canvas.u(pillSet.isFailed ? 10 : 26))
             if let state = cloud.states[game.id], let active = state.activeItem, active != .sources, !state.queued {
@@ -86,7 +80,7 @@ struct DetailsTopBlock: View {
                 Text(issue.message).seleneFont(15).foregroundColor(issue.failed ? PortingPillCopy.softRed : SeleneTheme.ink60)
                     .padding(.top, canvas.u(12))
             }
-            note
+            portingNote
                 .padding(.leading, canvas.u(4))
                 .padding(.top, canvas.u(12))
             stats
@@ -130,16 +124,10 @@ struct DetailsTopBlock: View {
 
     // MARK: - Pills
 
-    @ViewBuilder private var note: some View {
-        if queuedCancelIndex != nil {
-            Text(L10n.text("Build queued")).seleneFont(16).foregroundColor(SeleneTheme.ink75)
-        } else {
-            portingNote
-        }
-    }
-
     @ViewBuilder private var portingNote: some View {
         switch pillSet {
+        case .queued:
+            EmptyView()
         case .porting:
             if let etaText {
                 Text(etaText).seleneFont(16).foregroundColor(SeleneTheme.ink75)
@@ -182,19 +170,25 @@ struct DetailsTopBlock: View {
                         .onHover { if $0 { onHoverPill(index) } }
                 }
             }
-        case .normal, .normalAfterFailure, .unavailable:
+        case .normal, .queued, .normalAfterFailure, .unavailable:
             normalPills
         }
     }
 
     private var normalPills: some View {
         HStack(spacing: canvas.u(14)) {
-            SelenePillButton(title: primaryTitle, minWidth: 200, height: 52,
-                             horizontalPadding: 36, focused: focusedPill == 0,
-                             enabled: isRunning || (downloadsApp ? downloadEnabled && cloud.states[game.id]?.action == nil
-                                 && cloud.states[game.id]?.refreshing != true
-                                 : primaryEnabled && pillSet.unavailableReason == nil), action: onPrimary)
-                .onHover { if $0 { onHoverPill(0) } }
+            Group {
+                if pillSet == .queued {
+                    SelenePillButton.buildQueue(minWidth: 200, focused: focusedPill == 0, action: onPrimary)
+                } else {
+                    SelenePillButton(title: primaryTitle, minWidth: 200, height: 52,
+                                     horizontalPadding: 36, focused: focusedPill == 0,
+                                     enabled: isRunning || (downloadsApp ? downloadEnabled && cloud.states[game.id]?.action == nil
+                                         && cloud.states[game.id]?.refreshing != true
+                                         : primaryEnabled && pillSet.unavailableReason == nil), action: onPrimary)
+                }
+            }
+            .onHover { if $0 { onHoverPill(0) } }
             SelenePillButton(title: isRunning ? L10n.text("Close Game") : L10n.text("Options"), minWidth: 200, height: 52,
                              horizontalPadding: 36, focused: focusedPill == 1,
                              action: onSecondary)

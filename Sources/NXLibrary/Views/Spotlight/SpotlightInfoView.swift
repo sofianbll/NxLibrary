@@ -25,7 +25,6 @@ struct SpotlightGameInfoView: View {
     @ObservedObject var cloud: CloudLibraryModel
     var showsCloudPill = false
     var canCheckCloudSources = false
-    var queuedCancelIndex: Int?
     /// "About 8 min left" under the Porting pill.
     var etaText: String? = nil
     /// "Last porting failed · Open log".
@@ -63,17 +62,10 @@ struct SpotlightGameInfoView: View {
                         .padding(.leading, canvas.u(4))
                         .padding(.top, canvas.u(20))
                 }
-                HStack(spacing: canvas.u(14)) {
-                    pills
-                    if let index = queuedCancelIndex {
-                        pill(index, SelenePillButton(title: L10n.text("Cancel"), height: 52,
-                                                     focused: focusedPill == index) { onPill(index) })
-                            .accessibilityLabel(L10n.text("Cancel queued build"))
-                    }
-                }
+                pills
                     .padding(.leading, canvas.u(2))
                     .padding(.top, canvas.u(pillSet.isFailed ? 10 : 18))
-                note
+                portingNote
                     .padding(.leading, canvas.u(4))
                     .padding(.top, canvas.u(12))
                 SeleneStatsRow(presentation: presentation)
@@ -91,17 +83,10 @@ struct SpotlightGameInfoView: View {
         GameLogoArea(title: game.name, logo: logo)
     }
 
-    /// The time left while porting, or the last failure over a working app.
-    @ViewBuilder private var note: some View {
-        if queuedCancelIndex != nil {
-            Text(L10n.text("Build queued")).seleneFont(16).foregroundColor(SeleneTheme.ink75)
-        } else {
-            portingNote
-        }
-    }
-
     @ViewBuilder private var portingNote: some View {
         switch pillSet {
+        case .queued:
+            EmptyView()
         case .porting:
             if let etaText {
                 Text(etaText)
@@ -147,7 +132,7 @@ struct SpotlightGameInfoView: View {
                                                  focused: focusedPill == index) { onPill(index) })
                 }
             }
-        case .normal, .normalAfterFailure, .unavailable:
+        case .normal, .queued, .normalAfterFailure, .unavailable:
             normalPills
         }
     }
@@ -157,6 +142,7 @@ struct SpotlightGameInfoView: View {
                            secondaryTitle: isRunning ? "Close Game" : "Options",
                            isFavorite: game.isFavorite, focused: focusedPill,
                            primaryEnabled: isRunning || pillSet.unavailableReason == nil,
+                           primaryQueued: pillSet == .queued,
                            cloud: showsCloudPill ? CloudLibraryIndicator(state: cloud.states[game.id] ?? CloudLibraryState()) : nil,
                            onAction: onPill, onHover: onHoverPill)
     }

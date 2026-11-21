@@ -307,9 +307,15 @@ extension SpotlightView {
                 SoundEffectService.shared.play(.click); SteamPlayCoordinator.shared.press(steam); return
             }
             guard let game = viewModel.libraryGames.first(where: { $0.id == id }) else { return }
-            if viewModel.portingPills(game) == .porting {
+            let pills = viewModel.portingPills(game)
+            if pills == .porting {
                 SoundEffectService.shared.play(.click)
                 router.openAddGame()
+                return
+            }
+            if pills == .queued, !game.isPlayableLocally {
+                mutate { _ = $0.showGameDetails() }
+                SoundEffectService.shared.play(.focus)
                 return
             }
             play(game)
@@ -330,14 +336,15 @@ extension SpotlightView {
 
     func pressPill(_ index: Int, game: PortedGame) {
         SoundEffectService.shared.play(.click)
-        if index == queuedCancelIndex(game) {
+        let pills = viewModel.portingPills(game)
+        if pills.cancelsQueuedBuild(at: index) {
             viewModel.porting.cancelQueuedBuild(game.id)
             return
         }
-        switch viewModel.portingPills(game) {
+        switch pills {
         case .porting:
             // The porting pill shows the porting.
-            router.openAddGame()
+            if index == 0 { router.openAddGame() }
             return
         case .failed:
             switch index {
@@ -351,7 +358,7 @@ extension SpotlightView {
                 SoundEffectService.shared.play(.error)
                 return
             }
-        case .normal, .normalAfterFailure:
+        case .normal, .queued, .normalAfterFailure:
             break
         }
         if showsCloudPill(game), index == 2 {

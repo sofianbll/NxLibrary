@@ -365,6 +365,8 @@ Il percorso completo è in [flows.md](flows.md#5-costruire-un-gioco-switch-add-g
 **Coda delle compilazioni.**
 Build e Rebuild per un altro gioco entrano in `BuildQueue` quando un porting è attivo. La coda FIFO vive solo in memoria; `AppViewModel.buildQueue` espone gli UUID in attesa. Quando il worker finisce, il coordinatore rilegge il gioco dal catalogo e aspetta che il titolo sia libero secondo `SaveOperationGate` e i lock cloud (titolo e percorsi), senza superare il primo della coda. Se gioco o sorgenti non sono più disponibili, segue la procedura cloud esistente quando possibile, altrimenti annota il salto nella Console. Questo mantiene un solo worker senza costringere a ripetere ogni richiesta.
 
+In Spotlight e Details `PortingPills.queued` sostituisce la sola azione primaria, mantenendo gli indici degli altri pulsanti. `SelenePillButton` mostra lo stato in coda e rivela Annulla in rosso al focus o al passaggio del puntatore, senza spostare i pulsanti vicini. Lo stato attivo prevale sulla coda e ripristina la pillola Porting.
+
 **Il percorso, passo per passo.**
 1. **Scelta dei file.** `AddGameView` raccoglie cartelle o file. `SourceCatalog` riconosce NSP, XCI, NSZ e XCZ e raggruppa base, aggiornamenti e DLC.
    - I file scelti si scandiscono e collegano uno per uno, senza includere altri pacchetti della cartella né cambiare la preferenza globale Game files.

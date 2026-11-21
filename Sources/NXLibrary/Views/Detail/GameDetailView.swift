@@ -173,7 +173,8 @@ struct GameDetailView: View {
             VStack(spacing: 0) {
                 Spacer(minLength: 0)
                 SeleneHintsBar(left: [HintItem(.b, L10n.text("Back"), action: { router.back() })],
-                               right: [HintItem(.y, L10n.text("Options")), HintItem(.a, L10n.text("Select"))],
+                               right: [HintItem(.y, "Options"), HintItem(.a, focus.zone == DetailsFocus.topZone
+                                    && pillSet.cancelsQueuedBuild(at: focus.pill) ? "Cancel" : "Select")],
                                bottom: SeleneBottomScrim.hintsBottom, leftInset: 18)
             }
             .seleneOverlaidHints(router.overlayHasHints(viewModel))
@@ -225,9 +226,7 @@ struct GameDetailView: View {
         cloud.archive != nil && cloud.states[game.id]?.appIsCloudOnly == true && !runningGames.isRunning(game)
     }
     var pillSet: PortingPills { viewModel.portingPills(game).detailsPresentation(cloudOnly: downloadsCloudApp) }
-    private var basePillCount: Int { pillSet.count + (showsCloudPill ? 1 : 0) }
-    var queuedCancelIndex: Int? { viewModel.buildQueue.contains(game.id) ? basePillCount : nil }
-    private var pillCount: Int { basePillCount + (queuedCancelIndex == nil ? 0 : 1) }
+    private var pillCount: Int { pillSet.count + (showsCloudPill ? 1 : 0) }
 
     // MARK: - Stage
 
@@ -294,7 +293,7 @@ struct GameDetailView: View {
                             wikipedia: wikipediaAbout?.matching(aboutLookup(model)),
                             onPrimary: { pressPill(0) },
                             onSecondary: { pressPill(1) },
-                            onFavorite: { pressPill(basePillCount - 1) },
+                            onFavorite: { pressPill(pillCount - 1) },
                             onHoverPill: { hoverPill($0) },
                             pillSet: pillSet,
                             etaText: viewModel.portingETAText,
@@ -302,7 +301,6 @@ struct GameDetailView: View {
                             showsCloudPill: showsCloudPill,
                             downloadEnabled: viewModel.canChangeCloudLibrary(game),
                             canCheckCloudSources: viewModel.canCheckCloudSources(for: game),
-                            queuedCancelIndex: queuedCancelIndex,
                             onPill: { pressPill($0) },
                             onOpenLog: { viewModel.revealLog(for: game) })
                 .offset(x: canvas.u(110), y: canvas.u(96))

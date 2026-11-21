@@ -6,6 +6,7 @@ struct SelenePillButton: View {
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneReduceMotion) private var reduceMotion
     @Environment(\.nxAppLocale) private var localization
+    @State private var hovered = false
 
     let title: String?
     var titleArguments: [String] = []
@@ -20,6 +21,8 @@ struct SelenePillButton: View {
     var enabled: Bool = true
     /// Three dots after the title rising and falling like a wave ("Porting…").
     var waveDots = false
+    var tint: Color? = nil
+    var queuedBuild = false
     let action: () -> Void
 
     static func roundIcon(_ icon: MaterialIcon, focused: Bool = false, enabled: Bool = true,
@@ -28,17 +31,43 @@ struct SelenePillButton: View {
              focused: focused, enabled: enabled, action: action)
     }
 
+    static func buildQueue(minWidth: CGFloat = 180, focused: Bool, action: @escaping () -> Void) -> Self {
+        Self(title: "Queued", icon: .schedule, iconSize: 20, minWidth: minWidth, height: 52, horizontalPadding: 18,
+             focused: focused, tint: PortingPillCopy.softRed, queuedBuild: true, action: action)
+    }
+
     var body: some View {
-        let solid = focused && enabled
-        Button(action: action) {
+        if queuedBuild {
+            pill.onHover { hovered = $0 }
+                .accessibilityLabel(L10n.text("Cancel queued build", context: localization))
+                .accessibilityValue(L10n.text("Queued", context: localization))
+        } else {
+            pill
+        }
+    }
+
+    private var pill: some View {
+        let cancelling = queuedBuild && (focused || hovered)
+        let focused = self.focused || cancelling
+        let tint = !queuedBuild || cancelling ? self.tint : nil
+        let title = cancelling ? "Cancel" : self.title
+        let icon = cancelling ? MaterialIcon.close : self.icon
+        let solid = focused && enabled && tint == nil
+        return Button(action: action) {
             HStack(spacing: canvas.u(10)) {
                 if let icon {
                     MaterialIconView(icon, size: iconSize)
                 }
                 if let title {
                     // A pill's title stays on one line: the pill grows instead.
-                    Text(titleArguments.isEmpty ? L10n.text(title, context: localization)
-                         : L10n.format(title, titleArguments, context: localization))
+                    ZStack {
+                        if queuedBuild {
+                            Text(L10n.text(cancelling ? "Queued" : "Cancel", context: localization))
+                                .hidden().accessibilityHidden(true)
+                        }
+                        Text(titleArguments.isEmpty ? L10n.text(title, context: localization)
+                             : L10n.format(title, titleArguments, context: localization))
+                    }
                         .seleneFont(21)
                         .lineLimit(1)
                         .fixedSize()
@@ -48,11 +77,11 @@ struct SelenePillButton: View {
                         .padding(.leading, canvas.u(-4))
                 }
             }
-            .foregroundColor(solid ? SeleneTheme.onFocus : (enabled ? SeleneTheme.ink : SeleneTheme.ink60))
+            .foregroundColor(solid ? SeleneTheme.onFocus : (enabled ? tint ?? SeleneTheme.ink : SeleneTheme.ink60))
             .padding(.horizontal, canvas.u(horizontalPadding))
             .frame(minWidth: canvas.u(minWidth), minHeight: canvas.u(height), maxHeight: canvas.u(height))
             .background(Capsule().fill(solid ? SeleneTheme.focus : SeleneTheme.glass))
-            .overlay(Capsule().strokeBorder(focused && !solid ? SeleneTheme.focus : SeleneTheme.ink15,
+            .overlay(Capsule().strokeBorder(focused && !solid ? tint ?? SeleneTheme.focus : SeleneTheme.ink15,
                                             lineWidth: solid ? 0 : max(1, canvas.u(focused && !solid ? 2 : 1))))
             .shadow(color: solid ? SeleneTheme.focus.opacity(0.4) : .clear, radius: canvas.u(22))
             .scaleEffect(focused && !reduceMotion ? 1.06 : 1)

@@ -160,6 +160,20 @@ final class PortingPresentationTests: XCTestCase {
         XCTAssertEqual(PortingETA.elapsed(15165), "4:12:45")
     }
 
+    func testQueuedBuildOnlyReplacesPrimaryPillUntilItStarts() {
+        let existing = game(app: true, failure: .failed)
+        let queued = PortingPills.make(game: existing, portingGameID: UUID(), queued: true)
+        XCTAssertEqual(queued, .queued)
+        XCTAssertEqual(queued.detailsPresentation(cloudOnly: true), .queued)
+        XCTAssertEqual(queued.count, PortingPills.normal.count)
+        XCTAssertEqual(queued.detailsCloudIndex, PortingPills.normal.detailsCloudIndex)
+        XCTAssertEqual((0..<4).filter(queued.cancelsQueuedBuild(at:)), [0])
+        let promoted = PortingPills.make(game: existing, portingGameID: existing.id, queued: true)
+        XCTAssertEqual(promoted, .porting)
+        XCTAssertFalse(promoted.cancelsQueuedBuild(at: 0))
+        XCTAssertEqual(PortingPills.make(game: existing, portingGameID: nil), .normalAfterFailure(.failed))
+    }
+
     // MARK: - Tile look
 
     func testTileFollowsThePortingPhase() {

@@ -12,8 +12,8 @@ extension SpotlightView {
     func hintReserve(_ state: SpotlightState) -> [[String]] {
         if state.isLifted || cardMenu != nil { return [] }
         switch state.focus {
-        case .row: return [[], ["Play", "Build", "Pick", "Open"]]
-        case .pills, .strip, .mods, .about, .actions, .more, .achievements: return [[], ["Select", "View", "Show", "Open"]]
+        case .row: return [[], ["Play", "Build", "Pick", "Open", "Show"]]
+        case .pills, .strip, .mods, .about, .actions, .more, .achievements: return [[], ["Select", "View", "Show", "Open", "Cancel"]]
         case .store: return [[], ["Sort", "View"]]
         case .topGames: return []
         }
@@ -28,7 +28,8 @@ extension SpotlightView {
         }
         switch state.focus {
         case .pills:
-            return [HintItem(.b, L10n.text("Back")), HintItem(.a, L10n.text("Select"))]
+            let cancels = model.selectedGame.map { viewModel.portingPills($0).cancelsQueuedBuild(at: state.pillIndex) } ?? false
+            return [HintItem(.b, "Back"), HintItem(.a, cancels ? "Cancel" : "Select")]
         case .strip:
             return [HintItem(.b, L10n.text("Back")), HintItem(.a, L10n.text("View"))]
         case .mods, .about, .actions:
@@ -54,15 +55,17 @@ extension SpotlightView {
                     return [HintItem(.y, L10n.text("Options"))] + SteamPlayCoordinator.shared.hint(for: steam)
                 }
                 guard let game = model.selectedGame else { return [] }
-                if viewModel.portingPills(game) == .porting {
+                let pills = viewModel.portingPills(game)
+                if pills == .porting {
                     return [HintItem(.y, L10n.text("Options")), HintItem(.a, L10n.text("Porting"))]
                 }
-                if viewModel.portingPills(game).unavailableReason != nil, !runningGames.isRunning(game) {
+                if pills.unavailableReason != nil, !runningGames.isRunning(game) {
                     return [HintItem(.y, L10n.text("Options"))]
                 }
                 if game.isPlayableLocally {
                     return [HintItem(.y, L10n.text("Options")), HintItem(.a, L10n.text("Play"))]
                 }
+                if pills == .queued { return [HintItem(.y, "Options"), HintItem(.a, "Show")] }
                 return [HintItem(.y, L10n.text("Options")), HintItem(.a, L10n.text("Build"))]
             case nil:
                 return []

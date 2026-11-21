@@ -14,10 +14,14 @@ private struct CanvasKey: EnvironmentKey { static let defaultValue = HeaderCanva
 extension EnvironmentValues { var seleneCanvas: HeaderCanvas { get { self[CanvasKey.self] } set { self[CanvasKey.self] = newValue } } }
 extension View { func seleneFont(_ size: CGFloat, _ weight: Font.Weight = .regular) -> some View { font(.system(size: size, weight: weight)) } }
 enum SeleneTheme { static let ink = Color.white }
+struct CloudLibraryIndicator { var pillIcon: MaterialIcon { .cloud } }
 struct SelenePillButton: View {
  let title: String?; var icon: MaterialIcon? = nil; var iconSize: CGFloat = 26
  var minWidth: CGFloat = 180; var height: CGFloat = 60; var horizontalPadding: CGFloat = 36
  let focused: Bool; var enabled: Bool = true; var waveDots = false; let action: () -> Void
+ static func buildQueue(focused: Bool, action: @escaping () -> Void) -> Self {
+  Self(title: "Queued", focused: focused, action: action)
+ }
  var body: some View { Color.clear }
 }
 '''+actual+'''
@@ -26,8 +30,9 @@ struct SelenePillButton: View {
   for collection in [true,false] {
    withExtendedLifetime(GameLogoArea(title: "Fixture", logo: nil, collection: collection).body) {}
   }
-  for enabled in [true,false] {
-   withExtendedLifetime(GamePrimaryActions(primaryTitle: "Play", secondaryTitle: "Options", isFavorite: true, focused: 0, primaryEnabled: enabled, onAction: {_ in}).body) {}
+  for queued in [true,false] {
+   withExtendedLifetime(GamePrimaryActions(primaryTitle: "Play", secondaryTitle: "Options", isFavorite: true,
+    focused: 0, primaryEnabled: !queued, primaryQueued: queued, cloud: CloudLibraryIndicator(), onAction: {_ in}).body) {}
   }
   print("Actual shared game header bodies work without injected stores, for both layouts/action states.")
  }
