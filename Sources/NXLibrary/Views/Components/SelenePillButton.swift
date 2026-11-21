@@ -22,6 +22,12 @@ struct SelenePillButton: View {
     var waveDots = false
     let action: () -> Void
 
+    static func roundIcon(_ icon: MaterialIcon, focused: Bool = false, enabled: Bool = true,
+                          action: @escaping () -> Void) -> Self {
+        Self(title: nil, icon: icon, iconSize: 22, minWidth: 44, height: 44, horizontalPadding: 0,
+             focused: focused, enabled: enabled, action: action)
+    }
+
     var body: some View {
         let solid = focused && enabled
         Button(action: action) {

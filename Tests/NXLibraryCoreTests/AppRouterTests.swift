@@ -145,9 +145,9 @@ final class MenuSelectionModelTests: XCTestCase {
         let first = UUID(), second = UUID()
         var focus = ActivityCenterFocus()
         let rows = ActivityCenterFocus.rows(isBuilding: true, queuedCloud: [first, second])
-        XCTAssertEqual(focus.current(in: rows), .porting)
+        XCTAssertEqual(focus.current(in: rows), .build(nil))
         focus.move(by: -1, in: rows)
-        XCTAssertEqual(focus.current(in: rows), .porting)
+        XCTAssertEqual(focus.current(in: rows), .build(nil))
         focus.move(by: 2, in: rows)
         XCTAssertEqual(focus.current(in: rows), .queuedCloud(second))
         let remaining = ActivityCenterFocus.rows(isBuilding: false, queuedCloud: [second])
@@ -155,6 +155,9 @@ final class MenuSelectionModelTests: XCTestCase {
         let empty = ActivityCenterFocus.rows(isBuilding: false)
         XCTAssertEqual(focus.current(in: empty), .close)
         XCTAssertEqual(focus.current(in: ActivityCenterFocus.rows(isBuilding: false, queuedCloud: [first])), .close)
+        let replacement: [ActivityCenterFocus.Row] = [.queuedCloud(first), .queuedCloud(UUID())]
+        focus.move(by: 1, in: replacement)
+        XCTAssertEqual(focus.current(in: replacement), .queuedCloud(first))
         focus.move(by: 1, in: empty)
         XCTAssertEqual(focus.current(in: empty), .close)
     }
@@ -163,8 +166,11 @@ final class MenuSelectionModelTests: XCTestCase {
         let build = UUID(), queuedBuild = UUID(), transfer = UUID(), queuedCloud = UUID()
         let rows = ActivityCenterFocus.rows(isBuilding: true, activeBuild: build, queuedBuilds: [queuedBuild],
                                             activeCloud: transfer, queuedCloud: [queuedCloud])
-        XCTAssertEqual(rows, [.porting, .cancelBuild(build), .queuedBuild(queuedBuild),
-                              .cancelCloud(transfer), .queuedCloud(queuedCloud), .close])
+        XCTAssertEqual(rows, [.build(build), .queuedBuild(queuedBuild), .cloud(transfer), .queuedCloud(queuedCloud)])
+        XCTAssertEqual(rows.filter(\.opensPorting), [.build(build), .queuedBuild(queuedBuild)])
+        XCTAssertEqual(rows.filter { $0.canCancel(isCancellingBuild: true) },
+                       [.queuedBuild(queuedBuild), .cloud(transfer), .queuedCloud(queuedCloud)])
+        XCTAssertFalse(ActivityCenterFocus.Row.close.canCancel(isCancellingBuild: false))
         var focus = ActivityCenterFocus()
         focus.selected = .queuedBuild(queuedBuild)
         let promoted = ActivityCenterFocus.rows(isBuilding: true, activeBuild: queuedBuild, activeCloud: queuedCloud)

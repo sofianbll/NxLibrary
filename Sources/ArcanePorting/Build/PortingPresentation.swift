@@ -13,22 +13,27 @@ public enum PortingETA {
     /// Shaders: the engine's ETA plus what the final stages took last time on this
     /// Mac, or the shaders' part alone. Finishing: what is left of last time.
     /// Nothing before the shaders.
-    public static func text(_ progress: PortingProgress, lastFinishingSeconds: Double?) -> String? {
-        if progress.isUpdatingShaderCache { return "Updating shader cache" }
+    public static func text(_ progress: PortingProgress, lastFinishingSeconds: Double?,
+                            context: AppLocale = L10n.context, compact: Bool = false) -> String? {
+        func estimate(_ key: String, _ seconds: Double) -> String? {
+            guard seconds.isFinite, abs(seconds) < Double(Int.max) else { return nil }
+            return L10n.format(compact ? "~%@" : key, [duration(seconds, context: context)], context: context)
+        }
+        if progress.isUpdatingShaderCache { return compact ? nil : L10n.text("Updating shader cache", context: context) }
         switch progress.phase {
         case .shaders:
             guard let eta = progress.shaderETA else { return nil }
-            if let last = lastFinishingSeconds { return "About \(duration(eta + last)) left" }
-            return "Shaders: about \(duration(eta))"
+            if let last = lastFinishingSeconds { return estimate("About %@ left", eta + last) }
+            return estimate("Shaders: about %@", eta)
         case .finishing:
             // Prewarm has no reliable counter and can dwarf an older build's
             // finishing time. Keep the activity visible without reusing that ETA.
             if progress.stageName == PortingProgress.prewarmStageName {
-                return L10n.text("Preparing the first launch")
+                return compact ? nil : L10n.text("Preparing the first launch", context: context)
             }
-            if let eta = progress.finishingETA { return "Pipelines: about \(duration(eta))" }
-            guard let last = lastFinishingSeconds else { return "Finishing up" }
-            return "About \(duration(max(0, last - progress.finishingElapsed))) left"
+            if let eta = progress.finishingETA { return estimate("Pipelines: about %@", eta) }
+            guard let last = lastFinishingSeconds else { return compact ? nil : L10n.text("Finishing up", context: context) }
+            return estimate("About %@ left", max(0, last - progress.finishingElapsed))
         case .preparing, .done, .failed:
             return nil
         }
@@ -51,13 +56,47 @@ public enum PortingETA {
         max(1, Int((seconds / 60).rounded()))
     }
 
-    static func duration(_ seconds: Double) -> String {
+    static func duration(_ seconds: Double, context: AppLocale) -> String {
         let total = minutes(seconds)
         let hours = total / 60
         let mins = total % 60
-        if hours == 0 { return L10n.format("%@ min", [String(describing: mins)]) }
-        if mins == 0 { return L10n.format("%@ hr", [String(describing: hours)]) }
-        return L10n.format("%@ hr %@ min", [String(describing: hours), String(describing: mins)])
+        func number(_ value: Int) -> String { value.formatted(.number.locale(context.formatLocale)) }
+        if hours == 0 { return L10n.format("%@ min", [number(mins)], context: context) }
+        if mins == 0 { return L10n.format("%@ hr", [number(hours)], context: context) }
+        return L10n.format("%@ hr %@ min", [number(hours), number(mins)], context: context)
+    }
+}
+
+/// Engine stage names are identifiers in progress and logs, not display copy.
+public enum BuildStageCopy {
+    public static func title(_ stage: String, context: AppLocale = L10n.context) -> String {
+        let key: String
+        switch stage {
+        case "", "Preparing build": key = "Preparing"
+        case "decompress NSZ": key = "Decompressing NSZ"
+        case "build ID lookup", "survey: RomFS manifest", "survey: code modules", "survey: imports vs host hooks",
+             "heap check", "address regions": key = "Checking game files"
+        case "rewrite": key = "Preparing game code"
+        case "NRO capture", "GLSLC capture", "UE shader decode", "JIT capture", "shader split":
+            key = "Preparing shaders"
+        case PortingProgress.shaderStageName, "iOS shaders", "Vulkan shaders", "GL shaders": key = "Compiling shaders"
+        case "Mac host": key = "Building Mac runtime"
+        case "Nextendo game patch", "Nextendo services": key = "Configuring Nextendo"
+        case "Pipeline prebuild": key = "Building pipelines"
+        case PortingProgress.pipelineArchiveStageName: key = "Archiving pipelines"
+        case PortingProgress.prewarmStageName: key = "Preparing the first launch"
+        case "Mac app", "app build", "IPA pack": key = "Building the app"
+        case "prepare Xcode": key = "Preparing Xcode"
+        case "Build completed": key = "Ready to play"
+        case "Installation failed", PendingInstall.stageName: key = stage
+        default:
+            if stage.hasPrefix("extract ") || stage.hasPrefix("unpack ") { key = "Extracting game files" }
+            else if stage.hasPrefix("pack ") { key = "Packing game files" }
+            else if stage.hasPrefix("check ") { key = "Checking game files" }
+            else if stage.hasSuffix(" shader capture") { key = "Preparing shaders" }
+            else { key = "Porting" }
+        }
+        return L10n.text(key, context: context)
     }
 }
 

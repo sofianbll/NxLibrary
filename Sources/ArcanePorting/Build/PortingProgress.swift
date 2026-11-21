@@ -46,6 +46,12 @@ public struct PortingProgress: Equatable {
 
     public init() {}
 
+    /// The activity list shows progress only when the overall estimate has a meaningful fill.
+    public var activityFraction: Double? {
+        guard overall.isFinite, overall > 0, !isUpdatingShaderCache, stageName != Self.prewarmStageName else { return nil }
+        return overall
+    }
+
     public mutating func apply(_ event: BuildEvent) {
         guard phase != .done, phase != .failed else { return }
         switch event {

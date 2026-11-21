@@ -2,7 +2,22 @@ import Foundation
 
 public struct ActivityCenterFocus: Equatable {
     public enum Row: Hashable {
-        case porting, cancelBuild(UUID), queuedBuild(UUID), cancelCloud(UUID), queuedCloud(UUID), close
+        case build(UUID?), queuedBuild(UUID), cloud(UUID), queuedCloud(UUID), close
+
+        public var opensPorting: Bool {
+            switch self {
+            case .build, .queuedBuild: return true
+            default: return false
+            }
+        }
+
+        public func canCancel(isCancellingBuild: Bool) -> Bool {
+            switch self {
+            case .build(let id): return id != nil && !isCancellingBuild
+            case .queuedBuild, .cloud, .queuedCloud: return true
+            case .close: return false
+            }
+        }
     }
 
     public var selected: Row?
@@ -11,21 +26,24 @@ public struct ActivityCenterFocus: Equatable {
 
     public static func rows(isBuilding: Bool, activeBuild: UUID? = nil, queuedBuilds: [UUID] = [],
                             activeCloud: UUID? = nil, queuedCloud: [UUID] = []) -> [Row] {
-        var rows: [Row] = isBuilding ? [.porting] : []
-        if let activeBuild { rows.append(.cancelBuild(activeBuild)) }
+        var rows: [Row] = isBuilding ? [.build(activeBuild)] : []
         rows += queuedBuilds.map(Row.queuedBuild)
-        if let activeCloud { rows.append(.cancelCloud(activeCloud)) }
-        return rows + queuedCloud.map(Row.queuedCloud) + [.close]
+        if let activeCloud { rows.append(.cloud(activeCloud)) }
+        return rows + queuedCloud.map(Row.queuedCloud)
     }
 
     public func current(in rows: [Row]) -> Row {
         guard let selected else { return rows.first ?? .close }
-        // A vanished request must not silently focus another Cancel button.
+        // A vanished request must not silently hand its cancel shortcut to another row.
         return rows.contains(selected) ? selected : .close
     }
 
     public mutating func move(by delta: Int, in rows: [Row]) {
-        var index = FocusIndex(index: rows.firstIndex(of: current(in: rows)) ?? 0)
+        guard let current = rows.firstIndex(of: current(in: rows)) else {
+            selected = delta < 0 ? rows.last : rows.first
+            return
+        }
+        var index = FocusIndex(index: current)
         index.move(by: delta, count: rows.count)
         selected = rows.indices.contains(index.index) ? rows[index.index] : .close
     }

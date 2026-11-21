@@ -913,12 +913,202 @@
     },
     "About %@ left": {
       "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "about %@ left"}},
+        "en": {"stringUnit": {"state": "translated", "value": "About %@ left"}},
         "it": {"stringUnit": {"state": "translated", "value": "ancora circa %@"}},
         "fr": {"stringUnit": {"state": "translated", "value": "encore ~%@"}},
         "de": {"stringUnit": {"state": "translated", "value": "noch ca. %@"}},
         "es": {"stringUnit": {"state": "translated", "value": "quedan unos %@"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "faltam cerca de %@"}}
+      }
+    },
+    "~%@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "~%@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "~%@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "~%@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "ca. %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "~%@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "~%@"}}
+      }
+    },
+    "In progress": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "In progress"}},
+        "it": {"stringUnit": {"state": "translated", "value": "In corso"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "En cours"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Läuft"}},
+        "es": {"stringUnit": {"state": "translated", "value": "En curso"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Em andamento"}}
+      }
+    },
+    "Decompressing NSZ": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Decompressing NSZ"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Decompressione NSZ"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Décompression du NSZ"}},
+        "de": {"stringUnit": {"state": "translated", "value": "NSZ wird entpackt"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Descomprimiendo el NSZ"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Descompactando o NSZ"}}
+      }
+    },
+    "Checking game files": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Checking game files"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Verifica dei file di gioco"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vérification des fichiers du jeu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spieldateien werden geprüft"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Verificando los archivos del juego"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Verificando os arquivos do jogo"}}
+      }
+    },
+    "Extracting game files": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Extracting game files"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Estrazione dei file di gioco"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Extraction des fichiers du jeu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spieldateien werden extrahiert"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Extrayendo los archivos del juego"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Extraindo os arquivos do jogo"}}
+      }
+    },
+    "Packing game files": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Packing game files"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Raggruppamento dei file di gioco"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Assemblage des fichiers du jeu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spieldateien werden gepackt"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Empaquetando los archivos del juego"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Empacotando os arquivos do jogo"}}
+      }
+    },
+    "Preparing game code": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Preparing game code"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Preparazione del codice del gioco"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Préparation du code du jeu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spielcode wird vorbereitet"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Preparando el código del juego"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Preparando o código do jogo"}}
+      }
+    },
+    "Preparing shaders": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Preparing shaders"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Preparazione degli shader"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Préparation des shaders"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Shader werden vorbereitet"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Preparando los shaders"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Preparando os shaders"}}
+      }
+    },
+    "Compiling shaders": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Compiling shaders"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Compilazione degli shader"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Compilation des shaders"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Shader werden kompiliert"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Compilando los shaders"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Compilando os shaders"}}
+      }
+    },
+    "Building Mac runtime": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Building Mac runtime"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Compilazione del runtime per Mac"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Compilation du moteur Mac"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Mac-Laufzeit wird erstellt"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Compilando el entorno para Mac"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Compilando o ambiente para Mac"}}
+      }
+    },
+    "Configuring Nextendo": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Configuring Nextendo"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Configurazione di Nextendo"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Configuration de Nextendo"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Nextendo wird eingerichtet"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Configurando Nextendo"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Configurando o Nextendo"}}
+      }
+    },
+    "Building pipelines": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Building pipelines"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Compilazione delle pipeline"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Compilation des pipelines"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Pipelines werden erstellt"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Compilando los pipelines"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Compilando os pipelines"}}
+      }
+    },
+    "Archiving pipelines": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Archiving pipelines"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Archiviazione delle pipeline"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Archivage des pipelines"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Pipelines werden archiviert"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Archivando los pipelines"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Arquivando os pipelines"}}
+      }
+    },
+    "Building the app": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Building the app"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Compilazione dell’app"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Compilation de l’app"}},
+        "de": {"stringUnit": {"state": "translated", "value": "App wird erstellt"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Compilando la app"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Compilando o app"}}
+      }
+    },
+    "Preparing Xcode": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Preparing Xcode"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Preparazione di Xcode"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Préparation de Xcode"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Xcode wird vorbereitet"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Preparando Xcode"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Preparando o Xcode"}}
+      }
+    },
+    "Updating shader cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Updating shader cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Aggiornamento della cache degli shader"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mise à jour du cache des shaders"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Shader-Cache wird aktualisiert"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Actualizando la caché de shaders"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Atualizando o cache de shaders"}}
+      }
+    },
+    "Shaders: about %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Shaders: about %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Shader: circa %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Shaders : ~%@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Shader: ca. %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Shaders: unos %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Shaders: cerca de %@"}}
+      }
+    },
+    "Pipelines: about %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Pipelines: about %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Pipeline: circa %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Pipelines : ~%@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Pipelines: ca. %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Pipelines: unos %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Pipelines: cerca de %@"}}
+      }
+    },
+    "Finishing up": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Finishing up"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Completamento"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Finalisation"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wird abgeschlossen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Finalizando"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Finalizando"}}
       }
     },
     "Archiving app": {

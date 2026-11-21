@@ -59,7 +59,7 @@ Come si aggiorna:
 | Cloud library → stato all'avvio e impronte | in attesa | Verificare badge all'avvio, precedenza del trasferimento e invalidazione dopo una modifica che mantiene dimensione e mtime. |
 | Gioco a distanza tramite ZeroTier | in attesa | Verificare LAN con ZeroTier univoco, ripiego con più VPN o senza app, precedenza della scelta per gioco e Nextendo invariato. |
 | Uscita dalla schermata del porting | in attesa | Provare B ed Esc dopo una build senza Review, il ritorno a Review con una bozza e Hide durante una build attiva. |
-| Centro attività | in attesa | Verificare apertura, focus, ritorno al porting, code lunghe, annullamento di richieste attive o in attesa e sospensione dell'input sottostante. |
+| Centro attività | in attesa | Verificare progressi, focus, A/Invio/clic per aprire Porting, X per annullare una richiesta e sospensione dell'input sottostante. |
 | Coda delle compilazioni | in attesa | Avviare A e accodare B e C; verificare deduplica, annullamento, ordine, attesa del lease e avvio dopo successo o errore. |
 | Ordinamento della libreria | in attesa | Verificare i quattro ordini, R3, precedenza di porting e download, riordino manuale, persistenza e reset. |
 | File del gioco nel cloud (Porting) | in attesa | Su un remote di prova, verificare riuso, conflitto senza sostituzione, ripristino dei file mancanti e recupero dal Cestino. |

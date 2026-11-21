@@ -50,11 +50,22 @@ struct SeleneOptionRow<Trailing: View>: View {
             Spacer(minLength: canvas.u(16))
             trailing()
         }
-        .padding(.leading, canvas.u(26))
-        .padding(.top, canvas.u(18))
-        .padding(.trailing, canvas.u(24))
-        .padding(.bottom, canvas.u(18))
-        .background(RoundedRectangle(cornerRadius: canvas.u(16), style: .continuous).fill(SeleneTheme.glass))
-        .seleneRowFocus(focused, radius: canvas.u(16))
+        .modifier(SeleneOptionRowSurface(focused: focused))
+    }
+}
+
+/// The option row's shell, also used when progress needs a full-width line below the content.
+struct SeleneOptionRowSurface: ViewModifier {
+    @Environment(\.seleneCanvas) private var canvas
+    let focused: Bool
+
+    func body(content: Content) -> some View {
+        let radius = canvas.u(16)
+        content
+            .padding(.leading, canvas.u(26))
+            .padding(.trailing, canvas.u(24))
+            .padding(.vertical, canvas.u(18))
+            .background(SeleneTheme.glass, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .seleneRowFocus(focused, radius: radius)
     }
 }

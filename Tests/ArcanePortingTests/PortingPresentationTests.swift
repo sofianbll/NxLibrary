@@ -54,6 +54,18 @@ final class PortingPresentationTests: XCTestCase {
         XCTAssertEqual(PortingETA.text(inShaders, lastFinishingSeconds: 150), "About 10 min left")
     }
 
+    func testActivityUsesLocalizedStagesAndCompactEstimates() {
+        let french = AppLocale(language: .french, region: "FR")
+        XCTAssertEqual(BuildStageCopy.title("Mac shaders", context: french), "Compilation des shaders")
+        XCTAssertEqual(BuildStageCopy.title("unpack base", context: french), "Extraction des fichiers du jeu")
+        XCTAssertEqual(BuildStageCopy.title("Prewarm pipelines", context: french), "Préparation du premier lancement")
+        XCTAssertEqual(BuildStageCopy.title("unexpected engine stage", context: french), L10n.text("Porting", context: french))
+        XCTAssertEqual(PortingETA.text(inShaders, lastFinishingSeconds: 150, context: french), "encore ~10 min")
+        XCTAssertEqual(PortingETA.text(inShaders, lastFinishingSeconds: 150, context: french, compact: true), "~10 min")
+        XCTAssertNil(PortingProgress().activityFraction)
+        XCTAssertEqual(inShaders.activityFraction, 0.45)
+    }
+
     func testETAWithoutAPreviousPortingShowsTheShadersOnly() {
         XCTAssertEqual(PortingETA.text(inShaders, lastFinishingSeconds: nil), "Shaders: about 7 min")
     }
@@ -98,6 +110,7 @@ final class PortingPresentationTests: XCTestCase {
         p.apply(heartbeat)
         XCTAssertEqual(p.overall, before, "elapsed time is not a completed-work counter")
         XCTAssertNil(p.finishingETA)
+        XCTAssertNil(p.activityFraction)
         for previousTime: Double? in [nil, 60, 7200] {
             XCTAssertEqual(PortingETA.text(p, lastFinishingSeconds: previousTime), "Preparing the first launch")
         }

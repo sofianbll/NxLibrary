@@ -151,7 +151,7 @@ flowchart TD
 
 Durante un porting, B o Esc nasconde il pannello senza annullare il lavoro. Dopo il completamento o l'annullamento, B o Esc torna a Review se c'è una selezione nel wizard; da un Build o Rebuild aperto direttamente senza bozza, torna alla schermata di partenza.
 
-**Menu → Centro attività.** La campanella si apre con un clic o con la selezione del menu (Home sul controller, ⌘K da tastiera). Mostra il porting in corso e il collegamento alla sua schermata, il trasferimento cloud e le rispettive code. Su/Giù sposta il focus; Annulla ferma il lavoro attivo selezionato o rimuove la singola richiesta ancora in coda. B o Esc chiude il centro senza fermare i lavori.
+**Menu → Centro attività.** La campanella si apre con un clic o con la selezione del menu (Home sul controller, ⌘K da tastiera). Mostra compilazioni, trasferimenti cloud e relative code. Su/Giù sposta il focus; A, Invio o un clic su una riga di compilazione apre Porting. X o il pulsante tondo ferma il lavoro attivo selezionato o rimuove la singola richiesta in coda. B o Esc chiude senza fermare i lavori.
 
 Con un porting in corso, Build o Rebuild per un altro gioco accoda la richiesta; ripetere il comando per lo stesso gioco non crea duplicati. Spotlight e Details mostrano «Compilazione in coda» con Cancel, senza togliere Play dall'app già installata. Al successo, errore o annullamento del porting attivo parte il primo in attesa senza riaprire il pannello. Un titolo occupato da un trasferimento o da un lease aspetta il rilascio; un gioco rimosso o senza sorgenti recuperabili viene saltato con una nota nella Console. La coda del porting non sopravvive alla chiusura di Arcane.
 

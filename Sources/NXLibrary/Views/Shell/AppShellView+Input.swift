@@ -14,7 +14,8 @@ extension AppShellView {
             focus.move(by: action == .navigateUp ? -1 : 1, in: rows)
             router.activityCenterFocus = focus
             if focus.selected != current { SoundEffectService.shared.play(.focus) }
-        case .confirm: selectActivityCenterRow(current, router: router, viewModel: viewModel)
+        case .confirm: openActivityCenterRow(current, router: router, viewModel: viewModel)
+        case .secondaryAction: cancelActivityCenterRow(current, viewModel: viewModel)
         case .cancel, .menu: router.closeMenu()
         default: break
         }
@@ -25,26 +26,27 @@ extension AppShellView {
         case 125: return .navigateDown
         case 126: return .navigateUp
         case 36, 76, 49: return .confirm
+        case 7: return .secondaryAction // X
         case 53: return .cancel
         default: return nil
         }
     }
 
-    func selectActivityCenterRow(_ row: ActivityCenterFocus.Row, router: AppRouter, viewModel: AppViewModel) {
+    func openActivityCenterRow(_ row: ActivityCenterFocus.Row, router: AppRouter, viewModel: AppViewModel) {
+        guard row.opensPorting, ActivityCenterView.rows(viewModel).contains(row) else { return }
+        router.closeMenu()
+        router.openAddGame()
+    }
+
+    func cancelActivityCenterRow(_ row: ActivityCenterFocus.Row, viewModel: AppViewModel) {
+        guard row.canCancel(isCancellingBuild: viewModel.porting.isCancellingBuild),
+              ActivityCenterView.rows(viewModel).contains(row) else { return }
         switch row {
-        case .porting:
-            guard viewModel.isBuilding else { return }
-            router.closeMenu()
-            router.openAddGame()
-        case .cancelBuild(let id):
-            guard viewModel.portingGameID == id, !viewModel.porting.isCancellingBuild else { return }
-            viewModel.porting.cancelBuild()
-        case .queuedBuild(let id):
-            guard viewModel.buildQueue.contains(id) else { return }
-            viewModel.porting.cancelQueuedBuild(id)
-        case .cancelCloud(let token): viewModel.cancelActiveCloudLibrary(token)
+        case .build: viewModel.porting.cancelBuild()
+        case .queuedBuild(let id): viewModel.porting.cancelQueuedBuild(id)
+        case .cloud(let token): viewModel.cancelActiveCloudLibrary(token)
         case .queuedCloud(let token): viewModel.cancelQueuedCloudLibrary(token)
-        case .close: router.closeMenu()
+        case .close: break
         }
     }
 
@@ -133,7 +135,8 @@ extension AppShellView {
             // Typing in a menu's text field (the Theme screen's search): keys go to the field, Esc leaves it.
             if router.isMenuPresented, router.activityCenterFocus != nil {
                 guard mods.isEmpty else { return event }
-                if let action = activityCenterKey(event.keyCode), action != .confirm || !event.isARepeat {
+                if let action = activityCenterKey(event.keyCode),
+                   !event.isARepeat || action == .navigateUp || action == .navigateDown {
                     GameControllerService.shared.onAction?(action)
                 }
                 return nil

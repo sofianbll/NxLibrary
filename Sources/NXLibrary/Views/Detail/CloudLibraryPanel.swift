@@ -109,6 +109,7 @@ struct CloudLibraryPanel: View {
                 .locale(localization.formatLocale))],
                         context: localization)
         }
+        let control = artifactControl(item)
         return VStack(alignment: .leading, spacing: canvas.u(8)) {
             HStack(spacing: canvas.u(12)) {
                 VStack(alignment: .leading, spacing: canvas.u(5)) {
@@ -131,13 +132,16 @@ struct CloudLibraryPanel: View {
                 }
                 .foregroundColor(SeleneTheme.ink75)
                 .multilineTextAlignment(.trailing)
-                if let control = artifactControl(item) {
-                    switch control {
-                    case .cancel: button(.cancel, "Cancel")
-                    case .upload, .uploadSources: button(control, "Send")
-                    default: button(control, "Download")
+                Group {
+                    if let control {
+                        switch control {
+                        case .cancel: artifactButton(control, "Cancel", icon: .close)
+                        case .upload, .uploadSources: artifactButton(control, "Send", icon: .cloudUpload)
+                        default: artifactButton(control, "Download", icon: .cloudDownload)
+                        }
                     }
                 }
+                .frame(width: canvas.u(44), height: canvas.u(44))
             }
             if let path = cloudPath(item) {
                 Text(verbatim: path)
@@ -160,8 +164,7 @@ struct CloudLibraryPanel: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(canvas.u(12))
-        .background(SeleneTheme.glassLight, in: RoundedRectangle(cornerRadius: canvas.u(SeleneTheme.rowRadius)))
+        .modifier(SeleneOptionRowSurface(focused: control != nil && (focus ?? controls.first) == control))
     }
 
     private func cloudPath(_ item: CloudLibraryItem) -> String? {
@@ -211,6 +214,13 @@ struct CloudLibraryPanel: View {
     private func button(_ control: Control, _ key: String) -> some View {
         SelenePillButton(title: key, minWidth: 96, height: 36, horizontalPadding: 14,
                          focused: (focus ?? controls.first) == control, action: { choose(control) })
+            .onHover { if $0 { focus = control } }
+    }
+
+    private func artifactButton(_ control: Control, _ key: String, icon: MaterialIcon) -> some View {
+        SelenePillButton.roundIcon(icon) { choose(control) }
+            .help(text(key))
+            .accessibilityLabel(text(key))
             .onHover { if $0 { focus = control } }
     }
 
@@ -358,15 +368,19 @@ struct CloudLibraryProgressView: View {
             if let speed = transfer.bytesPerSecond, speed.isFinite, speed > 0, speed < Double(Int64.max) {
                 segments.append(L10n.format("%@/s", [bytes(Int64(speed))], context: context))
             }
-            if let eta = transfer.etaSeconds, eta.isFinite, eta >= 0, eta <= 86_400, fraction < 1 {
-                let seconds = max(1, Int(eta.rounded()))
-                let duration = seconds < 60
-                    ? L10n.format("%@ s", [seconds.formatted(.number.locale(locale))], context: context)
-                    : L10n.format("%@ min", [Int((Double(seconds) / 60).rounded()).formatted(.number.locale(locale))], context: context)
-                segments.append(L10n.format("About %@ left", [duration], context: context))
-            }
+            if let eta = estimate(progress, context: context) { segments.append(eta) }
         }
         return segments.joined(separator: " · ")
+    }
+
+    static func estimate(_ progress: CloudArchiveProgress?, context: AppLocale, compact: Bool = false) -> String? {
+        guard let fraction = fraction(progress), fraction < 1, let eta = progress?.transfer?.etaSeconds,
+              eta.isFinite, eta >= 0, eta <= 86_400 else { return nil }
+        let seconds = max(1, Int(eta.rounded()))
+        let count = seconds < 60 ? seconds : Int((Double(seconds) / 60).rounded())
+        let duration = L10n.format(seconds < 60 ? "%@ s" : "%@ min",
+                                   [count.formatted(.number.locale(context.formatLocale))], context: context)
+        return L10n.format(compact ? "~%@" : "About %@ left", [duration], context: context)
     }
 
     static func percent(_ fraction: Double, context: AppLocale) -> String {

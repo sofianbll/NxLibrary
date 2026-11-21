@@ -60,7 +60,7 @@ struct AddGameStepThreeView: View {
         VStack(alignment: .leading, spacing: canvas.u(24)) {
             HStack(alignment: .top, spacing: canvas.u(36)) {
                 gameTile(caption: viewModel.portingETAText
-                    ?? (porting.currentStageName.isEmpty ? L10n.text("Preparing") : porting.currentStageName))
+                    ?? BuildStageCopy.title(porting.currentStageName))
                 stageList
             }
             PortingLogBox(logs: viewModel.logs, expanded: $porting.showLiveLogsInBuild)
@@ -120,7 +120,7 @@ struct AddGameStepThreeView: View {
                     stageMark(stage)
                         .frame(width: canvas.u(22), height: canvas.u(22))
                     VStack(alignment: .leading, spacing: canvas.u(2)) {
-                        Text(stage.name.prefix(1).uppercased() + stage.name.dropFirst())
+                        Text(BuildStageCopy.title(stage.name))
                             .seleneFont(17, stage.isRunning ? .semibold : .regular)
                             .foregroundColor(stage.isRunning ? SeleneTheme.ink : SeleneTheme.ink75)
                         if stage.isRunning, !porting.currentStepName.isEmpty {
