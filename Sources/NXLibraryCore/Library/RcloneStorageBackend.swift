@@ -196,6 +196,11 @@ public struct RcloneStorageBackend: StorageBackend {
         let environment = ProcessInfo.processInfo.environment.filter {
             !$0.key.hasPrefix("RCLONE_") || ["RCLONE_CONFIG", "RCLONE_CONFIG_PASS", "RCLONE_PASSWORD_COMMAND"].contains($0.key)
         }
+        // Apps opened from Finder get no shell environment: an encrypted config is unlocked from the
+        // login keychain item "rclone-config" (rclone only runs the command for an encrypted config).
+        if environment["RCLONE_CONFIG_PASS"] == nil, environment["RCLONE_PASSWORD_COMMAND"] == nil {
+            flags += ["--password-command", "/usr/bin/security find-generic-password -a rclone -s rclone-config -w"]
+        }
         let result: CommandResult
         do {
             result = try await SystemCommandRunner().runCancellable(binary, arguments + flags, environment: environment) { line in

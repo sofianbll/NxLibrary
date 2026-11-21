@@ -170,7 +170,7 @@ final class CloudGameArchiveTests: XCTestCase {
             XCTFail("An archive with excluded data cannot be offered for later eviction")
         } catch { XCTAssertEqual(error as? CloudArchiveError, .excludedFiles) }
         let after = try await f.backend.list()
-        XCTAssertEqual(before, after)
+        XCTAssertEqual(before.sorted { $0.key.value < $1.key.value }, after.sorted { $0.key.value < $1.key.value })
         let current = try await service.latest(titleID: title)
         XCTAssertEqual(current, manifest)
         do {
