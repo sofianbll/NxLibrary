@@ -441,8 +441,8 @@ struct CloudLibraryIndicator {
 
     static func copyColor(_ copy: CloudArtifactStatus.State) -> Color {
         switch copy {
-        case .synchronized: return SeleneTheme.success
-        case .cloudOnly: return SeleneTheme.glyph
+        case .synchronized: return SeleneTheme.statusOK
+        case .cloudOnly: return SeleneTheme.statusCloud
         case .newerOnThisMac: return SeleneTheme.untested
         case .notInCloud, .unknown: return SeleneTheme.ink60
         }
@@ -532,7 +532,7 @@ struct CloudLibraryBadge: View {
                         .foregroundColor(CloudLibraryIndicator.copyColor(indicator.copy))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     if indicator.copy == .synchronized {
-                        Circle().fill(SeleneTheme.success).frame(width: canvas.u(6), height: canvas.u(6))
+                        Circle().fill(SeleneTheme.statusOK).frame(width: canvas.u(6), height: canvas.u(6))
                             .padding(canvas.u(2))
                     }
                 }

@@ -68,7 +68,7 @@ struct SettingsCloudLibrarySection: View {
 
                 let provider = connected.flatMap { $0.type == "drive" ? nil : $0.type } ?? text("Google Drive")
                 SeleneRow("\(provider) · \(remote)", verbatimTitle: true) {
-                    SeleneStatusDot(text: serviceStatus, color: connected == nil ? SeleneTheme.ink60 : SeleneTheme.success)
+                    SeleneStatusDot(text: serviceStatus, color: connected == nil ? SeleneTheme.ink60 : SeleneTheme.statusOK)
                 }
 
                 // shortcut: the assistant starts at the account step until it accepts a folder entry point.

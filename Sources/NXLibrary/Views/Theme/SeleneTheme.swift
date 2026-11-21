@@ -28,6 +28,9 @@ enum SeleneTheme {
     static var rowIcon: Color { palette.id == SelenePaletteCatalog.defaultID ? ink82 : glyph }
     static var success: Color { Color(hex: palette.success) }
     static let danger = Color(hex: 0xFF6B6B)
+    /// Monochrome themes still use semantic colors for status dots.
+    static let statusOK = Color(hex: 0x3DDC84)
+    static let statusCloud = Color(hex: 0x9CCBFF)
     static let untested = Color(hex: 0xE8B65C)
     static var focusGlow: Color { focus.opacity(0.35) }
     static var focusGlowStrong: Color { focus.opacity(0.55) }

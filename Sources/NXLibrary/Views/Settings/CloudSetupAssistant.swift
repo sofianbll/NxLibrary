@@ -177,7 +177,7 @@ struct CloudSetupAssistant: View {
 
     private var account: some View {
         VStack(alignment: .leading, spacing: canvas.u(10)) {
-            if let version { SeleneStatusDot(text: format("rclone detected · %@", [version]), color: SeleneTheme.success) }
+            if let version { SeleneStatusDot(text: format("rclone detected · %@", [version]), color: SeleneTheme.statusOK) }
             if work?.kind == .inspect { progress("Checking…") }
             else if work?.kind == .connect { progress("Waiting for Google sign-in in your browser…") }
             else if tool == nil {
@@ -202,7 +202,7 @@ struct CloudSetupAssistant: View {
                 }
                 if !client.isEmpty {
                     SeleneStatusDot(text: text(validID ? "Valid format" : "Use an ID ending in .apps.googleusercontent.com"),
-                                    color: validID ? SeleneTheme.success : SeleneTheme.danger)
+                                    color: validID ? SeleneTheme.statusOK : SeleneTheme.danger)
                 }
                 Text(text("Google client secret"))
                 input(.secret) {
@@ -256,7 +256,7 @@ struct CloudSetupAssistant: View {
                 if folderMissing { option(.newFolder, text("New folder…"), action: nameFolder) }
                 if let count, count > 0 {
                     SeleneStatusDot(text: format(count == 1 ? "Arcane library found: %d game" : "Arcane library found: %d games", [count]),
-                                    color: SeleneTheme.success)
+                                    color: SeleneTheme.statusOK)
                 } else if countUnknown {
                     SeleneStatusDot(text: text("Arcane library status unavailable"), color: SeleneTheme.ink60)
                 }
@@ -265,7 +265,7 @@ struct CloudSetupAssistant: View {
                     SeleneStatusDot(text: text("Could not check the old folder."), color: SeleneTheme.ink60)
                 } else if let movePlan, movePlan.games > 0 {
                     SeleneStatusDot(text: format(movePlan.games == 1 ? "%d game in %@" : "%d games in %@",
-                                                 [movePlan.games, movePlan.source]), color: SeleneTheme.success)
+                                                 [movePlan.games, movePlan.source]), color: SeleneTheme.statusOK)
                     if moveOffered {
                         option(.moveGames, text("Move my games here"), checked: draft.wantsMove,
                                wide: true) { draft.toggleMove() }
@@ -284,7 +284,7 @@ struct CloudSetupAssistant: View {
                 SeleneStatusDot(text: text(stopMove ? "Cancelling…" : "Moving games…"), color: SeleneTheme.focus)
                 ProgressView(value: moveProgress).tint(SeleneTheme.focus).accessibilityLabel(text("Moving games…"))
             } else if work != nil { progress("Checking…") }
-            else if draft.verified { SeleneStatusDot(text: text("Connection OK"), color: SeleneTheme.success) }
+            else if draft.verified { SeleneStatusDot(text: text("Connection OK"), color: SeleneTheme.statusOK) }
             else { pill(.retry, "Try again", action: verify) }
         }
     }

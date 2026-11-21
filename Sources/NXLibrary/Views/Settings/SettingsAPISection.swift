@@ -131,7 +131,7 @@ struct SettingsAPISection: View {
         if remotePlayAdapters.isAmbiguous {
             status = ("Multiple active VPNs", SeleneTheme.untested)
         } else if remotePlayAdapters.zeroTier == 1 {
-            status = ("ZeroTier connected", SeleneTheme.success)
+            status = ("ZeroTier connected", SeleneTheme.statusOK)
         } else if zeroTierURL != nil {
             status = ("ZeroTier installed, not connected", SeleneTheme.untested)
         } else {
@@ -239,7 +239,7 @@ struct SettingsAPISection: View {
 
     private var accountStatus: some View {
         switch nextendo.status {
-        case .signedIn: return SeleneStatusDot(text: text("Nextendo connected"), color: SeleneTheme.success).fixedSize()
+        case .signedIn: return SeleneStatusDot(text: text("Nextendo connected"), color: SeleneTheme.statusOK).fixedSize()
         case .expired: return SeleneStatusDot(text: text("Session expired"), color: SeleneTheme.danger).fixedSize()
         case .signedOut, .unavailable: return SeleneStatusDot(text: text("Offline"), color: SeleneTheme.ink60).fixedSize()
         }
@@ -587,8 +587,8 @@ private struct NextendoFriendLine<Trailing: View>: View {
     private var color: Color {
         switch friend.presence {
         case .offline: return SeleneTheme.ink60
-        case .online: return SeleneTheme.success
-        case .playing: return SeleneTheme.glyph
+        case .online: return SeleneTheme.statusOK
+        case .playing: return SeleneTheme.statusCloud
         }
     }
 }
