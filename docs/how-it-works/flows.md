@@ -141,7 +141,7 @@ flowchart TD
 
 `BuildCommandBuilder` aggiunge `--nextendo` e l'ID pubblico all'ambiente solo se il checkout dichiara il flag e l'ID è configurato. La sessione serve al Play online, non al porting.
 
-**Details → Cloud.** Il pulsante accanto a Options apre la libreria cloud; il link in fondo resta disponibile. Send update compare solo con app e cache locali leggibili e almeno una copia diversa o non ancora nel cloud. L'invio controlla spazio e inventari, verifica le copie Apple Archive in staging, pubblica entrambi gli oggetti e infine il manifest. Una divergenza ferma la pubblicazione: il pannello indica il percorso relativo, la Console anche il motivo.
+**Details → Cloud.** Il pulsante accanto a Options apre la libreria cloud; il link in fondo resta disponibile. Il primo invio è congiunto; Send per riga richiede una copia remota dell’altro elemento. Solo dopo gli oggetti verificati si pubblica il manifest. Una divergenza ferma la pubblicazione: il pannello indica il percorso relativo, la Console anche il motivo. Invio, download e Cestino partono nell’ordine della coda; Cancel toglie una richiesta in attesa o annulla quella attiva.
 
 Con solo una copia cloud dell'app, Download sostituisce il pulsante principale e usa lo stesso ripristino del pannello: verifica hash, inventario e firma prima di pubblicare la copia mancante e riattivare Play. Cancel agisce sul trasferimento della riga; B chiude il pannello e la fase con l'avanzamento resta in Details. Free compare per una copia sincronizzata. La conferma Selene precede una nuova verifica remota e il confronto locale; una divergenza lascia il file dov'è. La voce in libreria resta.
 

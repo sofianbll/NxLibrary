@@ -661,6 +661,36 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Download %@"}}
       }
     },
+    "Queued": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "In Warteschlange"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Queued"}},
+        "es": {"stringUnit": {"state": "translated", "value": "En cola"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "En attente"}},
+        "it": {"stringUnit": {"state": "translated", "value": "In coda"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Na fila"}}
+      }
+    },
+    "Send": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Hochladen"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Send"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enviar"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoyer"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invia"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviar"}}
+      }
+    },
+    "Send the app and cache": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "App und Cache hochladen"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Send the app and cache"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enviar la app y la caché"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoyer l’app et le cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invia app e cache"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviar o app e o cache"}}
+      }
+    },
     "Send update": {
       "localizations": {
         "de": {"stringUnit": {"state": "translated", "value": "Update hochladen"}},

@@ -129,7 +129,7 @@ final class AppIconModel: ObservableObject {
     func syncPendingAppIcons() {
         for game in app.libraryGames where game.appIconPending {
             guard app.developmentOperations.permits(.icon, gameID: game.id) else { continue }
-            guard app.cloudLibrary.jobs[game.id] == nil else { continue }
+            guard !app.cloudLibrary.isWorking || !app.cloudLibrary.conflicts(with: CloudWorkScope(game)) else { continue }
             guard !appIconsInFlight.contains(game.id) else {
                 appIconRerun.insert(game.id)
                 continue

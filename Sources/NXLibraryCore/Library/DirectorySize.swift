@@ -8,7 +8,7 @@ public enum DirectorySize {
         bytes(at: url, includingHidden: false)
     }
 
-    static func bytes(at url: URL, includingHidden: Bool) -> Int64 {
+    package static func bytes(at url: URL, includingHidden: Bool) -> Int64 {
         var total: Int64 = 0
         url.withUnsafeFileSystemRepresentation { path in
             guard let path, let root = strdup(path) else { return }

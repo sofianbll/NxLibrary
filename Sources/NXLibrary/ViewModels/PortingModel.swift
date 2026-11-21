@@ -9,6 +9,9 @@ import ArcanePorting
 /// screens. What the rest of Arcane reads of a porting stays on `AppViewModel`: `isBuilding`, `currentBuildGameID`
 /// and `portingProgress` (the home's tile).
 final class PortingModel: ObservableObject {
+    var checkingCloudBuildScope: CloudWorkScope?
+    var activeCloudBuildScope: CloudWorkScope?
+    var cloudBuildScope: CloudWorkScope? { activeCloudBuildScope ?? checkingCloudBuildScope }
     // MARK: - Wizard
     @Published var buildWizardStep: Int = 1 // 1: Select Game, 2: Configure & Output, 3: Porting
     @Published var showLiveLogsInBuild: Bool = true

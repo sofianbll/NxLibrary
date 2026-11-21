@@ -141,6 +141,7 @@ extension PortingModel {
                      finalApp: URL, tempDir: URL, nextendoRequested: Bool, stagedCodeMods: [String]?) {
         stopStageElapsedTimer()
         currentBuildCacheURL = nil
+        activeCloudBuildScope = nil
         app.portingProgress?.finish(success: result.success)
         app.isBuilding = false
         self.isCancellingBuild = false

@@ -23,7 +23,7 @@ struct CloudLibraryPanel: View {
     }
 
     private enum Control: Hashable {
-        case upload, free(CloudArtifactKind), download(CloudArtifactKind), cancel, refresh, settings, close
+        case upload(CloudArtifactKind?), free(CloudArtifactKind), download(CloudArtifactKind), cancel, refresh, settings, close
     }
 
     private var state: CloudLibraryState { model.states[game.id] ?? CloudLibraryState() }
@@ -75,12 +75,14 @@ struct CloudLibraryPanel: View {
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            if controls.contains(where: { [.close, .settings, .refresh, .upload].contains($0) }) {
+            if controls.contains(where: { [.close, .settings, .refresh, .upload(nil)].contains($0) }) {
                 HStack(spacing: canvas.u(10)) {
                     if !showHints { button(.close, "Close") }
                     if controls.contains(.settings) { button(.settings, "Open settings") }
                     if controls.contains(.refresh) { button(.refresh, "Refresh") }
-                    if controls.contains(.upload) { button(.upload, "Send update") }
+                    if controls.contains(.upload(nil)) {
+                        button(.upload(nil), state.needsCombinedUpload ? "Send the app and cache" : "Send update")
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }
@@ -91,7 +93,7 @@ struct CloudLibraryPanel: View {
     private func artifactRow(_ kind: CloudArtifactKind) -> some View {
         let title = text(kind == .app ? "Game app" : "Build cache")
         let copy = state.copies[kind]
-        let live = state.activeKind == kind
+        let live = state.activeKind == kind && !state.queued
         let size = copy?.bytes.map { $0.formatted(.byteCount(style: .file).locale(localization.formatLocale)) }
         let sent = copy?.uploadedAt.map {
             L10n.format("Sent %@", [$0.formatted(.relative(presentation: .named, unitsStyle: .abbreviated)
@@ -123,6 +125,7 @@ struct CloudLibraryPanel: View {
                 if let control = artifactControl(kind) {
                     switch control {
                     case .cancel: button(.cancel, "Cancel")
+                    case .upload: button(control, "Send")
                     case .free: button(control, size == nil ? "Free up space" : "Free %@", arguments: size.map { [$0] } ?? [])
                     default: button(control, "Download")
                     }
@@ -147,7 +150,7 @@ struct CloudLibraryPanel: View {
         switch state.copies[kind]?.state {
         case .synchronized: return .free(kind)
         case .cloudOnly: return .download(kind)
-        default: return nil
+        default: return state.canUpload(kind) ? .upload(kind) : nil
         }
     }
 
@@ -158,7 +161,7 @@ struct CloudLibraryPanel: View {
         let artifacts = CloudArtifactKind.allCases.compactMap(artifactControl)
         if state.action != nil || state.refreshing { return artifacts + close }
         return artifacts + close + (state.message == nil ? [] : [.settings])
-            + [.refresh] + (canChange && state.needsUpload ? [.upload] : [])
+            + [.refresh] + (canChange && state.canUploadBoth ? [.upload(nil)] : [])
     }
 
     private func button(_ control: Control, _ key: String, arguments: [String] = []) -> some View {
@@ -189,7 +192,7 @@ struct CloudLibraryPanel: View {
     private func choose(_ control: Control) {
         guard controls.contains(control) else { return }
         switch control {
-        case .upload: viewModel.performCloudLibrary(.upload, for: game)
+        case .upload(let kind): viewModel.performCloudLibrary(.upload(kind), for: game)
         case .free(let kind): viewModel.confirmCloudFree(kind, for: game)
         case .download(let kind): viewModel.performCloudLibrary(.restore(kind), for: game)
         case .cancel: viewModel.cancelCloudLibrary(game)
@@ -284,7 +287,9 @@ struct CloudLibraryIndicator {
     let state: CloudLibraryState
     var kind: CloudArtifactKind? = nil
 
-    var progress: Bool { state.action != nil && (kind == nil || state.activeKind == kind) }
+    private var showsAction: Bool { state.action != nil && (kind == nil || state.activeKind == kind) }
+    var progress: Bool { showsAction && !state.queued }
+    var queued: Bool { showsAction && state.queued }
     var copy: CloudArtifactStatus.State { state.copies[kind ?? .app]?.state ?? .unknown }
     // Bound once: comparing two optional-chained tuple fields crashes Swift 6.4.2's Release optimizer (SemanticARCOpts).
     private var failed: Bool {
@@ -293,6 +298,7 @@ struct CloudLibraryIndicator {
     }
 
     var color: Color {
+        if queued { return SeleneTheme.ink60 }
         if progress { return SeleneTheme.ink }
         if failed { return PortingPillCopy.softRed }
         return Self.copyColor(copy)
@@ -308,6 +314,7 @@ struct CloudLibraryIndicator {
     }
 
     func label(context: AppLocale, showingFailure: Bool = true) -> String {
+        if queued { return L10n.text("Queued", context: context) }
         if progress {
             if let fraction = CloudLibraryProgressView.fraction(state.progress) {
                 let key = state.progress?.phase == .uploading ? "Sending %@" : "Downloading %@"
@@ -329,7 +336,7 @@ struct CloudLibraryIndicator {
 
     func dot(context: AppLocale, title: String? = nil) -> some View {
         SeleneStatusDot(text: label(context: context), color: color,
-                        labelColor: failed && !progress ? PortingPillCopy.softRed : SeleneTheme.ink90,
+                        labelColor: failed && !progress && !queued ? PortingPillCopy.softRed : SeleneTheme.ink90,
                         accessibilityTitle: title ?? L10n.text("Cloud library", context: context))
     }
 }
@@ -345,7 +352,7 @@ struct CloudLibraryTileBadge: ViewModifier {
     func body(content: Content) -> some View {
         let indicator = state.map { CloudLibraryIndicator(state: $0) }
         let symbol = indicator.flatMap { Self.symbol(for: $0.copy) }
-        let visible = indicator?.progress == true || symbol != nil
+        let visible = indicator?.progress == true || indicator?.queued == true || symbol != nil
         content.overlay(alignment: .topTrailing) {
             if let indicator, visible {
                 badge(indicator, symbol: symbol)
@@ -372,6 +379,9 @@ struct CloudLibraryTileBadge: ViewModifier {
                     }
                     Image(systemName: "icloud").font(.system(size: canvas.u(15)))
                         .foregroundColor(SeleneTheme.ink).frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if indicator.queued {
+                    Image(systemName: "clock").font(.system(size: canvas.u(15)))
+                        .foregroundColor(indicator.color).frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let symbol {
                     Image(systemName: symbol).font(.system(size: canvas.u(17), weight: .medium))
                         .foregroundColor(CloudLibraryIndicator.copyColor(indicator.copy))

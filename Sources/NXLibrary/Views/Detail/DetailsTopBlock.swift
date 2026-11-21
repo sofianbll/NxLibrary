@@ -76,7 +76,7 @@ struct DetailsTopBlock: View {
                 }
             }
                 .padding(.top, canvas.u(pillSet.isFailed ? 10 : 26))
-            if let state = cloud.states[game.id], state.action != nil {
+            if let state = cloud.states[game.id], state.action != nil, !state.queued {
                 CloudLibraryProgressView(progress: state.progress)
                     .frame(maxWidth: canvas.u(700), alignment: .leading)
                     .padding(.top, canvas.u(12))

@@ -38,10 +38,36 @@ extension PortingModel {
     }
 
     // MARK: - Build run
+    private func buildScope(title: String, appURL: URL, registered: [URL], workspace: URL?) -> CloudWorkScope {
+        let scratch = BuildScratch.choose(core: app.core, appFolder: appURL.deletingLastPathComponent(), existingWorkspace: workspace)
+        return CloudWorkScope(title: title, urls: registered + [appURL, scratch.workspaces.appendingPathComponent(title.uppercased())])
+    }
+
+    private func buildScope(for game: PortedGame) -> CloudWorkScope {
+        let workspace = game.workspacePath.map { URL(fileURLWithPath: $0) }
+        return buildScope(title: game.titleId ?? "", appURL: finalAppURL(for: game),
+                          registered: [game.url] + [workspace, game.buildCachePath.map { URL(fileURLWithPath: $0) }].compactMap { $0 },
+                          workspace: workspace)
+    }
+
+    private var selectedFolderWorkspace: URL? {
+        guard selectedPackageURLs == nil, detectedGames.count == 1,
+              let selectedGame, selectedSources.count == selectedGame.files.count,
+              selectedSources.allSatisfy({ $0.layout == .package }) else { return nil }
+        return selectedGameFolder
+    }
+
     var canStartBuild: Bool {
         !app.isBuilding
             && !app.isCheckingCloudBuild
-            && !app.cloudLibrary.isWorking
+            && !app.cloudLibrary.isChangingConnection
+            && (!app.cloudLibrary.isWorking || selectedGame?.titleId.map { title in
+                let existing = selectedLibraryGame
+                let workspace = existing?.workspacePath.map { URL(fileURLWithPath: $0) } ?? selectedFolderWorkspace
+                return !app.cloudLibrary.conflicts(with: buildScope(title: title, appURL: selectedBuildAppURL,
+                    registered: [existing?.url, workspace, existing?.buildCachePath.map { URL(fileURLWithPath: $0) }]
+                        .compactMap { $0 }, workspace: workspace))
+            } == true)
             && !app.isCleaningStorage
             && !app.isUpdatingApp
             && self.canAddSelectedGame
@@ -114,16 +140,11 @@ extension PortingModel {
         )
         let customName = self.appName.trimmingCharacters(in: .whitespacesAndNewlines)
         if !customName.isEmpty { detected.name = customName }
-        let useFolderMode = self.selectedGameFolder != nil
-            && self.selectedPackageURLs == nil
-            && self.detectedGames.count == 1
-            && files.count == selection.files.count
-            && files.allSatisfy { $0.layout == .package }
         do {
             let game = try addGame(
                 detected: detected,
                 selected: sources,
-                folder: useFolderMode ? self.selectedGameFolder : nil,
+                folder: selectedFolderWorkspace,
                 bundleId: self.bundleId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                     ? nil : self.bundleId.trimmingCharacters(in: .whitespacesAndNewlines)
             )
@@ -150,7 +171,7 @@ extension PortingModel {
     @discardableResult
     func addGame(detected: DetectedGame, selected: [DetectedSource],
                         folder: URL?, bundleId: String? = nil) throws -> PortedGame {
-        guard !app.isCheckingCloudBuild, !app.cloudLibrary.isWorking, !app.cloudLibrary.isChangingConnection else { throw CloudArchiveError.busy }
+        guard !app.cloudLibrary.isChangingConnection else { throw CloudArchiveError.busy }
         let selectedGame = DetectedGame(
             baseTitleId: detected.baseTitleId,
             name: detected.name,
@@ -201,6 +222,12 @@ extension PortingModel {
         if let existing { game.toolchain = existing.toolchain; game.lastBuild = existing.lastBuild }
         game.settings = pendingRuntimeConfig
 
+        if app.cloudLibrary.isWorking || checkingCloudBuildScope != nil {
+            let scope = buildScope(for: game)
+            guard !app.cloudLibrary.conflicts(with: scope), checkingCloudBuildScope?.overlaps(scope) != true else {
+                throw CloudArchiveError.busy
+            }
+        }
         let catalog = try app.catalogRepository.mergeNXNative(scanned: [game], replacingSources: true, enableSource: true)
         app.applyCatalog(catalog)
         return catalog.nxnativeGames.first(where: { $0.titleId == titleId }) ?? game
@@ -222,11 +249,13 @@ extension PortingModel {
     func requestCloudBuild(for game: PortedGame, archive: CloudGameArchive, extraArguments: [String],
                            onStarted: (() -> Void)?, withoutCache: Bool = false) {
         guard !app.isCheckingCloudBuild else { return }
-        do { try checkBuildIdle(for: game) }
+        let target = app.libraryGames.first(where: { $0.id == game.id }) ?? game
+        do { try checkBuildIdle(for: target) }
         catch { presentBuildError(error); return }
+        checkingCloudBuildScope = buildScope(for: target)
         app.isCheckingCloudBuild = true
-        Task { @MainActor [app] in
-            defer { app.isCheckingCloudBuild = false }
+        Task { @MainActor in
+            defer { checkingCloudBuildScope = nil; app.isCheckingCloudBuild = false }
             await app.startCloudBuild(for: game, archive: archive, extraArguments: extraArguments,
                                       onStarted: onStarted, withoutCache: withoutCache)
         }
@@ -234,7 +263,10 @@ extension PortingModel {
 
     private func checkBuildIdle(for game: PortedGame) throws {
         guard !app.isBuilding else { throw NXLibraryError.buildAlreadyRunning }
-        guard !app.cloudLibrary.isWorking, !app.cloudLibrary.isChangingConnection else { throw CloudArchiveError.busy }
+        guard !app.cloudLibrary.isChangingConnection,
+              !app.cloudLibrary.isWorking || !app.cloudLibrary.conflicts(with: buildScope(for: game)) else {
+            throw CloudArchiveError.busy
+        }
         guard !app.isCleaningStorage else { throw NXLibraryError.environmentBlocked(L10n.text("wait for storage cleanup to finish")) }
         guard !app.isUpdatingApp else { throw NXLibraryError.environmentBlocked(L10n.text("wait for the app update to finish")) }
         guard !app.appIcon.appIconsInFlight.contains(game.id) else {
@@ -244,8 +276,8 @@ extension PortingModel {
 
     func beginBuild(for game: PortedGame, extraArguments: [String] = [], verifiedCache: URL? = nil,
                     withoutCache: Bool = false, releaseCloudBuild: (() async -> Void)? = nil) throws {
-        try checkBuildIdle(for: game)
         var target = app.libraryGames.first(where: { $0.id == game.id }) ?? game
+        try checkBuildIdle(for: target)
         guard let titleId = target.titleId,
               UInt64(titleId, radix: 16) != nil else {
             throw NXLibraryError.missingTitleId
@@ -255,6 +287,7 @@ extension PortingModel {
         }
         // Snapshot the destination before any build work. Changing folders later cannot redirect this build.
         let finalApp = finalAppURL(for: target)
+        let reservedScope = buildScope(for: target)
         if let problem = GameAppDestination.folderProblem(at: finalApp.deletingLastPathComponent()) {
             throw NXLibraryError.environmentBlocked(problem)
         }
@@ -444,6 +477,7 @@ extension PortingModel {
         buildTempDirectory = tempRoot
         app.buildLogURL = logURL
         currentBuildCacheURL = workDir ?? workspace.buildCache
+        activeCloudBuildScope = reservedScope
         isPollingPipelineArchive = false
         self.buildWizardStep = 3
         app.isBuilding = true
