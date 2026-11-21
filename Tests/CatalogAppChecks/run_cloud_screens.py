@@ -84,7 +84,8 @@ def change(file, old, new):
 
 
 def main():
-    output = Path(sys.argv[1]).resolve()
+    # Without a folder, as a release regression, render into a throwaway folder under work/.
+    output = Path(sys.argv[1] if len(sys.argv) > 1 else tempfile.mkdtemp(prefix="cloud-screens-", dir=ROOT / "work")).resolve()
     output.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="cloud-screen-", dir=output.parent) as temp:
         package = Path(temp)
