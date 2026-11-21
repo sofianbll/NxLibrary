@@ -6,9 +6,10 @@ import Foundation
 public enum SettingsReset {
     public static func canReset(_ section: SettingsSection) -> Bool {
         switch section {
-        case .startUp, .navigation, .spotlight, .soundMusic, .look, .controllers, .libraryGames, .library, .games, .cloudLibrary:
+        case .startUp, .navigation, .spotlight, .soundMusic, .look, .controllers, .libraryGames, .library, .games, .cloudLibrary,
+             .apiServices:
             return true
-        case .search, .changed, .apiServices, .sources, .storage, .engine, .keys, .cloudSaves, .portingStorage,
+        case .search, .changed, .sources, .storage, .engine, .keys, .cloudSaves, .portingStorage,
              .about, .console:
             return false
         }
@@ -65,7 +66,9 @@ public enum SettingsReset {
             next.showsCloudPlayIcon = defaults.showsCloudPlayIcon
             next.showsCloudDetailsLink = defaults.showsCloudDetailsLink
             next.cloudTileBadges = defaults.cloudTileBadges
-        case .games, .controllers, .search, .changed, .apiServices, .sources, .storage, .engine, .keys, .cloudSaves,
+        case .apiServices:
+            next.remotePlayMode = defaults.remotePlayMode
+        case .games, .controllers, .search, .changed, .sources, .storage, .engine, .keys, .cloudSaves,
              .portingStorage, .about, .console:
             break
         }

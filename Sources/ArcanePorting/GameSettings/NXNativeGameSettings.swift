@@ -37,9 +37,10 @@ public enum GameSettingsError: LocalizedError, Equatable {
 }
 
 /// The settings of a game built with saved choices (its Info.plist has DMSettings): kept as `launcher.<env>` in the
-/// app's preferences domain, only where they differ from the build's tested default (docs/frontends.md). A build
+/// app's preferences domain, where they differ from the build's tested default or pin a VPN choice. A build
 /// from before saved choices has no adapter and keeps `env.txt` (`GameRuntimeConfig.save`).
 public struct NXNativeGameSettings {
+    public static let remotePlayKey = "DM_NET_VPN"
     /// The keys NX Library wrote into every game's env.txt up to 0.1.2.
     public static let managedKeys: Set<String> = [
         "DM_FPS_TARGET", "DM_METAL_HUD", "DM_OPMODE", "DM_RENDER_SCALE", "DM_PRESENT_UPSCALE",
@@ -108,6 +109,22 @@ public struct NXNativeGameSettings {
     /// The value Play's child process sees. Does not migrate or change a saved choice.
     public func effectiveLaunchValue(_ env: String, environment: [String: String] = ProcessInfo.processInfo.environment) -> String? {
         guard let setting = setting(env) else { return nil }
+        return explicitLaunchValue(setting, environment: environment) ?? setting.defaultValue
+    }
+
+    public func remotePlayLaunchValue(mode: RemotePlayMode, adapters: RemotePlayAdapters,
+                                      environment: [String: String]) -> String? {
+        guard mode == .automatic, adapters.zeroTier == 1, !adapters.isAmbiguous,
+              let setting = setting(Self.remotePlayKey), setting.accepts("1"),
+              explicitLaunchValue(setting, environment: environment, includeDisabledChoices: true) == nil,
+              (environment[NextendoLaunch.networkKey] ?? effectiveLaunchValue(NextendoLaunch.networkKey, environment: environment)) != "nextendo"
+        else { return nil }
+        return "1"
+    }
+
+    private func explicitLaunchValue(_ setting: LauncherSetting, environment: [String: String],
+                                     includeDisabledChoices: Bool = false) -> String? {
+        let env = setting.env
         if let inherited = environment[env] { return inherited }
         var ignoreSaved = environment["DM_SAVED_CHOICES"]
         for url in [envURL, bundleEnvURL] {
@@ -122,10 +139,11 @@ public struct NXNativeGameSettings {
                 if key == "DM_SAVED_CHOICES", ignoreSaved == nil { ignoreSaved = String(value) }
             }
         }
-        if ignoreSaved != "0", let saved = store.value(env, domain: domain), setting.accepts(saved) {
+        if includeDisabledChoices || ignoreSaved != "0",
+           let saved = store.value(env, domain: domain), setting.accepts(saved) {
             return saved
         }
-        return setting.defaultValue
+        return nil
     }
 
     /// What each setting is now: the player's env.txt, then a saved choice this build accepts, then the default.
@@ -147,11 +165,11 @@ public struct NXNativeGameSettings {
         return GameSettingsSnapshot(settings: settings, values: values, fixed: fixed)
     }
 
-    /// Keeps `value` as the player's choice; the build's default removes the key.
+    /// The build default removes the key, except for an explicit VPN choice which wins over Arcane's automatic mode.
     public func set(_ env: String, to value: String) throws {
         guard let setting = setting(env) else { throw GameSettingsError.notOffered(env) }
         guard setting.accepts(value) else { throw GameSettingsError.refused(env, value) }
-        try store.set(setting.isDefault(value) ? nil : value, env, domain: domain)
+        try store.set(env != Self.remotePlayKey && setting.isDefault(value) ? nil : value, env, domain: domain)
     }
 
     /// Every setting back to the build's tested default.

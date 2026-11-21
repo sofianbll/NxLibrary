@@ -148,9 +148,17 @@ extension AppViewModel {
             let codeMods = await Task.detached(priority: .userInitiated) {
                 store?.codeModsLaunchEnvironment(app: appURL, build: game.lastBuild) ?? [:]
             }.value
-            let overrides = (gameSettings == nil ? config.toEnvironmentDict() : environment)
+            var overrides = (gameSettings == nil ? config.toEnvironmentDict() : environment)
                 .merging(homeMenu) { _, launcher in launcher }
                 .merging(codeMods) { _, mods in mods }
+            let remotePlayMode = settingsStore?.settings.remotePlayMode ?? .automatic
+            if let gameSettings {
+                let inherited = ProcessInfo.processInfo.environment.merging(overrides) { _, override in override }
+                let adapters: RemotePlayAdapters = remotePlayMode == .automatic ? .current() : .init()
+                if let value = gameSettings.remotePlayLaunchValue(mode: remotePlayMode, adapters: adapters, environment: inherited) {
+                    overrides[NXNativeGameSettings.remotePlayKey] = value
+                }
+            }
             openGame(game, titleId: titleId, token: saveLaunchToken, environment: overrides)
         }
     }

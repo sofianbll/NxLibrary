@@ -23,6 +23,7 @@ public struct SettingDescriptor: Identifiable {
 /// with the Porting rows, is `SettingsCatalog.all` (`SettingsCatalog+Porting.swift`).
 public enum SettingsCatalog {
     package static let defaults = AppSettings()
+    public static let remotePlayHelp = "Play in Local communication or LAN mode with a friend outside your home. Online play (Nextendo) is not affected."
 
     package static func row<Value: Equatable>(_ id: String, _ group: SettingsSection, _ title: String,
                                       _ about: String,
@@ -113,6 +114,8 @@ public enum SettingsCatalog {
         // Optional connections shared by all library platforms.
         action("igdb", .apiServices, "IGDB", "Personal IGDB credentials for critic scores. Wikidata remains available without a key."),
         action("steamGridDB", .apiServices, "SteamGridDB", "Add your API key to find covers, backgrounds, logos and icons in Change artwork."),
+        action("zeroTier", .apiServices, "ZeroTier", remotePlayHelp),
+        row("remotePlayMode", .apiServices, "Remote play via ZeroTier", remotePlayHelp) { $0.remotePlayMode },
 
         // Games (Library)
         row("launchStyle", .libraryGames, "Launch screen style",

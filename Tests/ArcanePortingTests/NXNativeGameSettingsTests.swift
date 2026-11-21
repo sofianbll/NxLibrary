@@ -41,13 +41,17 @@ final class NXNativeGameSettingsTests: XCTestCase {
         var envURL: URL { support.appendingPathComponent("040074A01BF12000/env.txt") }
     }
 
-    private func fixture(dmSettings: Bool = true, env: String? = nil) throws -> Fixture {
+    private func fixture(dmSettings: Bool = true, env: String? = nil, vpn: Bool = false) throws -> Fixture {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("NXSettings-\(UUID().uuidString)")
         addTeardownBlock { try? FileManager.default.removeItem(at: root) }
         let app = root.appendingPathComponent("Donkey Kong Bananza.app")
         let dm = app.appendingPathComponent("Contents/Resources/dm")
         try FileManager.default.createDirectory(at: dm, withIntermediateDirectories: true)
-        try Data(launcherJSON.utf8).write(to: dm.appendingPathComponent("launcher.json"))
+        let json = vpn ? String(launcherJSON.dropLast(2)) + """
+            ,{"env":"DM_NET_VPN","kind":"toggle","section":"Game","label":"Play over a VPN","default":"0","on":"1","off":"0"},
+            {"env":"DM_NETWORK","kind":"choice","section":"Game","label":"Network","default":"lan","options":[["lan","LAN"],["nextendo","Online"]]}]}
+            """ : launcherJSON
+        try Data(json.utf8).write(to: dm.appendingPathComponent("launcher.json"))
         var info: [String: Any] = ["CFBundleIdentifier": domain, "DMTitleID": titleID]
         if dmSettings { info["DMSettings"] = [["env": "DM_RUMBLE", "values": ["1", "0"]]] }
         try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0)
@@ -155,6 +159,45 @@ final class NXNativeGameSettingsTests: XCTestCase {
         XCTAssertNil(f.store.values[domain]?["DM_RUMBLE_GAIN"], "the default removes the key")
         XCTAssertThrowsError(try s.set("DM_OPMODE", to: "2"))
         XCTAssertThrowsError(try s.set("DM_FPS_TARGET", to: "60"))
+    }
+
+    func testRemotePlayLaunchOnlyWithOneUnambiguousZeroTierAdapter() throws {
+        let f = try fixture(vpn: true)
+        let s = try settings(f)
+        let single = RemotePlayAdapters(zeroTier: 1)
+        func override(_ adapters: RemotePlayAdapters = .init(zeroTier: 1),
+                      _ mode: RemotePlayMode = .automatic,
+                      environment: [String: String] = [:]) -> String? {
+            s.remotePlayLaunchValue(mode: mode, adapters: adapters, environment: environment)
+        }
+        XCTAssertNil(override(.init()))
+        XCTAssertEqual(override(single), "1")
+        XCTAssertNil(override(.init(zeroTier: 2)))
+        XCTAssertNil(override(.init(zeroTier: 1, other: 1)))
+        XCTAssertNil(override(single, .disabled))
+        XCTAssertNil(override(environment: ["DM_NETWORK": "nextendo"]))
+        XCTAssertNil(override(environment: ["DM_NET_VPN": "0"]))
+        let unsupported = try settings(fixture())
+        XCTAssertNil(unsupported.remotePlayLaunchValue(mode: .automatic, adapters: single, environment: [:]))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: f.envURL.path))
+        XCTAssertNil(f.store.values[domain]?["DM_NET_VPN"])
+
+        try s.set("DM_NET_VPN", to: "0")
+        XCTAssertNil(override(), "An explicit off wins even when it matches the build default")
+        XCTAssertNil(override(environment: ["DM_SAVED_CHOICES": "0"]), "Ignoring saved choices does not opt into the VPN")
+        XCTAssertEqual(s.effectiveLaunchValue("DM_NET_VPN", environment: [:]), "0")
+        try s.set("DM_NET_VPN", to: "1")
+        XCTAssertNil(override(), "An explicit on already applies without injection")
+        try s.resetAll()
+        XCTAssertEqual(override(), "1")
+        try s.set("DM_NETWORK", to: "nextendo")
+        XCTAssertNil(override())
+        try s.resetAll()
+
+        try FileManager.default.createDirectory(at: f.envURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("DM_NET_VPN=0\n".utf8).write(to: f.envURL)
+        XCTAssertNil(override())
+        XCTAssertEqual(try String(contentsOf: f.envURL, encoding: .utf8), "DM_NET_VPN=0\n")
     }
 
     func testApplyWritesOnlyChangedTypedFields() throws {

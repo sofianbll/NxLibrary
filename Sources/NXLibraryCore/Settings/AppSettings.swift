@@ -129,9 +129,14 @@ public enum LaunchShade: String, Codable, CaseIterable, Identifiable, Equatable 
     }
 }
 
+public enum RemotePlayMode: String, Codable, CaseIterable {
+    case automatic, disabled
+}
+
 public struct AppSettings: Codable, Equatable {
     public var appLanguage: AppLanguage = .automatic
     public var appRegion: String? = nil
+    public var remotePlayMode: RemotePlayMode = .automatic
     public var backgroundShade: BackgroundShade
     public var readableText: Bool
     public var reduceMotion: Bool
@@ -269,7 +274,7 @@ public struct AppSettings: Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey, CaseIterable {
-        case appLanguage, appRegion
+        case appLanguage, appRegion, remotePlayMode
         case backgroundShade, readableText, reduceMotion, showButtonHints, showClock
         case restoreLastGame, checkEngineAtLaunch, refreshLibraryAtLaunch, lastSelectedGameID
         case startInFullscreen
@@ -289,6 +294,7 @@ public struct AppSettings: Codable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         appLanguage = (try container.decodeIfPresent(String.self, forKey: .appLanguage)).flatMap(AppLanguage.init(rawValue:)) ?? .automatic
         appRegion = AppLocale.validRegion(try container.decodeIfPresent(String.self, forKey: .appRegion))
+        remotePlayMode = (try? container.decode(RemotePlayMode.self, forKey: .remotePlayMode)) ?? .automatic
         self.backgroundShade = try container.decodeIfPresent(BackgroundShade.self, forKey: .backgroundShade) ?? .balanced
         self.readableText = try container.decodeIfPresent(Bool.self, forKey: .readableText) ?? true
         self.reduceMotion = try container.decodeIfPresent(Bool.self, forKey: .reduceMotion) ?? false
@@ -360,6 +366,7 @@ public struct AppSettings: Codable, Equatable {
         try c.encode(spotlightOrder, forKey: .spotlightOrder)
         try c.encode(startingTab, forKey: .startingTab)
         try c.encode(surprisePool, forKey: .surprisePool)
+        try c.encode(remotePlayMode, forKey: .remotePlayMode)
         try c.encode(showsCloudPlayIcon, forKey: .showsCloudPlayIcon)
         try c.encode(showsCloudDetailsLink, forKey: .showsCloudDetailsLink)
         try c.encode(cloudTileBadges, forKey: .cloudTileBadges)

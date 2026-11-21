@@ -131,6 +131,116 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível concluir a transferência. Tente de novo para mover os arquivos restantes."}}
       }
     },
+    "Remote play": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Remote play"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Gioco a distanza"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Jeu à distance"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spielen aus der Ferne"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Juego a distancia"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Jogo a distância"}}
+      }
+    },
+    "Remote play via ZeroTier": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Remote play via ZeroTier"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Gioco a distanza tramite ZeroTier"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Jeu à distance via ZeroTier"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spielen aus der Ferne über ZeroTier"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Juego a distancia mediante ZeroTier"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Jogo a distância via ZeroTier"}}
+      }
+    },
+    "Play in Local communication or LAN mode with a friend outside your home. Online play (Nextendo) is not affected.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Play in Local communication or LAN mode with a friend outside your home. Online play (Nextendo) is not affected."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Per giocare in Comunicazione locale o in Modalità LAN con un amico fuori casa. La modalità Online (Nextendo) non cambia."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Pour jouer en Communication locale ou en Mode LAN avec un ami hors de chez toi. Le mode En ligne (Nextendo) n’est pas concerné."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spiele per lokaler Kommunikation oder im LAN-Modus mit jemandem außerhalb deines Heimnetzes. Der Online-Modus (Nextendo) bleibt unverändert."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Juega mediante comunicación local o en modo LAN con un amigo fuera de casa. El modo en línea (Nextendo) no cambia."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Jogue por comunicação local ou no modo LAN com um amigo fora de casa. O modo on-line (Nextendo) não muda."}}
+      }
+    },
+    "ZeroTier": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "ZeroTier"}},
+        "it": {"stringUnit": {"state": "translated", "value": "ZeroTier"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "ZeroTier"}},
+        "de": {"stringUnit": {"state": "translated", "value": "ZeroTier"}},
+        "es": {"stringUnit": {"state": "translated", "value": "ZeroTier"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "ZeroTier"}}
+      }
+    },
+    "ZeroTier connected": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "ZeroTier connected"}},
+        "it": {"stringUnit": {"state": "translated", "value": "ZeroTier connesso"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "ZeroTier connecté"}},
+        "de": {"stringUnit": {"state": "translated", "value": "ZeroTier verbunden"}},
+        "es": {"stringUnit": {"state": "translated", "value": "ZeroTier conectado"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "ZeroTier conectado"}}
+      }
+    },
+    "ZeroTier installed, not connected": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "ZeroTier installed, not connected"}},
+        "it": {"stringUnit": {"state": "translated", "value": "ZeroTier installato, non connesso"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "ZeroTier installé, pas connecté"}},
+        "de": {"stringUnit": {"state": "translated", "value": "ZeroTier installiert, nicht verbunden"}},
+        "es": {"stringUnit": {"state": "translated", "value": "ZeroTier instalado, sin conexión"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "ZeroTier instalado, não conectado"}}
+      }
+    },
+    "ZeroTier not installed": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "ZeroTier not installed"}},
+        "it": {"stringUnit": {"state": "translated", "value": "ZeroTier non installato"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "ZeroTier non installé"}},
+        "de": {"stringUnit": {"state": "translated", "value": "ZeroTier nicht installiert"}},
+        "es": {"stringUnit": {"state": "translated", "value": "ZeroTier no instalado"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "ZeroTier não instalado"}}
+      }
+    },
+    "Multiple active VPNs": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Multiple active VPNs"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Più VPN attive"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Plusieurs VPN actifs"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Mehrere VPNs aktiv"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Varias VPN activas"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Várias VPNs ativas"}}
+      }
+    },
+    "Download ZeroTier": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Download ZeroTier"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scarica ZeroTier"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Télécharger ZeroTier"}},
+        "de": {"stringUnit": {"state": "translated", "value": "ZeroTier herunterladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Descargar ZeroTier"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Baixar ZeroTier"}}
+      }
+    },
+    "Open ZeroTier": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Open ZeroTier"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Apri ZeroTier"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ouvrir ZeroTier"}},
+        "de": {"stringUnit": {"state": "translated", "value": "ZeroTier öffnen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Abrir ZeroTier"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Abrir ZeroTier"}}
+      }
+    },
+    "Disabled": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Disabled"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Disattivato"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Désactivé"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Deaktiviert"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Desactivado"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Desativado"}}
+      }
+    },
     "Sleep": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Sleep"}},

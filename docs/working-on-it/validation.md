@@ -55,6 +55,7 @@ Come si aggiorna:
 | Aspetto della libreria cloud | in attesa | Verificare icona, link e badge con mouse, tastiera, controller e VoiceOver, e che Reset group non cambi la connessione. |
 | Settings → spostare la libreria cloud | in attesa | Con due cartelle di prova, verificare conteggio, conferma, conflitto, annullamento e ripresa nella stessa destinazione. |
 | Importazione dalla libreria cloud | in attesa | Verificare import senza download, esclusioni dopo riavvio, cambio destinazione, ripristino e stato con remote irraggiungibile. |
+| Gioco a distanza tramite ZeroTier | in attesa | Verificare LAN con ZeroTier univoco, ripiego con più VPN o senza app, precedenza della scelta per gioco e Nextendo invariato. |
 | File del gioco nel cloud (Porting) | in attesa | Su un remote di prova, verificare riuso, conflitto senza sostituzione, ripristino dei file mancanti e recupero dal Cestino. |
 | Cloud library → file del gioco | in attesa | Con pacchetti sintetici, verificare stato, dimensione, conflitti, focus e selezione per il Cestino. Con file mancanti, provare Build e Rebuild: download verificato, annullamento, errore senza build e ripresa dopo il successo; Play e badge dell'app non cambiano. |
 | Apertura immediata di Game Options con Y | in attesa | A freddo, premere subito Y su un gioco portato con un checkout nxnative personalizzato; verificare che Game Options si apra senza crash e che la riga Cheats sia corretta. |

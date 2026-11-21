@@ -94,6 +94,8 @@ flowchart TD
     J --> K["Dopo la chiusura: icone, installazioni in attesa"]
 ```
 
+Subito prima del lancio, la modalità Gioco a distanza automatica aggiunge `DM_NET_VPN=1` solo con un unico candidato VPN IPv4 ZeroTier e una build che offre l'opzione. Nextendo, un valore esplicito per gioco o più candidati impediscono l'aggiunta. Il lancio non salva questa scelta.
+
 ## 4. Play di un gioco Steam
 
 ```mermaid
@@ -224,6 +226,8 @@ La barra laterale segue `SettingsSidebarGroup`: General, Library, Porting e Syst
 In General → Online services, un checkout con supporto Nextendo mostra la scheda account, Amici e l'ID client pubblico avanzato. La scheda legge l'account all'apertura, al completamento di Sign in e con Check status, senza polling. In Amici si può mandare una richiesta con un codice o da Giocatori recenti, accettare o rifiutare una richiesta ricevuta e rimuovere un amico dopo conferma. Le richieste inviate restano in attesa e non hanno azioni. Il risultato compare nel pannello e una scrittura confermata ricarica le liste; se la rilettura fallisce o l'esito è incerto, Check status rilegge senza reinviare. Il codice personale si può copiare e il profilo si può ancora aprire nel browser. Le letture in corso si annullano quando si lascia la pagina; una rotazione già avviata termina per conservare il token condiviso.
 
 Sign in apre il browser predefinito e la riga offre Cancel finché attende la callback loopback. Una callback valida porta allo scambio PKCE e allo store condiviso del motore; Sign out rimuove solo il token locale. In Game Options → More settings, Network conserva solo le modalità dichiarate dal bundle del gioco.
+
+Gioco a distanza mostra lo stato ZeroTier e offre Scarica o Apri. Gioco a distanza tramite ZeroTier alterna Automatico e Disattivato; Reset group torna ad Automatico.
 
 In System → About, il pulsante Support Arcane compare tra il riepilogo dell’app e i crediti. `SettingsAboutSection` apre la pagina Buy Me a Coffee nel browser predefinito tramite clic, Invio o conferma del controller.
 

@@ -22,6 +22,8 @@ struct SettingsAPISection: View {
     @State private var friendCode = ""
     @FocusState private var friendCodeFocused: Bool
     @State private var copiedCode: String?
+    @State private var zeroTierURL: URL?
+    @State private var remotePlayAdapters = RemotePlayAdapters()
 
     private var clientID: String? { settings.settings.nextendoClientID ?? NextendoLaunch.buildClientID }
     private let accountRowID = "Nextendo"
@@ -72,10 +74,16 @@ struct SettingsAPISection: View {
             }
 
             if supportsNextendo { nextendoRows }
+            remotePlayRows
         }
         .onAppear {
+            refreshRemotePlay()
             publishActions()
             if supportsNextendo { nextendo.check(clientID: clientID) }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            refreshRemotePlay()
+            publishActions()
         }
         .onChange(of: igdb.revision) { publishActions() }
         .onChange(of: supportsNextendo) { _, supported in
@@ -116,6 +124,50 @@ struct SettingsAPISection: View {
             do { try await Task.sleep(for: .seconds(1.4)) } catch { return }
             if !Task.isCancelled, copiedCode == code { copiedCode = nil }
         }
+    }
+
+    private var remotePlayRows: some View {
+        let status: (String, Color)
+        if remotePlayAdapters.isAmbiguous {
+            status = ("Multiple active VPNs", SeleneTheme.untested)
+        } else if remotePlayAdapters.zeroTier == 1 {
+            status = ("ZeroTier connected", SeleneTheme.success)
+        } else if zeroTierURL != nil {
+            status = ("ZeroTier installed, not connected", SeleneTheme.untested)
+        } else {
+            status = ("ZeroTier not installed", SeleneTheme.ink60)
+        }
+        return Group {
+            SettingsSubheading(text("Remote play"))
+            SeleneRow("ZeroTier") {
+                SeleneStatusDot(text: text(status.0), color: status.1)
+                Button(text(zeroTierActionTitle), action: openZeroTier)
+                    .buttonStyle(.plain)
+                    .seleneFont(15, .semibold)
+                    .foregroundColor(SeleneTheme.glyph)
+            }
+            SeleneCycleRow("Remote play via ZeroTier", subtitle: SettingsCatalog.remotePlayHelp,
+                           value: settings.settings.remotePlayMode == .automatic ? "Automatic" : "Disabled",
+                           cycle: stepRemotePlay)
+        }
+    }
+
+    private var zeroTierActionTitle: String { zeroTierURL == nil ? "Download ZeroTier" : "Open ZeroTier" }
+
+    private func refreshRemotePlay() {
+        let standardURL = URL(fileURLWithPath: "/Applications/ZeroTier.app")
+        zeroTierURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.zerotier.ZeroTier-UI")
+            ?? (FileManager.default.fileExists(atPath: standardURL.path) ? standardURL : nil)
+        remotePlayAdapters = .current()
+    }
+
+    private func openZeroTier() {
+        if let zeroTierURL { NSWorkspace.shared.open(zeroTierURL) }
+        else if let url = URL(string: "https://www.zerotier.com/download/") { openURL(url) }
+    }
+
+    private func stepRemotePlay(_ step: Int) {
+        settings.settings.remotePlayMode = settings.settings.remotePlayMode.stepped(step)
     }
 
     @ViewBuilder private var nextendoRows: some View {
@@ -463,6 +515,10 @@ struct SettingsAPISection: View {
                 nextendo.isEditingClient = true
             })
         }
+        actions += [
+            .init(id: "zeroTier", title: zeroTierActionTitle, rowID: "ZeroTier", activate: openZeroTier),
+            .value("remotePlayMode", "Remote play via ZeroTier", cycle: stepRemotePlay),
+        ]
         onActions(actions)
     }
 

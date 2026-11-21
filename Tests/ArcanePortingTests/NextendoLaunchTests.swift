@@ -66,9 +66,11 @@ final class NextendoLaunchTests: XCTestCase {
     func testSearchAndChangedDoNotSurfaceUnsupportedConnection() {
         var settings = AppSettings()
         settings.nextendoClientID = "sample-client"
-        XCTAssertTrue(SettingsCatalog.search("Nextendo").isEmpty)
+        // Remote play mentions Nextendo in its help, but the account and client ID are conditional.
+        let nextendoRows = ["nextendo", "nextendoClientID"]
+        XCTAssertTrue(SettingsCatalog.search("Nextendo").allSatisfy { !nextendoRows.contains($0.id) })
         XCTAssertTrue(SettingsCatalog.changed(in: settings).isEmpty)
-        XCTAssertEqual(SettingsCatalog.search("Nextendo", supportsNextendo: true).map(\.id), ["nextendo", "nextendoClientID"])
+        XCTAssertEqual(SettingsCatalog.search("Nextendo", supportsNextendo: true).map(\.id).filter(nextendoRows.contains), nextendoRows)
         XCTAssertEqual(SettingsCatalog.changed(in: settings, supportsNextendo: true).map(\.id), ["nextendoClientID"])
     }
 }

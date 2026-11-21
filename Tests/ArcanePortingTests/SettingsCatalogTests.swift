@@ -25,7 +25,7 @@ final class SettingsCatalogTests: XCTestCase {
         XCTAssertTrue(changed.allSatisfy { $0.about.contains("new ported games") })
     }
 
-    /// Every row identity as it was before the regrouping: moving rows never renames them.
+    /// Every unconditional row identity: moving rows never renames them.
     private static let rowIDs: Set<String> = [
         "appLanguage", "appRegion", "startOn", "restoreLastGame", "startInFullscreen", "checkEngineAtLaunch",
         "refreshLibraryAtLaunch", "checkAppUpdatesAtLaunch", "introAnimation", "showButtonHints", "buttonNames",
@@ -44,7 +44,7 @@ final class SettingsCatalogTests: XCTestCase {
         "steamSource", "steamRefresh", "steamFolder", "steamInBackground", "storageUsage", "buildCaches", "logs",
         "metadataCache", "artworkCache", "saveBackups", "console", "engineFolder", "engineStatus",
         "toolchainOverride", "upstream", "newestEngine", "compare", "keys", "setup", "diagnostics", "appUpdates",
-        "projectDocs"
+        "projectDocs", "zeroTier", "remotePlayMode"
     ]
 
     func testRowIDsAreUnchanged() {
@@ -153,7 +153,7 @@ final class SettingsCatalogTests: XCTestCase {
         "spotlightOrder", "interfaceSounds", "soundVolume", "quietLaunch", "importSeleneSounds", "colorThemeID",
         "wallpaperID", "settingsWallpaperID", "backgroundSizing", "wallpaperBrightness", "animatedBackground",
         "keepWallpaperOnGames", "backgroundShade", "readableText", "showClock", "reduceMotion", "iconAppearance",
-        "controllerStatus", "buttonLayout", "controllerDeadzone", "igdb", "steamGridDB", "steamSource",
+        "controllerStatus", "buttonLayout", "controllerDeadzone", "igdb", "steamGridDB", "zeroTier", "remotePlayMode", "steamSource",
         "steamRefresh", "steamFolder", "steamInBackground", "launchStyle", "launchMotion", "launchShade",
         "surprisePool", "showsSessionCard", "hiddenGames", "storageUsage", "logs", "metadataCache", "artworkCache",
         "saveBackups", "checkEngineAtLaunch", "engineFolder", "engineStatus", "toolchainOverride", "upstream",
@@ -228,6 +228,22 @@ final class SettingsCatalogTests: XCTestCase {
         XCTAssertFalse(SettingsSection.apiServices.group.isPlatform)
         XCTAssertEqual(SettingsSection.sources.place(in: Self.english), "Sources")
         XCTAssertTrue(SettingsCatalog.search("API").contains { $0.group == .apiServices })
+    }
+
+    func testRemotePlayPreferenceIsSearchableChangedAndResetWithoutTouchingNextendo() throws {
+        let decoder = JSONDecoder()
+        XCTAssertEqual(try decoder.decode(AppSettings.self, from: Data("{}".utf8)).remotePlayMode, .automatic)
+        XCTAssertEqual(try decoder.decode(AppSettings.self, from: Data(#"{"remotePlayMode":"unknown"}"#.utf8)).remotePlayMode, .automatic)
+        var settings = AppSettings()
+        settings.remotePlayMode = .disabled
+        settings.nextendoClientID = "public-client"
+        XCTAssertEqual(try decoder.decode(AppSettings.self, from: JSONEncoder().encode(settings)).remotePlayMode, .disabled)
+        XCTAssertTrue(SettingsCatalog.search("ZeroTier").contains { $0.id == "remotePlayMode" && $0.group == .apiServices })
+        XCTAssertTrue(SettingsCatalog.changed(in: settings).contains { $0.id == "remotePlayMode" })
+        XCTAssertTrue(SettingsReset.canReset(.apiServices))
+        let reset = SettingsReset.reset(.apiServices, in: settings)
+        XCTAssertEqual(reset.remotePlayMode, .automatic)
+        XCTAssertEqual(reset.nextendoClientID, settings.nextendoClientID)
     }
 
     func testEmptySearchReturnsNothing() {
