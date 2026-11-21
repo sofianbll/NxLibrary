@@ -299,6 +299,7 @@ final class SetupModel: ObservableObject {
                         .map { "\($0.title): \($0.detail)" }.joined(separator: " | ")
                     self.app.logs.append(LogEntry(level: .warning, message: L10n.format("Toolchain gate: %@", [String(describing: blocked)])))
                 }
+                self.app.porting.scheduleNextBuild()
             }
         }
     }

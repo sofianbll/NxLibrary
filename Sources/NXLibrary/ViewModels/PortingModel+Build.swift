@@ -252,23 +252,61 @@ extension PortingModel {
     }
 
     func submitBuild(for game: PortedGame, extraArguments: [String], onStarted: (() -> Void)?,
-                     withoutCache: Bool = false) {
-        let activeID = app.portingGameID ?? checkingCloudBuild?.id
-        guard activeID != game.id, !app.buildQueue.contains(game.id) else { return }
-        if app.isBuilding || app.isCheckingCloudBuild || !app.buildQueue.isEmpty {
-            pendingBuilds.enqueue((game.name, extraArguments, withoutCache), id: game.id, activeID: activeID)
-            app.buildQueue = pendingBuilds.ids
+                     withoutCache: Bool = false, request: BuildRequest? = nil) {
+        let rebuild = game.url.pathExtension.lowercased() == "app" && game.cloudImportPending != true
+        let request = request ?? BuildRequest(gameID: game.id, name: game.name, arguments: extraArguments,
+                                              withoutCache: withoutCache, rebuild: rebuild || withoutCache)
+        guard !app.cloudLibrary.isQuitting, activeBuildRequest?.gameID != game.id,
+              checkingCloudBuild?.id != game.id, !app.buildQueue.contains(game.id) else { return }
+        if !hasRestoredBuildQueue || app.isBuilding || app.isCheckingCloudBuild || !app.buildQueue.isEmpty ||
+            (app.cloudLibrary.archive != nil && !app.cloudLibrary.hasRestoredQueue) {
+            enqueueBuild(request)
             scheduleNextBuild()
             return
         }
-        startBuildImmediately(for: game, extraArguments: extraArguments,
-                              onStarted: onStarted, withoutCache: withoutCache)
+        startBuildImmediately(for: game, request: request, onStarted: onStarted, queued: false)
     }
 
     func cancelQueuedBuild(_ id: UUID) {
-        guard pendingBuilds.cancel(id) else { return }
-        app.buildQueue = pendingBuilds.ids
+        guard let request = pendingBuilds.remove(id) else { return }
+        app.recordActivity(request.id, job: .build(request), name: request.name, outcome: .cancelled)
+        publishBuildQueue()
         scheduleNextBuild()
+    }
+
+    func restoreBuildQueue(_ stored: [BuildRequest]) {
+        let submitted = pendingBuilds.entries.map(\.value)
+        for request in submitted { pendingBuilds.cancel(request.gameID) }
+        for request in BuildRequest.restoring(stored) + submitted {
+            enqueueBuild(request)
+        }
+        hasRestoredBuildQueue = true
+        if !stored.isEmpty || !submitted.isEmpty { publishBuildQueue() }
+        scheduleNextBuild()
+    }
+
+    func retryBuild(_ request: BuildRequest) -> Bool {
+        // Only automatic resume is local-only. An explicit retry can ask to recover missing files.
+        var retry = request
+        retry.localSourcesOnly = false
+        guard hasRestoredBuildQueue, !app.cloudLibrary.isQuitting, enqueueBuild(retry) else { return false }
+        scheduleNextBuild()
+        return true
+    }
+
+    @discardableResult
+    private func enqueueBuild(_ request: BuildRequest) -> Bool {
+        guard pendingBuilds.enqueue(request, id: request.gameID,
+                                    activeID: activeBuildRequest?.gameID ?? checkingCloudBuild?.id) else { return false }
+        publishBuildQueue()
+        return true
+    }
+
+    func publishBuildQueue() {
+        app.buildQueue = pendingBuilds.ids
+        guard hasRestoredBuildQueue else { return }
+        hasBuildQueueWrites = true
+        buildQueueStore.save([activeBuildRequest].compactMap { $0 } + pendingBuilds.entries.map(\.value))
     }
 
     func scheduleNextBuild() {
@@ -277,28 +315,37 @@ extension PortingModel {
     }
 
     private func startNextBuild() {
-        guard !app.isBuilding, !app.isCheckingCloudBuild, !app.cloudQuitRequested, !app.cloudLibrary.isQuitting,
+        guard hasRestoredBuildQueue, !app.isBuilding, !app.isCheckingCloudBuild, !app.isScanningLibrary,
+              !app.cloudQuitRequested, !app.cloudLibrary.isQuitting,
               !app.cloudLibrary.isChangingConnection, !app.isCleaningStorage, !app.isUpdatingApp,
-              app.settingsNotice == nil else { return }
+              app.settingsNotice == nil,
+              app.cloudLibrary.archive == nil || app.cloudLibrary.hasRestoredQueue else { return }
         while !app.isBuilding && !app.isCheckingCloudBuild {
             var target: PortedGame?
-            guard let entry = pendingBuilds.takeNext({ id in
+            guard let first = pendingBuilds.entries.first?.value,
+                  let entry = pendingBuilds.takeNext({ id in
                 guard let game = app.libraryGames.first(where: { $0.id == id }) else { return .skip }
                 guard !buildTitleBusy(game) else { return .wait }
-                guard GameResourceState.sourcesAvailable(for: game) || app.canCheckCloudSources(for: game) else {
+                let sourcesAvailable = GameResourceState.sourcesAvailable(for: game)
+                guard first.localSourcesOnly ? first.canResumeAutomatically(game)
+                    : (sourcesAvailable || app.canCheckCloudSources(for: game)) else {
                     return .skip
+                }
+                if sourcesAvailable && app.setup.environmentStatus == nil && app.setup.isNxnativeValid {
+                    if !app.setup.isCheckingEnvironment { app.setup.refreshCompatibility() }
+                    return .wait
                 }
                 target = game
                 return .start
             }) else { return }
-            app.buildQueue = pendingBuilds.ids
             guard let target else {
-                logSkippedBuild(entry.value.name, reason: L10n.text("Game or source files not found."))
+                let reason = L10n.text("Game, app or source files not found.")
+                logSkippedBuild(entry.value.name, reason: reason)
+                app.recordActivity(entry.value.id, job: .build(entry.value), name: entry.value.name, outcome: .failed(reason))
+                publishBuildQueue()
                 continue
             }
-            startBuildImmediately(for: target, extraArguments: entry.value.arguments,
-                                  onStarted: nil, withoutCache: entry.value.withoutCache,
-                                  queued: (entry.id, entry.value))
+            startBuildImmediately(for: target, request: entry.value, onStarted: nil, queued: true)
         }
     }
 
@@ -312,41 +359,52 @@ extension PortingModel {
             || game.titleId.map { app.saveGate.isBusy(titleID: $0) } == true
     }
 
-    private func startBuildImmediately(for game: PortedGame, extraArguments: [String], onStarted: (() -> Void)?,
-                                       withoutCache: Bool, queued: BuildQueue<QueuedBuild>.Entry? = nil) {
+    private func startBuildImmediately(for game: PortedGame, request: BuildRequest, onStarted: (() -> Void)?,
+                                       queued: Bool) {
+        activeBuildRequest = request
+        publishBuildQueue()
         if let archive = app.cloudLibrary.archive {
-            requestCloudBuild(for: game, archive: archive, extraArguments: extraArguments, onStarted: onStarted,
-                              withoutCache: withoutCache, queuedName: queued?.value.name,
-                              canStart: queued.map { entry in
-                { [weak self] target in
+            requestCloudBuild(for: game, archive: archive, extraArguments: request.arguments, onStarted: onStarted,
+                              withoutCache: request.withoutCache, queuedName: queued ? request.name : nil,
+                              request: request, canStart: queued ? { [weak self] target in
                     guard let self else { return false }
                     guard !self.buildTitleBusy(target) else {
-                        self.pendingBuilds.retryFirst(entry)
-                        self.app.buildQueue = self.pendingBuilds.ids
+                        self.activeBuildRequest = nil
+                        self.pendingBuilds.retryFirst((request.gameID, request))
+                        self.publishBuildQueue()
                         return false
                     }
                     return true
-                }
-            })
+                } : nil)
             return
         }
         do {
-            try beginBuild(for: game, extraArguments: extraArguments, withoutCache: withoutCache)
+            try beginBuild(for: game, extraArguments: request.arguments, withoutCache: request.withoutCache)
             onStarted?()
         } catch {
-            if let queued { logSkippedBuild(queued.value.name, reason: error.localizedDescription) }
+            finishActivityBuild(.failed(error.localizedDescription))
+            if queued { logSkippedBuild(request.name, reason: error.localizedDescription) }
             else { presentBuildError(error) }
         }
     }
 
+    func finishActivityBuild(_ outcome: ActivityHistory.Outcome) {
+        guard let request = activeBuildRequest, !app.cloudLibrary.isQuitting else { return }
+        app.recordActivity(request.id, job: .build(request), name: request.name, outcome: outcome)
+        activeBuildRequest = nil
+        publishBuildQueue()
+    }
+
     func requestCloudBuild(for game: PortedGame, archive: CloudGameArchive, extraArguments: [String],
                            onStarted: (() -> Void)?, withoutCache: Bool = false,
-                           queuedName: String? = nil, canStart: ((PortedGame) -> Bool)? = nil,
+                           queuedName: String? = nil, request: BuildRequest? = nil,
+                           canStart: ((PortedGame) -> Bool)? = nil,
                            afterSourcesDownloaded: (() -> Void)? = nil) {
         guard !app.isCheckingCloudBuild else { return }
         let target = app.libraryGames.first(where: { $0.id == game.id }) ?? game
         do { try checkBuildIdle(for: target) }
         catch {
+            if request != nil { finishActivityBuild(.failed(error.localizedDescription)) }
             if let queuedName { logSkippedBuild(queuedName, reason: error.localizedDescription) }
             else { presentBuildError(error) }
             return
@@ -361,13 +419,16 @@ extension PortingModel {
                 return
             }
             defer {
+                if request?.id == activeBuildRequest?.id, request != nil, !app.isBuilding {
+                    finishActivityBuild(.failed(L10n.text("Build needs your attention.")))
+                }
                 checkingCloudBuild = nil
                 app.isCheckingCloudBuild = false
                 scheduleNextBuild()
             }
             await app.startCloudBuild(for: game, archive: archive, extraArguments: extraArguments,
                                       onStarted: onStarted, withoutCache: withoutCache,
-                                      queuedName: queuedName, canStart: canStart,
+                                      queuedName: queuedName, request: request, canStart: canStart,
                                       afterSourcesDownloaded: afterSourcesDownloaded)
         }
     }
@@ -389,6 +450,10 @@ extension PortingModel {
                     withoutCache: Bool = false, releaseCloudBuild: (() async -> Void)? = nil) throws {
         var target = app.libraryGames.first(where: { $0.id == game.id }) ?? game
         try checkBuildIdle(for: target)
+        if let request = activeBuildRequest, request.localSourcesOnly,
+           !request.canResumeAutomatically(target) {
+            throw NXLibraryError.missingSources
+        }
         guard let titleId = target.titleId,
               UInt64(titleId, radix: 16) != nil else {
             throw NXLibraryError.missingTitleId
@@ -462,8 +527,6 @@ extension PortingModel {
         }
         target = stored
         buildPreviousStatus = target.status
-        app.currentBuildGameID = target.id
-        app.lastBuildGameID = target.id
 
         let workspace: Workspace
         let existingDirectory = target.workspacePath.map { URL(fileURLWithPath: $0) }
@@ -591,6 +654,8 @@ extension PortingModel {
         activeCloudBuildScope = reservedScope
         isPollingPipelineArchive = false
         self.buildWizardStep = 3
+        app.currentBuildGameID = target.id
+        app.lastBuildGameID = target.id
         app.isBuilding = true
         // The request belongs to an accepted porting, never to startup or Steam-only use.
         NotificationService.shared.requestAuthorization()

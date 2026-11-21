@@ -188,6 +188,248 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "使用其他 Google 客户端"}}
       }
     },
+    "No activity": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "No activity"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nessuna attività"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Aucune activité"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Keine Aktivität"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Sin actividad"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nenhuma atividade"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "没有活动"}}
+      }
+    },
+    "Results": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Results"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Esiti"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Résultats"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Ergebnisse"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Resultados"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Resultados"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "结果"}}
+      }
+    },
+    "Clear all": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Clear all"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cancella tutto"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Tout effacer"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Alle löschen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Borrar todo"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Limpar tudo"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "全部清除"}}
+      }
+    },
+    "Send app": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Send app"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invia l’app"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoyer l’app"}},
+        "de": {"stringUnit": {"state": "translated", "value": "App hochladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enviar la app"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviar o app"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "上传应用"}}
+      }
+    },
+    "Send cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Send cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invia la cache"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoyer le cache"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cache hochladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enviar la caché"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviar o cache"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "上传缓存"}}
+      }
+    },
+    "Send app and cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Send app and cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invia app e cache"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoyer l’app et le cache"}},
+        "de": {"stringUnit": {"state": "translated", "value": "App und Cache hochladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enviar la app y la caché"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviar o app e o cache"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "上传应用和缓存"}}
+      }
+    },
+    "Download app": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Download app"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scarica l’app"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Télécharger l’app"}},
+        "de": {"stringUnit": {"state": "translated", "value": "App herunterladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Descargar la app"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Baixar o app"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "下载应用"}}
+      }
+    },
+    "Send game files": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Send game files"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invia i file del gioco"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoyer les fichiers du jeu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spieldateien hochladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enviar los archivos del juego"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviar os arquivos do jogo"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "上传游戏文件"}}
+      }
+    },
+    "Download game files": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Download game files"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scarica i file del gioco"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Télécharger les fichiers du jeu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spieldateien herunterladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Descargar los archivos del juego"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Baixar os arquivos do jogo"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "下载游戏文件"}}
+      }
+    },
+    "Move library": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Move library"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Sposta la libreria"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Déplacer la bibliothèque"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Bibliothek verschieben"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Mover la biblioteca"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Mover a biblioteca"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "移动游戏库"}}
+      }
+    },
+    "Library files conflict.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Library files conflict."}},
+        "it": {"stringUnit": {"state": "translated", "value": "File della libreria in conflitto."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Des fichiers de la bibliothèque sont en conflit."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Dateikonflikt in der Bibliothek."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Hay archivos de la biblioteca en conflicto."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Há arquivos da biblioteca em conflito."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "游戏库文件存在冲突。"}}
+      }
+    },
+    "Moving the cloud library": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Moving the cloud library"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Spostamento della libreria cloud"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Déplacement de la bibliothèque cloud"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Bibliothek wird verschoben"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Moviendo la biblioteca en la nube"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Movendo a biblioteca na nuvem"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在移动云端游戏库"}}
+      }
+    },
+    "Quitting stops the move between files. Files already moved stay in the new folder.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Quitting stops the move between files. Files already moved stay in the new folder."}},
+        "it": {"stringUnit": {"state": "translated", "value": "L’uscita interrompe lo spostamento tra un file e l’altro. I file già spostati restano nella nuova cartella."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Quitter arrête le déplacement entre deux fichiers. Les fichiers déjà déplacés restent dans le nouveau dossier."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Beim Beenden stoppt der Vorgang zwischen zwei Dateien. Bereits verschobene Dateien bleiben im neuen Ordner."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Salir detiene el traslado entre archivos. Los archivos ya movidos se quedan en la nueva carpeta."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Sair interrompe a movimentação entre arquivos. Os arquivos já movidos ficam na nova pasta."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "退出会在两个文件之间停止移动。已移动的文件会留在新文件夹中。"}}
+      }
+    },
+    "Succeeded": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Succeeded"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Riuscito"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Réussi"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Erfolgreich"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Completado"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Concluído"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "成功"}}
+      }
+    },
+    "Failed": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Failed"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Non riuscito"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Échec"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Fehlgeschlagen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Error"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Falhou"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "失败"}}
+      }
+    },
+    "Cancelled": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Cancelled"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Annullato"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Annulé"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Abgebrochen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Cancelado"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Cancelado"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "已取消"}}
+      }
+    },
+    "Game, app or source files not found.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Game, app or source files not found."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Gioco, app o file sorgente non trovati."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Jeu, app ou fichiers source introuvables."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spiel, App oder Quelldateien nicht gefunden."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se encontró el juego, la app o los archivos fuente."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Jogo, app ou arquivos de origem não encontrados."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "找不到游戏、应用或源文件。"}}
+      }
+    },
+    "Cloud operation no longer available.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Cloud operation no longer available."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Operazione cloud non più disponibile."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Opération cloud devenue indisponible."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Aktion nicht mehr verfügbar."}},
+        "es": {"stringUnit": {"state": "translated", "value": "La operación en la nube ya no está disponible."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "A operação na nuvem não está mais disponível."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "云端操作已不可用。"}}
+      }
+    },
+    "Build needs your attention.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Build needs your attention."}},
+        "it": {"stringUnit": {"state": "translated", "value": "La compilazione richiede un intervento."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "La compilation attend votre intervention."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Die Kompilierung erfordert eine Aktion."}},
+        "es": {"stringUnit": {"state": "translated", "value": "La compilación requiere tu intervención."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "A compilação requer sua atenção."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "编译需要你处理。"}}
+      }
+    },
+    "Build needs a verified cache.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Build needs a verified cache."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Serve una cache verificata."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "La compilation nécessite un cache vérifié."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Ein geprüfter Cache ist für die Kompilierung nötig."}},
+        "es": {"stringUnit": {"state": "translated", "value": "La compilación necesita una caché verificada."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "A compilação precisa de um cache verificado."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "编译需要经过验证的缓存。"}}
+      }
+    },
+    "Preparing build…": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Preparing build…"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Preparazione della compilazione…"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Préparation de la compilation…"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Kompilierung wird vorbereitet…"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Preparando la compilación…"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Preparando a compilação…"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在准备编译…"}}
+      }
+    },
+    "This activity cannot be retried right now.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "This activity cannot be retried right now."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Non puoi riprovare questa attività adesso."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Impossible de réessayer cette opération pour le moment."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Diese Aktivität kann gerade nicht erneut versucht werden."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se puede reintentar esta actividad ahora."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não é possível tentar esta atividade novamente agora."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "暂时无法重试此活动。"}}
+      }
+    },
     "Sort games": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Sort games"}},

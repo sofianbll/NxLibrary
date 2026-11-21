@@ -26,27 +26,34 @@ extension AppShellView {
         case 125: return .navigateDown
         case 126: return .navigateUp
         case 36, 76, 49: return .confirm
-        case 7: return .secondaryAction // X
+        case 7, 51: return .secondaryAction // X / Delete
         case 53: return .cancel
         default: return nil
         }
     }
 
     func openActivityCenterRow(_ row: ActivityCenterFocus.Row, router: AppRouter, viewModel: AppViewModel) {
-        guard row.opensPorting, ActivityCenterView.rows(viewModel).contains(row) else { return }
-        router.closeMenu()
-        router.openAddGame()
+        guard ActivityCenterView.rows(viewModel).contains(row) else { return }
+        switch row {
+        case .result(let id): viewModel.retryActivity(id)
+        case .clearAll: viewModel.clearActivity()
+        default:
+            guard row.opensPorting else { return }
+            router.closeMenu()
+            router.openAddGame()
+        }
     }
 
     func cancelActivityCenterRow(_ row: ActivityCenterFocus.Row, viewModel: AppViewModel) {
-        guard row.canCancel(isCancellingBuild: viewModel.porting.isCancellingBuild),
-              ActivityCenterView.rows(viewModel).contains(row) else { return }
+        guard ActivityCenterView.rows(viewModel).contains(row) else { return }
         switch row {
-        case .build: viewModel.porting.cancelBuild()
+        case .build where viewModel.isBuilding && !viewModel.porting.isCancellingBuild: viewModel.porting.cancelBuild()
         case .queuedBuild(let id): viewModel.porting.cancelQueuedBuild(id)
         case .cloud(let token): viewModel.cancelActiveCloudLibrary(token)
         case .queuedCloud(let token): viewModel.cancelQueuedCloudLibrary(token)
-        case .close: break
+        case .move(let id): viewModel.cancelLibraryMove(id)
+        case .result(let id): viewModel.clearActivity(id)
+        default: break
         }
     }
 

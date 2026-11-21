@@ -22,6 +22,7 @@ final class AppShellState {
         let model = AppViewModel(settingsStore: settings, catalog: catalog, repository: repository)
         viewModel = model
         AppDelegate.cloudLibrary = model.cloudLibrary
+        AppDelegate.activityOwner = model
         AppDelegate.showCloudQuit = { [weak model] in
             guard let model, !model.cloudQuitRequested else { return }
             model.dismissLaunchOverlay()

@@ -75,6 +75,59 @@ final class CloudDriveFoldersTests: XCTestCase {
         XCTAssertEqual(loose, .init(path: "Games/GameFiles", games: nil))
     }
 
+    func testSavedMoveCanBeCancelledThenRetryReusesTheDestinationCopy() async throws {
+        let title = "0100123456789ABC"
+        let name = String(repeating: "a", count: 64) + ".aar"
+        let hash = String(repeating: "b", count: 32)
+        let key = "\(title)/app/\(name)"
+        let manifest = "0000000000000001-\(String(repeating: "c", count: 64)).json"
+        let manifestKey = "\(title)/manifests/\(manifest)"
+        let artifact = #"{"key":{"value":"\#(key)"},"size":7,"hashes":{"md5":"\#(hash)"}}"#
+        let payload = """
+        {"source":"Old","remote":"fixture","games":1,"bytes":7,"entries":[
+          {"file":\(artifact),"dependencies":[]},
+          {"file":{"key":{"value":"\(manifestKey)"},"size":7,"hashes":{"md5":"\(hash)"}},"dependencies":[\(artifact)]}]}
+        """
+        let plan = try JSONDecoder().decode(CloudDriveFolders.MovePlan.self, from: Data(payload.utf8))
+        let saved = try JSONEncoder().encode(LibraryMoveRequest(plan: plan, destination: "New"))
+        let restored = try JSONDecoder().decode(LibraryMoveRequest.self, from: saved)
+        let drive = CloudDriveFolders(remote: "fixture", executable: URL(fileURLWithPath: "/synthetic/rclone"),
+                                      config: URL(fileURLWithPath: "/dev/null")) { _, args, _ in
+            XCTAssertEqual(args[0], "lsjson", "The verified destination copy must not be moved again")
+            let listing: String
+            switch args[1] {
+            case "fixture:": listing = #"[{"Name":"Old","IsDir":true},{"Name":"New","IsDir":true}]"#
+            case "fixture:New": listing = #"[{"Name":"\#(name)","Path":"\#(key)","IsDir":false}]"#
+            case "fixture:New/\(title)/app":
+                listing = #"[{"Name":"\#(name)","Size":7,"IsDir":false,"Hashes":{"MD5":"\#(hash)"}}]"#
+            case "fixture:New/\(title)/manifests":
+                listing = #"[{"Name":"\#(manifest)","Size":7,"IsDir":false,"Hashes":{"MD5":"\#(hash)"}}]"#
+            default: listing = "[]"
+            }
+            return .init(status: 0, stdout: listing, stderr: "")
+        }
+        do {
+            _ = try await drive.move(restored.plan, to: restored.destination) { done, total in
+                XCTAssertEqual(done, 0)
+                XCTAssertEqual(total, 2)
+                throw CancellationError()
+            }
+            XCTFail("Expected cancellation")
+        } catch is CancellationError {}
+        var progress = [Int]()
+        let conflicts = try await drive.move(restored.plan, to: restored.destination) { done, _ in
+            progress.append(done)
+        }
+        XCTAssertEqual(progress, [0, 1, 2])
+        XCTAssertEqual(conflicts, [])
+        let invalid = try JSONDecoder().decode(CloudDriveFolders.MovePlan.self,
+            from: Data(payload.replacingOccurrences(of: key, with: "\(title)/GameFiles/test.nsp").utf8))
+        do {
+            _ = try await drive.move(invalid, to: "New") { _, _ in XCTFail("Invalid entry reached progress") }
+            XCTFail("Only archive keys can be restored from disk")
+        } catch StorageBackendError.invalidKey {}
+    }
+
     func testArchiveManifestWaitsForObjectsOnResumeAndMoveLeavesGameFilesInPlace() async throws {
         try await withMoveFixture { drive, root in
             let title = "0100123456789ABC"

@@ -41,8 +41,7 @@ struct CloudSetupAssistant: View {
     @State private var checkingMove = false
     @State private var moveUnavailable = false
     @State private var confirmingMove = false
-    @State private var stopMove = false
-    @State private var moveProgress = 0.0
+    @State private var moveID: UUID?
     @State private var moveConflicts: [String] = []
     @State private var issue: String?
     @State private var work: (id: UUID, kind: Work, task: Task<Void, Never>)?
@@ -52,7 +51,11 @@ struct CloudSetupAssistant: View {
     @FocusState private var field: CloudSetupAssistantFocus.Target?
 
     typealias Target = CloudSetupAssistantFocus.Target
-    private enum Work { case inspect, connect, discover, browse, create, verify, move }
+    private enum Work { case inspect, connect, discover, browse, create, verify }
+    private var move: LibraryMoveActivity? {
+        guard model.libraryMove?.id == moveID else { return nil }
+        return model.libraryMove
+    }
     private var existing: RcloneRemote? {
         remotes?.first { $0.type == "drive" && $0.name == model.preference.remote }
             ?? remotes?.first { $0.type == "drive" }
@@ -139,9 +142,9 @@ struct CloudSetupAssistant: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     HStack(spacing: canvas.u(14)) {
-                        pill(.cancel, work?.kind == .move ? "Cancel" : draft.step == .verify || folderName != nil
+                        pill(.cancel, move != nil ? "Cancel" : draft.step == .verify || folderName != nil
                              || selectingSources ? "Back" : "Cancel",
-                             enabled: !stopMove, action: cancel)
+                             enabled: move?.isCancelling != true, action: cancel)
                         if folderName != nil {
                             pill(.create, "Continue", enabled: folderName.map(CloudDriveFolders.validName) == true,
                                  action: proposeCreation)
@@ -163,8 +166,24 @@ struct CloudSetupAssistant: View {
         .onReceive(NotificationCenter.default.publisher(for: .nxSettingsGamepadAction)) { note in
             if let action = note.object as? GamepadAction { handleAssistantInput(action) }
         }
-        .onChange(of: focusRows) { focus.settle(in: $0) }
-        .onChange(of: field) { if let target = $0 { focus.select(target) } }
+        .onChange(of: focusRows) { _, rows in focus.settle(in: rows) }
+        .onChange(of: model.preference) { _, preference in
+            guard draft.wantsMove, preference.remote == draft.remote, preference.root == draft.path else { return }
+            draft.acceptMove(draft.ticket)
+            guard draft.activation != nil else { return }
+            activated = true
+            onClose()
+        }
+        .onChange(of: model.libraryMove?.id) { previous, current in
+            guard current == nil, let previous, previous == moveID,
+                  let result = viewModel.activityResults.entries.first(where: { $0.id == previous }) else { return }
+            switch result.outcome {
+            case .cancelled: issue = "Move stopped. Try again to move the remaining files."
+            case .failed: if moveConflicts.isEmpty { issue = "Could not finish moving games. Try again to move the remaining files." }
+            case .succeeded: break
+            }
+        }
+        .onChange(of: field) { _, target in if let target { focus.select(target) } }
     }
 
     private var stepper: some View {
@@ -297,7 +316,7 @@ struct CloudSetupAssistant: View {
                             }
                         }
                         .frame(height: canvas.u(CGFloat(min(folderNames.count * 39, 185))))
-                        .onChange(of: focus.target) { if case .folder = $0 { proxy.scrollTo($0) } }
+                        .onChange(of: focus.target) { _, target in if case .folder = target { proxy.scrollTo(target) } }
                     }
                     option(.newFolder, text("New folder…"), enabled: folderControlsReady && !checkingMove,
                            wide: true, action: nameFolder)
@@ -338,9 +357,9 @@ struct CloudSetupAssistant: View {
                 Text(verbatim: "\(draft.remote ?? ""):/\(manualSourcesPath.isEmpty ? "\(draft.path)/GameFiles" : manualSourcesPath)")
                     .seleneFont(16).foregroundColor(SeleneTheme.ink75)
             }
-            if work?.kind == .move {
-                SeleneStatusDot(text: text(stopMove ? "Cancelling…" : "Moving games…"), color: SeleneTheme.focus)
-                ProgressView(value: moveProgress).tint(SeleneTheme.focus).accessibilityLabel(text("Moving games…"))
+            if let move {
+                SeleneStatusDot(text: text(move.isCancelling ? "Cancelling…" : "Moving games…"), color: SeleneTheme.focus)
+                AchievementProgressBar(fraction: move.fraction ?? 0, height: 4).accessibilityLabel(text("Moving games…"))
             } else if work != nil { progress("Checking…") }
             else if draft.verified { SeleneStatusDot(text: text("Connection OK"), color: SeleneTheme.statusOK) }
             else { pill(.retry, "Try again", action: verify) }
@@ -610,30 +629,11 @@ struct CloudSetupAssistant: View {
     }
 
     private func moveGames() {
-        guard confirmingMove, draft.wantsMove, primaryEnabled, let movePlan, let service else { return }
-        let ticket = draft.ticket, path = draft.path
-        confirmingMove = false; focus.reset(); moveConflicts = []; moveProgress = 0
-        model.isChangingConnection = true
-        start(.move) {
-            defer { model.isChangingConnection = false; stopMove = false }
-            let conflicts: [String]
-            do {
-                conflicts = try await service.move(movePlan, to: path) { done, total in
-                    if stopMove && done < total { throw CancellationError() }
-                    moveProgress = total > 0 ? Double(done) / Double(total) : 0
-                }
-                try Task.checkCancellation()
-            } catch is CancellationError {
-                if !Task.isCancelled { issue = "Move stopped. Try again to move the remaining files." }
-                return
-            } catch {
-                issue = "Could not finish moving games. Try again to move the remaining files."
-                return
-            }
-            moveConflicts = conflicts
-            guard conflicts.isEmpty else { return }
-            draft.acceptMove(ticket)
-            activate()
+        guard confirmingMove, draft.wantsMove, primaryEnabled, let movePlan, let tool,
+              replacement == nil else { return }
+        confirmingMove = false; focus.reset(); moveConflicts = []; issue = nil
+        moveID = viewModel.startLibraryMove(.init(plan: movePlan, destination: draft.path), executable: tool) {
+            moveConflicts = $0
         }
     }
 
@@ -641,7 +641,7 @@ struct CloudSetupAssistant: View {
         field = nil; focus.reset()
         if creation != nil { creation = nil; return }
         if confirmingMove { confirmingMove = false; return }
-        if work?.kind == .move { stopMove = true; return }
+        if let move { viewModel.cancelLibraryMove(move.id); return }
         if folderName != nil { folderName = nil; return }
         if work?.kind == .create { return }
         if draft.step == .verify {
@@ -708,7 +708,7 @@ struct CloudSetupAssistant: View {
         case .verify:
             if work == nil && !draft.verified { rows = [[.retry]] }
         }
-        return rows + [(stopMove ? [] : [.cancel]) + (primaryEnabled ? [.primary] : [])]
+        return rows + [(move?.isCancelling == true ? [] : [.cancel]) + (primaryEnabled ? [.primary] : [])]
     }
 
     func perform(_ target: Target) {

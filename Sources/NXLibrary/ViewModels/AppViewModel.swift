@@ -25,6 +25,10 @@ final class AppViewModel: ObservableObject {
     static let automaticIconArtwork = ArtworkStore()
     let saveGate = SaveOperationGate()
     let cloudLibrary = CloudLibraryModel()
+    @Published var activityResults = ActivityHistory()
+    let activityStore = ActivityQueueFile<ActivityHistory.Result>(file: AppData.supportRoot.appendingPathComponent("activity-results.json"))
+    var hasLoadedActivity = false
+    var hasActivityWrites = false
     @Published var cloudQuitRequested = false {
         didSet { if !cloudQuitRequested { porting.scheduleNextBuild() } }
     }

@@ -2,7 +2,7 @@ import Foundation
 
 public struct ActivityCenterFocus: Equatable {
     public enum Row: Hashable {
-        case build(UUID?), queuedBuild(UUID), cloud(UUID), queuedCloud(UUID), close
+        case build(UUID?), queuedBuild(UUID), cloud(UUID), queuedCloud(UUID), move(UUID), result(UUID), clearAll, close
 
         public var opensPorting: Bool {
             switch self {
@@ -14,8 +14,8 @@ public struct ActivityCenterFocus: Equatable {
         public func canCancel(isCancellingBuild: Bool) -> Bool {
             switch self {
             case .build(let id): return id != nil && !isCancellingBuild
-            case .queuedBuild, .cloud, .queuedCloud: return true
-            case .close: return false
+            case .queuedBuild, .cloud, .queuedCloud, .move: return true
+            case .result, .clearAll, .close: return false
             }
         }
     }
@@ -25,11 +25,15 @@ public struct ActivityCenterFocus: Equatable {
     public init() {}
 
     public static func rows(isBuilding: Bool, activeBuild: UUID? = nil, queuedBuilds: [UUID] = [],
-                            activeCloud: UUID? = nil, queuedCloud: [UUID] = []) -> [Row] {
+                            activeCloud: UUID? = nil, queuedCloud: [UUID] = [], move: UUID? = nil,
+                            results: [UUID] = []) -> [Row] {
         var rows: [Row] = isBuilding ? [.build(activeBuild)] : []
         rows += queuedBuilds.map(Row.queuedBuild)
         if let activeCloud { rows.append(.cloud(activeCloud)) }
-        return rows + queuedCloud.map(Row.queuedCloud)
+        rows += queuedCloud.map(Row.queuedCloud)
+        if let move { rows.append(.move(move)) }
+        if !results.isEmpty { rows += results.map(Row.result) + [.clearAll] }
+        return rows
     }
 
     public func current(in rows: [Row]) -> Row {
