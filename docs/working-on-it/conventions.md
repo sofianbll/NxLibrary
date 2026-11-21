@@ -59,7 +59,7 @@ Esempi: `AchievementsScreen` con `AchievementsScreenModel` (schermata intera), `
 - **Misure in unità del canvas** 1920×1080: `canvas.u(…)` da `seleneCanvas` (`SeleneCanvasEnvironment.swift`), mai punti fissi. Colori, curve e font vengono da `SeleneTheme` e `SeleneFonts`, le icone da `MaterialIcon`.
 - **Componenti condivisi prima di tutto** (`Views/Components`):
   - `SeleneOptionRow`, `SeleneRow`, `SeleneToggleRow`, `SeleneValueRow`, `SeleneCycleRow` (in `SeleneSettingsRow.swift`);
-  - `SelenePillButton`, `SeleneSwitch`, `SeleneValueChip`;
+  - `SelenePillButton`, `SeleneSwitch`, `SeleneValueChip`, `SeleneStatusDot` (stato in testo con punto decorativo: Cloud e Nextendo);
   - `SeleneConfirmDialog`, `SeleneSuccessNotice`;
   - `SeleneHintsBar`, `GamePrimaryActions`, `DetailsPanel`.
 

@@ -6,12 +6,19 @@ public enum CloudArtifactKind: String, Codable, CaseIterable, Hashable, Sendable
     case app, cache
 }
 
-public enum CloudAppAvailability: Equatable {
-    case unknown, cloudCopy, cloudOnly
+public struct CloudArtifactStatus: Equatable, Sendable {
+    public enum State: Equatable, Sendable {
+        case notInCloud, cloudOnly, synchronized, newerOnThisMac, unknown
+    }
 
-    public init(remote: Set<CloudArtifactKind>?, localApp: Bool?) {
-        if remote?.contains(.app) == true { self = localApp == false ? .cloudOnly : .cloudCopy }
-        else { self = .unknown }
+    public let state: State
+    public let hasLocalCopy: Bool
+    public let bytes: Int64?
+    public let uploadedAt: Date?
+
+    public static func needsUpload(_ statuses: [CloudArtifactKind: Self]) -> Bool {
+        CloudArtifactKind.allCases.allSatisfy { statuses[$0]?.hasLocalCopy == true }
+            && statuses.values.contains { $0.state == .notInCloud || $0.state == .newerOnThisMac }
     }
 }
 
@@ -134,6 +141,11 @@ public actor CloudGameArchive {
     private let capacity: @Sendable (URL) -> Int64?
     private let trash: @Sendable (URL) throws -> Void
     private var activeTitles: [String: UUID] = [:]
+    private struct Fingerprint: Sendable {
+        let signature: String
+        let sha256: String
+    }
+    private var fingerprints: [URL: Fingerprint] = [:]
 
     public init(backend: any StorageBackend) {
         self.init(backend: backend, trash: { try FileManager.default.trashItem(at: $0, resultingItemURL: nil) })
@@ -149,20 +161,77 @@ public actor CloudGameArchive {
         self.trash = trash
     }
 
-    /// An unavailable or unsafe path is not an absent directory.
-    public func localStatus(_ game: CloudArchiveGame) -> [CloudArtifactKind: Bool] {
-        var status: [CloudArtifactKind: Bool] = [:]
-        for kind in CloudArtifactKind.allCases {
-            guard let url = try? location(kind, for: game),
-                  let parent = try? CloudArchiveInventory.node(at: url.deletingLastPathComponent()),
-                  parent.st_mode & S_IFMT == S_IFDIR else { continue }
-            do {
-                if let node = try existingNode(at: url) {
-                    if node.st_mode & S_IFMT == S_IFDIR { status[kind] = true }
-                } else { status[kind] = false }
-            } catch { continue }
+    /// A failed manifest read is distinct from a successful lookup with no manifest.
+    public func copyStatuses(_ game: CloudArchiveGame, manifest lookup: Result<CloudGameManifest?, Error>)
+        async throws -> [CloudArtifactKind: CloudArtifactStatus] {
+        let manifest = try? lookup.get()
+        let readable: Bool
+        if case .success = lookup { readable = manifest.map { $0.titleID == game.titleID } ?? true }
+        else { readable = false }
+        let cached = fingerprints
+        let worker = Task.detached(priority: .utility) {
+            var statuses: [CloudArtifactKind: CloudArtifactStatus] = [:]
+            var fingerprints: [URL: Fingerprint] = [:]
+            for kind in CloudArtifactKind.allCases {
+                try Task.checkCancellation()
+                let artifact = readable ? manifest?.artifacts.first { $0.kind == kind } : nil
+                var state = CloudArtifactStatus.State.unknown
+                var local = false
+                var bytes = artifact?.unpackedSize
+                if let url = try? self.location(kind, for: game),
+                   let parent = try? CloudArchiveInventory.node(at: url.deletingLastPathComponent()),
+                   parent.st_mode & S_IFMT == S_IFDIR {
+                    do {
+                        guard try self.existingNode(at: url) != nil else {
+                            let confirmed = (try? self.sameDirectory(parent, at: url.deletingLastPathComponent())) == true
+                            let missing: CloudArtifactStatus.State = artifact == nil ? .notInCloud : .cloudOnly
+                            statuses[kind] = .init(state: readable && confirmed ? missing : .unknown,
+                                                   hasLocalCopy: false, bytes: bytes,
+                                                   uploadedAt: artifact == nil ? nil : manifest?.createdAt)
+                            continue
+                        }
+                        let signature = try CloudArchiveInventory.signature(url, kind: kind)
+                        bytes = signature.bytes
+                        if !signature.hasExcludedFiles {
+                            local = true
+                            if let artifact {
+                                if signature.bytes != artifact.unpackedSize || signature.entries.count != artifact.entryCount {
+                                    state = .newerOnThisMac
+                                } else {
+                                    let fingerprint: Fingerprint
+                                    if let previous = cached[url], previous.signature == signature.sha256 {
+                                        fingerprint = previous
+                                    } else {
+                                        let snapshot = try CloudArchiveInventory.scan(url, kind: kind)
+                                        let after = try CloudArchiveInventory.signature(url, kind: kind)
+                                        guard !snapshot.hasExcludedFiles, !after.hasExcludedFiles, signature.sha256 == after.sha256 else {
+                                            throw CloudArchiveError.localChanged
+                                        }
+                                        fingerprint = .init(signature: signature.sha256, sha256: snapshot.sha256)
+                                    }
+                                    fingerprints[url] = fingerprint
+                                    state = fingerprint.sha256 == artifact.inventorySHA256 ? .synchronized : .newerOnThisMac
+                                }
+                            } else if readable {
+                                state = .notInCloud
+                            }
+                        }
+                    } catch is CancellationError {
+                        throw CancellationError()
+                    } catch {
+                        local = false
+                    }
+                }
+                statuses[kind] = .init(state: state, hasLocalCopy: local, bytes: bytes,
+                                       uploadedAt: artifact == nil ? nil : manifest?.createdAt)
+            }
+            return (statuses, fingerprints)
         }
-        return status
+        let (statuses, fresh) = try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
+        try Task.checkCancellation()
+        if fingerprints.count + fresh.count > 64 { fingerprints.removeAll() }
+        fingerprints.merge(fresh) { _, new in new }
+        return statuses
     }
 
     /// Hold the same title lease as upload, free and restore until the engine exits.
@@ -383,7 +452,7 @@ public actor CloudGameArchive {
         return artifact
     }
 
-    private func location(_ kind: CloudArtifactKind, for game: CloudArchiveGame) throws -> URL {
+    private nonisolated func location(_ kind: CloudArtifactKind, for game: CloudArchiveGame) throws -> URL {
         guard let url = game.locations[kind], url.isFileURL else { throw CloudArchiveError.localMissing }
         let original = url.standardizedFileURL
         let parent = original.deletingLastPathComponent().resolvingSymlinksInPath()
@@ -394,7 +463,7 @@ public actor CloudGameArchive {
         return parent.appendingPathComponent(original.lastPathComponent, isDirectory: true)
     }
 
-    private func existingNode(at url: URL) throws -> stat? {
+    private nonisolated func existingNode(at url: URL) throws -> stat? {
         do { return try CloudArchiveInventory.node(at: url) }
         catch CloudArchiveError.localMissing { return nil }
     }
@@ -406,7 +475,7 @@ public actor CloudGameArchive {
             && old.st_ctimespec.tv_sec == current.st_ctimespec.tv_sec && old.st_ctimespec.tv_nsec == current.st_ctimespec.tv_nsec
     }
 
-    private func sameDirectory(_ old: stat, at url: URL) throws -> Bool {
+    private nonisolated func sameDirectory(_ old: stat, at url: URL) throws -> Bool {
         try SaveFiles.safePath(url)
         let current = try CloudArchiveInventory.node(at: url)
         return current.st_mode & S_IFMT == S_IFDIR && old.st_dev == current.st_dev && old.st_ino == current.st_ino

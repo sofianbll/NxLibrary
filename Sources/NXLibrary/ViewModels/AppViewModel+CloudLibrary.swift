@@ -8,27 +8,27 @@ enum CloudLibraryAction: Equatable {
     case free(CloudArtifactKind)
     case restore(CloudArtifactKind)
     case restoreBuildCache
+
+    func kind(during progress: CloudArchiveProgress?) -> CloudArtifactKind {
+        switch self {
+        case .upload: return progress?.kind ?? (progress == nil ? .app : .cache)
+        case .free(let kind), .restore(let kind): return kind
+        case .restoreBuildCache: return .cache
+        }
+    }
 }
 
 struct CloudLibraryState {
-    var local: [CloudArtifactKind: Bool] = [:]
-    var remote: Set<CloudArtifactKind>?
+    var copies: [CloudArtifactKind: CloudArtifactStatus] = [:]
     var action: CloudLibraryAction?
     var progress: CloudArchiveProgress?
     var message: String?
-    var operationMessage: String?
+    var issue: (kind: CloudArtifactKind, message: String, failed: Bool)?
     var refreshing = false
 
-    var appAvailability: CloudAppAvailability { .init(remote: remote, localApp: local[.app]) }
-
-    func statusKey(installed: Bool) -> String? {
-        if action != nil { return "In progress" }
-        switch appAvailability {
-        case .unknown: return nil
-        case .cloudOnly: return "In the cloud"
-        case .cloudCopy: return installed ? "Installed · Cloud copy ✓" : "In the cloud"
-        }
-    }
+    var activeKind: CloudArtifactKind? { action?.kind(during: progress) }
+    var appIsCloudOnly: Bool { copies[.app]?.state == .cloudOnly }
+    var needsUpload: Bool { CloudArtifactStatus.needsUpload(copies) }
 }
 
 final class CloudLibraryModel: ObservableObject {
@@ -38,6 +38,7 @@ final class CloudLibraryModel: ObservableObject {
     @Published var isChangingConnection = false
     @Published var states: [UUID: CloudLibraryState] = [:]
     private var backend: RcloneStorageBackend?
+    var reads: [UUID: (token: UUID, task: Task<Void, Never>)] = [:]
     var jobs: [UUID: Task<Void, Never>] = [:]
     var jobTokens: [UUID: UUID] = [:]
     var isWorking: Bool { !jobs.isEmpty }
@@ -68,6 +69,8 @@ final class CloudLibraryModel: ObservableObject {
 
     private func rebuildArchive() {
         stopRemoteControl()
+        reads.values.forEach { $0.task.cancel() }
+        reads.removeAll()
         states = [:]
         backend = preference.enabled ? preference.remote.map {
             RcloneStorageBackend(remote: $0, root: preference.root, executable: chosenExecutable)
@@ -98,16 +101,9 @@ extension AppViewModel {
 
     /// Read only the settled selection, not every tile or every game passed during a scroll.
     @MainActor func prefetchCloudLibrary(_ game: PortedGame?) async {
-        guard let game, cloudLibrary.archive != nil, showsCloudLibrary(game) else { return }
-        func needsStatus() -> Bool {
-            let state = cloudLibrary.states[game.id]
-            guard state?.action == nil else { return false }
-            if state?.remote == nil { return true }
-            return state?.local[.app].map { $0 != game.isPlayableLocally } ?? false
-        }
-        guard needsStatus() else { return }
+        guard let game, cloudLibrary.archive != nil, showsCloudLibrary(game), cloudLibraryGameID == nil else { return }
         do { try await Task.sleep(nanoseconds: 250_000_000) } catch { return }
-        if needsStatus() { await refreshCloudLibrary(game) }
+        if cloudLibraryGameID == nil, cloudLibrary.reads[game.id] == nil { await refreshCloudLibrary(game) }
     }
 
     var canConfigureCloudLibrary: Bool {
@@ -206,27 +202,35 @@ extension AppViewModel {
     @MainActor func refreshCloudLibrary(_ game: PortedGame) async {
         guard let archive = cloudLibrary.archive, let game = libraryGames.first(where: { $0.id == game.id }),
               let titleID = game.titleId, SaveLocation.validID(titleID),
-              cloudLibrary.states[game.id]?.refreshing != true, cloudLibrary.jobs[game.id] == nil else { return }
-        let id = game.id
+              !Task.isCancelled, cloudLibrary.jobs[game.id] == nil else { return }
+        let id = game.id, token = UUID()
+        cloudLibrary.reads[id]?.task.cancel()
         cloudLibrary.update(id) { $0.refreshing = true; $0.message = nil }
-        defer { if cloudLibrary.archive === archive { cloudLibrary.update(id) { $0.refreshing = false } } }
-        async let latest = archive.latest(titleID: titleID)
-        let target = await cloudLocations(for: game)
-        let local = await archive.localStatus(target)
-        guard cloudLibrary.archive === archive, !Task.isCancelled else { return }
-        cloudLibrary.update(id) { $0.local = local }
-        do {
-            let manifest = try await latest
-            try Task.checkCancellation()
-            guard cloudLibrary.archive === archive else { return }
-            cloudLibrary.update(id) { $0.remote = Set(manifest?.artifacts.map(\.kind) ?? []) }
-        } catch is CancellationError {
-            // Closing the panel cancels this read, but not a user-started transfer.
-        } catch {
-            if cloudLibrary.archive === archive {
-                cloudLibrary.update(id) { $0.remote = nil; $0.message = cloudMessage(for: error) }
+        let read = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                if self.cloudLibrary.reads[id]?.token == token {
+                    self.cloudLibrary.reads[id] = nil
+                    self.cloudLibrary.update(id) { $0.refreshing = false }
+                }
+            }
+            async let target = self.cloudLocations(for: game)
+            let lookup: Result<CloudGameManifest?, Error>
+            do { lookup = .success(try await archive.latest(titleID: titleID)) }
+            catch { lookup = .failure(error) }
+            guard let copies = try? await archive.copyStatuses(target, manifest: lookup), !Task.isCancelled,
+                  self.cloudLibrary.reads[id]?.token == token, self.cloudLibrary.archive === archive,
+                  let current = self.libraryGames.first(where: { $0.id == id }),
+                  current.titleId == titleID, current.url == game.url,
+                  current.buildCachePath == game.buildCachePath, current.workspacePath == game.workspacePath,
+                  current.modificationDate == game.modificationDate else { return }
+            self.cloudLibrary.update(id) {
+                $0.copies = copies
+                if case .failure(let error) = lookup { $0.message = self.cloudMessage(for: error) }
             }
         }
+        cloudLibrary.reads[id] = (token, read)
+        await withTaskCancellationHandler { await read.value } onCancel: { read.cancel() }
     }
 
     @MainActor func confirmCloudFree(_ kind: CloudArtifactKind, for game: PortedGame) {
@@ -246,23 +250,27 @@ extension AppViewModel {
               game.workspacePath == selected.workspacePath,
               game.titleId.map(SaveLocation.validID) == true,
               cloudLibrary.jobs[game.id] == nil, cloudLibrary.states[game.id]?.refreshing != true,
+              action != .upload || cloudLibrary.states[game.id]?.needsUpload == true,
               canChangeCloudLibrary(game), let release = acquireSaveInstallLease(for: game) else {
-            cloudLibrary.update(selected.id) { $0.operationMessage = cloudMessage(for: CloudArchiveError.busy) }
+            cloudLibrary.update(selected.id) {
+                $0.issue = (action.kind(during: nil), cloudMessage(for: CloudArchiveError.busy), true)
+            }
             return
         }
         let id = game.id
         let token = UUID()
         cloudLibrary.jobTokens[id] = token
-        cloudLibrary.update(id) { $0.action = action; $0.progress = nil; $0.message = nil; $0.operationMessage = nil }
+        cloudLibrary.update(id) { $0.action = action; $0.progress = nil; $0.message = nil; $0.issue = nil }
         cloudLibrary.jobs[id] = Task { [weak self] in
             guard let self else { release(); return }
             defer {
                 self.cloudLibrary.jobs[id] = nil
                 self.cloudLibrary.jobTokens[id] = nil
                 release()
-                self.cloudLibrary.update(id) { $0.action = nil; $0.progress = nil }
+                self.cloudLibrary.update(id) { $0.action = nil; $0.progress = nil; $0.copies = [:] }
                 self.appIcon.syncPendingAppIcons()
                 self.resumeLibraryScanAfterCloud()
+                Task { await self.refreshCloudLibrary(game) }
             }
             let target = await self.cloudLocations(for: game)
             let (updates, continuation) = AsyncStream.makeStream(of: CloudArchiveProgress.self, bufferingPolicy: .bufferingNewest(1))
@@ -281,8 +289,7 @@ extension AppViewModel {
             do {
                 switch action {
                 case .upload:
-                    let manifest = try await archive.upload(target, progress: progress)
-                    self.cloudLibrary.update(id) { $0.remote = Set(manifest.artifacts.map(\.kind)) }
+                    _ = try await archive.upload(target, progress: progress)
                 case .free(let kind):
                     self.cloudLibrary.update(id) { $0.progress = .init(.verifying, kind: kind) }
                     try await archive.free(kind, for: target, confirmed: true, beforeMutation: gameClosed)
@@ -315,18 +322,19 @@ extension AppViewModel {
                     }
                 }
             } catch is CancellationError {
-                self.cloudLibrary.update(id) { $0.operationMessage = L10n.text("Transfer cancelled.") }
+                continuation.finish()
+                await listener.value
+                self.cloudLibrary.update(id) { $0.issue = (action.kind(during: $0.progress), L10n.text("Transfer cancelled."), false) }
             } catch {
+                continuation.finish()
+                await listener.value
                 if let detail = (error as? CloudArchiveError)?.diagnosticDetail {
                     self.logs.append(LogEntry(level: .error, message: detail))
                 }
                 self.cloudLibrary.update(id) {
-                    $0.operationMessage = self.cloudMessage(for: error)
-                    if error is StorageBackendError || error as? CloudArchiveError == .invalidManifest { $0.remote = nil }
+                    $0.issue = (action.kind(during: $0.progress), self.cloudMessage(for: error), true)
                 }
             }
-            let current = await archive.localStatus(target)
-            self.cloudLibrary.update(id) { $0.local = current }
         }
     }
 

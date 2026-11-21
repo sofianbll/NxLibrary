@@ -64,7 +64,7 @@ extension GameDetailView {
 
     func runPill(_ index: Int) {
         let state = viewModel.cloudLibrary.states[game.id]
-        let cloudOnly = viewModel.cloudLibrary.archive != nil && state?.appAvailability == .cloudOnly
+        let cloudOnly = viewModel.cloudLibrary.archive != nil && state?.appIsCloudOnly == true
             && !runningGames.isRunning(game)
         let pills = viewModel.portingPills(game).detailsPresentation(cloudOnly: cloudOnly)
         if viewModel.showsCloudLibrary(game), index == pills.detailsCloudIndex {

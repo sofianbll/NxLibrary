@@ -8,6 +8,7 @@ struct SelenePillButton: View {
     @Environment(\.nxAppLocale) private var localization
 
     let title: String?
+    var titleArguments: [String] = []
     var icon: MaterialIcon? = nil
     var iconSize: CGFloat = 26
     var minWidth: CGFloat = 180
@@ -30,7 +31,9 @@ struct SelenePillButton: View {
                 }
                 if let title {
                     // A pill's title stays on one line: the pill grows instead.
-                    Text(L10n.text(title, context: localization)).seleneFont(21)
+                    Text(titleArguments.isEmpty ? L10n.text(title, context: localization)
+                         : L10n.format(title, titleArguments, context: localization))
+                        .seleneFont(21)
                         .lineLimit(1)
                         .fixedSize()
                 }

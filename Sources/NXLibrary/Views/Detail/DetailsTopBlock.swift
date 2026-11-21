@@ -9,6 +9,7 @@ import ArcanePorting
 /// placed at (110, 96) on the stage; every length is in Selene units.
 struct DetailsTopBlock: View {
     @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.nxAppLocale) private var localization
 
     let game: PortedGame
     let logo: NSImage?
@@ -69,8 +70,8 @@ struct DetailsTopBlock: View {
                 pills
                 if game.platform == .macApp {
                     if pillSet == .porting || pillSet.isFailed { cloudPill }
-                    if let status = cloud.states[game.id]?.statusKey(installed: game.isPlayableLocally) {
-                        SeleneValueChip(text: L10n.text(status))
+                    if let state = cloud.states[game.id] {
+                        CloudLibraryIndicator(state: state).dot(context: localization)
                     }
                 }
             }
@@ -79,8 +80,8 @@ struct DetailsTopBlock: View {
                 CloudLibraryProgressView(progress: state.progress)
                     .frame(maxWidth: canvas.u(700), alignment: .leading)
                     .padding(.top, canvas.u(12))
-            } else if let message = cloud.states[game.id]?.operationMessage {
-                Text(message).seleneFont(15).foregroundColor(SeleneTheme.danger)
+            } else if let issue = cloud.states[game.id]?.issue {
+                Text(issue.message).seleneFont(15).foregroundColor(issue.failed ? PortingPillCopy.softRed : SeleneTheme.ink60)
                     .padding(.top, canvas.u(12))
             }
             note
@@ -214,7 +215,7 @@ struct DetailsTopBlock: View {
     }
 
     private var downloadsApp: Bool {
-        cloud.archive != nil && cloud.states[game.id]?.appAvailability == .cloudOnly
+        cloud.archive != nil && cloud.states[game.id]?.appIsCloudOnly == true
     }
 
     // MARK: - Stats

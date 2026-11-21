@@ -21,7 +21,7 @@ struct SpotlightRowView: View {
     let artwork: ArtworkStore
     /// The porting look of a game's tile (`PortingTileLook`).
     var tileLook: (PortedGame) -> PortingTileLook = { _ in .normal }
-    let cloud: CloudLibraryModel
+    @ObservedObject var cloud: CloudLibraryModel
     /// Mods' art for the Mods card's face (up to four); empty draws Selene's own face.
     var modsCover: [URL] = []
     /// Spotlight's entrance (`SpotlightView+Entrance`): the tiles fly in from the centre while it plays.
@@ -166,8 +166,10 @@ struct SpotlightRowView: View {
     /// A tile at its own size; `TileGlide` places and grows it.
     private func tile(_ item: SpotlightItem, selected: Bool) -> some View {
         let native: PortedGame? = if case .game(let id) = item { gamesByID[id] } else { nil }
+        let cloudState = native.flatMap { cloud.states[$0.id] }
         return ZStack(alignment: .topLeading) {
             face(item, selected: selected)
+                .opacity(CloudLibraryTileBadge.artworkOpacity(cloudState))
                 .padding(canvas.u(7))
             SeleneTileRing(cornerRadius: canvas.u(19), active: selected)
                 .frame(width: canvas.u(Self.host), height: canvas.u(Self.host))
@@ -180,7 +182,7 @@ struct SpotlightRowView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title(of: item))
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
-        .modifier(CloudLibraryTileBadge(cloud: cloud, game: native))
+        .modifier(CloudLibraryTileBadge(state: cloudState))
     }
 
     @ViewBuilder

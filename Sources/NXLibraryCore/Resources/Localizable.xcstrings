@@ -11,14 +11,14 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Nuvem"}}
       }
     },
-    "Installed · Cloud copy ✓": {
+    "Synchronized": {
       "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "Installed · Cloud copy ✓"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Installato · Copia cloud ✓"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Installé · Copie cloud ✓"}},
-        "de": {"stringUnit": {"state": "translated", "value": "Installiert · Cloud-Kopie ✓"}},
-        "es": {"stringUnit": {"state": "translated", "value": "Instalado · Copia en la nube ✓"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Instalado · Cópia na nuvem ✓"}}
+        "en": {"stringUnit": {"state": "translated", "value": "Synchronized"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Sincronizzato"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Synchronisé"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Synchronisiert"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Sincronizado"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Sincronizado"}}
       }
     },
     "Preparing cloud operation…": {
@@ -641,62 +641,62 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Cache de compilação"}}
       }
     },
-    "In progress": {
+    "Sending %@": {
       "localizations": {
-        "de": {"stringUnit": {"state": "translated", "value": "In Bearbeitung"}},
-        "en": {"stringUnit": {"state": "translated", "value": "In progress"}},
-        "es": {"stringUnit": {"state": "translated", "value": "En curso"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "En cours"}},
-        "it": {"stringUnit": {"state": "translated", "value": "In corso"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Em andamento"}}
+        "de": {"stringUnit": {"state": "translated", "value": "Upload %@"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Sending %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Envío %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoi %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invio %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Envio %@"}}
       }
     },
-    "App installed": {
+    "Downloading %@": {
       "localizations": {
-        "de": {"stringUnit": {"state": "translated", "value": "Installiert"}},
-        "en": {"stringUnit": {"state": "translated", "value": "Installed"}},
-        "es": {"stringUnit": {"state": "translated", "value": "Instalado"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Installé"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Installato"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Instalado"}}
+        "de": {"stringUnit": {"state": "translated", "value": "Download %@"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Downloading %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Descarga %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Téléchargement %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Download %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Download %@"}}
       }
     },
-    "Send": {
+    "Send update": {
       "localizations": {
-        "de": {"stringUnit": {"state": "translated", "value": "Hochladen"}},
-        "en": {"stringUnit": {"state": "translated", "value": "Send"}},
-        "es": {"stringUnit": {"state": "translated", "value": "Enviar"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Envoyer"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Invia"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviar"}}
+        "de": {"stringUnit": {"state": "translated", "value": "Update hochladen"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Send update"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enviar actualización"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoyer la mise à jour"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invia aggiornamento"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviar atualização"}}
       }
     },
-    "On this Mac": {
+    "Newer on this Mac": {
       "localizations": {
-        "de": {"stringUnit": {"state": "translated", "value": "Auf diesem Mac"}},
-        "en": {"stringUnit": {"state": "translated", "value": "On this Mac"}},
-        "es": {"stringUnit": {"state": "translated", "value": "En este Mac"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Sur ce Mac"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Su questo Mac"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Neste Mac"}}
+        "de": {"stringUnit": {"state": "translated", "value": "Neuer auf diesem Mac"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Newer on this Mac"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Más reciente en este Mac"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Plus récent sur ce Mac"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Più recente su questo Mac"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Mais recente neste Mac"}}
       }
     },
-    "In the cloud": {
+    "Cloud only": {
       "localizations": {
-        "de": {"stringUnit": {"state": "translated", "value": "In der Cloud"}},
-        "en": {"stringUnit": {"state": "translated", "value": "In the cloud"}},
-        "es": {"stringUnit": {"state": "translated", "value": "En la nube"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Dans le cloud"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Nel cloud"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Na nuvem"}}
+        "de": {"stringUnit": {"state": "translated", "value": "Nur in der Cloud"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Cloud only"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Solo en la nube"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Dans le cloud seulement"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Solo nel cloud"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Só na nuvem"}}
       }
     },
-    "Not saved in the cloud": {
+    "Not in the cloud": {
       "localizations": {
         "de": {"stringUnit": {"state": "translated", "value": "Nicht in der Cloud"}},
-        "en": {"stringUnit": {"state": "translated", "value": "Not saved in the cloud"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Not in the cloud"}},
         "es": {"stringUnit": {"state": "translated", "value": "Sin copia en la nube"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Pas de copie cloud"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Pas dans le cloud"}},
         "it": {"stringUnit": {"state": "translated", "value": "Nessuna copia nel cloud"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Sem cópia na nuvem"}}
       }
@@ -711,14 +711,14 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Status na nuvem desconhecido"}}
       }
     },
-    "Local folder unavailable": {
+    "Cloud operation failed": {
       "localizations": {
-        "de": {"stringUnit": {"state": "translated", "value": "Lokaler Ordner nicht verfügbar"}},
-        "en": {"stringUnit": {"state": "translated", "value": "Local folder unavailable"}},
-        "es": {"stringUnit": {"state": "translated", "value": "Carpeta local no disponible"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Dossier local indisponible"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Cartella locale non disponibile"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Pasta local indisponível"}}
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Vorgang fehlgeschlagen"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Cloud operation failed"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Operación en la nube fallida"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Échec"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Operazione cloud non riuscita"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Falha na operação na nuvem"}}
       }
     },
     "Free up space": {
@@ -751,14 +751,24 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Após a verificação, Arcane move o cache de compilação para o Lixo. Os arquivos do jogo e os dados salvos ficam neste Mac."}}
       }
     },
-    "Cancel transfer": {
+    "Free %@": {
       "localizations": {
-        "de": {"stringUnit": {"state": "translated", "value": "Übertragung abbrechen"}},
-        "en": {"stringUnit": {"state": "translated", "value": "Cancel transfer"}},
-        "es": {"stringUnit": {"state": "translated", "value": "Cancelar transferencia"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Annuler le transfert"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Annulla trasferimento"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Cancelar transferência"}}
+        "de": {"stringUnit": {"state": "translated", "value": "%@ freigeben"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Free %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Liberar %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Libérer %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Libera %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Liberar %@"}}
+      }
+    },
+    "Sent %@": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Hochgeladen %@"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Sent %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enviado %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoyé %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Inviato %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviado %@"}}
       }
     },
     "Transfer cancelled.": {

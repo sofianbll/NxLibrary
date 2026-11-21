@@ -7,12 +7,67 @@ import XCTest
 final class CloudGameArchiveTests: XCTestCase {
     private let title = "0100E65002BB8000"
 
-    func testCloudOnlyRequiresAManifestAppAndKnownLocalAbsence() {
-        XCTAssertEqual(CloudAppAvailability(remote: [.app], localApp: false), .cloudOnly)
-        XCTAssertEqual(CloudAppAvailability(remote: [.app], localApp: true), .cloudCopy)
-        XCTAssertEqual(CloudAppAvailability(remote: [.app], localApp: nil), .cloudCopy)
-        XCTAssertEqual(CloudAppAvailability(remote: [.cache], localApp: false), .unknown)
-        XCTAssertEqual(CloudAppAvailability(remote: nil, localApp: false), .unknown)
+    func testCopyStatusUsesTheManifestInventoryAndDetectsSameSizeEdits() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let app = root.appendingPathComponent("Synthetic.app")
+        let cache = root.appendingPathComponent("\(title)_build")
+        try FileManager.default.createDirectory(at: app, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: false)
+        let file = cache.appendingPathComponent("build")
+        try Data("original".utf8).write(to: file)
+        let inventory = try CloudArchiveInventory.scan(cache, kind: .cache)
+        let artifact = CloudGameManifest.Artifact(kind: .cache, size: 40, sha256: "", md5: "",
+            unpackedSize: inventory.bytes, entryCount: inventory.entries.count, inventorySHA256: inventory.sha256,
+            engineCommit: nil, shaderChain: nil, options: [:])
+        let date = Date(timeIntervalSince1970: 1_700_000_000)
+        let manifest = CloudGameManifest(version: 1, titleID: title, createdAt: date, artifacts: [artifact])
+        let game = CloudArchiveGame(titleID: title, locations: [.app: app, .cache: cache])
+        let service = CloudGameArchive(backend: RcloneStorageBackend(remote: ":local:", root: "/unused"))
+
+        let original = try await service.copyStatuses(game, manifest: .success(manifest))
+        XCTAssertEqual(original[.app]?.state, .notInCloud)
+        XCTAssertEqual(original[.cache]?.state, .synchronized)
+        XCTAssertEqual(original[.cache]?.bytes, 8)
+        XCTAssertEqual(original[.cache]?.uploadedAt, date)
+        XCTAssertTrue(CloudArtifactStatus.needsUpload(original), "The app has no cloud copy")
+        XCTAssertFalse(CloudArtifactStatus.needsUpload([.app: original[.cache]!, .cache: original[.cache]!]))
+
+        let old = try CloudArchiveInventory.node(at: file).st_mtimespec
+        try Data("modified".utf8).write(to: file)
+        var stamps = [old, old]
+        XCTAssertEqual(utimensat(AT_FDCWD, file.path, &stamps, 0), 0)
+        let changed = try await service.copyStatuses(game, manifest: .success(manifest))
+        XCTAssertEqual(changed[.cache]?.state, .newerOnThisMac)
+        XCTAssertEqual(changed[.cache]?.bytes, 8)
+
+        try FileManager.default.removeItem(at: cache)
+        let missing = try await service.copyStatuses(game, manifest: .success(manifest))
+        XCTAssertEqual(missing[.cache]?.state, .cloudOnly)
+        XCTAssertEqual(missing[.cache]?.bytes, 8)
+        XCTAssertFalse(CloudArtifactStatus.needsUpload(missing))
+        let unavailable = CloudArchiveGame(titleID: title, locations: [.app: app])
+        let unknown = try await service.copyStatuses(unavailable, manifest: .success(manifest))
+        XCTAssertEqual(unknown[.cache]?.state, .unknown)
+        let unreadable = try await service.copyStatuses(game, manifest: .failure(CloudArchiveError.invalidManifest))
+        XCTAssertEqual(unreadable[.app]?.state, .unknown)
+        XCTAssertEqual(unreadable[.cache]?.state, .unknown)
+        XCTAssertFalse(CloudArtifactStatus.needsUpload(unreadable))
+
+        let noManifest = try await service.copyStatuses(game, manifest: .success(nil))
+        XCTAssertEqual(noManifest[.app]?.state, .notInCloud)
+        XCTAssertEqual(noManifest[.cache]?.state, .notInCloud)
+        XCTAssertNil(noManifest[.app]?.uploadedAt)
+        XCTAssertFalse(CloudArtifactStatus.needsUpload(noManifest))
+
+        let cancelled = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return try await service.copyStatuses(game, manifest: .success(manifest))
+        }
+        do {
+            _ = try await cancelled.value
+            XCTFail("A cancelled comparison must not publish a result")
+        } catch is CancellationError {}
     }
 
     func testRebuildDecisionRequiresSourcesAndVerifiedRemoteCacheUnlessExplicitlyOverridden() {
@@ -69,6 +124,10 @@ final class CloudGameArchiveTests: XCTestCase {
         XCTAssertEqual(manifest.artifacts.first?.shaderChain, "1234567890ab")
         let latest = try await service.latest(titleID: title)
         XCTAssertEqual(latest, manifest)
+        let copies = try await service.copyStatuses(fixture.game, manifest: .success(latest))
+        XCTAssertEqual(copies[.app]?.state, .synchronized)
+        XCTAssertEqual(copies[.cache]?.state, .synchronized)
+        XCTAssertFalse(CloudArtifactStatus.needsUpload(copies))
         for artifact in manifest.artifacts {
             try await fixture.backend.verify(artifact.object(titleID: title))
         }

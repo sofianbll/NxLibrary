@@ -22,7 +22,7 @@ struct CollectionCoverRow: View {
     let needsMetadata: (PortedGame) -> Void
     /// The porting look of a game's cover (`PortingTileLook`).
     var tileLook: (PortedGame) -> PortingTileLook = { _ in .normal }
-    let cloud: CloudLibraryModel
+    @ObservedObject var cloud: CloudLibraryModel
     let onSelect: (CatalogGame) -> Void
     let onActivate: (CatalogGame) -> Void
 
@@ -66,6 +66,7 @@ struct CollectionCoverRow: View {
     private func cover(_ game: CatalogGame, selected: Bool) -> some View {
         let w = canvas.u(CollectionRow.coverWidth), h = canvas.u(CollectionRow.coverHeight)
         let face = RoundedRectangle(cornerRadius: canvas.u(12), style: .continuous)
+        let cloudState = game.nxnativeGame.flatMap { cloud.states[$0.id] }
         return ZStack {
             Group {
                 if let native = game.nxnativeGame {
@@ -84,6 +85,7 @@ struct CollectionCoverRow: View {
                         .clipShape(face)
                 }
             }
+            .opacity(CloudLibraryTileBadge.artworkOpacity(cloudState))
             if game.nxnativeGame == nil {
                 PortingDownloadMark(look: PortingTileLook.make(catalog: game), width: w, height: h)
             }
@@ -101,7 +103,7 @@ struct CollectionCoverRow: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(game.name)
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
-        .modifier(CloudLibraryTileBadge(cloud: cloud, game: game.nxnativeGame))
+        .modifier(CloudLibraryTileBadge(state: cloudState))
         .task(id: game.id) { if let native = game.nxnativeGame { needsMetadata(native) } }
     }
 }

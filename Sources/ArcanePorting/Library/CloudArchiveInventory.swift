@@ -87,6 +87,14 @@ enum CloudArchiveInventory {
     }
 
     static func scan(_ root: URL, kind: CloudArtifactKind) throws -> Snapshot {
+        try scan(root, kind: kind, includeContents: true)
+    }
+
+    static func signature(_ root: URL, kind: CloudArtifactKind) throws -> Snapshot {
+        try scan(root, kind: kind, includeContents: false)
+    }
+
+    private static func scan(_ root: URL, kind: CloudArtifactKind, includeContents: Bool) throws -> Snapshot {
         var entries: [Entry] = []
         var hash = SHA256()
         var hasExcludedFiles = false
@@ -114,13 +122,19 @@ enum CloudArchiveInventory {
                                  link: link, mode: Int(st.st_mode & 0o777)))
             for value in [path, type, String(st.st_mode & 0o777), String(st.st_mtimespec.tv_sec),
                           String(st.st_mtimespec.tv_nsec), link ?? ""] { field(value) }
-            let attrs = try SaveFiles.attributes(url)
-            field(String(attrs.count))
-            for (key, data) in attrs.sorted(by: { $0.key < $1.key }) {
-                field(key)
-                field(hex(SHA256.hash(data: data)))
+            if includeContents {
+                let attrs = try SaveFiles.attributes(url)
+                field(String(attrs.count))
+                for (key, data) in attrs.sorted(by: { $0.key < $1.key }) {
+                    field(key)
+                    field(hex(SHA256.hash(data: data)))
+                }
+                if type == "F" { field(try hashes(at: url, includeMD5: false)["sha256"]!) }
+            } else {
+                // ctime also catches xattr and same-size edits with a preserved mtime.
+                for value in [String(st.st_dev), String(st.st_ino), String(st.st_size),
+                              String(st.st_ctimespec.tv_sec), String(st.st_ctimespec.tv_nsec)] { field(value) }
             }
-            if type == "F" { field(try hashes(at: url, includeMD5: false)["sha256"]!) }
             if type == "D" {
                 for child in try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
                     .sorted(by: { $0.lastPathComponent.utf8.lexicographicallyPrecedes($1.lastPathComponent.utf8) }) {

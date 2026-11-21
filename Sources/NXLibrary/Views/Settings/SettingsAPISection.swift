@@ -187,9 +187,9 @@ struct SettingsAPISection: View {
 
     private var accountStatus: some View {
         switch nextendo.status {
-        case .signedIn: return NextendoPresence(text: text("Nextendo connected"), color: SeleneTheme.success)
-        case .expired: return NextendoPresence(text: text("Session expired"), color: SeleneTheme.danger)
-        case .signedOut, .unavailable: return NextendoPresence(text: text("Offline"), color: SeleneTheme.ink60)
+        case .signedIn: return SeleneStatusDot(text: text("Nextendo connected"), color: SeleneTheme.success).fixedSize()
+        case .expired: return SeleneStatusDot(text: text("Session expired"), color: SeleneTheme.danger).fixedSize()
+        case .signedOut, .unavailable: return SeleneStatusDot(text: text("Offline"), color: SeleneTheme.ink60).fixedSize()
         }
     }
 
@@ -492,20 +492,6 @@ private struct NextendoValue: View {
     }
 }
 
-private struct NextendoPresence: View {
-    @Environment(\.seleneCanvas) private var canvas
-    let text: String
-    let color: Color
-
-    var body: some View {
-        HStack(spacing: canvas.u(8)) {
-            Circle().fill(color).frame(width: canvas.u(7), height: canvas.u(7)).accessibilityHidden(true)
-            NextendoValue(text: text)
-        }
-        .fixedSize()
-    }
-}
-
 private struct NextendoFriendLine<Trailing: View>: View {
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.nxAppLocale) private var locale
@@ -525,7 +511,7 @@ private struct NextendoFriendLine<Trailing: View>: View {
             if friend.presence == .playing {
                 NextendoGameTitle(name: friend.game, id: friend.gameID)
             }
-            NextendoPresence(text: L10n.text(status, context: locale), color: color)
+            SeleneStatusDot(text: L10n.text(status, context: locale), color: color).fixedSize()
             trailing()
         }
         .padding(.horizontal, canvas.u(8))
