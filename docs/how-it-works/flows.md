@@ -120,7 +120,7 @@ Nella pagina Spotlight di un titolo Steam, Giù porta anche a **More like this**
 
 ## 5. Costruire un gioco Switch (Add Game)
 
-**Add Game → Add ported app.** Scegli un bundle locale nel selettore oppure trascina un solo `.app` sulla schermata Add Game. Arcane verifica l'identità e la firma; se il titolo esiste, Replace o Cancel decide se procedere. Arcane controlla lo spazio e pubblica una copia verificata in Game apps. La sorgente resta dov'è e il titolo compare in libreria.
+**Add Game → Add ported app.** Scegli un bundle locale nel selettore oppure trascina un solo `.app` sulla schermata Add Game. Se la riga è disabilitata, il sottotitolo indica l'operazione in corso. Se il titolo esiste, Replace o Cancel decide se procedere. Arcane controlla lo spazio, ripara i metadati di trasferimento solo sulla copia e verifica identità e firma prima di pubblicarla in Game apps. La sorgente resta intatta e il titolo compare in libreria.
 
 **Details → Options → Edit details → Attach sources.** Scegli i file originali o una cartella. La scansione usa le regole di Add Game e rifiuta le sorgenti che non producono un gioco compilabile con lo stesso title ID. Torna a Options → Rebuild: l'installazione riuscita sostituisce il bundle esistente, senza inviare nulla al cloud.
 

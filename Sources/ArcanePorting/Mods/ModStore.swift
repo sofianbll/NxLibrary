@@ -447,8 +447,12 @@ public struct ModStore {
             build?.outputPath == app.path && ModFolderScanner.isRealDirectory(app.appendingPathComponent("Contents/Resources/dm/codemods"))
                 ? build?.builtCodeMods ?? [] : []
         )
-        guard let selected = try? codeMods(enabledCodeMods(), stage: nil) else { return (true, nil) }
-        if selected.isEmpty { return (false, built.first) } // One name switches the entire copy off.
+        guard let selection = try? localCodeMods(),
+              let selected = try? codeMods(selection.filter(\.isOn), stage: nil) else { return (true, nil) }
+        if selected.isEmpty {
+            // Without a local build or selectable patches, leave a transferred bundle's defaults alone.
+            return (false, build == nil && selection.isEmpty ? nil : built.first)
+        }
         guard Set(selected.map(Self.codeModIdentity)) == Set(built.map(Self.codeModIdentity)) else { return (true, nil) }
         return (false, "") // Even an empty launch value takes precedence over env.txt.
     }
@@ -462,9 +466,13 @@ public struct ModStore {
     }
 
     func enabledCodeMods() throws -> [LocalMod] {
+        try localCodeMods().filter(\.isOn)
+    }
+
+    private func localCodeMods() throws -> [LocalMod] {
         let entries = try checkedEntries(in: codeModsFolder)
         guard !entries.isEmpty else { return [] }
-        return mods(entries: entries, records: try checkedRecords()).filter { $0.isOn && $0.exefs != nil }
+        return mods(entries: entries, records: try checkedRecords()).filter { $0.exefs != nil }
     }
 
     /// The engine reads child folders in name order and applies the whole set together. Prefix with the

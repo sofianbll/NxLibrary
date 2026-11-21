@@ -97,7 +97,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 |---|---|
 | [Sources/NXLibrary/ViewModels/AppViewModel.swift](../../Sources/NXLibrary/ViewModels/AppViewModel.swift) | Coordina libreria e catalogo, sorgenti, lancio (con la sincronizzazione delle mod prima di Play), primo avvio, Game options, spazio su disco e icona di Arcane nel Dock. Tiene il pin del motore, dal bundle o dal default, e crea i modelli Switch. Conserva la scelta Steam del Setup, tiene lo stato del porting letto dalla home e non scansiona Game files all’avvio. Il file tiene stato, init, primo avvio, icona nel Dock e i due scrittori della libreria e dello spazio (`applyCatalog`, `cleanStorage`); il resto sta nelle estensioni qui sotto. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+Storage.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Storage.swift) | Spazio su disco: misura, cancella cache e log. |
-| [Sources/NXLibrary/ViewModels/AppViewModel+Library.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Library.swift) | Scansione e cartella Game apps, adozione locale con conferma, trascinamento e collegamento di sorgenti per title ID. |
+| [Sources/NXLibrary/ViewModels/AppViewModel+Library.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Library.swift) | Scansione e cartella Game apps, adozione locale con conferma e motivo del blocco, trascinamento e collegamento di sorgenti per title ID. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+CloudLibrary.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+CloudLibrary.swift) | Coordina archivio, coda, esiti e recupero cloud; conserva l'ultimo controllo effettivo e gestisce Download, lease e verifica della cache prima di Rebuild. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+CloudLibraryMove.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+CloudLibraryMove.swift) | Esegue il piano confermato di spostamento cloud; pubblica progressi ed esito e attiva la cartella solo al successo. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+Activity.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Activity.swift) | Ripristina, registra e cancella gli esiti; invia Retry al proprietario del lavoro originale. |
@@ -350,7 +350,7 @@ Cartella `Sources/NXLibraryCore/Settings/`. Il catalogo dei testi sta in `Resour
 | [Sources/NXLibraryCore/Settings/SettingsReset.swift](../../Sources/NXLibraryCore/Settings/SettingsReset.swift) | Reset group per sezione: quali sezioni si azzerano e quali valori della base tornano ai default (`resetShared`). |
 | [Sources/NXLibraryCore/Settings/AppLocale.swift](../../Sources/NXLibraryCore/Settings/AppLocale.swift) | Sette lingue, risoluzione delle preferenze e regione indipendente; nomi e ricerca delle regioni. |
 | [Sources/NXLibraryCore/Settings/AppLocalization.swift](../../Sources/NXLibraryCore/Settings/AppLocalization.swift) | Contesto osservabile, lookup portabile delle risorse e interpolazioni/plurali. |
-| [Sources/NXLibraryCore/Resources/Localizable.xcstrings](../../Sources/NXLibraryCore/Resources/Localizable.xcstrings) | Testi condivisi in sette lingue, inclusi gli stati delle copie cloud e l'azione per digitare un percorso. |
+| [Sources/NXLibraryCore/Resources/Localizable.xcstrings](../../Sources/NXLibraryCore/Resources/Localizable.xcstrings) | Testi condivisi in sette lingue, inclusi gli stati delle copie cloud e i motivi che bloccano l'adozione di un'app. |
 
 ## Core · Steam
 
@@ -517,7 +517,7 @@ Cartella `Sources/ArcanePorting/Launch/`.
 
 | File | Responsabilità |
 |---|---|
-| [Sources/ArcanePorting/Launch/ImportService.swift](../../Sources/ArcanePorting/Launch/ImportService.swift) | Identità e scansione dei bundle nxnative; adozione locale con firma, inventario, spazio e pubblicazione recuperabile. |
+| [Sources/ArcanePorting/Launch/ImportService.swift](../../Sources/ArcanePorting/Launch/ImportService.swift) | Identità e scansione dei bundle nxnative; adozione locale con inventario, spazio, riparazione della copia in staging, verifica della firma e pubblicazione recuperabile. |
 | [Sources/ArcanePorting/Launch/AppIconProgress.swift](../../Sources/ArcanePorting/Launch/AppIconProgress.swift) | Stati e testi della preparazione icona, con esito informativo aggiunto al log della build conclusa. |
 | [Sources/ArcanePorting/Launch/IconLaunchWait.swift](../../Sources/ArcanePorting/Launch/IconLaunchWait.swift) | Conserva una richiesta Play durante la firma dell'icona e la revoca su annullamento, errore o chiusura del dialogo. |
 | [Sources/ArcanePorting/Launch/LaunchService.swift](../../Sources/ArcanePorting/Launch/LaunchService.swift) | Scrive l’ambiente runtime e avvia il bundle del gioco tramite NSWorkspace. |
@@ -597,7 +597,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 
 | File | Responsabilità |
 |---|---|
-| [Sources/ArcanePorting/Mods/ModStore.swift](../../Sources/ArcanePorting/Mods/ModStore.swift) | Ordine, interruttori, conflitti RomFS (con esclusione opzionale del descrittore Z-A), Cestino, overlay e snapshot ExeFS. Ferma la riconciliazione se cartella o record non si leggono. |
+| [Sources/ArcanePorting/Mods/ModStore.swift](../../Sources/ArcanePorting/Mods/ModStore.swift) | Ordine, interruttori, conflitti RomFS, Cestino, overlay e snapshot ExeFS. Senza build né mod ExeFS locali, lascia al bundle la scelta al lancio. Ferma la riconciliazione se cartella o record non si leggono. |
 | [Sources/ArcanePorting/Mods/ModFolderScanner.swift](../../Sources/ArcanePorting/Mods/ModFolderScanner.swift) | Elenca cartelle, archivi e file RomFS. La lettura stretta distingue una cartella vuota da una scansione fallita durante la riconciliazione. |
 | [Sources/ArcanePorting/Mods/ModSupport.swift](../../Sources/ArcanePorting/Mods/ModSupport.swift) | Quali file di mod funzionano (solo RomFS), dov'è la loro cartella `romfs`, nomi di cartella sicuri. |
 | [Sources/ArcanePorting/Mods/GameBanana/GameBananaAPI.swift](../../Sources/ArcanePorting/Mods/GameBanana/GameBananaAPI.swift) | URL di ricerca e ID dai link, host fidati, risposte GameBanana e testo dalle descrizioni HTML. |
@@ -618,8 +618,8 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 
 | File | Responsabilità |
 |---|---|
-| [Sources/NXLibrary/Views/AddGame/AddGameView.swift](../../Sources/NXLibrary/Views/AddGame/AddGameView.swift) | Compone il wizard Choose/Review/Porting, navigazione e rilascio di sorgenti o di una singola app nel primo passo. |
-| [Sources/NXLibrary/Views/AddGame/AddGameView+Rows.swift](../../Sources/NXLibrary/Views/AddGame/AddGameView+Rows.swift) | Righe e focus del wizard, scelta di un'app locale già portata e stato della verifica della cache di compilazione cloud. |
+| [Sources/NXLibrary/Views/AddGame/AddGameView.swift](../../Sources/NXLibrary/Views/AddGame/AddGameView.swift) | Compone il wizard Choose/Review/Porting e osserva i blocchi cloud; navigazione e rilascio di sorgenti o di una singola app nel primo passo. |
+| [Sources/NXLibrary/Views/AddGame/AddGameView+Rows.swift](../../Sources/NXLibrary/Views/AddGame/AddGameView+Rows.swift) | Righe e focus del wizard, spiegazione del blocco dell'adozione locale e stato della verifica della cache di compilazione cloud. |
 | [Sources/NXLibrary/Views/AddGame/AddGameRows.swift](../../Sources/NXLibrary/Views/AddGame/AddGameRows.swift) | Rende le righe riutilizzabili per sorgenti e azioni di Add Game. |
 | [Sources/NXLibrary/Views/AddGame/AddGameAction.swift](../../Sources/NXLibrary/Views/AddGame/AddGameAction.swift) | Identifica le azioni navigabili dei passaggi del wizard. |
 | [Sources/NXLibrary/Views/AddGame/AddGameStepThreeView.swift](../../Sources/NXLibrary/Views/AddGame/AddGameStepThreeView.swift) | Mostra progresso, log, cancellazione ed esito del porting, con nuovo tentativo d’installazione per una build già pronta. |
@@ -884,7 +884,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/ArcanePortingTests/CheatLocatorTests.swift](../../Tests/ArcanePortingTests/CheatLocatorTests.swift) | Identità nel bundle e precedenza dei percorsi cheats e delle variabili del launcher. |
 | [Tests/ArcanePortingTests/CheatStatusTests.swift](../../Tests/ArcanePortingTests/CheatStatusTests.swift) | Ancestry del motore, necessità di rebuild, valore della riga e indicatore attivo. |
 | [Tests/ArcanePortingTests/CheatStoreTests.swift](../../Tests/ArcanePortingTests/CheatStoreTests.swift) | Installazione, enabled, master switch, sostituzione e metadati dei file cheats. |
-| [Tests/ArcanePortingTests/ModStoreTests.swift](../../Tests/ArcanePortingTests/ModStoreTests.swift) | Ordine, acceso/spento, limite dell'overlay, conflitti, Cestino e righe dell'`env.txt` delle mod. |
+| [Tests/ArcanePortingTests/ModStoreTests.swift](../../Tests/ArcanePortingTests/ModStoreTests.swift) | Ordine, acceso/spento, overlay, conflitti, Cestino, `env.txt` e avvio ExeFS senza patch locali. |
 | [Tests/ArcanePortingTests/ModFolderScannerTests.swift](../../Tests/ArcanePortingTests/ModFolderScannerTests.swift) | Voci della cartella mods, layout `romfs`/Atmosphère, symlink, file relativi e file nascosti. |
 | [Tests/ArcanePortingTests/EnvFileEditorTests.swift](../../Tests/ArcanePortingTests/EnvFileEditorTests.swift) | Modifica di una chiave dell'`env.txt`: commenti, duplicati, CRLF, merge al lancio. |
 | [Tests/ArcanePortingTests/GameBananaAPITests.swift](../../Tests/ArcanePortingTests/GameBananaAPITests.swift) | Decodifica tollerante delle risposte, URL, host fidati, contenuto degli archivi e testo dalle descrizioni. |
@@ -911,7 +911,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/ArcanePortingTests/GameRuntimeConfigTests.swift](../../Tests/ArcanePortingTests/GameRuntimeConfigTests.swift) | Review di giochi nuovi ed esistenti, persistenza, lingua del rebuild e conversione DM_* con merge di env.txt. |
 | [Tests/ArcanePortingTests/GameTDBTests.swift](../../Tests/ArcanePortingTests/GameTDBTests.swift) | Database, normalizzazione dei nomi, regioni e matching delle copertine. |
 | [Tests/NXLibraryCoreTests/HoldDetectorTests.swift](../../Tests/NXLibraryCoreTests/HoldDetectorTests.swift) | Soglia temporale e distinzione fra pressione breve e prolungata. |
-| [Tests/ArcanePortingTests/ImportServiceTests.swift](../../Tests/ArcanePortingTests/ImportServiceTests.swift) | Identità, firma, spazio, copia, conflitto, rollback e persistenza dell'adozione di bundle nxnative sintetici. |
+| [Tests/ArcanePortingTests/ImportServiceTests.swift](../../Tests/ArcanePortingTests/ImportServiceTests.swift) | Identità, firma, spazio, riparazione della copia, rifiuto di contenuti alterati, conflitto, rollback e persistenza di bundle sintetici. |
 | [Tests/NXLibraryCoreTests/CursorIdleTests.swift](../../Tests/NXLibraryCoreTests/CursorIdleTests.swift) | Ritardo del cursore, ripristino e ripartenza dopo interruzione o attività del mouse. |
 | [Tests/ArcanePortingTests/InstallProgressTests.swift](../../Tests/ArcanePortingTests/InstallProgressTests.swift) | Fasi Git, percentuali, byte e ricomposizione delle righe parziali. |
 | [Tests/ArcanePortingTests/KeyCheckTests.swift](../../Tests/ArcanePortingTests/KeyCheckTests.swift) | Cifratura e lettura delle intestazioni sintetiche e chiavi richieste dalle sorgenti. |
@@ -1046,7 +1046,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [CatalogBuildRecoveryTests.swift](../../Tests/ArcanePortingTests/CatalogBuildRecoveryTests.swift) | Vecchia build persistita e nuova conservata, sospensione automatica e conferme obsolete. |
 | [run_notices.py](../../Tests/CatalogAppChecks/run_notices.py) | Esegue i metodi reali degli avvisi e del ponte legacy senza finestre, dopo swift test. |
 | [run_review.py](../../Tests/CatalogAppChecks/run_review.py) | Verifica achievement, loghi, focus, navigazione, lettura Mods e priorità dei dialoghi. Prova Steam che riappare durante Play e aspetta il completamento del task che gestisce il ripiego del pannello. Dati sintetici, senza finestre. |
-| [run_cloud_screens.py](../../Tests/CatalogAppChecks/run_cloud_screens.py) | Rende pannello, impostazioni, selettore, tessere e attività in PNG fuori schermo; verifica stati, visibilità del badge, sezioni vuote, focus e salvataggio del percorso manuale. |
+| [run_cloud_screens.py](../../Tests/CatalogAppChecks/run_cloud_screens.py) | Rende pannello, impostazioni, selettore, tessere e attività in PNG fuori schermo; verifica anche i blocchi dell'adozione locale durante build e trasferimento. |
 | [run_startup_recovery.py](../../Tests/CatalogAppChecks/run_startup_recovery.py) | Coordinatore di avvio reale su profili sintetici: conflitto, scelta esplicita, offerta obsoleta, Retry e fallimento della preparazione; nessuna finestra. |
 | [run_source_access.py](../../Tests/CatalogAppChecks/run_source_access.py) | Esegue il ripristino di avvio, l'observer e i selettori reali: nessuna scansione automatica dei sorgenti, cartella ricordata, annullamento e lettura dei soli file scelti; nessuna finestra o dato personale. |
 | [run_onboarding.py](../../Tests/CatalogAppChecks/run_onboarding.py) | Esegue observer e ripristino del Setup, uscita durante lettura pendente con annullamento, input sotto modali, scelte acceso/spento/nil, radice della fonte, focus dopo Retry e richiesta notifiche su dati sintetici; nessuna finestra. |
@@ -1150,7 +1150,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [docs/how-it-works/flows.md](../how-it-works/flows.md) | Schemi dei flussi completi: avvio, libreria, Play Switch e Steam, Add Game, salvataggi, mod, impostazioni, aggiornamento dell’app. |
 | [docs/how-it-works/steam.md](../how-it-works/steam.md) | Riferimento unico dell’integrazione Steam: file letti, stati, osservazione, libreria, Play, ore, achievement, scelte e limiti. |
 | [docs/working-on-it/conventions.md](conventions.md) | Come si costruisce una cosa nuova: dove va il codice, ricette per fonte, schermata Selene, impostazione, file su disco, rete, testi, lavoro in background, test e documentazione. |
-| [docs/working-on-it/development.md](development.md) | Documenta prerequisiti, runtime, build, debug, verifiche, CI e preparazione delle release. |
+| [docs/working-on-it/development.md](development.md) | Documenta prerequisiti, runtime, build, debug, verifiche, CI e release, compreso l'ID Nextendo pubblico della release personale. |
 | [docs/working-on-it/perso-release-notes.md](perso-release-notes.md) | Modello francese delle note di release del fork: versione, pin, giochi da ricompilare e novità. |
 | [docs/working-on-it/file-map.md](file-map.md) | Catalogo corrente delle responsabilità di tutti i file versionati, suddiviso per area. |
 | [docs/working-on-it/validation.md](validation.md) | Elenco unico di ciò che il maintainer ha validato o deve ancora provare, compresi i pin dell’engine. |

@@ -16,6 +16,7 @@ struct AddGameView: View {
     @Environment(\.seleneCanvas) var canvas
     @Environment(\.seleneReduceMotion) var reduceMotion
     @ObservedObject var viewModel: AppViewModel
+    @ObservedObject private var cloudLibrary: CloudLibraryModel
     /// The wizard and the live build (`PortingModel`), observed on their own.
     @ObservedObject var porting: PortingModel
     /// The Switch Setup (`SetupModel`): engine, keys and the Metal gate the review checks.
@@ -39,6 +40,7 @@ struct AddGameView: View {
     init(viewModel: AppViewModel, router: AppRouter, artwork: ArtworkStore? = nil, showsHints: Bool = true,
                 reviewSelectionID: UUID? = nil) {
         self.viewModel = viewModel
+        self.cloudLibrary = viewModel.cloudLibrary
         self.porting = viewModel.porting
         self.setup = viewModel.setup
         self.router = router

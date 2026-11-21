@@ -218,12 +218,12 @@ public final class ImportService {
         if let problem = GameAppDestination.folderProblem(at: folder) {
             throw BuildInstallError.replaceFailed(problem)
         }
+        // This identity only plans the destination and confirmation; trust the staged copy below.
         let info = try Self.verifiedIdentity(of: source)
         guard let app = Self.observation(at: source, info: info, bytes: 0), let title = app.titleId,
               try CloudArchiveInventory.node(at: source).st_mode & S_IFMT == S_IFDIR else {
             throw CloudArchiveError.invalidApp
         }
-        try verifySignature(source)
         let known = existing.first { $0.titleId?.caseInsensitiveCompare(title) == .orderedSame }
         let discovered = scan(directories: [folder], matchingTitle: title)
         let registered = known?.canDeleteAppBundle() == true ? known?.url : nil
@@ -272,15 +272,68 @@ public final class ImportService {
                   try CloudArchiveInventory.signature(source, kind: .app).sha256 == initial.sha256 else {
                 throw CloudArchiveError.localChanged
             }
+            try repairAdoptionCopy(incoming, entries: copied.entries)
             let info = try Self.verifiedIdentity(of: incoming, titleID: plan.app.titleId)
             try verifySignature(incoming)
-            guard var app = Self.observation(at: incoming, info: info, bytes: copied.bytes) else { throw CloudArchiveError.invalidApp }
+            let bytes = try CloudArchiveInventory.signature(incoming, kind: .app).bytes
+            guard var app = Self.observation(at: incoming, info: info, bytes: bytes) else { throw CloudArchiveError.invalidApp }
             app.name = plan.app.name
             app.appURL = plan.destination
             return .init(plan: plan, app: app, incoming: incoming)
         } catch {
             try? fm.removeItem(at: stage)
             throw error
+        }
+    }
+
+    private func repairAdoptionCopy(_ app: URL, entries: [CloudArchiveInventory.Entry]) throws {
+        let types = Dictionary(uniqueKeysWithValues: entries.map { ($0.path, $0.type) })
+        for entry in entries {
+            try Task.checkCancellation()
+            let url = entry.path.isEmpty ? app : app.appendingPathComponent(entry.path)
+            if removexattr(url.path, "com.apple.quarantine", XATTR_NOFOLLOW) != 0, errno != ENOATTR && errno != ENOTSUP {
+                throw CloudArchiveError.invalidApp
+            }
+            if entry.type == "F", entry.path.hasPrefix("Contents/MacOS/"),
+               entry.path.split(separator: "/").count == 3, entry.mode & 0o100 == 0,
+               chmod(url.path, mode_t(entry.mode | 0o111)) != 0 {
+                throw CloudArchiveError.invalidApp
+            }
+            let parts = entry.path.split(separator: "/")
+            if entry.type == "F", parts.count == 6, parts[0] == "Contents", parts[1] == "PlugIns",
+               parts[2].hasSuffix(".bundle"), parts[3] == "Contents", parts[4] == "_CodeSignature",
+               parts[5] == "CodeResources" {
+                let signature = String(entry.path.dropLast("CodeResources".count)) + "CodeSignature"
+                if types[signature] == nil {
+                    try Data().write(to: app.appendingPathComponent(signature), options: .withoutOverwriting)
+                }
+            }
+        }
+
+        // Use the outer seal to distinguish flattened links from legitimate independent resources.
+        // Only accept the relative layout emitted by nxnative's packer; codesign still verifies the seal and targets.
+        let sealPath = "Contents/_CodeSignature/CodeResources"
+        guard types[sealPath] == "F",
+              let data = try? SaveFiles.readRegular(app.appendingPathComponent(sealPath), limit: 32 * 1_048_576),
+              let seal = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any],
+              let files = seal["files2"] as? [String: [String: Any]] else { return }
+        for (path, entry) in files {
+            guard path.hasPrefix("Resources/"), SaveFiles.validRelative(path),
+                  let link = entry["symlink"] as? String else { continue }
+            let relative = "Contents/" + path
+            let url = app.appendingPathComponent(relative)
+            let parent = relative.split(separator: "/").dropLast().joined(separator: "/")
+            let depth = path.split(separator: "/").count - 1
+            let parts = link.split(separator: "/")
+            guard parts.count > depth + 1, parts[depth] == "PlugIns", parts[depth + 1].hasSuffix(".bundle"),
+                  types[parent] == "D", types[relative] != "L" else { continue }
+            let target = "PlugIns/\(parts[depth + 1])/Contents/" + path
+            guard link == String(repeating: "../", count: depth) + target,
+                  let targetType = types["Contents/" + target], targetType == "F" || targetType == "D" else { continue }
+            try SaveFiles.safePath(url.deletingLastPathComponent())
+            try SaveFiles.safePath(app.appendingPathComponent("Contents/" + target))
+            if types[relative] != nil { try fm.removeItem(at: url) }
+            try fm.createSymbolicLink(atPath: url.path, withDestinationPath: link)
         }
     }
 

@@ -4,6 +4,29 @@ import os
 @testable import ArcanePorting
 
 final class CodeModStoreTests: XCTestCase {
+    func testTransferredBundleLeavesIncludedCodeModsActiveWithoutLocalPatches() throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent("CodeModStore-\(UUID())")
+        defer { try? fm.removeItem(at: root) }
+        let store = ModStore(supportFolder: root.appendingPathComponent("game"), recordsFile: root.appendingPathComponent("mods.json"),
+                             titleID: "0100000000010000", canWrite: { true }, trash: { _ in XCTFail() })
+        let app = root.appendingPathComponent("Game.app")
+        let names = ["First", "Second", "Third"]
+        for name in names {
+            let marker = app.appendingPathComponent("Contents/Resources/dm/mods/\(name)/dm_code.tsv")
+            try fm.createDirectory(at: marker.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try Data().write(to: marker)
+        }
+        XCTAssertFalse(store.codeModsNeedRebuild(app: app))
+        XCTAssertEqual(store.codeModsLaunchEnvironment(app: app), [:])
+        let build = BuildRecord(outputPath: app.path, builtCodeMods: names)
+        XCTAssertEqual(store.codeModsLaunchEnvironment(app: app, build: build), ["DM_MODS_OFF": "First"])
+        try fm.createDirectory(at: store.codeModsFolder.appendingPathComponent("First/exefs"), withIntermediateDirectories: true)
+        try store.setOn(false, folderName: "First")
+        XCTAssertFalse(store.codeModsNeedRebuild(app: app))
+        XCTAssertEqual(store.codeModsLaunchEnvironment(app: app), ["DM_MODS_OFF": "First"])
+    }
+
     func testMovesStayInTheirSectionAndTogglesAreIndependent() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("CodeModStore-\(UUID())")
         defer { try? FileManager.default.removeItem(at: root) }

@@ -50,11 +50,18 @@ import ArcanePorting
         let queuedRequest = CloudLibraryModel.Request(id: game.id, name: game.name, action: .restore(.app),
             storage: model.preference.storage, scope: .init(title: game.titleId!, urls: []),
             importDestination: nil, sourceFiles: nil, onSuccess: nil)
+        let addGame = AddGameView(viewModel: vm, router: AppRouter())
+        func adoptionRow() -> AddGameRow { addGame.rows(for: 1).first { $0.id == "adoptApp" }! }
+        precondition(adoptionRow().enabled)
+        vm.isBuilding = true
+        precondition(!adoptionRow().enabled && adoptionRow().about == L10n.text("Available after the active build finishes or is cancelled."))
+        vm.isBuilding = false
         let activity = ActivityCenterView(viewModel: vm, porting: vm.porting, cloudLibrary: model, focus: .init(),
             onFocus: { _ in }, onOpen: { _ in }, onCancel: { _ in }, onClose: {})
         precondition(ActivityCenterView.rows(vm).isEmpty)
         try render("activity-empty", output, activity)
         model.queue = [queuedRequest]
+        precondition(!adoptionRow().enabled && adoptionRow().about == L10n.text("Available after the cloud transfers."))
         model.update(game.id) { $0.action = queuedRequest.action; $0.queued = true }
         try render("panel-queued", output, CloudLibraryPanel(viewModel: vm, model: model, game: game))
         let activeGame = PortedGame(name: "Solar Observatory", url: data.appendingPathComponent("Active.app"),

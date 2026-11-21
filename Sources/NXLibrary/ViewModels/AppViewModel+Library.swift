@@ -33,8 +33,18 @@ extension AppViewModel {
     }
 
     var canAdoptLocalApp: Bool {
-        !isScanningLibrary && !isBuilding && !isCheckingCloudBuild && !isCleaningStorage &&
-            !isUpdatingApp && !cloudLibrary.isWorking && !cloudLibrary.isChangingConnection
+        localAppAdoptionBlocker == nil
+    }
+
+    var localAppAdoptionBlocker: String? {
+        if isBuilding { return L10n.text("Available after the active build finishes or is cancelled.") }
+        if isCheckingCloudBuild { return L10n.text("Available after the cloud build check.") }
+        if isScanningLibrary { return L10n.text("Available after the current library operation.") }
+        if isCleaningStorage { return L10n.text("Available after storage cleanup.") }
+        if isUpdatingApp { return L10n.text("Available after the Arcane update.") }
+        if cloudLibrary.isChangingConnection { return L10n.text("Available after the cloud connection change.") }
+        if cloudLibrary.isWorking { return L10n.text("Available after the cloud transfers.") }
+        return nil
     }
 
     func chooseLocalApp() {

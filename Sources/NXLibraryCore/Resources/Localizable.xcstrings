@@ -320,6 +320,72 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "将本地 nxnative App 复制到游戏 App 文件夹。"}}
       }
     },
+    "Available after the cloud build check.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Available after the cloud build check."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Disponibile dopo il controllo della compilazione nel cloud."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Disponible après la vérification cloud pour la compilation."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Nach der Cloud-Prüfung für den Build verfügbar."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Disponible tras la comprobación en la nube para la compilación."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Disponível após a verificação na nuvem para a compilação."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "构建的云端检查结束后可用。"}}
+      }
+    },
+    "Available after the current library operation.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Available after the current library operation."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Disponibile al termine dell’operazione in corso nella libreria."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Disponible après l’opération en cours dans la bibliothèque."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Nach dem aktuellen Bibliotheksvorgang verfügbar."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Disponible tras la operación en curso en la biblioteca."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Disponível após a operação atual na biblioteca."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "资料库的当前操作结束后可用。"}}
+      }
+    },
+    "Available after storage cleanup.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Available after storage cleanup."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Disponibile dopo la pulizia dello spazio di archiviazione."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Disponible après le nettoyage du stockage."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Nach der Speicherbereinigung verfügbar."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Disponible tras la limpieza del almacenamiento."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Disponível após a limpeza do armazenamento."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "存储清理结束后可用。"}}
+      }
+    },
+    "Available after the Arcane update.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Available after the Arcane update."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Disponibile dopo l’aggiornamento di Arcane."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Disponible après la mise à jour d’Arcane."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Nach der Aktualisierung von Arcane verfügbar."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Disponible tras la actualización de Arcane."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Disponível após a atualização do Arcane."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "Arcane 更新结束后可用。"}}
+      }
+    },
+    "Available after the cloud connection change.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Available after the cloud connection change."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Disponibile dopo la modifica della connessione al cloud."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Disponible après le changement de connexion cloud."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Nach der Änderung der Cloud-Verbindung verfügbar."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Disponible tras el cambio de conexión a la nube."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Disponível após a alteração da conexão com a nuvem."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "云端连接更改结束后可用。"}}
+      }
+    },
+    "Available after the cloud transfers.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Available after the cloud transfers."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Disponibile al termine dei trasferimenti cloud."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Disponible après les transferts cloud."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Nach den Cloud-Übertragungen verfügbar."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Disponible tras las transferencias en la nube."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Disponível após as transferências na nuvem."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "云端传输结束后可用。"}}
+      }
+    },
     "Add one app at a time.": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Add one app at a time."}},
