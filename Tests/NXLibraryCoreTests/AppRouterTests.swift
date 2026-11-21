@@ -97,7 +97,7 @@ final class AppRouterTests: XCTestCase {
         router.movePowerMenu(by: 1)
         XCTAssertEqual(router.menuSelection.power, .sleep)
         router.moveMenu(by: -1)
-        XCTAssertEqual(router.menuSelection.selected, .manageSources)
+        XCTAssertEqual(router.menuSelection.selected, .activityCenter)
     }
 
     func testCloseMenuClosesPowerPills() {
@@ -113,9 +113,9 @@ final class AppRouterTests: XCTestCase {
 final class MenuSelectionModelTests: XCTestCase {
     func testMenuOrder() {
         XCTAssertEqual(MenuAction.allCases,
-                       [.addGame, .refreshLibrary, .settings, .theme, .console, .setupCheck, .manageSources, .power])
+                       [.addGame, .refreshLibrary, .settings, .theme, .console, .setupCheck, .manageSources, .activityCenter, .power])
         XCTAssertEqual(MenuAction.allCases.map(\.title),
-                       ["Add Game", "Library refresh", "Settings", "Theme", "Console", "Setup check", "Manage sources", "Power"])
+                       ["Add Game", "Library refresh", "Settings", "Theme", "Console", "Setup check", "Manage sources", "Activity center", "Power"])
         XCTAssertEqual(PowerAction.allCases, [.quit, .sleep, .hide, .relaunch])
         XCTAssertEqual(PowerAction.allCases.map(\.title), ["Quit", "Sleep", "Hide", "Restart app"])
     }
@@ -128,6 +128,35 @@ final class MenuSelectionModelTests: XCTestCase {
         XCTAssertEqual(model.selected, .power)
         model.move(by: 1)
         XCTAssertEqual(model.selected, .power)
+    }
+
+    func testActivityCenterUsesMenuLifetime() {
+        let router = AppRouter()
+        router.isMenuPresented = true
+        router.moveMenu(by: -1)
+        XCTAssertEqual(router.menuSelection.selected, .activityCenter)
+        router.activityCenterFocus = ActivityCenterFocus()
+        router.closeMenu()
+        XCTAssertFalse(router.isMenuPresented)
+        XCTAssertNil(router.activityCenterFocus)
+    }
+
+    func testActivityFocusTracksRequestsThroughQueueChanges() {
+        let first = UUID(), second = UUID()
+        var focus = ActivityCenterFocus()
+        let rows = ActivityCenterFocus.rows(isBuilding: true, queued: [first, second])
+        XCTAssertEqual(focus.current(in: rows), .porting)
+        focus.move(by: -1, in: rows)
+        XCTAssertEqual(focus.current(in: rows), .porting)
+        focus.move(by: 2, in: rows)
+        XCTAssertEqual(focus.current(in: rows), .queued(second))
+        let remaining = ActivityCenterFocus.rows(isBuilding: false, queued: [second])
+        XCTAssertEqual(focus.current(in: remaining), .queued(second))
+        let empty = ActivityCenterFocus.rows(isBuilding: false, queued: [])
+        XCTAssertEqual(focus.current(in: empty), .close)
+        XCTAssertEqual(focus.current(in: ActivityCenterFocus.rows(isBuilding: false, queued: [first])), .close)
+        focus.move(by: 1, in: empty)
+        XCTAssertEqual(focus.current(in: empty), .close)
     }
 
     func testPowerSubmenuOpensAndCloses() {

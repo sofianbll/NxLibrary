@@ -19,7 +19,8 @@ extension AppShellView {
                 // Keep artwork/tiles drawn and warm, as during Spotlight's entrance, while the full page covers them.
                 .opacity(fullScreenCover ? 0.001 : 1)
                 .allowsHitTesting(!fullScreenCover && !router.route.isOverlay && !viewModel.isGameOptionsOpen
-                                  && viewModel.cloudLibraryGameID == nil)
+                                  && viewModel.cloudLibraryGameID == nil && router.activityCenterFocus == nil)
+                .accessibilityHidden(router.activityCenterFocus != nil)
             if router.route == .addGame {
                 AddGameView(viewModel: viewModel,
                             router: router,
@@ -27,7 +28,8 @@ extension AppShellView {
                             showsHints: settings.settings.showButtonHints,
                             reviewSelectionID: setupSourceEntryID)
                     .opacity(opacityBelowCover(0.8))
-                    .allowsHitTesting(!currentBackdropCover.covers(0.8))
+                    .allowsHitTesting(!currentBackdropCover.covers(0.8) && router.activityCenterFocus == nil)
+                    .accessibilityHidden(router.activityCenterFocus != nil)
                     .transition(overlayTransition)
                     .zIndex(0.8)
             }
@@ -35,7 +37,8 @@ extension AppShellView {
                 ConsoleView(viewModel: viewModel, router: router,
                             showsHints: settings.settings.showButtonHints)
                     .opacity(opacityBelowCover(0.8))
-                    .allowsHitTesting(!currentBackdropCover.covers(0.8))
+                    .allowsHitTesting(!currentBackdropCover.covers(0.8) && router.activityCenterFocus == nil)
+                    .accessibilityHidden(router.activityCenterFocus != nil)
                     .transition(overlayTransition)
                     .zIndex(0.8)
             }
@@ -43,7 +46,8 @@ extension AppShellView {
                 FindGameView(router: router, viewModel: viewModel, playSessions: playSessions,
                              artwork: artwork)
                     .opacity(opacityBelowCover(0.5))
-                    .allowsHitTesting(!currentBackdropCover.covers(0.5))
+                    .allowsHitTesting(!currentBackdropCover.covers(0.5) && router.activityCenterFocus == nil)
+                    .accessibilityHidden(router.activityCenterFocus != nil)
                     .transition(.opacity)
                     .zIndex(0.5)
             }
@@ -117,13 +121,20 @@ extension AppShellView {
             }
             if router.isMenuPresented {
                 Group {
-                    if router.isThemePickerOpen {
+                    if let focus = router.activityCenterFocus {
+                        ActivityCenterView(viewModel: viewModel, cloudLibrary: viewModel.cloudLibrary, focus: focus,
+                                           onFocus: { router.activityCenterFocus?.selected = $0 },
+                                           onSelect: { selectActivityCenterRow($0, router: router, viewModel: viewModel) })
+                            .transition(.opacity)
+                    } else if router.isThemePickerOpen {
                         ThemePickerView(viewModel: viewModel, router: router, settings: settings, games: viewModel.libraryGames)
                             .transition(.opacity)
                             .transformPreference(SeleneBackdropRequestKey.self) { $0?.priority = ShellBackdropCover.themePicker.priority }
                     } else {
                         MenuOverlayView(
                             router: router,
+                            cloudLibrary: viewModel.cloudLibrary,
+                            isBuilding: viewModel.isBuilding,
                             onSelect: { runMenuAction($0) },
                             onSelectPower: { runPower($0) }
                         )

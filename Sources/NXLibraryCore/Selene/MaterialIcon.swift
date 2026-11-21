@@ -5,6 +5,7 @@ import Foundation
 public enum MaterialIcon: String, CaseIterable, Sendable {
     case spotlight = "\u{E3E0}"
     case menu = "\u{E5D2}"
+    case notifications = "\u{E7F4}"
     case platform = "\u{EA12}"
     case trophy = "\u{EA23}"
     case play = "\u{E037}"

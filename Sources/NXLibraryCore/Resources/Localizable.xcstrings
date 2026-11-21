@@ -701,6 +701,66 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Nuvem"}}
       }
     },
+    "Activity center": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Activity center"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Centro attività"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Centre d’activité"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Aktivitätszentrale"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Centro de actividad"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Central de atividades"}}
+      }
+    },
+    "Activity in progress": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Activity in progress"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Attività in corso"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Activité en cours"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Aktivität läuft"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Actividad en curso"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Atividade em andamento"}}
+      }
+    },
+    "Compilation": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Compilation"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Compilazione"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Compilation"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Kompilierung"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Compilación"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Compilação"}}
+      }
+    },
+    "No compilation": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "No compilation"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nessuna compilazione"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Aucune compilation"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Keine Kompilierung"}},
+        "es": {"stringUnit": {"state": "translated", "value": "No hay compilaciones"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nenhuma compilação"}}
+      }
+    },
+    "No cloud transfer": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "No cloud transfer"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nessun trasferimento"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Aucun transfert"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Keine Übertragung"}},
+        "es": {"stringUnit": {"state": "translated", "value": "No hay transferencias"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nenhuma transferência"}}
+      }
+    },
+    "Open porting": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Open porting"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Apri il porting"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ouvrir le portage"}},
+        "de": {"stringUnit": {"state": "translated", "value": "App-Erstellung öffnen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Abrir la compilación"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Abrir compilação"}}
+      }
+    },
     "Synchronized": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Synchronized"}},

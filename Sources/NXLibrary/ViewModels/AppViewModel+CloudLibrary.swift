@@ -825,15 +825,20 @@ extension AppViewModel {
 
     @MainActor func cancelCloudLibrary(_ game: PortedGame) {
         guard let action = cloudLibrary.states[game.id]?.action else { return }
-        if let index = cloudLibrary.queue.firstIndex(where: { $0.id == game.id && $0.action == action }) {
-            objectWillChange.send()
-            cloudLibrary.queue.remove(at: index)
-            cloudLibrary.update(game.id) { $0.action = nil; $0.queued = false }
-            cloudLibrary.persistQueue()
-            appIcon.syncPendingAppIcons()
+        if let request = cloudLibrary.queue.first(where: { $0.id == game.id && $0.action == action }) {
+            cancelQueuedCloudLibrary(request.token)
         } else if let active = cloudLibrary.active, active.request.id == game.id, active.request.action == action {
             active.task.cancel()
         }
+    }
+
+    @MainActor func cancelQueuedCloudLibrary(_ token: UUID) {
+        guard let index = cloudLibrary.queue.firstIndex(where: { $0.token == token }) else { return }
+        objectWillChange.send()
+        let request = cloudLibrary.queue.remove(at: index)
+        cloudLibrary.update(request.id) { $0.action = nil; $0.queued = false }
+        cloudLibrary.persistQueue()
+        appIcon.syncPendingAppIcons()
     }
 
     @MainActor private func cloudImportDestination(for game: PortedGame, action: CloudLibraryAction) -> URL? {

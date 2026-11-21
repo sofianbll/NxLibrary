@@ -115,6 +115,7 @@ struct AppShellView: View {
     var nativeMenuAvailability: NativeMenuAvailability {
         let general = !viewModel.showSetupCheck && !showsWelcome
             && !isCloseGameOpen && !router.isScreenshotViewerOpen && !router.isSearchPresented
+            && router.activityCenterFocus == nil
             && !viewModel.isGameOptionsOpen && viewModel.launchOverlay == nil && !nativeDialogOwnsInput
         let game = general && !router.isMenuPresented ? viewModel.currentFocusedGame : nil
         let focused = general && !router.isMenuPresented ? viewModel.currentFocusedCatalogGame : nil

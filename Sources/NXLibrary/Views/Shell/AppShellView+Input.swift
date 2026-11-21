@@ -5,6 +5,46 @@ import NXLibraryCore
 
 /// Keyboard equivalents of the controller gestures, the menu's input and its actions.
 extension AppShellView {
+    func activityCenterRows(_ viewModel: AppViewModel) -> [ActivityCenterFocus.Row] {
+        ActivityCenterFocus.rows(isBuilding: viewModel.isBuilding, queued: viewModel.cloudLibrary.queue.map(\.token))
+    }
+
+    func activityCenterInput(_ action: GamepadAction, router: AppRouter, viewModel: AppViewModel) {
+        guard var focus = router.activityCenterFocus else { return }
+        let rows = activityCenterRows(viewModel)
+        let current = focus.current(in: rows)
+        switch action {
+        case .navigateUp, .navigateDown:
+            focus.move(by: action == .navigateUp ? -1 : 1, in: rows)
+            router.activityCenterFocus = focus
+            if focus.selected != current { SoundEffectService.shared.play(.focus) }
+        case .confirm: selectActivityCenterRow(current, router: router, viewModel: viewModel)
+        case .cancel, .menu: router.closeMenu()
+        default: break
+        }
+    }
+
+    func activityCenterKey(_ keyCode: UInt16) -> GamepadAction? {
+        switch keyCode {
+        case 125: return .navigateDown
+        case 126: return .navigateUp
+        case 36, 76, 49: return .confirm
+        case 53: return .cancel
+        default: return nil
+        }
+    }
+
+    func selectActivityCenterRow(_ row: ActivityCenterFocus.Row, router: AppRouter, viewModel: AppViewModel) {
+        switch row {
+        case .porting:
+            guard viewModel.isBuilding else { return }
+            router.closeMenu()
+            router.openAddGame()
+        case .queued(let token): viewModel.cancelQueuedCloudLibrary(token)
+        case .close: router.closeMenu()
+        }
+    }
+
     func cloudQuitInput(_ action: GamepadAction) {
         switch action {
         case .navigateLeft, .navigateRight:
@@ -88,6 +128,13 @@ extension AppShellView {
             // The open control center takes the keyboard: arrows, Return, Space and Esc go to the menu,
             // and no screen underneath sees them.
             // Typing in a menu's text field (the Theme screen's search): keys go to the field, Esc leaves it.
+            if router.isMenuPresented, router.activityCenterFocus != nil {
+                guard mods.isEmpty else { return event }
+                if let action = activityCenterKey(event.keyCode), action != .confirm || !event.isARepeat {
+                    GameControllerService.shared.onAction?(action)
+                }
+                return nil
+            }
             if router.isMenuPresented, event.window?.firstResponder is NSText, event.keyCode != 53 {
                 return event
             }
@@ -147,6 +194,10 @@ extension AppShellView {
     /// Input while the control center is open: arrows move, A selects, B (or Esc) closes the Power pills
     /// first and then the menu, Menu closes it, and hold Menu closes it and opens Settings.
     func menuInput(_ action: GamepadAction) {
+        if router.activityCenterFocus != nil {
+            activityCenterInput(action, router: router, viewModel: viewModel)
+            return
+        }
         // The Theme screen takes everything but Menu, which closes the whole menu.
         if router.isThemePickerOpen, action != .menu, action != .menuHold {
             NotificationCenter.default.post(name: .nxThemePickerGamepadAction, object: action)
@@ -187,6 +238,12 @@ extension AppShellView {
     /// pills, and Theme opens its screen in place of the row.
     func runMenuAction(_ action: MenuAction) {
         switch action {
+        case .activityCenter:
+            router.closePowerMenu()
+            var focus = ActivityCenterFocus()
+            focus.selected = activityCenterRows(viewModel).first
+            router.activityCenterFocus = focus
+            SoundEffectService.shared.play(.openPanel)
         case .power:
             if router.menuSelection.isPowerOpen {
                 router.closePowerMenu()

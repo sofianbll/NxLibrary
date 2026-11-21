@@ -10,12 +10,15 @@ import NXLibraryCore
 /// controller. Mouse: hover focuses, click activates, a click on the scrim closes.
 struct MenuOverlayView: View {
     @ObservedObject var router: AppRouter
+    @ObservedObject var cloudLibrary: CloudLibraryModel
+    let isBuilding: Bool
     /// A click on a row button; the shell runs it.
     let onSelect: (MenuAction) -> Void
     /// A click on a Power pill; the shell runs it.
     let onSelectPower: (PowerAction) -> Void
 
     @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.nxAppLocale) private var localization
     @Environment(\.seleneReduceMotion) private var settingsReduceMotion
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
 
@@ -72,6 +75,7 @@ struct MenuOverlayView: View {
 
     private func button(_ action: MenuAction, index: Int) -> some View {
         let isFocused = router.menuSelection.selected == action
+        let hasActivity = action == .activityCenter && (isBuilding || cloudLibrary.isWorking)
 
         return Button {
             router.menuSelection.selected = action
@@ -101,6 +105,13 @@ struct MenuOverlayView: View {
                         .animation(SeleneTheme.focusIn, value: isFocused)
                     MaterialIconView(action.icon, size: iconSize)
                         .foregroundColor(SeleneTheme.ink)
+                        .overlay(alignment: .topTrailing) {
+                            if hasActivity {
+                                Circle().fill(SeleneTheme.statusOK)
+                                    .frame(width: canvas.u(9), height: canvas.u(9))
+                                    .accessibilityHidden(true)
+                            }
+                        }
                 }
                 .frame(width: canvas.u(dotSize), height: canvas.u(dotSize))
                 .scaleEffect(isFocused && !reduceMotion ? focusedScale : 1)
@@ -121,6 +132,7 @@ struct MenuOverlayView: View {
             }
         }
         .accessibilityLabel(action.title)
+        .accessibilityValue(hasActivity ? L10n.text("Activity in progress", context: localization) : "")
         .accessibilityAddTraits(isFocused ? [.isSelected] : [])
         .opacity(presented ? 1 : 0)
         .offset(y: presented || reduceMotion ? 0 : canvas.u(24))

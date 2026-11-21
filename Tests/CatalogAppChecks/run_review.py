@@ -197,6 +197,7 @@ final class Router {
     var isScreenshotViewerOpen = false
     var isSearchPresented = false
     var isMenuPresented = false
+    var activityCenterFocus: ActivityCenterFocus?
     func openSettings(_ section: SettingsSection) { route = .settings(section) }
 }
 final class WindowState { var attachedSheet: Int?; var isSheet = false }
@@ -450,6 +451,14 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
         GameControllerService.shared.onAction?(.confirm)
         require(received.actions == [.confirm], "An uncovered library must receive controller actions")
         received.actions = []
+        input.router.isMenuPresented = true
+        input.router.activityCenterFocus = ActivityCenterFocus()
+        GameControllerService.shared.onAction?(.navigateDown)
+        require(received.actions.isEmpty && input.dialogActions == [.navigateDown] && !input.availability().general,
+                "The activity center must retain menu routing and suspend page commands")
+        input.router.activityCenterFocus = nil
+        input.router.isMenuPresented = false
+        input.dialogActions = []
         let blockers: [(String, (Bool) -> Void)] = [
             ("pending alert", { input.viewModel.alertMessage = $0 ? "Fixture alert" : nil }),
             ("modal dialog", { NSApp.modalWindow = $0 ? 1 : nil }),

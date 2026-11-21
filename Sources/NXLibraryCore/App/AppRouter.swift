@@ -45,6 +45,8 @@ public final class AppRouter: ObservableObject {
     /// True while the full-screen screenshot viewer is open; the shell ignores its global shortcuts.
     @Published public var isScreenshotViewerOpen = false
     @Published public var menuSelection = MenuSelectionModel()
+    /// The activity card replaces the control-center row while the menu still owns input.
+    @Published public var activityCenterFocus: ActivityCenterFocus?
     /// The menu's Theme screen (colors, then background) is open in place of its row.
     @Published public var isThemePickerOpen = false
     /// A Spotlight item key waiting to be lifted for moving (see `requestSpotlightMove`).
@@ -130,10 +132,11 @@ public final class AppRouter: ObservableObject {
         route = previous
     }
 
-    /// Closes the menu and, with it, the Power pills and the Theme screen.
+    /// Closes the menu and any of its panels.
     public func closeMenu() {
         isMenuPresented = false
         isThemePickerOpen = false
+        activityCenterFocus = nil
         menuSelection.closePower()
     }
 }
