@@ -102,7 +102,7 @@ struct CloudSetupAssistant: View {
                 let size = movePlan.bytes.formatted(.byteCount(style: .file).locale(localization.formatLocale))
                 SeleneConfirmDialog(title: format(movePlan.games == 1
                     ? "Move %d game (%@) to %@?" : "Move %d games (%@) to %@?", [movePlan.games, size, draft.path]),
-                    message: text("Nothing is downloaded again."), confirmTitle: "Move",
+                    message: text("Only app and build cache archives move. Game files stay where they are."), confirmTitle: "Move",
                     focus: Binding(get: { focus.target == .confirmMove ? .confirm : .cancel },
                                    set: { focus.select($0 == .confirm ? .confirmMove : .cancel) }),
                     onCancel: cancel, onConfirm: moveGames)

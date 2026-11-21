@@ -81,6 +81,7 @@ struct SettingsChangedSection: View {
         if cloudLibrary.preference.enabled { external.insert("cloudLibraryEnabled") }
         if cloudLibrary.preference.remote != nil { external.insert("cloudLibraryService") }
         if cloudLibrary.preference.root != CloudLibraryPreference.defaultRoot { external.insert("cloudLibraryFolder") }
+        if cloudLibrary.preference.sourcesRootOverride != nil { external.insert("cloudSourcesRoot") }
         if cloudLibrary.chosenExecutable != nil { external.insert("cloudLibraryTool") }
         let root = URL(fileURLWithPath: viewModel.defaultInstallPath)
         if viewModel.libraryFolder?.standardizedFileURL != root.appendingPathComponent("Applications").standardizedFileURL {

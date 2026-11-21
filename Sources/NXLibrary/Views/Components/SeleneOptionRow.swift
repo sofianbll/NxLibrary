@@ -15,6 +15,7 @@ struct SeleneOptionRow<Trailing: View>: View {
     var aboutPreview: String? = nil
     var leading: AnyView? = nil
     var titleAccessory: AnyView? = nil
+    var truncateAboutInMiddle = false
     @ViewBuilder var trailing: () -> Trailing
 
     var body: some View {
@@ -36,7 +37,9 @@ struct SeleneOptionRow<Trailing: View>: View {
                         if let aboutPreview {
                             SeleneExpandableText(text: about, preview: aboutPreview, expanded: focused)
                         } else {
-                            Text(about)
+                            Text(verbatim: about)
+                                .lineLimit(truncateAboutInMiddle ? 1 : nil)
+                                .truncationMode(truncateAboutInMiddle ? .middle : .tail)
                         }
                     }
                         .seleneFont(15)

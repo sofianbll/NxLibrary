@@ -53,12 +53,14 @@ struct SeleneRow<Trailing: View>: View {
     let info: String?
     let verbatimTitle: Bool
     let verbatimSubtitle: Bool
+    private let truncateSubtitleInMiddle: Bool
     @ViewBuilder var trailing: () -> Trailing
 
     @Environment(\.seleneFocusedRowID) private var focusedRowID
 
     init(_ title: String, id: String? = nil, subtitle: String? = nil, info: String? = nil,
          verbatimTitle: Bool = false, verbatimSubtitle: Bool = false,
+         truncateSubtitleInMiddle: Bool = false,
                 @ViewBuilder trailing: @escaping () -> Trailing) {
         self.rowID = id ?? title
         self.title = title
@@ -66,6 +68,7 @@ struct SeleneRow<Trailing: View>: View {
         self.info = info
         self.verbatimTitle = verbatimTitle
         self.verbatimSubtitle = verbatimSubtitle
+        self.truncateSubtitleInMiddle = truncateSubtitleInMiddle
         self.trailing = trailing
     }
 
@@ -73,7 +76,8 @@ struct SeleneRow<Trailing: View>: View {
 
     var body: some View {
         SeleneOptionRow(icon: nil, title: verbatimTitle ? title : L10n.text(title, context: localization),
-                        about: verbatimSubtitle ? subtitle : subtitle.map { L10n.text($0, context: localization) }, focused: isFocused) {
+                        about: verbatimSubtitle ? subtitle : subtitle.map { L10n.text($0, context: localization) }, focused: isFocused,
+                        truncateAboutInMiddle: truncateSubtitleInMiddle) {
             HStack(spacing: 10) {
                 if let info {
                     SeleneInfoTip(info)
@@ -156,10 +160,12 @@ struct SeleneButtonRow: View {
     let buttonTitle: String
     let verbatimTitle: Bool
     let verbatimSubtitle: Bool
+    private let truncateSubtitleInMiddle: Bool
     let action: () -> Void
 
     init(_ title: String, id: String? = nil, subtitle: String? = nil, info: String? = nil,
          verbatimTitle: Bool = false, verbatimSubtitle: Bool = false,
+         truncateSubtitleInMiddle: Bool = false,
                 buttonTitle: String, action: @escaping () -> Void) {
         self.rowID = id ?? title
         self.title = title
@@ -167,12 +173,14 @@ struct SeleneButtonRow: View {
         self.info = info
         self.verbatimTitle = verbatimTitle
         self.verbatimSubtitle = verbatimSubtitle
+        self.truncateSubtitleInMiddle = truncateSubtitleInMiddle
         self.buttonTitle = buttonTitle
         self.action = action
     }
 
     var body: some View {
-        SeleneRow(title, id: rowID, subtitle: subtitle, info: info, verbatimTitle: verbatimTitle, verbatimSubtitle: verbatimSubtitle) {
+        SeleneRow(title, id: rowID, subtitle: subtitle, info: info, verbatimTitle: verbatimTitle, verbatimSubtitle: verbatimSubtitle,
+                  truncateSubtitleInMiddle: truncateSubtitleInMiddle) {
             Button(L10n.text(buttonTitle, context: localization), action: action)
                 .buttonStyle(.plain)
                 .seleneFont(15, .semibold)

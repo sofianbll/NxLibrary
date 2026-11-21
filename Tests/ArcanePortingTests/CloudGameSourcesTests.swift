@@ -4,6 +4,18 @@ import XCTest
 @testable import ArcanePorting
 
 final class CloudGameSourcesTests: XCTestCase {
+    func testFolderNameKeepsMatchingLocalNameAndOtherwiseUsesSafeCatalogTitle() {
+        let id = "010019401051C000"
+        let existing = "Mario Strikers - Battle League [\(id)]"
+        XCTAssertEqual(CloudGameSources.folderName(local: existing, title: "Renamed", titleID: id.lowercased()), existing)
+        XCTAssertEqual(CloudGameSources.folderName(local: "All ROMs", title: "Mario Strikers", titleID: id),
+                       "Mario Strikers [\(id)]")
+        XCTAssertEqual(CloudGameSources.folderName(local: "Other [0100123456789ABC]",
+                                                    title: "  Mario/ Strikers:  Battle\u{0000} League. . ", titleID: id),
+                       "Mario - Strikers - Battle League [\(id)]")
+        XCTAssertNil(CloudGameSources.folderName(local: existing, title: "Game", titleID: "invalid"))
+    }
+
     func testStatusPartialUploadAndConflictNeverOverwrite() async throws {
         let f = try Fixture()
         let base = try f.local("Base.nsp", "base")
@@ -102,7 +114,8 @@ final class CloudGameSourcesTests: XCTestCase {
         }
         catch is CancellationError {}
         XCTAssertFalse(FileManager.default.fileExists(atPath: f.remoteFolder.appendingPathComponent("Base.nsp").path))
-        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: f.root.appendingPathComponent(".arcane-upload").path), [])
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: f.remoteFolder.deletingLastPathComponent()
+            .appendingPathComponent(".arcane-upload").path), [])
         try await f.service.upload(folderName: f.folder, files: [file], progress: nil)
     }
 
@@ -168,7 +181,8 @@ final class CloudGameSourcesTests: XCTestCase {
             folder = "Fixture [\(titleID)]"
             localFolder = directory.appendingPathComponent("local/\(folder)", isDirectory: true)
             root = directory.appendingPathComponent("Games", isDirectory: true)
-            remoteFolder = root.appendingPathComponent("Switch/Jeux/\(folder)", isDirectory: true)
+            let sourcesRoot = directory.appendingPathComponent("Sources", isDirectory: true)
+            remoteFolder = sourcesRoot.appendingPathComponent(folder, isDirectory: true)
             try FileManager.default.createDirectory(at: localFolder, withIntermediateDirectories: true)
             let config = directory.appendingPathComponent("rclone.conf")
             try Data().write(to: config)
@@ -183,7 +197,7 @@ final class CloudGameSourcesTests: XCTestCase {
                 try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
             }
             backend = RcloneStorageBackend(remote: ":local:", root: root.path, executable: executable, config: config)
-            service = CloudGameSources(backend: backend, root: root.path) { [directory] file in
+            service = CloudGameSources(backend: backend, root: sourcesRoot.path) { [directory] file in
                 try FileManager.default.moveItem(at: file, to: directory.appendingPathComponent(file.lastPathComponent))
             }
         }

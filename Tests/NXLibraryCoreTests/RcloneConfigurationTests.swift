@@ -17,6 +17,23 @@ final class RcloneConfigurationTests: XCTestCase {
         XCTAssertEqual(folderFirst.storage, ":New Games")
     }
 
+    func testSourcesRootDefaultsToLibraryGameFilesOrUsesAnIndependentPath() {
+        XCTAssertEqual(CloudLibraryPreference(storage: nil, enabled: nil).sourcesRoot, "Games/GameFiles")
+        XCTAssertEqual(CloudLibraryPreference(storage: "drive:Games/Switch/Arcane-nx/", enabled: true).sourcesRoot,
+                       "Games/Switch/Arcane-nx/GameFiles")
+        for library in ["Games/Switch/Arcane-nx", "Archive/Arcane"] {
+            let preference = CloudLibraryPreference(storage: "drive:\(library)", enabled: true, sourcesRoot: "Games/Switch/Jeux")
+            XCTAssertEqual(preference.storage, "drive:\(library)")
+            XCTAssertEqual(preference.sourcesRoot, "Games/Switch/Jeux")
+            XCTAssertEqual(preference.sourcesStorage, "drive:Games/Switch/Jeux")
+        }
+        for invalid in ["", " ", "../Jeux", "other:Jeux", "/Games/Jeux"] {
+            let preference = CloudLibraryPreference(storage: "drive:Archive", enabled: true, sourcesRoot: invalid)
+            XCTAssertNil(preference.sourcesRootOverride)
+            XCTAssertEqual(preference.sourcesRoot, "Archive/GameFiles")
+        }
+    }
+
     func testListParsesFileRemotesAndReportsConfigurationNotNetworkStatus() throws {
         let remotes = try RcloneConfiguration.parseRemotes(Self.list)
         XCTAssertEqual(remotes.map(\.name), ["gdrive", "other drive"])

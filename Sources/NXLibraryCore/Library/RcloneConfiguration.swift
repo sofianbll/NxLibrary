@@ -3,15 +3,17 @@ import Security
 
 public struct CloudLibraryPreference: Equatable, Sendable {
     public static let storageKey = "NXLibrary_CloudStorage"
+    public static let sourcesRootKey = "NXLibrary_CloudSourcesRoot"
     public static let enabledKey = "NXLibrary_CloudStorageEnabled"
     public static let executableKey = "NXLibrary_RclonePath"
     public static let defaultRoot = "Games"
 
     public let remote: String?
     public let root: String
+    public let sourcesRootOverride: String?
     public let enabled: Bool
 
-    public init(storage: String?, enabled: Bool?) {
+    public init(storage: String?, enabled: Bool?, sourcesRoot: String? = nil) {
         let parts = (storage ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             .split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
         let name = parts.first.map(String.init) ?? ""
@@ -19,8 +21,15 @@ public struct CloudLibraryPreference: Equatable, Sendable {
         let valid = Self.validRoot(folder)
         remote = valid && Self.validRemote(name) ? name : nil
         root = valid ? folder : Self.defaultRoot
+        sourcesRootOverride = sourcesRoot.flatMap { Self.validSourcesRoot($0) ? $0 : nil }
         self.enabled = enabled ?? (remote != nil)
     }
+
+    public var sourcesRoot: String {
+        sourcesRootOverride ?? root + (root.hasSuffix("/") ? "" : "/") + "GameFiles"
+    }
+
+    public var sourcesStorage: String? { remote.map { "\($0):\(sourcesRoot)" } }
 
     public var storage: String? {
         if let remote { return "\(remote):\(root)" }
@@ -29,6 +38,10 @@ public struct CloudLibraryPreference: Equatable, Sendable {
 
     public static func validRoot(_ root: String) -> Bool {
         !root.split(separator: "/").isEmpty && safePath(root)
+    }
+
+    public static func validSourcesRoot(_ root: String) -> Bool {
+        !root.hasPrefix("/") && !root.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && validRoot(root)
     }
 
     package static func safePath(_ path: String) -> Bool {

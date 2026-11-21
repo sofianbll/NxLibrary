@@ -4,37 +4,7 @@ import XCTest
 @testable import ArcanePorting
 
 final class CloudDriveFoldersTests: XCTestCase {
-    func testMoveLeavesConflictsAndResumesWithoutRepeatingMovedFiles() async throws {
-        try await withMoveFixture { drive, root in
-            let first = "Switch/Jeux/Game/00.nsp", second = "Switch/Jeux/Game/01.nsp"
-            let third = "Switch/Jeux/Game/02.nsp", unrelated = "Switch/Jeux/Game/notes.txt"
-            func put(_ path: String, _ content: String) throws {
-                let file = root.appendingPathComponent(path)
-                try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try Data(content.utf8).write(to: file)
-            }
-            for file in [first, second, third, unrelated] { try put("Old/" + file, "game") }
-            try put("New/" + second, "diff")
-            try put("New/" + third, "game")
-            let plan = try await drive.movePlan(from: "Old")
-            XCTAssertEqual(plan.games, 1)
-            XCTAssertEqual(plan.bytes, 12)
-            let conflicts = try await drive.move(plan, to: "New") { _, _ in }
-            XCTAssertEqual(conflicts, [second])
-            XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("Old/" + first).path))
-            XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("Old/" + third).path))
-            XCTAssertEqual(try String(contentsOf: root.appendingPathComponent("New/" + second)), "diff")
-            XCTAssertEqual(try String(contentsOf: root.appendingPathComponent("Old/" + second)), "game")
-            try put("New/" + second, "game")
-            let resumed = try await drive.movePlan(from: "Old")
-            XCTAssertEqual(resumed.bytes, 4)
-            let remaining = try await drive.move(resumed, to: "New") { _, _ in }
-            XCTAssertEqual(remaining, [])
-            XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("Old/" + unrelated).path))
-        }
-    }
-
-    func testArchiveManifestWaitsForObjectsIncludingOnResume() async throws {
+    func testArchiveManifestWaitsForObjectsOnResumeAndMoveLeavesGameFilesInPlace() async throws {
         try await withMoveFixture { drive, root in
             let title = "0100123456789ABC"
             let old = root.appendingPathComponent("Old")
@@ -64,14 +34,26 @@ final class CloudDriveFoldersTests: XCTestCase {
                 try fm.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
                 try fm.copyItem(at: payload, to: target)
             }
-            let source = old.appendingPathComponent("Switch/Jeux/Test [\(title)]/game.nsp")
-            try fm.createDirectory(at: source.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try fm.copyItem(at: payload, to: source)
+            let gameFiles = ["Switch/Jeux/Other/game.nsp", "GameFiles/Test [\(title)]/game.xci"]
+            for path in gameFiles {
+                let source = old.appendingPathComponent(path)
+                try fm.createDirectory(at: source.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try fm.copyItem(at: payload, to: source)
+            }
             let clash = new.appendingPathComponent(keys[1])
             try fm.createDirectory(at: clash.deletingLastPathComponent(), withIntermediateDirectories: true)
             try Data("changed".utf8).write(to: clash)
             let plan = try await drive.movePlan(from: "Old")
-            XCTAssertEqual(plan.games, 1, "Archive and source with the same title count once")
+            XCTAssertEqual(plan.games, 1)
+            XCTAssertEqual(plan.bytes, 14 + (try CloudArchiveInventory.node(at: old.appendingPathComponent(manifestPath)).st_size))
+            do {
+                _ = try await drive.move(plan, to: "New") { done, _ in
+                    if done == 1 { throw CancellationError() }
+                }
+                XCTFail("Expected cancellation")
+            } catch is CancellationError {}
+            XCTAssertTrue(fm.fileExists(atPath: new.appendingPathComponent(keys[0]).path))
+            XCTAssertTrue(fm.fileExists(atPath: old.appendingPathComponent(keys[1]).path))
             let conflicts = try await drive.move(plan, to: "New") { done, total in
                 if done < total {
                     XCTAssertFalse(fm.fileExists(atPath: new.appendingPathComponent(manifestPath).path))
@@ -87,31 +69,10 @@ final class CloudDriveFoldersTests: XCTestCase {
             let count = try await drive.libraryCount(in: "New", folders: [title])
             XCTAssertEqual(count, 1)
             XCTAssertFalse(fm.fileExists(atPath: old.appendingPathComponent(manifestPath).path))
-        }
-    }
-
-    func testCancellationStopsBetweenFilesAndKeepsOldFolder() async throws {
-        try await withMoveFixture { drive, root in
-            let parent = "Switch/Jeux/Game/"
-            let source = root.appendingPathComponent("Old/" + parent)
-            try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
-            for name in ["a.xci", "b.xci"] { try Data("game".utf8).write(to: source.appendingPathComponent(name)) }
-            let destination = "Old/Nested"
-            try FileManager.default.createDirectory(at: root.appendingPathComponent(destination), withIntermediateDirectories: false)
-            let plan = try await drive.movePlan(from: "Old")
-            do {
-                _ = try await drive.move(plan, to: destination) { done, _ in
-                    if done == 1 { throw CancellationError() }
-                }
-                XCTFail("Expected cancellation")
-            } catch is CancellationError {}
-            XCTAssertFalse(FileManager.default.fileExists(atPath: source.appendingPathComponent("a.xci").path))
-            XCTAssertTrue(FileManager.default.fileExists(atPath: source.appendingPathComponent("b.xci").path))
-            let resumed = try await drive.movePlan(from: "Old")
-            let conflicts = try await drive.move(resumed, to: destination) { _, _ in }
-            XCTAssertEqual(conflicts, [])
-            XCTAssertFalse(CloudDriveFolders.canMove(from: "Old", to: "Old/Switch/Jeux"))
-            XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("Old").path))
+            for path in gameFiles {
+                XCTAssertEqual(try Data(contentsOf: old.appendingPathComponent(path)), Data("archive".utf8))
+                XCTAssertFalse(fm.fileExists(atPath: new.appendingPathComponent(path).path))
+            }
         }
     }
 

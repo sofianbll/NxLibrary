@@ -51,14 +51,34 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Mover %d jogos (%@) para %@?"}}
       }
     },
-    "Nothing is downloaded again.": {
+    "Only app and build cache archives move. Game files stay where they are.": {
       "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "Nothing is downloaded again."}},
-        "it": {"stringUnit": {"state": "translated", "value": "Non viene scaricato di nuovo nulla."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Rien n’est retéléchargé."}},
-        "de": {"stringUnit": {"state": "translated", "value": "Nichts wird erneut heruntergeladen."}},
-        "es": {"stringUnit": {"state": "translated", "value": "No se vuelve a descargar nada."}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nada é baixado de novo."}}
+        "en": {"stringUnit": {"state": "translated", "value": "Only app and build cache archives move. Game files stay where they are."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Si spostano solo gli archivi delle app e delle cache di build. I file del gioco restano dove sono."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Seules les archives des apps et des caches de compilation sont déplacées. Les fichiers du jeu restent en place."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Nur App- und Build-Cache-Archive werden verschoben. Spieldateien bleiben unverändert am selben Ort."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Solo se mueven los archivos de las apps y las cachés de compilación. Los archivos del juego se quedan donde están."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Só os arquivos compactados dos apps e dos caches de compilação são movidos. Os arquivos do jogo ficam onde estão."}}
+      }
+    },
+    "Game files folder": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Game files folder"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cartella dei file del gioco"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Dossier des fichiers du jeu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Ordner für Spieldateien"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Carpeta de archivos del juego"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Pasta dos arquivos do jogo"}}
+      }
+    },
+    "Choose a path on the same cloud service. No files are moved.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose a path on the same cloud service. No files are moved."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli un percorso sullo stesso servizio cloud. Nessun file viene spostato."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Indique un chemin sur le même service cloud. Aucun fichier n’est déplacé."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle einen Pfad auf demselben Clouddienst. Es werden keine Dateien verschoben."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige una ruta en el mismo servicio en la nube. No se mueve ningún archivo."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha um caminho no mesmo serviço de nuvem. Nenhum arquivo é movido."}}
       }
     },
     "Checking the old folder…": {

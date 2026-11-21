@@ -95,6 +95,7 @@ extension SettingsCatalog {
                "Cloud storage for ported apps and build caches, separate from saves."),
         action("cloudLibraryService", .cloudLibrary, "Cloud service", "Google Drive"),
         action("cloudLibraryFolder", .cloudLibrary, "Folder", "Folder for game apps and build caches."),
+        action("cloudSourcesRoot", .cloudLibrary, "Game files folder", "Choose a path on the same cloud service. No files are moved."),
         action("cloudLibraryConnect", .cloudLibrary, "Change Google credentials", "Sign in with your own Google OAuth client in your browser."),
         action("cloudLibraryImport", .cloudLibrary, "Import games from the cloud", "Add missing games without downloading their apps."),
         row("showsCloudPlayIcon", .cloudLibrary, "Icon next to Play", "Show the cloud icon by the play button.") { $0.showsCloudPlayIcon },

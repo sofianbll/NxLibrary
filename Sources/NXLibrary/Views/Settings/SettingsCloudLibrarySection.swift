@@ -9,6 +9,7 @@ struct SettingsCloudLibrarySection: View {
     @ObservedObject var settings: AppSettingsStore
     @Binding var advanced: Bool
     let onEdit: () -> Void
+    let onEditSources: () -> Void
     let onActions: ([SettingsRowAction]) -> Void
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.nxAppLocale) private var localization
@@ -66,12 +67,16 @@ struct SettingsCloudLibrarySection: View {
                     .disabled(!editable)
 
                 let provider = connected.flatMap { $0.type == "drive" ? nil : $0.type } ?? text("Google Drive")
-                SeleneRow("\(provider) · \(remote)", subtitle: "\(selection.root)/", verbatimTitle: true, verbatimSubtitle: true) {
+                SeleneRow("\(provider) · \(remote)", verbatimTitle: true) {
                     SeleneStatusDot(text: serviceStatus, color: connected == nil ? SeleneTheme.ink60 : SeleneTheme.success)
                 }
 
                 // shortcut: the assistant starts at the account step until it accepts a folder entry point.
-                SeleneButtonRow("Folder", subtitle: selection.root, verbatimSubtitle: true, buttonTitle: "Edit", action: onEdit)
+                SeleneButtonRow("Folder", subtitle: selection.storage, verbatimSubtitle: true, truncateSubtitleInMiddle: true,
+                                buttonTitle: "Edit", action: onEdit)
+                    .disabled(!editable)
+                SeleneButtonRow("Game files folder", id: "cloudSourcesRoot", subtitle: selection.sourcesStorage,
+                                verbatimSubtitle: true, truncateSubtitleInMiddle: true, buttonTitle: "Edit", action: onEditSources)
                     .disabled(!editable)
                 SeleneButtonRow("Change Google credentials", buttonTitle: "Edit", action: onEdit)
                     .disabled(!editable)
@@ -153,6 +158,8 @@ struct SettingsCloudLibrarySection: View {
             actions = [
                 .init(id: "cloudLibraryEnabled", title: "Enable cloud library", isEnabled: editable) { setEnabled(!selection.enabled) },
                 .init(id: "cloudLibraryFolder", title: "Folder", isEnabled: editable, activate: onEdit),
+                .init(id: "cloudSourcesRoot", title: "Game files folder", rowID: "cloudSourcesRoot",
+                      isEnabled: editable, activate: onEditSources),
                 .init(id: "cloudLibraryConnect", title: "Change Google credentials", isEnabled: editable, activate: onEdit),
                 .init(id: "cloudLibraryImport", title: "Import games from the cloud", isEnabled: canImport, activate: importGames),
             ]
@@ -266,6 +273,64 @@ struct SettingsCloudLibrarySection: View {
                     }
                 }
             }
+    }
+
+    private func text(_ key: String) -> String { L10n.text(key, context: localization) }
+}
+
+struct CloudSourcesFolderDialog: View {
+    @State var draft: String
+    let onSave: (String) -> Void
+    let onClose: () -> Void
+    @State private var focus: SeleneConfirmButton = .confirm
+    @FocusState private var fieldFocused: Bool
+    @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.nxAppLocale) private var localization
+
+    private var path: String { draft.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var valid: Bool { CloudLibraryPreference.validSourcesRoot(path) }
+
+    var body: some View {
+        ZStack {
+            SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle()).onTapGesture(perform: onClose)
+            SeleneConfirmDialog(title: text("Game files folder"),
+                                message: text("Choose a path on the same cloud service. No files are moved."),
+                                confirmTitle: "Save", confirmEnabled: valid, focus: $focus,
+                                onCancel: onClose, onConfirm: save) {
+                TextField(text("Game files folder"), text: $draft, prompt: Text(verbatim: "Games/GameFiles"))
+                    .textFieldStyle(.plain)
+                    .focused($fieldFocused)
+                    .onSubmit(save)
+                    .onExitCommand(perform: onClose)
+                    .seleneFont(17)
+                    .foregroundColor(SeleneTheme.ink)
+                    .padding(canvas.u(16))
+                    .background(RoundedRectangle(cornerRadius: canvas.u(12)).fill(SeleneTheme.glassLight))
+                    .padding(.top, canvas.u(24))
+                if !valid {
+                    Text(text("Enter a folder path such as Games or Archive/Games."))
+                        .foregroundColor(SeleneTheme.danger)
+                        .seleneFont(15)
+                }
+            }
+        }
+        .onAppear { fieldFocused = true }
+        .onReceive(NotificationCenter.default.publisher(for: .nxSettingsGamepadAction)) { note in
+            guard let action = note.object as? GamepadAction else { return }
+            switch action {
+            case .navigateLeft: focus = .cancel
+            case .navigateRight: focus = .confirm
+            case .confirm: focus == .confirm ? save() : onClose()
+            case .cancel: onClose()
+            default: break
+            }
+        }
+    }
+
+    private func save() {
+        guard valid else { return }
+        onSave(path)
+        onClose()
     }
 
     private func text(_ key: String) -> String { L10n.text(key, context: localization) }

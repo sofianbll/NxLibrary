@@ -20,6 +20,7 @@ struct SettingsView: View {
     @State private var section: SettingsSection
     @State private var showingControls = false
     @State private var showingCloudAssistant = false
+    @State private var editingCloudSources = false
     @State private var cloudAdvanced = false
     @State private var localePicker: LocalePickerMode?
     @State private var focusArea: SettingsFocusArea = .sidebar
@@ -107,7 +108,7 @@ struct SettingsView: View {
         }
         .onDisappear(perform: removeKeyMonitor)
         .onDisappear { igdb.isEditing = false }
-        .onDisappear { showingCloudAssistant = false }
+        .onDisappear { showingCloudAssistant = false; editingCloudSources = false }
         .onDisappear {
             nextendo.isEditingClient = false
             nextendo.friendToRemove = nil
@@ -155,11 +156,16 @@ struct SettingsView: View {
                 NextendoClientDialog(settings: settings) { nextendo.isEditingClient = false }
             }
         }
-        .disabled(showingCloudAssistant)
-        .accessibilityHidden(showingCloudAssistant)
+        .disabled(showingCloudAssistant || editingCloudSources)
+        .accessibilityHidden(showingCloudAssistant || editingCloudSources)
         .overlay {
             if showingCloudAssistant {
                 CloudSetupAssistant(viewModel: viewModel, model: viewModel.cloudLibrary) { showingCloudAssistant = false }
+            } else if editingCloudSources {
+                CloudSourcesFolderDialog(draft: viewModel.cloudLibrary.preference.sourcesRoot, onSave: { root in
+                    guard viewModel.canConfigureCloudLibrary else { return }
+                    viewModel.cloudLibrary.chooseSourcesRoot(root)
+                }, onClose: { editingCloudSources = false })
             }
         }
         .disabled(nextendo.friendToRemove != nil)
@@ -224,6 +230,7 @@ struct SettingsView: View {
                         searchFieldRequest: searchFieldRequest,
                         cloudAdvanced: $cloudAdvanced,
                         onEditCloud: { showingCloudAssistant = true },
+                        onEditCloudSources: { editingCloudSources = true },
                         onActions: updateActions
                     )
                 }
@@ -381,7 +388,7 @@ struct SettingsView: View {
                   !router.isMenuPresented,
                   !viewModel.showSetupCheck,
                   !showingControls, localePicker == nil, !viewModel.isEditingSteamGridDBKey, !igdb.isEditing,
-                  !nextendo.isEditingClient, !showingCloudAssistant,
+                  !nextendo.isEditingClient, !showingCloudAssistant, !editingCloudSources,
                   viewModel.alertMessage == nil, viewModel.settingsNotice == nil,
                   viewModel.gameWithInstallFailure == nil,
                   let window = event.window,
@@ -434,7 +441,7 @@ struct SettingsView: View {
 
     private func handleGamepad(_ action: GamepadAction) {
         // The key dialog takes the controller while it is open.
-        if viewModel.isEditingSteamGridDBKey || igdb.isEditing || nextendo.isEditingClient || showingCloudAssistant { return }
+        if viewModel.isEditingSteamGridDBKey || igdb.isEditing || nextendo.isEditingClient || showingCloudAssistant || editingCloudSources { return }
         if nextendo.friendToRemove != nil {
             switch action {
             case .navigateLeft: nextendoRemovalFocus = .cancel

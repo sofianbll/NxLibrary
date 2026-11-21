@@ -104,7 +104,7 @@ public struct CloudDriveFolders: Sendable {
         guard CloudLibraryPreference.validRoot(old), CloudLibraryPreference.validRoot(new), old != new else { return false }
         for (parent, child) in [(old, new), (new, old)] where child.hasPrefix(parent + "/") {
             guard let subtree = child.dropFirst(parent.count + 1).split(separator: "/").first,
-                  subtree != "switch", !SaveLocation.validID(String(subtree)) else { return false }
+                  !SaveLocation.validID(String(subtree)) else { return false }
         }
         return true
     }
@@ -116,7 +116,6 @@ public struct CloudDriveFolders: Sendable {
         let backend = try backend(in: source)
         defer { backend.stopRemoteControl() }
         let archive = CloudGameArchive(backend: backend)
-        var games = Set<String>()
         var archiveTitles = Set<String>()
         var objects: [MoveEntry] = [], manifests: [MoveEntry] = []
         for item in items.sorted(by: { $0.Path < $1.Path }) where !item.IsDir {
@@ -129,15 +128,10 @@ public struct CloudDriveFolders: Sendable {
                 let manifest: CloudGameManifest
                 do { manifest = try await archive.readManifest(item.object, titleID: parts[0]) }
                 catch CloudArchiveError.invalidManifest { continue }
-                games.insert(manifest.titleID)
                 archiveTitles.insert(manifest.titleID)
                 manifests.append(.init(file: item.object, dependencies: manifest.artifacts.map {
                     $0.object(titleID: manifest.titleID)
                 }))
-            } else if parts.count == 4, parts.prefix(2).joined(separator: "/") == CloudGameSources.directory,
-                      CloudGameSources.fileExtensions.contains((parts[3] as NSString).pathExtension.lowercased()) {
-                games.insert(CloudGameSources.title(in: parts[2]))
-                objects.append(.init(file: item.object, dependencies: []))
             }
         }
         for item in items where !item.IsDir {
@@ -157,7 +151,7 @@ public struct CloudDriveFolders: Sendable {
             guard !overflow, entry.file.size >= 0 else { throw StorageBackendError.invalidResponse }
             bytes = total
         }
-        return MovePlan(source: source, games: games.count, bytes: bytes, remote: remote, entries: entries)
+        return MovePlan(source: source, games: archiveTitles.count, bytes: bytes, remote: remote, entries: entries)
     }
 
     /// Run only after confirmation; a skipped key (or manifest with missing dependencies) prevents activation.
@@ -258,7 +252,7 @@ public struct CloudDriveFolders: Sendable {
     }
 
     private func contents(_ folder: String, recursive: Bool, hashes: Bool = true) async throws -> [Item] {
-        let scope = recursive ? ["--recursive", "--max-depth", "4", "--exclude", "/.arcane-upload/**"] : []
+        let scope = recursive ? ["--recursive", "--max-depth", "3", "--exclude", "/.arcane-upload/**"] : []
         let hashing = hashes ? ["--hash-type", "MD5"] : []
         do {
             let output = try await checked(["lsjson", try target(folder), "--no-modtime", "--no-mimetype"] + scope + hashing)

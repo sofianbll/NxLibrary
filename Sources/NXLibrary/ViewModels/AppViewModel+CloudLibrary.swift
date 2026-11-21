@@ -14,18 +14,18 @@ extension CloudLibraryItem {
 }
 
 struct CloudSourceFiles: Equatable {
-    let folder: URL
+    let folderName: String
     let files: [URL]
-    var folderName: String { folder.lastPathComponent }
 
     init?(_ game: PortedGame) {
         guard SourceSelection.hasGame(game.sources),
               game.sources.allSatisfy({ $0.layout != .extracted && $0.url.isFileURL }) else { return nil }
         let files = Set(game.sources.map { $0.url.standardizedFileURL })
-        guard let first = files.first, files.allSatisfy({
-            $0.deletingLastPathComponent() == first.deletingLastPathComponent()
-        }) else { return nil }
-        self.folder = first.deletingLastPathComponent()
+        guard let folder = files.first?.deletingLastPathComponent(),
+              files.allSatisfy({ $0.deletingLastPathComponent() == folder }),
+              let id = game.titleId, let name = CloudGameSources.folderName(local: folder.lastPathComponent,
+                                                                          title: game.name, titleID: id) else { return nil }
+        self.folderName = name
         self.files = files.sorted { $0.path < $1.path }
     }
 }
@@ -190,18 +190,27 @@ final class CloudLibraryModel: ObservableObject {
     init() {
         let defaults = AppData.preferences
         preference = CloudLibraryPreference(storage: defaults.string(forKey: CloudLibraryPreference.storageKey),
-            enabled: defaults.object(forKey: CloudLibraryPreference.enabledKey) as? Bool)
+            enabled: defaults.object(forKey: CloudLibraryPreference.enabledKey) as? Bool,
+            sourcesRoot: defaults.string(forKey: CloudLibraryPreference.sourcesRootKey))
         chosenExecutable = defaults.string(forKey: CloudLibraryPreference.executableKey).map { URL(fileURLWithPath: $0) }
         rebuildArchive()
     }
 
     /// `reload` restarts the backend for an unchanged preference, after new Google credentials replaced the remote's token.
     @MainActor func configure(remote: String?, root: String, enabled: Bool, reload: Bool = false) {
-        let next = CloudLibraryPreference(storage: "\(remote ?? ""):\(root)", enabled: enabled)
+        let next = CloudLibraryPreference(storage: "\(remote ?? ""):\(root)", enabled: enabled,
+                                          sourcesRoot: preference.sourcesRootOverride)
         guard next != preference || reload else { return }
         AppData.preferences.set(next.storage, forKey: CloudLibraryPreference.storageKey)
         AppData.preferences.set(next.enabled, forKey: CloudLibraryPreference.enabledKey)
         preference = next
+        rebuildArchive()
+    }
+
+    @MainActor func chooseSourcesRoot(_ root: String) {
+        guard CloudLibraryPreference.validSourcesRoot(root), root != preference.sourcesRootOverride else { return }
+        AppData.preferences.set(root, forKey: CloudLibraryPreference.sourcesRootKey)
+        preference = CloudLibraryPreference(storage: preference.storage, enabled: preference.enabled, sourcesRoot: root)
         rebuildArchive()
     }
 
@@ -223,7 +232,7 @@ final class CloudLibraryModel: ObservableObject {
         backend = preference.enabled ? preference.remote.map {
             RcloneStorageBackend(remote: $0, root: preference.root, executable: chosenExecutable)
         } : nil
-        sourceArchive = backend.map { CloudGameSources(backend: $0, root: preference.root) }
+        sourceArchive = backend.map { CloudGameSources(backend: $0, root: preference.sourcesRoot) }
         archive = backend.map { CloudGameArchive(backend: $0) }
     }
 

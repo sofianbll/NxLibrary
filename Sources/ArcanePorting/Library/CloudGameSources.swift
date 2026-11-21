@@ -34,6 +34,19 @@ public final class CloudGameSources: @unchecked Sendable {
         self.trash = trash
     }
 
+    public static func folderName(local: String, title: String, titleID: String) -> String? {
+        guard SaveLocation.validID(titleID) else { return nil }
+        let suffix = "[\(titleID.uppercased())]"
+        if local.uppercased().hasSuffix(suffix), !local.contains("/"), CloudLibraryPreference.safePath(local) {
+            return local
+        }
+        let safeTitle = title.unicodeScalars.filter { !CharacterSet.controlCharacters.contains($0) }
+            .map { "/:\\".unicodeScalars.contains($0) ? " -" : String($0) }.joined()
+        var name = safeTitle.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        while name.last == "." || name.last == " " { name.removeLast() }
+        return "\(name.isEmpty ? "Game" : name) \(suffix)"
+    }
+
     public func status(folderName: String, files: [URL]) async throws -> CloudSourcesStatus {
         let selection = try Selection(folderName, files)
         let remote = try await remoteFiles(selection)
@@ -284,10 +297,9 @@ public final class CloudGameSources: @unchecked Sendable {
         }
     }
 
-    static let directory = "Switch/Jeux"
-    static let fileExtensions: Set<String> = ["nsp", "xci", "nsz", "xcz", "nup"]
+    private static let fileExtensions: Set<String> = ["nsp", "xci", "nsz", "xcz", "nup"]
 
-    static func title(in folder: String) -> String {
+    private static func title(in folder: String) -> String {
         let suffix = folder.suffix(18)
         let id = String(suffix.dropFirst().dropLast())
         return suffix.first == "[" && suffix.last == "]" && SaveLocation.validID(id) ? id.uppercased() : folder
@@ -300,7 +312,7 @@ public final class CloudGameSources: @unchecked Sendable {
 
         init(_ folder: String, _ urls: [URL]) throws {
             guard Self.safeName(folder) else { throw CloudArchiveError.unsafePath }
-            directory = StorageObjectKey(CloudGameSources.directory + "/" + folder)
+            directory = StorageObjectKey(folder)
             title = CloudGameSources.title(in: folder)
             var names: [String: URL] = [:]
             var files: [URL] = []

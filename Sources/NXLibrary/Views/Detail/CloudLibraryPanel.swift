@@ -139,6 +139,15 @@ struct CloudLibraryPanel: View {
                     }
                 }
             }
+            if let path = cloudPath(item) {
+                Text(verbatim: path)
+                    .seleneFont(13)
+                    .foregroundColor(SeleneTheme.ink60)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .textSelection(.enabled)
+                    .help(path)
+            }
             if live {
                 CloudLibraryProgressView(progress: state.progress, showsSummary: false)
             } else if let issue = state.issue, issue.item == item {
@@ -153,6 +162,20 @@ struct CloudLibraryPanel: View {
         }
         .padding(canvas.u(12))
         .background(SeleneTheme.glassLight, in: RoundedRectangle(cornerRadius: canvas.u(SeleneTheme.rowRadius)))
+    }
+
+    private func cloudPath(_ item: CloudLibraryItem) -> String? {
+        let base: String, folder: String
+        if let kind = item.artifact {
+            guard let storage = model.preference.storage, let title = game.titleId else { return nil }
+            base = storage
+            folder = "\(title.uppercased())/\(kind.rawValue)"
+        } else {
+            guard let storage = model.preference.sourcesStorage, let files = CloudSourceFiles(game) else { return nil }
+            base = storage
+            folder = files.folderName
+        }
+        return base + (base.hasSuffix("/") ? "" : "/") + folder + "/"
     }
 
     private func artifactControl(_ item: CloudLibraryItem) -> Control? {
