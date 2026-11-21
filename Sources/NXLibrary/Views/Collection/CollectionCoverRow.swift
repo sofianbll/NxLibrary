@@ -23,6 +23,7 @@ struct CollectionCoverRow: View {
     /// The porting look of a game's cover (`PortingTileLook`).
     var tileLook: (PortedGame) -> PortingTileLook = { _ in .normal }
     @ObservedObject var cloud: CloudLibraryModel
+    let showsCloudBadges: Bool
     let onSelect: (CatalogGame) -> Void
     let onActivate: (CatalogGame) -> Void
 
@@ -66,7 +67,7 @@ struct CollectionCoverRow: View {
     private func cover(_ game: CatalogGame, selected: Bool) -> some View {
         let w = canvas.u(CollectionRow.coverWidth), h = canvas.u(CollectionRow.coverHeight)
         let face = RoundedRectangle(cornerRadius: canvas.u(12), style: .continuous)
-        let cloudState = game.nxnativeGame.flatMap { cloud.states[$0.id] }
+        let cloudState = showsCloudBadges ? game.nxnativeGame.flatMap { cloud.states[$0.id] } : nil
         return ZStack {
             Group {
                 if let native = game.nxnativeGame {

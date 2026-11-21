@@ -4,6 +4,32 @@ import Combine
 @testable import ArcanePorting
 
 final class AppSettingsStoreTests: XCTestCase {
+    func testCloudAppearanceDefaultsForOldFilesAndRoundTrips() throws {
+        let decoder = JSONDecoder()
+        var settings = try decoder.decode(AppSettings.self, from: Data("{}".utf8))
+        XCTAssertTrue(settings.showsCloudPlayIcon)
+        XCTAssertTrue(settings.showsCloudDetailsLink)
+        XCTAssertEqual(settings.cloudTileBadges, .both)
+        let unknown = try decoder.decode(AppSettings.self, from: Data(#"{"cloudTileBadges":"future"}"#.utf8))
+        XCTAssertEqual(unknown.cloudTileBadges, .both)
+
+        settings.showsCloudPlayIcon = false
+        settings.showsCloudDetailsLink = false
+        settings.cloudTileBadges = .collection
+        let restored = try decoder.decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertFalse(restored.showsCloudPlayIcon)
+        XCTAssertFalse(restored.showsCloudDetailsLink)
+        XCTAssertEqual(restored.cloudTileBadges, .collection)
+    }
+
+    func testCloudTileBadgesCycleAndMatchTheirScreens() {
+        let options = CloudTileBadges.allCases
+        XCTAssertEqual(options.map { $0.stepped(1) }, [.spotlight, .collection, .both, .none])
+        XCTAssertEqual(options.map { $0.stepped(-1) }, [.both, .none, .spotlight, .collection])
+        XCTAssertEqual(options.map(\.showsOnSpotlight), [false, true, false, true])
+        XCTAssertEqual(options.map(\.showsOnCollection), [false, false, true, true])
+    }
+
     func testFullscreenStartupSurvivesSavingAndOldSettingsStayWindowed() throws {
         let decoder = JSONDecoder()
         let enabled = try decoder.decode(AppSettings.self, from: Data(#"{"startInFullscreen":true}"#.utf8))

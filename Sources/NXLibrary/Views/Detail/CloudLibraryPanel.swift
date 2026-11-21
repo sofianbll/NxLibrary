@@ -447,21 +447,29 @@ struct CloudLibraryTileBadge: ViewModifier {
     static func artworkOpacity(_ state: CloudLibraryState?) -> Double { state?.appIsCloudOnly == true ? 0.55 : 1 }
 
     func body(content: Content) -> some View {
-        let indicator = state.map { CloudLibraryIndicator(state: $0) }
-        let symbol = indicator.flatMap { Self.symbol(for: $0.copy) }
-        let visible = indicator?.progress == true || indicator?.queued == true || symbol != nil
+        let badge = state.map { CloudLibraryBadge(indicator: CloudLibraryIndicator(state: $0)) }
         content.overlay(alignment: .topTrailing) {
-            if let indicator, visible {
-                badge(indicator, symbol: symbol)
+            if let badge, badge.isVisibleOnTile {
+                badge
                     .padding(canvas.u(10))
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
         }
-        .accessibilityValue(visible ? indicator?.label(context: localization, showingFailure: false) ?? "" : "")
+        .accessibilityValue(badge?.isVisibleOnTile == true
+                            ? badge?.indicator.label(context: localization, showingFailure: false) ?? "" : "")
     }
+}
 
-    private func badge(_ indicator: CloudLibraryIndicator, symbol: String?) -> some View {
+/// Same glyph, ring and percentage on tiles and in the Details pill.
+struct CloudLibraryBadge: View {
+    let indicator: CloudLibraryIndicator
+    @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.nxAppLocale) private var localization
+
+    var isVisibleOnTile: Bool { indicator.progress || indicator.queued || symbol != nil }
+
+    var body: some View {
         let fraction = CloudLibraryProgressView.fraction(indicator.state.progress)
         return VStack(spacing: canvas.u(2)) {
             ZStack(alignment: .bottomTrailing) {
@@ -479,8 +487,8 @@ struct CloudLibraryTileBadge: ViewModifier {
                 } else if indicator.queued {
                     Image(systemName: "clock").font(.system(size: canvas.u(15)))
                         .foregroundColor(indicator.color).frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let symbol {
-                    Image(systemName: symbol).font(.system(size: canvas.u(17), weight: .medium))
+                } else {
+                    Image(systemName: symbol ?? "icloud").font(.system(size: canvas.u(17), weight: .medium))
                         .foregroundColor(CloudLibraryIndicator.copyColor(indicator.copy))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     if indicator.copy == .synchronized {
@@ -501,8 +509,8 @@ struct CloudLibraryTileBadge: ViewModifier {
         }
     }
 
-    static func symbol(for copy: CloudArtifactStatus.State) -> String? {
-        switch copy {
+    private var symbol: String? {
+        switch indicator.copy {
         case .synchronized: return "checkmark.icloud"
         case .cloudOnly: return "icloud.and.arrow.down"
         case .newerOnThisMac: return "exclamationmark.icloud"

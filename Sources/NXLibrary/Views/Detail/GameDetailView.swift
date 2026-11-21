@@ -26,6 +26,19 @@ struct GameDetailView: View {
     @ObservedObject var runningGames: RunningGameMonitor
     @ObservedObject var artwork: ArtworkStore
     let game: PortedGame
+    @ObservedObject private var cloud: CloudLibraryModel
+
+    init(viewModel: AppViewModel, router: AppRouter, settings: AppSettingsStore, playSessions: PlaySessionStore,
+         runningGames: RunningGameMonitor, artwork: ArtworkStore, game: PortedGame) {
+        self.viewModel = viewModel
+        self.router = router
+        self.settings = settings
+        self.playSessions = playSessions
+        self.runningGames = runningGames
+        self.artwork = artwork
+        self.game = game
+        cloud = viewModel.cloudLibrary
+    }
 
     @Environment(\.seleneCanvas) var canvas
     @Environment(\.seleneReduceMotion) var reduceMotion
@@ -83,7 +96,8 @@ struct GameDetailView: View {
         let urls = Array((metadata?.screenshotURLs ?? []).prefix(SpotlightScreenshotStrip.maxCount))
         let more = moreGames
         let blocked = toolchainBlocked
-        let links = DetailsLink.links(app: game.url, store: p.storeURL, hltb: p.hltbURL, viewModel: viewModel, cloudGame: game)
+        let links = DetailsLink.links(app: game.url, store: p.storeURL, hltb: p.hltbURL, viewModel: viewModel,
+                                      cloudGame: settings.settings.showsCloudDetailsLink ? game : nil)
         let facts = DetailsFacts.switchGame(game, metadata: metadata, folderName: DetailsLink.folderName(of: game.url))
         return Model(presentation: p, facts: facts, links: links, screenshots: urls,
                      screenshotsKnown: screenshotsKnown,
@@ -203,7 +217,12 @@ struct GameDetailView: View {
         .task(id: game) { await viewModel.prefetchCloudLibrary(game) }
     }
 
-    private var pillCount: Int { viewModel.portingPills(game).count + (viewModel.showsCloudLibrary(game) ? 1 : 0) }
+    var showsCloudPill: Bool { settings.settings.showsCloudPlayIcon && viewModel.showsCloudLibrary(game) }
+    var downloadsCloudApp: Bool {
+        cloud.archive != nil && cloud.states[game.id]?.appIsCloudOnly == true && !runningGames.isRunning(game)
+    }
+    var pillSet: PortingPills { viewModel.portingPills(game).detailsPresentation(cloudOnly: downloadsCloudApp) }
+    private var pillCount: Int { pillSet.count + (showsCloudPill ? 1 : 0) }
 
     // MARK: - Stage
 
@@ -270,11 +289,12 @@ struct GameDetailView: View {
                             wikipedia: wikipediaAbout?.matching(aboutLookup(model)),
                             onPrimary: { pressPill(0) },
                             onSecondary: { pressPill(1) },
-                            onFavorite: { pressPill(viewModel.showsCloudLibrary(game) ? 3 : 2) },
+                            onFavorite: { pressPill(pillCount - 1) },
                             onHoverPill: { hoverPill($0) },
-                            portingPills: viewModel.portingPills(game),
+                            pillSet: pillSet,
                             etaText: viewModel.portingETAText,
-                            cloud: viewModel.cloudLibrary,
+                            cloud: cloud,
+                            showsCloudPill: showsCloudPill,
                             downloadEnabled: viewModel.canChangeCloudLibrary(game),
                             canCheckCloudSources: viewModel.canCheckCloudSources(for: game),
                             onPill: { pressPill($0) },

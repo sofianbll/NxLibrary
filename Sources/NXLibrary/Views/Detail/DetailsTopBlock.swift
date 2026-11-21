@@ -18,7 +18,7 @@ struct DetailsTopBlock: View {
     let isRunning: Bool
     /// The quiet "Cheats on" stat: cheats on and at least one switch on (CheatsModel.cheatsOn).
     var cheatsOn = false
-    /// The focused pill: 0 Play, Resume or Build; 1 Options or Close Game; 2 Favorite; nil when the block has no focus.
+    /// The focused pill, or nil when the block has no focus.
     let focusedPill: Int?
     /// Build is dim (no sources to build from) but still takes focus.
     let primaryEnabled: Bool
@@ -31,14 +31,14 @@ struct DetailsTopBlock: View {
     let onFavorite: () -> Void
     let onHoverPill: (Int) -> Void
     /// The pills follow the porting (`PortingPills`); any pill press goes to `onPill`.
-    var portingPills: PortingPills = .normal
+    let pillSet: PortingPills
     var etaText: String? = nil
     @ObservedObject var cloud: CloudLibraryModel
+    let showsCloudPill: Bool
     var downloadEnabled = false
     var canCheckCloudSources = false
     var onPill: (Int) -> Void = { _ in }
     var onOpenLog: () -> Void = {}
-    private var pillSet: PortingPills { portingPills.detailsPresentation(cloudOnly: downloadsApp && !isRunning) }
 
     /// Longer than this, the description gets a "Read more" (five lines hold about 520 characters at this width).
     static let readMoreThreshold = 520
@@ -69,12 +69,7 @@ struct DetailsTopBlock: View {
             }
             HStack(spacing: canvas.u(14)) {
                 pills
-                if game.platform == .macApp {
-                    if pillSet == .porting || pillSet.isFailed { cloudPill }
-                    if let state = cloud.states[game.id] {
-                        CloudLibraryIndicator(state: state).dot(context: localization)
-                    }
-                }
+                if showsCloudPill && (pillSet == .porting || pillSet.isFailed) { cloudPill }
             }
                 .padding(.top, canvas.u(pillSet.isFailed ? 10 : 26))
             if let state = cloud.states[game.id], let active = state.activeItem, active != .sources, !state.queued {
@@ -190,8 +185,8 @@ struct DetailsTopBlock: View {
                              horizontalPadding: 36, focused: focusedPill == 1,
                              action: onSecondary)
                 .onHover { if $0 { onHoverPill(1) } }
-            if game.platform == .macApp { cloudPill }
-            let favorite = game.platform == .macApp ? 3 : 2
+            if showsCloudPill { cloudPill }
+            let favorite = pillSet.count - 1 + (showsCloudPill ? 1 : 0)
             SelenePillButton(title: nil, icon: game.isFavorite ? .favorite : .favoriteBorder,
                              iconSize: 20, minWidth: 52, height: 52, horizontalPadding: 0,
                              focused: focusedPill == favorite, action: onFavorite)
@@ -202,10 +197,17 @@ struct DetailsTopBlock: View {
 
     private var cloudPill: some View {
         let index = pillSet.detailsCloudIndex
-        return SelenePillButton(title: "Cloud", minWidth: 128, height: 52, horizontalPadding: 36,
+        let indicator = CloudLibraryIndicator(state: cloud.states[game.id] ?? CloudLibraryState())
+        return SelenePillButton(title: nil, minWidth: 52, height: 52, horizontalPadding: 0,
                                focused: focusedPill == index) { onPill(index) }
+            .overlay {
+                CloudLibraryBadge(indicator: indicator)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
             .onHover { if $0 { onHoverPill(index) } }
             .accessibilityLabel(L10n.text("Cloud library"))
+            .accessibilityValue(indicator.label(context: localization))
     }
 
     private var primaryTitle: String {

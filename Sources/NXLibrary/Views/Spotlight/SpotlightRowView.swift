@@ -22,6 +22,7 @@ struct SpotlightRowView: View {
     /// The porting look of a game's tile (`PortingTileLook`).
     var tileLook: (PortedGame) -> PortingTileLook = { _ in .normal }
     @ObservedObject var cloud: CloudLibraryModel
+    let showsCloudBadges: Bool
     /// Mods' art for the Mods card's face (up to four); empty draws Selene's own face.
     var modsCover: [URL] = []
     /// Spotlight's entrance (`SpotlightView+Entrance`): the tiles fly in from the centre while it plays.
@@ -166,7 +167,7 @@ struct SpotlightRowView: View {
     /// A tile at its own size; `TileGlide` places and grows it.
     private func tile(_ item: SpotlightItem, selected: Bool) -> some View {
         let native: PortedGame? = if case .game(let id) = item { gamesByID[id] } else { nil }
-        let cloudState = native.flatMap { cloud.states[$0.id] }
+        let cloudState = showsCloudBadges ? native.flatMap { cloud.states[$0.id] } : nil
         return ZStack(alignment: .topLeading) {
             face(item, selected: selected)
                 .opacity(CloudLibraryTileBadge.artworkOpacity(cloudState))

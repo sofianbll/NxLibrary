@@ -47,7 +47,7 @@ struct SettingsSectionContent: View {
         case .cloudSaves:
             SettingsCloudSavesSection(viewModel: viewModel, settings: settings, onActions: onActions)
         case .cloudLibrary:
-            SettingsCloudLibrarySection(viewModel: viewModel, model: viewModel.cloudLibrary, advanced: $cloudAdvanced,
+            SettingsCloudLibrarySection(viewModel: viewModel, model: viewModel.cloudLibrary, settings: settings, advanced: $cloudAdvanced,
                                         onEdit: onEditCloud, onActions: onActions)
         case .controllers:
             SettingsControllersSection(settings: settings, onActions: onActions,

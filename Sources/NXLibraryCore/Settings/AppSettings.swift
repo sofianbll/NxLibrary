@@ -29,6 +29,28 @@ public enum StartScreen: String, Codable, CaseIterable {
     case spotlight, collection, last
 }
 
+public enum CloudTileBadges: String, Codable, CaseIterable {
+    case none, spotlight, collection, both
+
+    public var showsOnSpotlight: Bool { self == .spotlight || self == .both }
+    public var showsOnCollection: Bool { self == .collection || self == .both }
+
+    public var titleKey: String {
+        switch self {
+        case .none: return "Cloud badges: None"
+        case .spotlight: return "Home"
+        case .collection: return "Collection"
+        case .both: return "Both"
+        }
+    }
+
+    public func stepped(_ step: Int) -> Self {
+        let options = Self.allCases
+        let index = options.firstIndex(of: self) ?? 0
+        return options[(index + step % options.count + options.count) % options.count]
+    }
+}
+
 /// How the background artwork is fitted to the window.
 public enum BackgroundSizing: String, Codable, CaseIterable, Identifiable, Equatable {
     case fill, fit, stretch
@@ -138,6 +160,9 @@ public struct AppSettings: Codable, Equatable {
     public var spotlightOrder: [String]
     public var startingTab: LibraryFilter.RawValue
     public var surprisePool: SurprisePool
+    public var showsCloudPlayIcon = true
+    public var showsCloudDetailsLink = true
+    public var cloudTileBadges: CloudTileBadges = .both
     public var startOn: StartScreen
     /// The home screen last shown: `.spotlight` or `.collection`.
     public var lastHome: StartScreen
@@ -250,6 +275,7 @@ public struct AppSettings: Codable, Equatable {
         case startInFullscreen
         case colorThemeID, buttonNames
         case spotlightCards, showsModsCard, spotlightOrder, startingTab, surprisePool
+        case showsCloudPlayIcon, showsCloudDetailsLink, cloudTileBadges
         case startOn, lastHome
         case introAnimation, viewButtonSwitches, interfaceSounds, soundVolume, quietLaunch
         case wallpaperID, backgroundSizing, animatedBackground, wallpaperBrightness, launchStyle, launchMotion, launchShade
@@ -281,6 +307,10 @@ public struct AppSettings: Codable, Equatable {
         self.spotlightOrder = try container.decodeIfPresent([String].self, forKey: .spotlightOrder) ?? []
         self.startingTab = try container.decodeIfPresent(String.self, forKey: .startingTab) ?? "All games"
         self.surprisePool = try container.decodeIfPresent(SurprisePool.self, forKey: .surprisePool) ?? .installed
+        self.showsCloudPlayIcon = try container.decodeIfPresent(Bool.self, forKey: .showsCloudPlayIcon) ?? true
+        self.showsCloudDetailsLink = try container.decodeIfPresent(Bool.self, forKey: .showsCloudDetailsLink) ?? true
+        self.cloudTileBadges = (try container.decodeIfPresent(String.self, forKey: .cloudTileBadges))
+            .flatMap(CloudTileBadges.init(rawValue:)) ?? .both
         self.startOn = try container.decodeIfPresent(StartScreen.self, forKey: .startOn) ?? .spotlight
         self.lastHome = try container.decodeIfPresent(StartScreen.self, forKey: .lastHome) ?? .spotlight
         self.introAnimation = try container.decodeIfPresent(Bool.self, forKey: .introAnimation) ?? true

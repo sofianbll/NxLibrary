@@ -139,6 +139,7 @@ struct CollectionView: View {
                     needsMetadata: { store.loadStoreMetadata(for: $0) },
                     tileLook: viewModel.portingTileLook,
                     cloud: viewModel.cloudLibrary,
+                    showsCloudBadges: settings.settings.cloudTileBadges.showsOnCollection,
                     onSelect: { select($0.id) },
                     onActivate: { record in select(record.id); activateCatalog(record) })
                     .offset(y: canvas.u(576))

@@ -27,7 +27,7 @@ extension SettingsCatalog {
             guard row.group == .cloudLibrary else { return true }
             switch row.id {
             case "cloudLibrarySetup": return !cloudConfigured
-            case "cloudLibraryAdvanced", "cloudLibraryTool": return true
+            case "cloudLibraryAdvanced", "cloudLibraryTool", "showsCloudPlayIcon", "showsCloudDetailsLink", "cloudTileBadges": return true
             default: return cloudConfigured
             }
         }
@@ -96,7 +96,10 @@ extension SettingsCatalog {
         action("cloudLibraryService", .cloudLibrary, "Cloud service", "Google Drive"),
         action("cloudLibraryFolder", .cloudLibrary, "Folder", "Folder for game apps and build caches."),
         action("cloudLibraryConnect", .cloudLibrary, "Change Google credentials", "Sign in with your own Google OAuth client in your browser."),
-        action("cloudLibraryAdvanced", .cloudLibrary, "Advanced", "Connection tools"),
+        row("showsCloudPlayIcon", .cloudLibrary, "Icon next to Play", "Show the cloud icon by the play button.") { $0.showsCloudPlayIcon },
+        row("showsCloudDetailsLink", .cloudLibrary, "Link in Details", "Show the cloud library link in Details.") { $0.showsCloudDetailsLink },
+        row("cloudTileBadges", .cloudLibrary, "Tile badges", "Show cloud status on game covers.") { $0.cloudTileBadges },
+        action("cloudLibraryAdvanced", .cloudLibrary, "Connection tools", "Advanced"),
         action("cloudLibraryTool", .cloudLibrary, "Cloud tool", "Choose the executable or use the detected one."),
         action("cloudLibraryTest", .cloudLibrary, "Test connection", "Lists the cloud folder without changing its files."),
         action("cloudLibraryDisconnect", .cloudLibrary, "Disconnect", "Removes only the local connection. Cloud files stay where they are."),

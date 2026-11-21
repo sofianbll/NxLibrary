@@ -6,9 +6,9 @@ import Foundation
 public enum SettingsReset {
     public static func canReset(_ section: SettingsSection) -> Bool {
         switch section {
-        case .startUp, .navigation, .spotlight, .soundMusic, .look, .controllers, .libraryGames, .library, .games:
+        case .startUp, .navigation, .spotlight, .soundMusic, .look, .controllers, .libraryGames, .library, .games, .cloudLibrary:
             return true
-        case .search, .changed, .apiServices, .sources, .storage, .engine, .keys, .cloudSaves, .cloudLibrary, .portingStorage,
+        case .search, .changed, .apiServices, .sources, .storage, .engine, .keys, .cloudSaves, .portingStorage,
              .about, .console:
             return false
         }
@@ -61,7 +61,11 @@ public enum SettingsReset {
         case .library:
             next.refreshLibraryAtLaunch = defaults.refreshLibraryAtLaunch
             next.notifyPortingEnds = defaults.notifyPortingEnds
-        case .games, .controllers, .search, .changed, .apiServices, .sources, .storage, .engine, .keys, .cloudSaves, .cloudLibrary,
+        case .cloudLibrary:
+            next.showsCloudPlayIcon = defaults.showsCloudPlayIcon
+            next.showsCloudDetailsLink = defaults.showsCloudDetailsLink
+            next.cloudTileBadges = defaults.cloudTileBadges
+        case .games, .controllers, .search, .changed, .apiServices, .sources, .storage, .engine, .keys, .cloudSaves,
              .portingStorage, .about, .console:
             break
         }

@@ -88174,6 +88174,116 @@
           }
         }
       }
+    },
+    "Connection": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Connection"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Connessione"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Connexion"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Verbindung"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Conexión"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Conexão"}}
+      }
+    },
+    "Appearance": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Appearance"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Aspetto"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Affichage"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Anzeige"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Apariencia"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Aparência"}}
+      }
+    },
+    "Icon next to Play": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Icon next to Play"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Icona accanto a Gioca"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Icône à côté de Jouer"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Symbol neben Spielen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Icono junto a Jugar"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Ícone ao lado de Jogar"}}
+      }
+    },
+    "Show the cloud icon by the play button.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Show the cloud icon by the play button."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Mostra l’icona cloud accanto a Gioca."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Affiche l’icône cloud à côté de Jouer."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Zeigt das Cloud-Symbol neben Spielen."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Muestra el icono de la nube junto a Jugar."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Mostra o ícone da nuvem ao lado de Jogar."}}
+      }
+    },
+    "Link in Details": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Link in Details"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Link nei dettagli"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Lien dans les détails"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Link in den Details"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enlace en los detalles"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Link nos detalhes"}}
+      }
+    },
+    "Show the cloud library link in Details.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Show the cloud library link in Details."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Mostra il link alla libreria cloud nei dettagli."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Affiche le lien vers la bibliothèque cloud dans les détails."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Zeigt den Link zur Cloud-Bibliothek in den Details."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Muestra el enlace a la biblioteca en la nube en los detalles."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Mostra o link da biblioteca na nuvem nos detalhes."}}
+      }
+    },
+    "Tile badges": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Tile badges"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Badge sulle copertine"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Badges sur les vignettes"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Abzeichen auf Kacheln"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Insignias en las portadas"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Selos nas capas"}}
+      }
+    },
+    "Show cloud status on game covers.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Show cloud status on game covers."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Mostra lo stato cloud sulle copertine."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Affiche l’état cloud sur les jaquettes."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Zeigt den Cloud-Status auf den Spielcovern."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Muestra el estado en la nube en las portadas."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Mostra o estado da nuvem nas capas dos jogos."}}
+      }
+    },
+    "Cloud badges: None": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "None"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nessuna"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Aucune"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Keine"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ninguna"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nenhuma"}}
+      }
+    },
+    "Home": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Home"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Home"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Accueil"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Startseite"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Inicio"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Início"}}
+      }
+    },
+    "Both": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Both"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Entrambe"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Les deux"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Beide"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ambas"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Ambas"}}
+      }
     }
   },
   "version": "1.0"

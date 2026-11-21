@@ -18,7 +18,7 @@ extension DetailsLink {
                       cloudGame: PortedGame? = nil) -> [DetailsLink] {
         var links: [DetailsLink] = []
         if let game = cloudGame, viewModel.showsCloudLibrary(game) {
-            links.append(DetailsLink(id: "cloud", title: L10n.text("Cloud library")) { viewModel.cloudLibraryGameID = game.id })
+            links.append(DetailsLink(id: "cloud", title: L10n.text("Cloud library")) { openCloud(for: game, viewModel: viewModel) })
         }
         if let app {
             links.append(DetailsLink(id: "app", title: L10n.text("Reveal in Finder")) { viewModel.revealInFinder(url: app) })
@@ -30,6 +30,11 @@ extension DetailsLink {
             links.append(DetailsLink(id: "hltb", title: L10n.text("HowLongToBeat")) { viewModel.openURL(hltb) })
         }
         return links
+    }
+
+    @MainActor
+    static func openCloud(for game: PortedGame, viewModel: AppViewModel) {
+        viewModel.cloudLibraryGameID = game.id
     }
 
     /// The app's folder by its Finder name ("Applications"); never the path. Read once per folder.

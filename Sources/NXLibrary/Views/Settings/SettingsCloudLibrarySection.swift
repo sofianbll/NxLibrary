@@ -6,6 +6,7 @@ import SwiftUI
 struct SettingsCloudLibrarySection: View {
     @ObservedObject var viewModel: AppViewModel
     @ObservedObject var model: CloudLibraryModel
+    @ObservedObject var settings: AppSettingsStore
     @Binding var advanced: Bool
     let onEdit: () -> Void
     let onActions: ([SettingsRowAction]) -> Void
@@ -57,6 +58,7 @@ struct SettingsCloudLibrarySection: View {
 
     var body: some View {
         VStack(spacing: canvas.u(8)) {
+            SettingsSubheading("Connection")
             if let remote = selection.remote {
                 SeleneToggleRow("Enable cloud library", subtitle: "Cloud storage for ported apps and build caches, separate from saves.",
                                 isOn: Binding(get: { selection.enabled }, set: setEnabled))
@@ -77,7 +79,13 @@ struct SettingsCloudLibrarySection: View {
                     .disabled(!editable)
             }
 
-            SeleneButtonRow("Advanced", subtitle: "Connection tools", buttonTitle: advanced ? "Hide" : "Show", action: toggleAdvanced)
+            SettingsSubheading("Appearance")
+            SeleneToggleRow("Icon next to Play", isOn: $settings.settings.showsCloudPlayIcon)
+            SeleneToggleRow("Link in Details", isOn: $settings.settings.showsCloudDetailsLink)
+            SeleneCycleRow("Tile badges", value: settings.settings.cloudTileBadges.titleKey, cycle: stepBadges)
+
+            SettingsSubheading("Advanced")
+            SeleneButtonRow("Connection tools", buttonTitle: advanced ? "Hide" : "Show", action: toggleAdvanced)
                 .accessibilityValue(text(advanced ? "Expanded" : "Collapsed"))
             if advanced { advancedRows }
         }
@@ -131,6 +139,10 @@ struct SettingsCloudLibrarySection: View {
         withAnimation(reduceMotion ? nil : SeleneTheme.quick) { advanced.toggle() }
     }
 
+    private func stepBadges(_ step: Int) {
+        settings.settings.cloudTileBadges = settings.settings.cloudTileBadges.stepped(step)
+    }
+
     private func publishActions() {
         var actions: [SettingsRowAction]
         if selection.remote != nil {
@@ -142,7 +154,12 @@ struct SettingsCloudLibrarySection: View {
         } else {
             actions = [.init(id: "cloudLibrarySetup", title: "Configure cloud library", isEnabled: editable, activate: onEdit)]
         }
-        actions.append(.init(id: "cloudLibraryAdvanced", title: "Advanced", activate: toggleAdvanced))
+        actions += [
+            .init(id: "showsCloudPlayIcon", title: "Icon next to Play") { settings.settings.showsCloudPlayIcon.toggle() },
+            .init(id: "showsCloudDetailsLink", title: "Link in Details") { settings.settings.showsCloudDetailsLink.toggle() },
+            .value("cloudTileBadges", "Tile badges", cycle: stepBadges),
+            .init(id: "cloudLibraryAdvanced", title: "Connection tools", activate: toggleAdvanced),
+        ]
         if advanced {
             let automatic = model.chosenExecutable != nil
             actions.append(.init(id: "cloudLibraryTool", title: "rclone", isEnabled: editable,

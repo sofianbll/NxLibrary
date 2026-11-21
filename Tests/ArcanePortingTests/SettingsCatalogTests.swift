@@ -35,6 +35,7 @@ final class SettingsCatalogTests: XCTestCase {
         "showClock", "reduceMotion", "iconAppearance", "boxCovers", "igdb", "steamGridDB", "launchStyle",
         "launchMotion", "launchShade", "surprisePool", "cloudSaves", "cloudSavesPickedFolder", "showsSessionCard",
         "cloudLibraryEnabled", "cloudLibraryService", "cloudLibraryConnect", "cloudLibraryFolder",
+        "showsCloudPlayIcon", "showsCloudDetailsLink", "cloudTileBadges",
         "cloudLibrarySetup", "cloudLibraryAdvanced", "cloudLibraryTest", "cloudLibraryTool", "cloudLibraryDisconnect",
         "hiddenGames", "gameDefaults.fullscreen", "gameDefaults.enable60FPS", "gameDefaults.isDockedMode",
         "gameDefaults.enableMetalFXUpscale", "gameDefaults.enableMetalHUD", "gameDefaults.language",
@@ -108,8 +109,33 @@ final class SettingsCatalogTests: XCTestCase {
         XCTAssertEqual(games.launchMotion, settings.launchMotion)
 
         XCTAssertFalse(SettingsReset.canReset(.cloudSaves))
-        XCTAssertFalse(SettingsReset.canReset(.cloudLibrary))
         XCTAssertEqual(SettingsReset.reset(.cloudSaves, in: settings).cloudSavesPickedFolder, "/Volumes/Saves")
+    }
+
+    func testCloudAppearanceIsAvailableAndResetWithoutAConnection() {
+        var settings = AppSettings()
+        settings.showsCloudPlayIcon = false
+        settings.showsCloudDetailsLink = false
+        settings.cloudTileBadges = .none
+        settings.cloudSavesPickedFolder = "/Volumes/Saves"
+
+        let ids = ["showsCloudPlayIcon", "showsCloudDetailsLink", "cloudTileBadges"]
+        let changed = SettingsCatalog.changed(in: settings)
+        XCTAssertEqual(changed.filter { $0.group == .cloudLibrary }.map(\.id), ids)
+        for (title, id) in zip(["Icon next to Play", "Link in Details", "Tile badges"], ids) {
+            XCTAssertEqual(SettingsCatalog.search(title).first { $0.id == id }?.group, .cloudLibrary)
+            XCTAssertFalse(SettingsCatalog.opensCloudAdvanced(id))
+        }
+
+        XCTAssertTrue(SettingsReset.canReset(.cloudLibrary))
+        let reset = SettingsReset.reset(.cloudLibrary, in: settings)
+        XCTAssertTrue(reset.showsCloudPlayIcon)
+        XCTAssertTrue(reset.showsCloudDetailsLink)
+        XCTAssertEqual(reset.cloudTileBadges, .both)
+        XCTAssertEqual(reset.cloudSavesPickedFolder, "/Volumes/Saves")
+        XCTAssertEqual(SettingsCatalog.changed(in: reset, externalChanges: ["cloudLibraryEnabled"],
+                                                cloudConfigured: true).filter { $0.group == .cloudLibrary }.map(\.id),
+                       ["cloudLibraryEnabled"])
     }
 
     func testOldSectionRawValuesStillDecode() {
@@ -136,7 +162,8 @@ final class SettingsCatalogTests: XCTestCase {
         "gameDefaults.enable60FPS", "gameDefaults.isDockedMode", "gameDefaults.enableMetalFXUpscale",
         "gameDefaults.enableMetalHUD", "gameDefaults.language", "gameDefaults.renderScale", "gameDefaults.rumble",
         "gameDefaults.rumbleGain", "cloudSaves", "cloudSavesPickedFolder", "cloudLibrarySetup", "cloudLibraryEnabled",
-        "cloudLibraryService", "cloudLibraryFolder", "cloudLibraryConnect", "cloudLibraryAdvanced",
+        "cloudLibraryService", "cloudLibraryFolder", "cloudLibraryConnect",
+        "showsCloudPlayIcon", "showsCloudDetailsLink", "cloudTileBadges", "cloudLibraryAdvanced",
         "cloudLibraryTool", "cloudLibraryTest", "cloudLibraryDisconnect", "buildCaches", "diagnostics",
         "appUpdates", "projectDocs", "console"
         ])

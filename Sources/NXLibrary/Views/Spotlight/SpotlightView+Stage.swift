@@ -79,6 +79,7 @@ extension SpotlightView {
                     artwork: artwork,
                     tileLook: viewModel.portingTileLook,
                     cloud: viewModel.cloudLibrary,
+                    showsCloudBadges: settings.settings.cloudTileBadges.showsOnSpotlight,
                     modsCover: storeHost.cover,
                     entrance: entrance,
                     onEntranceEnd: { finishEntrance() },
