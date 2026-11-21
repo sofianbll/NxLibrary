@@ -40,6 +40,7 @@ Punti fissi:
 - La scelta Steam del primo Setup resta salvata anche alla chiusura; lettura e attivazione usano la cartella scelta nella fonte. Una lettura incompleta offre Retry, senza dichiarare la libreria vuota.
 - La cartella Game files ricordata resta una preferenza del selettore: l'avvio non ne enumera i sorgenti.
 - Menu e dialoghi nativi hanno precedenza sul routing della shell: `nativeDialogOwnsInput` ferma i comandi del controller anche se un benvenuto, Setup o dialogo dell'app è già aperto sotto.
+- Se GameController non espone nessun dispositivo, il PowerA `Lic Pro Controller` può inviare azioni alla stessa shell tramite HID. Al ritorno da un gioco le azioni sono di nuovo ammesse quando Arcane torna in primo piano.
 
 ## 2. Dal disco alla libreria
 

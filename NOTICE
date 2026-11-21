@@ -65,7 +65,7 @@ https://github.com/LNPANDY/NX2Apple
 Adapted: the key check (Sources/ArcanePorting/Setup/KeyCheck.swift), the
 engine failure-message table (PortingFailureReason.swift) and the diagnostics
 report idea (DiagnosticsReport.swift) and the self-update rules (AppUpdate.swift).
-Also a dependency-detection reference.
+Also references for dependency detection and HID controller discovery (HIDControllerSource.swift).
 
 MIT License
 

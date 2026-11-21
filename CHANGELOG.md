@@ -2,6 +2,12 @@
 
 User-visible changes to Arcane (formerly NX Library) are recorded here. Entries are grouped by release, with the newest first. Engine changes also have their own [upgrade notes](docs/history/engine-upgrades/README.md).
 
+## Unreleased
+
+### Fixed
+
+- The PowerA **Lic Pro Controller** can navigate Arcane when macOS does not expose it through GameController. GameController remains the first choice, and game input is unchanged.
+
 ## 0.2.1 — 2026-11-20
 
 See the [validation checklist](docs/working-on-it/validation.md) for the state of manual checks.
