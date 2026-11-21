@@ -1,4 +1,5 @@
 import AppKit
+import ArcanePorting
 import NXLibraryCore
 import OSLog
 

@@ -10,9 +10,16 @@ public struct CatalogRepository {
     public func load() throws -> CatalogDocument { try store.loadOrMigrate() }
 
     package func transaction(_ change: (inout CatalogDocument) throws -> Void) throws -> CatalogDocument {
+        try transactionIfChanged { draft in
+            try change(&draft)
+            return true
+        }
+    }
+
+    package func transactionIfChanged(_ change: (inout CatalogDocument) throws -> Bool) throws -> CatalogDocument {
         let current = try load()
         var draft = current
-        try change(&draft)
+        guard try change(&draft) else { return current }
         return try store.save(draft, expectedRevision: current.revision)
     }
 }

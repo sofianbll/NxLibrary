@@ -85,39 +85,40 @@ extension CatalogRepository {
     /// Cloud discovery only adds missing titles; no local observation or personal choice is replaced.
     public func importCloudGames(_ manifests: [CloudGameManifest], in folder: URL,
                                  legacyNames: [String: String] = [:]) throws -> CatalogDocument {
-        let current = try load()
-        var draft = current
-        var known = Set(current.nxnativeGames.compactMap { $0.titleId?.uppercased() })
-        known.formUnion(current.cloudImportExclusions ?? [])
-        for manifest in manifests {
-            let title = manifest.titleID.uppercased()
-            guard SaveLocation.validID(title), let app = manifest.artifacts.first(where: { $0.kind == .app }),
-                  known.insert(title).inserted else { continue }
-            let name = [manifest.gameName, legacyNames[title]].compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
-                .first { !$0.isEmpty } ?? title
-            let bundle = manifest.bundleName.flatMap { value -> String? in
-                guard (5...200).contains(value.utf8.count), !value.hasPrefix("."),
-                      value.rangeOfCharacter(from: CharacterSet(charactersIn: "/:\\").union(.controlCharacters)) == nil,
-                      value.lowercased().hasSuffix(".app") else { return nil }
-                return value
-            } ?? "\(title).app"
-            var game = PortedGame(name: name,
-                url: folder.appendingPathComponent(bundle, isDirectory: true), platform: .macApp,
-                sizeBytes: app.unpackedSize, modificationDate: manifest.createdAt,
-                titleId: title, versionString: manifest.gameVersion)
-            game.status = .appMissing
-            game.cloudImportPending = true
-            draft.games.append(.init(nxnative: game))
+        try transactionIfChanged { draft in
+            let count = draft.games.count
+            var known = Set(draft.nxnativeGames.compactMap { $0.titleId?.uppercased() })
+            known.formUnion(draft.cloudImportExclusions ?? [])
+            for manifest in manifests {
+                let title = manifest.titleID.uppercased()
+                guard SaveLocation.validID(title), let app = manifest.artifacts.first(where: { $0.kind == .app }),
+                      known.insert(title).inserted else { continue }
+                let name = [manifest.gameName, legacyNames[title]].compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .first { !$0.isEmpty } ?? title
+                let bundle = manifest.bundleName.flatMap { value -> String? in
+                    guard (5...200).contains(value.utf8.count), !value.hasPrefix("."),
+                          value.rangeOfCharacter(from: CharacterSet(charactersIn: "/:\\").union(.controlCharacters)) == nil,
+                          value.lowercased().hasSuffix(".app") else { return nil }
+                    return value
+                } ?? "\(title).app"
+                var game = PortedGame(name: name,
+                    url: folder.appendingPathComponent(bundle, isDirectory: true), platform: .macApp,
+                    sizeBytes: app.unpackedSize, modificationDate: manifest.createdAt,
+                    titleId: title, versionString: manifest.gameVersion)
+                game.status = .appMissing
+                game.cloudImportPending = true
+                draft.games.append(.init(nxnative: game))
+            }
+            guard draft.games.count != count else { return false }
+            var source = draft.source(.nxnative) ?? .init(integration: .nxnative)
+            if !source.isEnabled {
+                source.isEnabled = true
+                source.generation = UUID()
+                if let index = draft.sources.firstIndex(where: { $0.integration == .nxnative }) { draft.sources[index] = source }
+                else { draft.sources.append(source) }
+            }
+            return true
         }
-        guard draft.games.count != current.games.count else { return current }
-        var source = current.source(.nxnative) ?? .init(integration: .nxnative)
-        if !source.isEnabled {
-            source.isEnabled = true
-            source.generation = UUID()
-            if let index = draft.sources.firstIndex(where: { $0.integration == .nxnative }) { draft.sources[index] = source }
-            else { draft.sources.append(source) }
-        }
-        return try store.save(draft, expectedRevision: current.revision)
     }
 
     public func removeNXNative(id: UUID) throws -> CatalogDocument {

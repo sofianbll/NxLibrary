@@ -624,7 +624,7 @@ extension AppViewModel {
                   request.importDestination.map({ $0.deletingLastPathComponent().standardizedFileURL.path
                       == gameAppsFolder.standardizedFileURL.path }) ?? true,
                   (request.importDestination != nil || CloudWorkScope(game) == request.scope),
-                  cloudBuildScope?.overlaps(request.scope) != true,
+                  porting.cloudBuildScope?.overlaps(request.scope) != true,
                   CloudSourceFiles(game) == request.sourceFiles, canChangeCloudLibrary(game),
                   let release = acquireSaveInstallLease(for: game) else {
                 cloudLibrary.update(id) {
