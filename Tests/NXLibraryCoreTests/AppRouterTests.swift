@@ -179,6 +179,19 @@ final class MenuSelectionModelTests: XCTestCase {
         XCTAssertEqual(focus.current(in: promoted), .close)
     }
 
+    func testActivityFocusNavigatesResultsAndClearAllWithoutRetargetingClear() {
+        let move = UUID(), first = UUID(), second = UUID()
+        var focus = ActivityCenterFocus()
+        let rows = ActivityCenterFocus.rows(isBuilding: false, move: move, results: [first, second])
+        focus.move(by: 1, in: rows)
+        XCTAssertEqual(focus.current(in: rows), .result(first))
+        let afterClear = ActivityCenterFocus.rows(isBuilding: false, move: move, results: [second])
+        XCTAssertEqual(focus.current(in: afterClear), .close)
+        focus.move(by: -1, in: afterClear)
+        XCTAssertEqual(focus.current(in: afterClear), .clearAll)
+        XCTAssertEqual(focus.current(in: [.move(move)]), .close)
+    }
+
     func testPowerSubmenuOpensAndCloses() {
         var model = MenuSelectionModel(selected: .power)
         XCTAssertFalse(model.isPowerOpen)

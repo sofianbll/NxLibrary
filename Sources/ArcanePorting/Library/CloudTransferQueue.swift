@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 import NXLibraryCore
 
 public enum CloudLibraryItem: String, Codable, CaseIterable, Hashable, Sendable {
@@ -48,63 +47,38 @@ public final class CloudTransferQueue: Sendable {
     public struct Entry: Codable, Equatable, Sendable {
         public let id: UUID
         public let action: CloudLibraryAction
+        package let token: UUID?
+        package let storage: String?
 
         public init(id: UUID, action: CloudLibraryAction) {
+            self.init(id: id, action: action, token: nil, storage: nil)
+        }
+
+        package init(id: UUID, action: CloudLibraryAction, token: UUID?, storage: String?) {
             self.id = id
             self.action = action
+            self.token = token
+            self.storage = storage
         }
     }
 
-    private struct Snapshot: Codable {
-        let version: Int
-        let entries: [Entry]
-    }
-
-    private let file: URL
-    private let io = DispatchQueue(label: "local.nxlibrary.cloud-transfer-queue", qos: .utility)
-    private static let log = Logger(subsystem: "local.nxlibrary", category: "cloud-transfer-queue")
+    private let store: ActivityQueueFile<Entry>
 
     public init(file: URL = AppData.supportRoot.appendingPathComponent("cloud-transfer-queue.json")) {
-        self.file = file
+        store = ActivityQueueFile(file: file)
     }
 
-    public func load() async -> [Entry] {
-        await withCheckedContinuation { continuation in
-            io.async {
-                do {
-                    let snapshot = try JSONDecoder().decode(Snapshot.self, from: Data(contentsOf: self.file))
-                    if snapshot.version == 1 {
-                        continuation.resume(returning: snapshot.entries)
-                        return
-                    }
-                    Self.log.error("Unsupported cloud transfer queue version")
-                } catch where (error as NSError).code == NSFileReadNoSuchFileError && (error as NSError).domain == NSCocoaErrorDomain {
-                    // No queue has been written in this profile.
-                } catch {
-                    Self.log.error("Could not read the cloud transfer queue")
-                }
-                continuation.resume(returning: [])
-            }
-        }
-    }
-
-    public func save(_ entries: [Entry]) {
-        io.async {
-            do {
-                try FileManager.default.createDirectory(at: self.file.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try JSONEncoder().encode(Snapshot(version: 1, entries: entries)).write(to: self.file, options: .atomic)
-            } catch {
-                Self.log.error("Could not save the cloud transfer queue")
-            }
-        }
-    }
-
-    public func flush() async {
-        await withCheckedContinuation { continuation in io.async { continuation.resume() } }
-    }
+    public func load() async -> [Entry] { await store.load() }
+    public func save(_ entries: [Entry]) { store.save(entries) }
+    public func flush() async { await store.flush() }
 
     public static func restoring(_ entries: [Entry], gameIDs: Set<UUID>) -> [Entry] {
         var remaining = gameIDs
-        return entries.filter { remaining.remove($0.id) != nil }
+        var tokens = Set<UUID>()
+        return entries.filter {
+            guard remaining.contains($0.id), $0.token.map({ tokens.insert($0).inserted }) ?? true else { return false }
+            remaining.remove($0.id)
+            return true
+        }
     }
 }

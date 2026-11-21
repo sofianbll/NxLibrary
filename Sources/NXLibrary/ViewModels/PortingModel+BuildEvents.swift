@@ -151,6 +151,7 @@ extension PortingModel {
 
         // Displayed state can retain a finished result for an explicit retry,
         // but is never serialized as a replacement catalog.
+        var activityFailure: String?
         if var game = app.libraryGames.first(where: { $0.id == gameID }) {
             let toolchain = activeBuildToolchain ?? ToolchainInfo(engineCommit: app.setup.activeEngineCommit, verified: false)
             let verified = toolchain.verified
@@ -195,6 +196,7 @@ extension PortingModel {
                     self.buildState = .failed
                     self.buildSuccessPath = nil
                     self.buildError = "The build is ready. Retry installation."
+                    activityFailure = L10n.text("Installation failed")
                     self.portingFailureReason = nil
                     app.lastError = result.error
                     app.presentInstallFailure(for: game, error: result.error ?? "Installation failed.")
@@ -226,6 +228,7 @@ extension PortingModel {
                     sourcePaths: game.sources.map(\.url.path)
                 )
                 let message = reason.what(game: game.name)
+                activityFailure = reason.title
                 game.status = .failed
                 game.portingFailure = .failed
                 game.portingFailureReason = reason
@@ -241,6 +244,7 @@ extension PortingModel {
             }
 
             let saved = app.persistBuildOutcome(game)
+            if !saved { activityFailure = L10n.text("Library not saved") }
             if result.success && saved {
                 if result.heldApp == nil { app.appIcon.appIconBuildLogs[gameID] = result.logURL }
                 app.loadLibrary()
@@ -259,6 +263,8 @@ extension PortingModel {
         buildPreviousStatus = nil
         app.currentBuildGameID = nil
         activeBuildToolchain = nil
+        finishActivityBuild(result.cancelled ? .cancelled : result.success && activityFailure == nil
+            ? .succeeded : .failed(activityFailure ?? L10n.text("Porting failed")))
         scheduleNextBuild()
     }
 

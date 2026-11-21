@@ -17,9 +17,14 @@ struct ActivityCenterView: View {
 
     static func rows(_ viewModel: AppViewModel) -> [ActivityCenterFocus.Row] {
         let cloud = viewModel.cloudLibrary
-        return ActivityCenterFocus.rows(isBuilding: viewModel.isBuilding, activeBuild: viewModel.portingGameID,
-                                        queuedBuilds: viewModel.buildQueue, activeCloud: cloud.active?.request.token,
-                                        queuedCloud: cloud.queue.map(\.token))
+        let porting = viewModel.porting
+        let pending = Set(porting.pendingBuilds.entries.map(\.value.id) + cloud.queue.map(\.token)
+            + [porting.activeBuildRequest?.id, cloud.active?.request.token, cloud.libraryMove?.id].compactMap { $0 })
+        return ActivityCenterFocus.rows(isBuilding: viewModel.isBuilding || porting.activeBuildRequest != nil,
+            activeBuild: viewModel.portingGameID ?? porting.activeBuildRequest?.gameID,
+            queuedBuilds: viewModel.buildQueue, activeCloud: cloud.active?.request.token,
+            queuedCloud: cloud.queue.map(\.token), move: cloud.libraryMove?.id,
+            results: viewModel.activityResults.entries.map(\.id).filter { !pending.contains($0) })
     }
 
     var body: some View {
@@ -31,8 +36,26 @@ struct ActivityCenterView: View {
             VStack(alignment: .leading, spacing: canvas.u(20)) {
                 Text(text("Activity center")).seleneFont(30, .semibold)
                     .accessibilityAddTraits(.isHeader)
-                section("Compilation", empty: "No compilation", rows: rows.filter(\.opensPorting), focused: focused)
-                section("Cloud", empty: "No cloud transfer", rows: rows.filter { !$0.opensPorting }, focused: focused)
+                if rows.isEmpty {
+                    Text(text("No activity")).seleneFont(15).foregroundColor(SeleneTheme.ink60)
+                } else {
+                    ScrollViewReader { scroll in
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: canvas.u(20)) {
+                                section("Compilation", rows: rows.filter(\.opensPorting), focused: focused)
+                                section("Cloud", rows: rows.filter {
+                                    switch $0 { case .cloud, .queuedCloud, .move: return true; default: return false }
+                                }, focused: focused)
+                                section("Results", rows: rows.filter {
+                                    switch $0 { case .result, .clearAll: return true; default: return false }
+                                }, focused: focused)
+                            }
+                        }
+                        .frame(maxHeight: canvas.u(620))
+                        .onAppear { scroll.scrollTo(focused) }
+                        .onChange(of: focused) { _, row in scroll.scrollTo(row) }
+                    }
+                }
             }
             .foregroundColor(SeleneTheme.ink)
             .multilineTextAlignment(.leading)
@@ -46,79 +69,105 @@ struct ActivityCenterView: View {
     }
 
     private func hints(_ row: ActivityCenterFocus.Row) -> [HintItem] {
-        [
+        switch row {
+        case .result(let id):
+            return [
+                result(id)?.canRetry == true ? HintItem(.a, "Retry", action: { onOpen(row) }) : nil,
+                HintItem(.x, "Clear", action: { onCancel(row) })
+            ].compactMap { $0 }
+        case .clearAll:
+            return [HintItem(.a, "Clear all", action: { onOpen(row) })]
+        default: break
+        }
+        return [
             row.opensPorting ? HintItem(.a, "Open", action: { onOpen(row) }) : nil,
-            row.canCancel(isCancellingBuild: porting.isCancellingBuild) ? HintItem(.x, "Cancel", action: { onCancel(row) }) : nil
+            canCancel(row) ? HintItem(.x, "Cancel", action: { onCancel(row) }) : nil
         ].compactMap { $0 }
     }
 
-    private func section(_ key: String, empty: String, rows: [ActivityCenterFocus.Row],
+    @ViewBuilder private func section(_ key: String, rows: [ActivityCenterFocus.Row],
                          focused: ActivityCenterFocus.Row) -> some View {
-        VStack(alignment: .leading, spacing: canvas.u(8)) {
-            Text(text(key)).seleneFont(12, .bold).tracking(canvas.u(1.4))
-                .textCase(.uppercase).foregroundColor(SeleneTheme.ink60)
-                .accessibilityAddTraits(.isHeader)
-            if rows.isEmpty {
-                Text(text(empty)).seleneFont(15).foregroundColor(SeleneTheme.ink60)
-                    .padding(.vertical, canvas.u(4))
-            } else if rows.count <= 3 {
+        if !rows.isEmpty {
+            VStack(alignment: .leading, spacing: canvas.u(8)) {
+                Text(text(key)).seleneFont(12, .bold).tracking(canvas.u(1.4))
+                    .textCase(.uppercase).foregroundColor(SeleneTheme.ink60)
+                    .accessibilityAddTraits(.isHeader)
                 rowList(rows, focused: focused)
-            } else {
-                ScrollViewReader { scroll in
-                    ScrollView { rowList(rows, focused: focused) }
-                        .frame(height: canvas.u(270))
-                        .onAppear { if rows.contains(focused) { scroll.scrollTo(focused) } }
-                        .onChange(of: focused) { _, row in
-                            if rows.contains(row) { scroll.scrollTo(row) }
-                        }
-                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func rowList(_ rows: [ActivityCenterFocus.Row], focused: ActivityCenterFocus.Row) -> some View {
-        VStack(spacing: canvas.u(8)) {
+        LazyVStack(alignment: .leading, spacing: canvas.u(8)) {
             ForEach(rows, id: \.self) { row in
-                let job = job(row)
-                ActivityRow(title: job.title, detail: job.detail, fraction: job.fraction, active: job.active,
-                            focused: focused == row, canCancel: row.canCancel(isCancellingBuild: porting.isCancellingBuild),
-                            open: row.opensPorting ? { onOpen(row) } : nil, cancel: { onCancel(row) })
-                    .id(row)
-                    .onHover { if $0 { onFocus(row) } }
+                Group {
+                    switch row {
+                    case .clearAll:
+                        SelenePillButton(title: "Clear all", focused: focused == row) { onOpen(row) }
+                    case .result(let id):
+                        if let item = result(id) {
+                            let status = status(item.outcome)
+                            ActivityRow(title: title(item.job, name: item.name), detail: status.detail,
+                                        fraction: nil, status: status.key, color: status.color, focused: focused == row,
+                                        open: nil, cancel: nil, retry: item.canRetry ? { onOpen(row) } : nil,
+                                        clear: { onCancel(row) })
+                        }
+                    default:
+                        let job = liveJob(row)
+                        ActivityRow(title: job.title, detail: job.detail, fraction: job.fraction,
+                                    status: job.active ? "In progress" : "Queued",
+                                    color: job.active ? SeleneTheme.ink : SeleneTheme.ink60,
+                                    focused: focused == row, open: row.opensPorting ? { onOpen(row) } : nil,
+                                    cancel: canCancel(row) ? { onCancel(row) } : nil, retry: nil, clear: nil)
+                    }
+                }
+                .id(row)
+                .onHover { if $0 { onFocus(row) } }
             }
         }
     }
 
-    private func job(_ row: ActivityCenterFocus.Row) -> (title: String, detail: String?, fraction: Double?, active: Bool) {
+    private func liveJob(_ row: ActivityCenterFocus.Row) -> (title: String, detail: String?, fraction: Double?, active: Bool) {
         switch row {
         case .build(let id):
-            let progress = viewModel.portingProgress
+            let progress = viewModel.isBuilding ? viewModel.portingProgress : nil
             let fraction = progress?.activityFraction
-            let stage = porting.isCancellingBuild ? text("Cancelling…")
+            let stage = !viewModel.isBuilding ? text("Preparing build…")
+                : porting.isCancellingBuild ? text("Cancelling…")
                 : progress?.isUpdatingShaderCache == true ? text("Updating shader cache")
                 : BuildStageCopy.title(porting.currentStageName, context: localization)
             let eta = porting.isCancellingBuild ? nil : progress.flatMap {
                 PortingETA.text($0, lastFinishingSeconds: porting.lastPortingFinishSeconds,
                                 context: localization, compact: true)
             }
-            return (gameName(id, fallback: "Compilation"), detail(stage, fraction, eta), fraction, true)
+            let request = porting.activeBuildRequest
+            let name = viewModel.libraryGames.first { $0.id == id }?.name ?? request?.name
+            return (label(request?.rebuild == true ? "Rebuild" : "Build", name), detail(stage, fraction, eta), fraction, true)
         case .queuedBuild(let id):
-            return (gameName(id, fallback: "Compilation"), nil, nil, false)
+            guard let request = porting.pendingBuilds.entries.first(where: { $0.id == id })?.value else {
+                return (text("Build"), nil, nil, false)
+            }
+            return (title(.build(request), name: request.name), nil, nil, false)
         case .cloud:
             guard let request = cloudLibrary.active?.request else { return (text("Cloud"), nil, nil, true) }
             let progress = cloudLibrary.states[request.id]?.progress
             let fraction = CloudLibraryProgressView.fraction(progress)
             let stage = text(progress.map(CloudLibraryProgressView.phaseKey) ?? "Preparing cloud operation…")
-            return (gameName(request.id, fallback: request.scope.title),
+            return (title(.cloud(request.entry), name: request.name),
                     detail(stage, fraction, CloudLibraryProgressView.estimate(progress, context: localization, compact: true)),
                     fraction, true)
         case .queuedCloud(let token):
             guard let request = cloudLibrary.queue.first(where: { $0.token == token }) else {
                 return (text("Cloud"), nil, nil, false)
             }
-            return (gameName(request.id, fallback: request.scope.title), nil, nil, false)
-        case .close: return ("", nil, nil, false)
+            return (title(.cloud(request.entry), name: request.name), nil, nil, false)
+        case .move:
+            guard let move = cloudLibrary.libraryMove else { return (text("Move library"), nil, nil, true) }
+            return (title(.move(move.request), name: move.request.destination),
+                    detail(text(move.isCancelling ? "Cancelling…" : "Moving games…"), move.fraction, nil),
+                    move.fraction, true)
+        case .result, .clearAll, .close: return ("", nil, nil, false)
         }
     }
 
@@ -127,8 +176,48 @@ struct ActivityCenterView: View {
             .compactMap { $0 }.joined(separator: " · ")
     }
 
-    private func gameName(_ id: UUID?, fallback: String) -> String {
-        viewModel.libraryGames.first { $0.id == id }?.name ?? text(fallback)
+    private func canCancel(_ row: ActivityCenterFocus.Row) -> Bool {
+        switch row {
+        case .build: return viewModel.isBuilding && row.canCancel(isCancellingBuild: porting.isCancellingBuild)
+        case .move: return cloudLibrary.libraryMove?.isCancelling == false
+        default: return row.canCancel(isCancellingBuild: porting.isCancellingBuild)
+        }
+    }
+
+    private func result(_ id: UUID) -> ActivityHistory.Result? {
+        viewModel.activityResults.entries.first { $0.id == id }
+    }
+
+    private func title(_ job: ActivityHistory.Job, name: String?) -> String {
+        let key: String
+        switch job {
+        case .build(let request): key = request.rebuild ? "Rebuild" : "Build"
+        case .move: key = "Move library"
+        case .cloud(let request):
+            switch request.action {
+            case .upload(.app): key = "Send app"
+            case .upload(.cache): key = "Send cache"
+            case .upload(nil): key = "Send app and cache"
+            case .restore(.app): key = "Download app"
+            case .restore(.cache), .restoreBuildCache: key = "Download cache"
+            case .uploadSources: key = "Send game files"
+            case .downloadSources: key = "Download game files"
+            case .free: key = "Free up space"
+            }
+        }
+        return label(key, name)
+    }
+
+    private func label(_ key: String, _ name: String?) -> String {
+        [text(key), name].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    private func status(_ outcome: ActivityHistory.Outcome) -> (key: String, color: Color, detail: String?) {
+        switch outcome {
+        case .succeeded: return ("Succeeded", SeleneTheme.statusOK, nil)
+        case .failed(let reason): return ("Failed", SeleneTheme.danger, reason)
+        case .cancelled: return ("Cancelled", SeleneTheme.ink60, nil)
+        }
     }
 
     private func text(_ key: String) -> String { L10n.text(key, context: localization) }
@@ -140,60 +229,61 @@ private struct ActivityRow: View {
     let title: String
     let detail: String?
     let fraction: Double?
-    let active: Bool
+    let status: String
+    let color: Color
     let focused: Bool
-    let canCancel: Bool
     let open: (() -> Void)?
-    let cancel: () -> Void
+    let cancel: (() -> Void)?
+    let retry: (() -> Void)?
+    let clear: (() -> Void)?
 
     var body: some View {
-        Group {
-            if let open {
-                Button(action: open) { content }
-                    .buttonStyle(.plain)
-                    .accessibilityHint(L10n.text("Open porting", context: localization))
-            } else {
-                content
-            }
-        }
-        .overlay(alignment: .topTrailing) {
-            SelenePillButton.roundIcon(.close, enabled: canCancel, action: cancel)
-                .disabled(!canCancel)
-                .help(L10n.text("Cancel", context: localization))
-                .accessibilityLabel(L10n.text("Cancel", context: localization))
-                .accessibilityHint(title)
-        }
-        .modifier(SeleneOptionRowSurface(focused: focused))
-    }
-
-    private var content: some View {
         VStack(alignment: .leading, spacing: canvas.u(8)) {
             HStack(spacing: canvas.u(18)) {
-                VStack(alignment: .leading, spacing: canvas.u(3)) {
-                    Text(title).seleneFont(17, .semibold).lineLimit(1)
-                    if let detail {
-                        Text(detail).seleneFont(15).foregroundColor(SeleneTheme.ink60).lineLimit(1)
-                            .monospacedDigit()
+                Group {
+                    if let open {
+                        Button(action: open) { content }.buttonStyle(.plain)
+                            .accessibilityHint(L10n.text("Open porting", context: localization))
+                    } else {
+                        content
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                ZStack(alignment: .leading) {
-                    status(!active).hidden().accessibilityHidden(true)
-                    status(active)
+                SeleneStatusDot(text: L10n.text(status, context: localization), color: color).fixedSize()
+                if let retry {
+                    SelenePillButton(title: "Retry", minWidth: 0, height: 44, horizontalPadding: 16,
+                                     focused: focused, action: retry)
+                        .accessibilityHint(title)
                 }
-                .fixedSize()
+                if let clear {
+                    SelenePillButton(title: "Clear", minWidth: 0, height: 44, horizontalPadding: 16,
+                                     focused: focused && retry == nil, action: clear)
+                        .accessibilityHint(title)
+                }
+                if let cancel {
+                    SelenePillButton.roundIcon(.close, action: cancel)
+                        .help(L10n.text("Cancel", context: localization))
+                        .accessibilityLabel(L10n.text("Cancel", context: localization))
+                        .accessibilityHint(title)
+                }
             }
-            .padding(.trailing, canvas.u(62))
             .frame(minHeight: canvas.u(44))
             if let fraction, fraction > 0 {
                 AchievementProgressBar(fraction: fraction, height: 4)
             }
         }
-        .contentShape(Rectangle())
+        .modifier(SeleneOptionRowSurface(focused: focused))
     }
 
-    private func status(_ active: Bool) -> some View {
-        SeleneStatusDot(text: L10n.text(active ? "In progress" : "Queued", context: localization),
-                        color: active ? SeleneTheme.ink : SeleneTheme.ink60)
+    private var content: some View {
+        VStack(alignment: .leading, spacing: canvas.u(3)) {
+            Text(title).seleneFont(17, .semibold).lineLimit(1)
+            if let detail {
+                Text(detail).seleneFont(15).foregroundColor(SeleneTheme.ink60).lineLimit(2)
+                    .monospacedDigit()
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
     }
 }

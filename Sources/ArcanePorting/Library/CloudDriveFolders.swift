@@ -8,15 +8,15 @@ public struct CloudDriveFolders: Sendable {
         public let names: [String]
     }
 
-    public struct MovePlan: Sendable {
+    public struct MovePlan: Equatable, Codable, Sendable {
         public let source: String
         public let games: Int
         public let bytes: Int64
-        fileprivate let remote: String
+        package let remote: String
         fileprivate let entries: [MoveEntry]
     }
 
-    fileprivate struct MoveEntry: Sendable {
+    fileprivate struct MoveEntry: Equatable, Codable, Sendable {
         let file: StorageObject
         let dependencies: [StorageObject]
     }
@@ -157,7 +157,8 @@ public struct CloudDriveFolders: Sendable {
     /// Run only after confirmation; a skipped key (or manifest with missing dependencies) prevents activation.
     public func move(_ plan: MovePlan, to destination: String,
                      progress: (Int, Int) async throws -> Void) async throws -> [String] {
-        guard remote == plan.remote, Self.canMove(from: plan.source, to: destination) else {
+        guard remote == plan.remote, Self.canMove(from: plan.source, to: destination),
+              !plan.entries.isEmpty, plan.entries.allSatisfy(Self.validMoveEntry) else {
             throw StorageBackendError.invalidKey
         }
         try await verifyUniqueFolder(plan.source)
@@ -185,6 +186,28 @@ public struct CloudDriveFolders: Sendable {
             try await progress(index + 1, plan.entries.count)
         }
         return conflicts
+    }
+
+    private static func validMoveEntry(_ entry: MoveEntry) -> Bool {
+        func parts(_ object: StorageObject) -> [String]? {
+            let path = object.key.value.components(separatedBy: "/")
+            guard path.count == 3, path.allSatisfy(validName), SaveLocation.validID(path[0]),
+                  path[0] == path[0].uppercased(), object.size >= 0 else { return nil }
+            return path
+        }
+        func isArchive(_ path: [String]) -> Bool {
+            CloudArtifactKind(rawValue: path[1]) != nil
+                && path[2].range(of: #"^[0-9a-f]{64}\.aar\z"#, options: .regularExpression) != nil
+        }
+        guard let path = parts(entry.file) else { return false }
+        if isArchive(path) { return entry.dependencies.isEmpty }
+        return path[1] == "manifests"
+            && path[2].range(of: #"^[0-9]{16}-[0-9a-f]{64}\.json\z"#, options: .regularExpression) != nil
+            && entry.dependencies.count == CloudArtifactKind.allCases.count
+            && entry.dependencies.allSatisfy {
+            guard let dependency = parts($0) else { return false }
+            return dependency[0] == path[0] && isArchive(dependency)
+        }
     }
 
     private func moveFile(_ file: StorageObject, from source: String, to destination: String) async throws -> Item? {

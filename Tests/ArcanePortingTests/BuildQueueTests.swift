@@ -4,6 +4,79 @@ import XCTest
 @testable import ArcanePorting
 
 final class BuildQueueTests: XCTestCase {
+    func testVersionedBuildSnapshotRestoresInterruptedFirstAndIgnoresInvalidEntries() async throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: file) }
+        let store = ActivityQueueFile<BuildRequest>(file: file)
+        let active = BuildRequest(gameID: UUID(), name: "Active", arguments: ["--allow-damaged"], rebuild: true)
+        let queued = BuildRequest(gameID: UUID(), name: "Queued", withoutCache: true)
+        store.save([active, queued])
+        await store.flush()
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        var entries = try XCTUnwrap(json["entries"] as? [[String: Any]])
+        var invalid = entries[0]
+        invalid["arguments"] = ["--output", "/not-allowed"]
+        entries.insert(invalid, at: 1)
+        entries.append(entries[0])
+        json["entries"] = entries
+        try JSONSerialization.data(withJSONObject: json).write(to: file)
+
+        let loaded = await ActivityQueueFile<BuildRequest>(file: file).load()
+        let restored = BuildRequest.restoring(loaded)
+        XCTAssertEqual(restored.map(\.id), [active.id, queued.id])
+        XCTAssertTrue(restored.allSatisfy(\.localSourcesOnly))
+        XCTAssertEqual(restored[0].arguments, active.arguments)
+        XCTAssertTrue(restored[1].withoutCache)
+    }
+
+    func testResultsRetainLastOutcomeUntilClearedAndRetryKeepsTheWork() async throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: file) }
+        let store = ActivityQueueFile<ActivityHistory.Result>(file: file)
+        var history = ActivityHistory()
+        let request = BuildRequest(gameID: UUID(), name: "Fixture", withoutCache: true)
+        history.record(id: request.id, job: .build(request), name: request.name, outcome: .failed("Fixture failure"))
+        let other = UUID()
+        history.record(id: other, job: .cloud(.init(id: UUID(), action: .upload(.app))), name: nil, outcome: .cancelled)
+        store.save(history.entries)
+        await store.flush()
+        let saved = await ActivityQueueFile<ActivityHistory.Result>(file: file).load()
+        history = ActivityHistory()
+        history.restore(saved)
+        XCTAssertFalse(history.retry(request.id) { _ in false })
+        XCTAssertEqual(history.entries.count, 2)
+        XCTAssertTrue(history.retry(request.id) { result in
+            result.job == .build(request)
+        })
+        history.record(id: request.id, job: .build(request), name: request.name, outcome: .succeeded)
+        XCTAssertEqual(history.entries.map(\.outcome), [.succeeded, .cancelled])
+        XCTAssertFalse(history.retry(request.id) { _ in XCTFail("Success cannot retry"); return true })
+        history.clear(request.id)
+        XCTAssertEqual(history.entries.map(\.id), [other])
+        history.clear()
+        XCTAssertTrue(history.entries.isEmpty)
+    }
+
+    func testRestoredBuildRequiresLocalSourcesAndRebuildRequiresTheApp() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let source = folder.appendingPathComponent("fixture.nsp")
+        let app = folder.appendingPathComponent("fixture.app")
+        var game = PortedGame(name: "Fixture", url: app, platform: .macApp, sizeBytes: 1, modificationDate: Date())
+        game.sources = [.init(url: source, kind: .base, sizeBytes: 1)]
+        let build = BuildRequest(gameID: game.id, name: game.name)
+        let rebuild = BuildRequest(gameID: game.id, name: game.name, rebuild: true)
+        XCTAssertFalse(build.canResumeAutomatically(game))
+        try Data([0]).write(to: source)
+        XCTAssertTrue(build.canResumeAutomatically(game))
+        XCTAssertFalse(rebuild.canResumeAutomatically(game))
+        try FileManager.default.createDirectory(at: app, withIntermediateDirectories: false)
+        XCTAssertTrue(rebuild.canResumeAutomatically(game))
+        try FileManager.default.removeItem(at: source)
+        XCTAssertFalse(rebuild.canResumeAutomatically(game))
+    }
+
     func testOnlyOneRequestPerGameAndCancellationKeepsFIFO() {
         let active = UUID(), first = UUID(), cancelled = UUID(), last = UUID()
         let queue = BuildQueue<String>()

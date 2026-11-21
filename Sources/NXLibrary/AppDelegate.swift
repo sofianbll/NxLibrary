@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// The profile's store outlives the last window so it can finish a selection write when quitting.
     @MainActor static var settingsStore: AppSettingsStore?
     @MainActor static var cloudLibrary: CloudLibraryModel?
+    @MainActor static weak var activityOwner: AppViewModel?
     @MainActor static var showCloudQuit: (() -> Void)?
     @MainActor static weak var shellWindow: NSWindow?
     @MainActor private static var cloudQuitCleanupComplete = false
@@ -45,7 +46,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard let cloud = Self.cloudLibrary else { return .terminateNow }
         // .terminateLater runs a modal loop that stalls shell input and main-actor cleanup.
-        switch CloudQuitDecision.resolve(isWorking: cloud.isWorking, hasQueueWrites: cloud.hasQueueWrites,
+        let activity = Self.activityOwner
+        switch CloudQuitDecision.resolve(isWorking: cloud.isWorking, hasQueueWrites: cloud.hasQueueWrites
+                                            || activity?.hasActivityWrites == true || activity?.porting.hasBuildQueueWrites == true
+                                            || activity?.buildQueue.isEmpty == false || activity?.activityResults.entries.isEmpty == false,
                                          isQuitting: cloud.isQuitting, cleanupComplete: Self.cloudQuitCleanupComplete,
                                          relaunchScheduled: Self.relaunchScheduled) {
         case .quit:
@@ -68,6 +72,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let cleanup = cloudLibrary?.stopForQuit() else { return }
         Task {
             await cleanup.value
+            if let owner = activityOwner {
+                await owner.restoreActivity()
+                await owner.porting.buildQueueStore.flush()
+                await owner.activityStore.flush()
+            }
             cloudQuitCleanupComplete = true
             sender.terminate(nil)
         }

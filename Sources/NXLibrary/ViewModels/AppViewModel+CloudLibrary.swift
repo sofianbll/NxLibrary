@@ -137,16 +137,18 @@ struct CloudWorkScope: Equatable {
 
 final class CloudLibraryModel: ObservableObject {
     struct Request {
-        let token = UUID()
+        var token = UUID()
         let id: UUID
+        let name: String
         let action: CloudLibraryAction
+        let storage: String?
         let scope: CloudWorkScope
         let importDestination: URL?
         let sourceFiles: CloudSourceFiles?
         let onSuccess: (() -> Void)?
         var resumed = false
 
-        var entry: CloudTransferQueue.Entry { .init(id: id, action: action) }
+        var entry: CloudTransferQueue.Entry { .init(id: id, action: action, token: token, storage: storage) }
     }
 
     @Published private(set) var preference: CloudLibraryPreference
@@ -169,12 +171,25 @@ final class CloudLibraryModel: ObservableObject {
     var reads: [UUID: (token: UUID, task: Task<Void, Never>)] = [:]
     var queue: [Request] = []
     var active: (request: Request, task: Task<Void, Never>)?
+    @Published var libraryMove: LibraryMoveActivity?
+    var libraryMoveTask: Task<Void, Never>?
     let queueStore = CloudTransferQueue()
     var isRestoringQueue = false
     var hasRestoredQueue = false
     private(set) var isQuitting = false
     private(set) var hasQueueWrites = false
-    var isWorking: Bool { active != nil || !queue.isEmpty }
+    var isWorking: Bool { active != nil || !queue.isEmpty || libraryMove != nil }
+
+    func storageScope(for action: CloudLibraryAction) -> String? {
+        switch action {
+        case .uploadSources, .downloadSources:
+            return preference.sourcesStorage
+        case .free(let items) where items.contains(.sources):
+            return [preference.storage, preference.sourcesStorage].compactMap { $0 }.joined(separator: "\n")
+        default:
+            return preference.storage
+        }
+    }
 
     @MainActor func persistQueue() {
         guard hasRestoredQueue, !isQuitting else { return }
@@ -189,8 +204,11 @@ final class CloudLibraryModel: ObservableObject {
         catalogCheck?.task.cancel()
         let transfer = active?.task
         transfer?.cancel()
+        libraryMove?.isCancelling = true
+        let move = libraryMoveTask
         return Task {
             await transfer?.value
+            await move?.value
             await queueStore.flush()
         }
     }
@@ -385,13 +403,15 @@ extension AppViewModel {
                 return
             }
             self.cloudLibrary.hasRestoredQueue = true
-            defer { self.checkCloudCatalog() }
+            defer { self.checkCloudCatalog(); self.porting.scheduleNextBuild() }
             let games = self.libraryGames
             guard !entries.isEmpty else { return }
             let restored = CloudTransferQueue.restoring(entries, gameIDs: Set(games.map(\.id)))
             self.objectWillChange.send()
             for entry in restored {
-                guard let game = games.first(where: { $0.id == entry.id }),
+                let storage = self.cloudLibrary.storageScope(for: entry.action)
+                guard entry.storage == nil || entry.storage == storage,
+                      let game = games.first(where: { $0.id == entry.id }),
                       game.titleId.map(SaveLocation.validID) == true else { continue }
                 self.cloudLibrary.reads[game.id]?.task.cancel()
                 self.cloudLibrary.reads[game.id] = nil
@@ -399,7 +419,8 @@ extension AppViewModel {
                     $0.action = entry.action; $0.queued = true; $0.refreshing = false
                 }
                 let destination = self.cloudImportDestination(for: game, action: entry.action)
-                self.cloudLibrary.queue.append(.init(id: game.id, action: entry.action, scope: destination.map {
+                self.cloudLibrary.queue.append(.init(token: entry.token ?? UUID(), id: game.id, name: game.name,
+                    action: entry.action, storage: storage, scope: destination.map {
                     CloudWorkScope(title: game.titleId ?? "", urls: [$0])
                 } ?? CloudWorkScope(game), importDestination: destination,
                              sourceFiles: CloudSourceFiles(game), onSuccess: nil, resumed: true))
@@ -426,7 +447,8 @@ extension AppViewModel {
     }
 
     var canConfigureCloudLibrary: Bool {
-        !isBuilding && !isCheckingCloudBuild && !isUpdatingApp && !cloudLibrary.isWorking && !cloudLibrary.isChangingConnection
+        !isBuilding && !isCheckingCloudBuild && !isUpdatingApp && !cloudLibrary.isWorking
+            && !cloudLibrary.isChangingConnection && !cloudLibrary.isQuitting && !cloudQuitRequested
     }
 
     @MainActor func canChangeCloudLibrary(_ game: PortedGame) -> Bool {
@@ -440,18 +462,19 @@ extension AppViewModel {
 
     @MainActor func startCloudBuild(for game: PortedGame, archive: CloudGameArchive, extraArguments: [String],
                                     onStarted: (() -> Void)?, withoutCache: Bool,
-                                    queuedName: String?, canStart: ((PortedGame) -> Bool)?,
+                                    queuedName: String?, request: BuildRequest?, canStart: ((PortedGame) -> Bool)?,
                                     afterSourcesDownloaded: (() -> Void)?) async {
         let target = libraryGames.first(where: { $0.id == game.id }) ?? game
         guard let title = target.titleId, SaveLocation.validID(title) else {
-            reportCloudBuildError(NXLibraryError.missingTitleId, queuedName: queuedName)
+            reportCloudBuildError(NXLibraryError.missingTitleId, queuedName: queuedName, request: request)
             return
         }
         do {
             if !GameResourceState.sourcesAvailable(for: target) {
+                if request?.localSourcesOnly == true { throw NXLibraryError.missingSources }
                 try await confirmCloudSourcesDownload(for: target, archive: archive, extraArguments: extraArguments,
                                                       onStarted: onStarted, withoutCache: withoutCache,
-                                                      afterSourcesDownloaded: afterSourcesDownloaded)
+                                                      afterSourcesDownloaded: afterSourcesDownloaded, request: request)
                 return
             }
             let token = try await archive.beginBuild(titleID: title)
@@ -463,6 +486,8 @@ extension AppViewModel {
                     check = try await archive.checkRebuild(locations, sourcesAvailable: true, withoutCache: withoutCache)
                 } catch {
                     await release()
+                    if request != nil { porting.finishActivityBuild(.failed(cloudMessage(for: error))) }
+                    guard !cloudLibrary.isQuitting else { return }
                     showCloudBuildNotice(for: target, archive: archive, extraArguments: extraArguments,
                                          onStarted: onStarted, canDownload: false)
                     return
@@ -472,9 +497,12 @@ extension AppViewModel {
                     throw NXLibraryError.missingSources
                 case .downloadCache:
                     await release()
+                    if request != nil { porting.finishActivityBuild(.failed(L10n.text("Build needs a verified cache."))) }
+                    guard !cloudLibrary.isQuitting else { return }
                     showCloudBuildNotice(for: target, archive: archive, extraArguments: extraArguments,
                                          onStarted: onStarted, canDownload: true)
                 case .allowed:
+                    guard !cloudLibrary.isQuitting else { await release(); return }
                     guard let current = libraryGames.first(where: { $0.id == target.id }),
                           current.titleId == target.titleId, current.workspacePath == target.workspacePath,
                           current.buildCachePath == target.buildCachePath else { throw CloudArchiveError.busy }
@@ -492,11 +520,13 @@ extension AppViewModel {
                 throw error
             }
         } catch {
-            reportCloudBuildError(error, queuedName: queuedName)
+            reportCloudBuildError(error, queuedName: queuedName, request: request)
         }
     }
 
-    private func reportCloudBuildError(_ error: Error, queuedName: String?) {
+    private func reportCloudBuildError(_ error: Error, queuedName: String?, request: BuildRequest?) {
+        guard !cloudLibrary.isQuitting else { return }
+        if request != nil { porting.finishActivityBuild(.failed(cloudMessage(for: error))) }
         if let queuedName { porting.logSkippedBuild(queuedName, reason: error.localizedDescription) }
         else { porting.presentBuildError(error) }
     }
@@ -509,7 +539,8 @@ extension AppViewModel {
 
     @MainActor private func confirmCloudSourcesDownload(for game: PortedGame, archive: CloudGameArchive,
                                                         extraArguments: [String], onStarted: (() -> Void)?,
-                                                        withoutCache: Bool, afterSourcesDownloaded: (() -> Void)?) async throws {
+                                                        withoutCache: Bool, afterSourcesDownloaded: (() -> Void)?,
+                                                        request: BuildRequest?) async throws {
         guard let sources = cloudLibrary.sourceArchive, let files = CloudSourceFiles(game) else {
             throw NXLibraryError.missingSources
         }
@@ -517,6 +548,8 @@ extension AppViewModel {
         guard status.state == .cloudOnly else { throw NXLibraryError.missingSources }
         let bytes = try await sources.downloadSize(folderName: files.folderName, files: files.files)
         guard bytes > 0 else { throw NXLibraryError.missingSources }
+        guard !cloudLibrary.isQuitting else { return }
+        if request != nil { porting.finishActivityBuild(.failed(L10n.text("Game files not found"))) }
         let size = bytes.formatted(.byteCount(style: .file).locale(L10n.context.formatLocale))
         showSettingsNotice(title: L10n.text("Rebuild"),
             message: L10n.format("Download %@ to rebuild?", [size]), actionTitle: "Download", cancelTitle: "Cancel") { [weak self] in
@@ -531,7 +564,7 @@ extension AppViewModel {
                     if let afterSourcesDownloaded { afterSourcesDownloaded() }
                     else {
                         self.porting.submitBuild(for: game, extraArguments: extraArguments, onStarted: onStarted,
-                                         withoutCache: withoutCache)
+                                         withoutCache: withoutCache, request: request)
                     }
                 }
                 if queued { self.cloudLibraryGameID = game.id }
@@ -643,8 +676,15 @@ extension AppViewModel {
         enqueueCloudLibrary(action, for: selected)
     }
 
+    @MainActor func retryCloudOperation(_ entry: CloudTransferQueue.Entry, token: UUID) -> Bool {
+        guard entry.storage == cloudLibrary.storageScope(for: entry.action),
+              let game = libraryGames.first(where: { $0.id == entry.id }) else { return false }
+        return enqueueCloudLibrary(entry.action, for: game, retryToken: token)
+    }
+
     @MainActor @discardableResult
     private func enqueueCloudLibrary(_ action: CloudLibraryAction, for selected: PortedGame,
+                                     retryToken: UUID? = nil,
                                      onSuccess: (() -> Void)? = nil) -> Bool {
         guard cloudLibrary.archive != nil, !cloudLibrary.isQuitting,
               cloudLibrary.hasRestoredQueue,
@@ -653,7 +693,7 @@ extension AppViewModel {
               game.sources == selected.sources,
               game.titleId.map(SaveLocation.validID) == true,
               cloudLibrary.states[game.id]?.action == nil,
-              onSuccess != nil || cloudLibrary.states[game.id]?.refreshing != true,
+              retryToken != nil || onSuccess != nil || cloudLibrary.states[game.id]?.refreshing != true,
               canChangeCloudLibrary(game) else {
             cloudLibrary.update(selected.id) {
                 $0.issue = (action.item(during: nil), cloudMessage(for: CloudArchiveError.busy), true)
@@ -662,16 +702,17 @@ extension AppViewModel {
         }
         let state = cloudLibrary.states[game.id] ?? CloudLibraryState()
         let files = CloudSourceFiles(game)
-        switch action {
-        case .upload(let kind):
+        switch (action, retryToken != nil) {
+        case (_, true): break // Retry rechecks current copies under the lease, after the FIFO wait.
+        case (.upload(let kind), false):
             guard kind.map(state.canUpload) ?? state.canUploadBoth else { return false }
-        case .free(let items):
+        case (.free(let items), false):
             let choices = CloudFreeSelection(state: state)
             guard !items.isEmpty, items.allSatisfy(choices.allows) else { return false }
-        case .uploadSources:
+        case (.uploadSources, false):
             guard files != nil, state.sources?.state == .notInCloud,
                   GameResourceState.sourcesAvailable(for: game) else { return false }
-        case .downloadSources:
+        case (.downloadSources, false):
             guard files != nil, onSuccess != nil || state.sources?.state == .cloudOnly else { return false }
         default: break
         }
@@ -679,10 +720,11 @@ extension AppViewModel {
         cloudLibrary.reads[game.id] = nil
         objectWillChange.send()
         let destination = cloudImportDestination(for: game, action: action)
-        cloudLibrary.queue.append(.init(id: game.id, action: action, scope: destination.map {
+        cloudLibrary.queue.append(.init(token: retryToken ?? UUID(), id: game.id, name: game.name,
+            action: action, storage: cloudLibrary.storageScope(for: action), scope: destination.map {
             CloudWorkScope(title: game.titleId ?? "", urls: [$0])
         } ?? CloudWorkScope(game), importDestination: destination,
-                                        sourceFiles: files, onSuccess: onSuccess))
+                                        sourceFiles: files, onSuccess: onSuccess, resumed: retryToken != nil))
         cloudLibrary.update(game.id) {
             $0.action = action; $0.queued = true; $0.progress = nil; $0.message = nil; $0.issue = nil; $0.refreshing = false
         }
@@ -707,10 +749,12 @@ extension AppViewModel {
                   porting.cloudBuildScope?.overlaps(request.scope) != true,
                   CloudSourceFiles(game) == request.sourceFiles, canChangeCloudLibrary(game),
                   let release = acquireSaveInstallLease(for: game) else {
+                let reason = cloudMessage(for: CloudArchiveError.busy)
                 cloudLibrary.update(id) {
                     $0.action = nil; $0.queued = false
-                    $0.issue = (action.item(during: nil), cloudMessage(for: CloudArchiveError.busy), true)
+                    $0.issue = (action.item(during: nil), reason, true)
                 }
+                recordActivity(request.token, job: .cloud(request.entry), name: request.name, outcome: .failed(reason))
                 continue
             }
             cloudLibrary.update(id) { $0.queued = false }
@@ -729,7 +773,7 @@ extension AppViewModel {
         catalogCheck?.cancel()
         return Task { [weak self] in
             guard let self else { release(); return }
-            var succeeded = false
+            var outcome: ActivityHistory.Outcome = .cancelled
             defer {
                 assert(self.cloudLibrary.active?.request.token == request.token)
                 self.objectWillChange.send()
@@ -741,7 +785,8 @@ extension AppViewModel {
                     $0.action = nil; $0.progress = nil
                 }
                 if !self.cloudLibrary.isQuitting {
-                    if succeeded { request.onSuccess?() }
+                    self.recordActivity(request.token, job: .cloud(request.entry), name: request.name, outcome: outcome)
+                    if outcome == .succeeded { request.onSuccess?() }
                     self.startNextCloudOperation()
                     self.appIcon.syncPendingAppIcons()
                     Task { await self.refreshCloudLibrary(game) }
@@ -767,7 +812,11 @@ extension AppViewModel {
                 let operation: CloudLibraryAction
                 if request.resumed {
                     guard let eligible = try await self.resumableCloudAction(request, archive: archive, game: game, target: target)
-                    else { return }
+                    else {
+                        outcome = .failed(L10n.text("Cloud operation no longer available."))
+                        self.cloudLibrary.update(id) { $0.issue = (action.item(during: nil), L10n.text("Cloud operation no longer available."), true) }
+                        return
+                    }
                     operation = eligible
                 } else { operation = action }
                 try Task.checkCancellation()
@@ -823,7 +872,7 @@ extension AppViewModel {
                     }
                 }
                 try Task.checkCancellation()
-                succeeded = true
+                outcome = .succeeded
             } catch is CancellationError {
                 continuation.finish()
                 await listener.value
@@ -834,9 +883,11 @@ extension AppViewModel {
                 if let detail = (error as? CloudArchiveError)?.diagnosticDetail {
                     self.logs.append(LogEntry(level: .error, message: detail))
                 }
+                let reason = self.cloudMessage(for: error)
+                outcome = Task.isCancelled ? .cancelled : .failed(reason)
                 self.cloudLibrary.update(id) {
                     if (error as? CloudArchiveError) == .needsFullUpload { $0.mustResendBoth = true }
-                    $0.issue = (action.item(during: $0.progress), self.cloudMessage(for: error), true)
+                    $0.issue = (action.item(during: $0.progress), reason, outcome != .cancelled)
                 }
             }
         }
@@ -928,6 +979,7 @@ extension AppViewModel {
         objectWillChange.send()
         let request = cloudLibrary.queue.remove(at: index)
         cloudLibrary.update(request.id) { $0.action = nil; $0.queued = false }
+        recordActivity(request.token, job: .cloud(request.entry), name: request.name, outcome: .cancelled)
         cloudLibrary.persistQueue()
         appIcon.syncPendingAppIcons()
         porting.scheduleNextBuild()

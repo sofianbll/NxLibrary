@@ -7,8 +7,8 @@ import ArcanePorting
 /// What a failed porting offers: Port anyway, the notification and the failure's actions.
 extension PortingModel {
     // MARK: - Failure actions
-    /// Restarts the failed porting once with the reason's one `--allow-*` flag; the flag is not
-    /// remembered, and the Metal gate's flag still comes from the persisted override.
+    /// Retries with the reason's one `--allow-*` flag on this request, not as a game preference.
+    /// The Metal gate still reads its own persisted override.
     func portAnyway() {
         guard case .portAnyway(let flag) = self.portingFailureReason?.action,
               let id = app.lastBuildGameID,

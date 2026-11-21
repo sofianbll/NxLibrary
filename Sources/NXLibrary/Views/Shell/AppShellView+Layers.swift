@@ -136,7 +136,8 @@ extension AppShellView {
                         MenuOverlayView(
                             router: router,
                             cloudLibrary: viewModel.cloudLibrary,
-                            hasBuildActivity: viewModel.isBuilding || !viewModel.buildQueue.isEmpty,
+                            hasBuildActivity: viewModel.isBuilding || viewModel.isCheckingCloudBuild
+                                || !viewModel.buildQueue.isEmpty || !viewModel.activityResults.entries.isEmpty,
                             onSelect: { runMenuAction($0) },
                             onSelectPower: { runPower($0) }
                         )
@@ -242,6 +243,7 @@ extension AppShellView {
         .preferredColorScheme(.dark)
         .frame(minWidth: 1100, minHeight: 700)
         .onAppear(perform: startRuntime)
+        .task { await viewModel.restoreActivity() }
         .onReceive(viewModel.cloudLibrary.$archive) { _ in
             Task { @MainActor in
                 viewModel.restoreCloudQueue()
@@ -252,6 +254,7 @@ extension AppShellView {
             if !scanning {
                 viewModel.restoreCloudQueue()
                 viewModel.importCloudGames()
+                viewModel.porting.scheduleNextBuild()
             }
         }
         .onReceive(settings.$loadError) { error in

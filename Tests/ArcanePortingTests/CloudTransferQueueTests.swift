@@ -18,7 +18,7 @@ final class CloudTransferQueueTests: XCTestCase {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: folder) }
         let store = CloudTransferQueue(file: folder.appendingPathComponent("queue.json"))
-        let active = CloudTransferQueue.Entry(id: UUID(), action: .upload(nil))
+        let active = CloudTransferQueue.Entry(id: UUID(), action: .upload(nil), token: UUID(), storage: "fixture:Games")
         let missing = CloudTransferQueue.Entry(id: UUID(), action: .restore(.app))
         let waiting = CloudTransferQueue.Entry(id: UUID(), action: .free([.app, .cache, .sources]))
         let entries = [active, missing, waiting, active]
@@ -33,12 +33,14 @@ final class CloudTransferQueueTests: XCTestCase {
     func testInvalidAndFutureFilesLoadEmptyWithoutBeingOverwritten() async throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: file) }
-        let store = CloudTransferQueue(file: file)
         for text in ["not JSON", #"{"version":2,"entries":[]}"#] {
+            let store = CloudTransferQueue(file: file)
             let data = Data(text.utf8)
             try data.write(to: file)
             let loaded = await store.load()
             XCTAssertEqual(loaded, [])
+            store.save([.init(id: UUID(), action: .restore(.app))])
+            await store.flush()
             XCTAssertEqual(try Data(contentsOf: file), data)
         }
     }

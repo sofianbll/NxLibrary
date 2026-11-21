@@ -9,8 +9,11 @@ import ArcanePorting
 /// screens. What the rest of Arcane reads of a porting stays on `AppViewModel`: `isBuilding`, `currentBuildGameID`
 /// and `portingProgress` (the home's tile).
 final class PortingModel: ObservableObject {
-    typealias QueuedBuild = (name: String, arguments: [String], withoutCache: Bool)
-    let pendingBuilds = BuildQueue<QueuedBuild>()
+    let pendingBuilds = BuildQueue<BuildRequest>()
+    let buildQueueStore = ActivityQueueFile<BuildRequest>(file: AppData.supportRoot.appendingPathComponent("build-queue.json"))
+    var hasRestoredBuildQueue = false
+    var hasBuildQueueWrites = false
+    var activeBuildRequest: BuildRequest?
     var checkingCloudBuild: (id: UUID, scope: CloudWorkScope)?
     var checkingCloudBuildScope: CloudWorkScope? { checkingCloudBuild?.scope }
     var activeCloudBuildScope: CloudWorkScope?
