@@ -288,10 +288,15 @@ struct AddGameView: View {
 
     // MARK: - Hints
 
+    private var previousWizardStep: Int? {
+        PortingModel.stepBack(from: porting.buildWizardStep, isBuilding: viewModel.isBuilding,
+                              succeeded: porting.buildSuccessPath != nil, hasSelectedGame: porting.selectedGame != nil)
+    }
+
     private var backLabel: String {
         if editing != nil { return "Done" }
         if viewModel.isBuilding { return "Hide" }
-        return porting.buildWizardStep > 1 ? "Back" : "Close"
+        return previousWizardStep != nil ? "Back" : "Close"
     }
 
     private func aLabel(_ row: AddGameRow?) -> String {
@@ -414,9 +419,7 @@ struct AddGameView: View {
 
     private func handleBack() {
         if confirmDiscard { return dismissDiscard() }
-        if let step = PortingModel.stepBack(from: porting.buildWizardStep, isBuilding: viewModel.isBuilding,
-                                            succeeded: porting.buildSuccessPath != nil,
-                                            hasSelectedGame: porting.selectedGame != nil) {
+        if let step = previousWizardStep {
             SoundEffectService.shared.play(.back)
             withAnimation(reduceMotion ? nil : SeleneTheme.standard) {
                 porting.goToWizardStep(step)

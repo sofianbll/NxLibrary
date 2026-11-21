@@ -122,7 +122,7 @@ struct SpotlightPageModel { var links = [1]; var more: [Int] = [] }
     func canCheckCloudSources(for game: PortedGame) -> Bool { false }
 }
 @MainActor final class SoundEffectService {
-    enum Cue { case focus, click, error }
+    enum Cue { case focus, click, error, back, alert }
     static let shared = SoundEffectService()
     var count = 0
     func play(_ cue: Cue) { count += 1 }
@@ -255,6 +255,34 @@ final class NativeMenus { var isTracking = false }
 }
 @MainActor final class InputRecorder { var actions: [GamepadAction] = [] }
 // ACTUAL_ACTION_NAMES
+
+@MainActor final class PortingModel {
+    var buildWizardStep = 3
+    var isBuilding = false
+    var selectedGame: String?
+    var selectedGameFolder: URL?
+    var selectedSources: [URL] = []
+    var buildSuccessPath: String?
+    var portingGameID: UUID?
+    func addGameDidLeave() {}
+    // ACTUAL_GO_TO_WIZARD_STEP
+}
+@MainActor final class PortingWizardHost {
+    let viewModel = PortingModel()
+    var porting: PortingModel { viewModel }
+    let router = AppRouter()
+    var confirmDiscard = false
+    var confirmFocus = SeleneConfirmButton.cancel
+    var editing: String?
+    var reduceMotion = true
+    func cancel() { handleBack() } // The shared handler reached by B and Esc.
+    var hint: String { backLabel }
+    // ACTUAL_WIZARD_NAVIGATION
+}
+enum SeleneConfirmButton { case cancel }
+enum SeleneTheme { static let standard = 0 }
+func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
+
 @MainActor struct SteamPlayCoordinator {
     static let shared = Self()
     func canPlay(_ game: CatalogGame) -> Bool { true }
@@ -482,6 +510,28 @@ final class NativeMenus { var isTracking = false }
         NotificationCenter.default.removeObserver(cloudWatch)
         input.viewModel.cloudLibraryGameID = nil
 
+        let wizard = PortingWizardHost()
+        wizard.router.showDetail(firstModsGame.id)
+        wizard.router.openAddGame()
+        require(wizard.hint == "Close", "A finished build opened directly has no Review to go back to")
+        wizard.cancel()
+        require(wizard.router.route == .detail(firstModsGame.id),
+                "B/Esc must leave the result of a build started without a Review draft")
+
+        wizard.router.openAddGame()
+        wizard.viewModel.selectedGame = "Fixture"
+        require(wizard.hint == "Back", "A build with a Review draft should offer Back")
+        wizard.cancel()
+        require(wizard.router.route == .addGame && wizard.viewModel.buildWizardStep == 2,
+                "B/Esc must still return to the Review draft when one exists")
+
+        wizard.viewModel.buildWizardStep = 3
+        wizard.viewModel.isBuilding = true
+        require(wizard.hint == "Hide", "An active build should offer Hide")
+        wizard.cancel()
+        require(wizard.router.route == .detail(firstModsGame.id) && wizard.viewModel.isBuilding,
+                "B/Esc must still hide an active build without cancelling it")
+
         let detail = ResumeHost(game: firstModsGame)
         let engine = RunningGameMonitor.Host(pid: 411)
         var session = HomeMenu.Session(pid: engine.pid)
@@ -554,9 +604,18 @@ for marker, signature in (
 host = host.replace('// ACTUAL_AVAILABILITY_TYPE', declaration(
     'Sources/NXLibrary/Services/NativeMenuCommands.swift', 'struct NativeMenuAvailability'))
 host = host.replace('// ACTUAL_MENU', declaration(
-    'Sources/NXLibrary/Views/Shell/AppShellView.swift', '    private var nativeMenuAvailability:'))
+    'Sources/NXLibrary/Views/Shell/AppShellView.swift', '    var nativeMenuAvailability:'))
 host = host.replace('// ACTUAL_DIALOG', declaration(
-    'Sources/NXLibrary/Views/Shell/AppShellView.swift', '    private var nativeDialogOwnsInput:'))
+    'Sources/NXLibrary/Views/Shell/AppShellView.swift', '    var nativeDialogOwnsInput:'))
+host = host.replace('// ACTUAL_GO_TO_WIZARD_STEP', '\n'.join(
+    declaration('Sources/NXLibrary/ViewModels/PortingModel+AddGame.swift', signature)
+    for signature in ('    func goToWizardStep(', '    static func wizardStepReachable(',
+                      '    static func stepBack(', '    static func closingAsks(')))
+host = host.replace('// ACTUAL_WIZARD_NAVIGATION', '\n'.join(
+    declaration('Sources/NXLibrary/Views/AddGame/AddGameView.swift', signature)
+    for signature in ('    private var previousWizardStep:', '    private var backLabel:', '    private func handleBack(',
+                      '    private func requestClose(', '    private func dismissDiscard(',
+                      '    private func close(then ', '    private func leave(')))
 host = host.replace('// ACTUAL_RESUME', declaration(
     'Sources/NXLibrary/Services/RunningGameMonitor.swift', '    func resume(_ game:'))
 host = host.replace('// ACTUAL_PRIMARY_ACTION', declaration(

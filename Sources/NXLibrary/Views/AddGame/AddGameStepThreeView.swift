@@ -383,24 +383,23 @@ struct AddGameStepThreeView: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) { didCopyDiagnostics = false }
                 })
             }
-            specs += [
-                StepAction(id: "retry", title: viewModel.canRetryReadyInstall ? L10n.text("Retry installation") : L10n.text("Try again"),
-                           systemImage: "arrow.clockwise", kind: leadsWithAction ? .secondary : .primary,
-                           isEnabled: !viewModel.isBuilding) {
-                    porting.retryLastBuild()
-                },
-                StepAction(id: "options", title: L10n.text("Back to review"),
-                           systemImage: "slider.horizontal.3",
-                           kind: .secondary, isEnabled: true) {
+            specs.append(StepAction(id: "retry", title: viewModel.canRetryReadyInstall ? L10n.text("Retry installation") : L10n.text("Try again"),
+                                    systemImage: "arrow.clockwise", kind: leadsWithAction ? .secondary : .primary,
+                                    isEnabled: !viewModel.isBuilding) {
+                porting.retryLastBuild()
+            })
+            if porting.selectedGame != nil {
+                specs.append(StepAction(id: "options", title: L10n.text("Back to review"),
+                                        systemImage: "slider.horizontal.3", kind: .secondary, isEnabled: true) {
                     withAnimation(reduceMotion ? nil : SeleneTheme.standard) {
                         porting.goToWizardStep(2)
                     }
-                },
-                StepAction(id: "console", title: L10n.text("Open console"),
-                           systemImage: nil, kind: .quiet, isEnabled: true) {
-                    NotificationCenter.default.post(name: .nxLibraryOpenConsole, object: nil)
-                }
-            ]
+                })
+            }
+            specs.append(StepAction(id: "console", title: L10n.text("Open console"),
+                                    systemImage: nil, kind: .quiet, isEnabled: true) {
+                NotificationCenter.default.post(name: .nxLibraryOpenConsole, object: nil)
+            })
             return specs
         }
 
