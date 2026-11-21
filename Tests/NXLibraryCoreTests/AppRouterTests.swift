@@ -137,7 +137,7 @@ final class MenuSelectionModelTests: XCTestCase {
         XCTAssertTrue(model.isPowerOpen)
         XCTAssertEqual(model.power, .quit)
         model.movePower(by: 1)
-        XCTAssertEqual(model.power, .hide)
+        XCTAssertEqual(model.power, .sleep)
         model.movePower(by: 5)
         XCTAssertEqual(model.power, .relaunch)
         model.movePower(by: -9)
