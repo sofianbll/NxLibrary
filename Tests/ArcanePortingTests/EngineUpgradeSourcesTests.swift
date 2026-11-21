@@ -3,6 +3,19 @@ import XCTest
 @testable import ArcanePorting
 
 final class EngineUpgradeSourcesTests: XCTestCase {
+    func testAttachmentRequiresExactlyOnePlayableMatchByTitleID() {
+        let id: UInt64 = 0x01007EF00011E000
+        let url = URL(fileURLWithPath: "/fixture/Base.nsp")
+        let base = DetectedSource(url: url, kind: .base, titleId: id, version: 0, sizeBytes: 1)
+        let match = DetectedGame(baseTitleId: id, name: "Fixture", base: base)
+        let other = DetectedGame(baseTitleId: id + 1, name: "Fixture", base: base)
+        let incomplete = DetectedGame(baseTitleId: id, name: "Fixture", base: nil)
+        XCTAssertEqual(SourceSelection.attachmentMatch(in: [other, match], titleID: "01007ef00011e000"), match)
+        XCTAssertNil(SourceSelection.attachmentMatch(in: [other, incomplete], titleID: match.id))
+        XCTAssertNil(SourceSelection.attachmentMatch(in: [match, match], titleID: match.id))
+        XCTAssertNil(SourceSelection.attachmentMatch(in: [match], titleID: "invalid"))
+    }
+
     func testMultipleTitlesNeedAnExplicitChoiceButRescansKeepTheChosenTitle() {
         let titles = ["0100000000010000", "0100000000020000"]
         XCTAssertNil(SourceSelection.initialTitleID(available: titles, previous: nil))

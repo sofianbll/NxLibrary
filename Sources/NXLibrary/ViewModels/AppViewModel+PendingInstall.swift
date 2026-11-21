@@ -56,6 +56,9 @@ extension AppViewModel {
                 applyCatalog(catalog)
                 guard let outcome else { continue }
                 catalogBuildRecoveries.acknowledge(id: id, matching: recoveryGeneration)
+                if outcome.pendingInstall == nil, outcome.status == .built {
+                    Task { await refreshCloudLibrary(outcome) }
+                }
                 if gameWithInstallFailure?.id == id { gameWithInstallFailure = nil }
                 if porting.buildHeldGameID == id { porting.buildHeldGameID = nil }
                 if lastBuildGameID == id, outcome.pendingInstall == nil, outcome.status == .built {

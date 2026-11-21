@@ -3,6 +3,12 @@ import NXLibraryCore
 
 /// Selection is by content; workspace links and disk usage are by physical input.
 public enum SourceSelection {
+    public static func attachmentMatch(in games: [DetectedGame], titleID: String) -> DetectedGame? {
+        guard SaveLocation.validID(titleID), let id = UInt64(titleID, radix: 16) else { return nil }
+        let matches = games.filter { $0.baseTitleId == id && $0.hasGame }
+        return matches.count == 1 ? matches.first : nil
+    }
+
     public static func initialTitleID(available: [String], previous: String?) -> String? {
         if let previous, available.contains(previous) { return previous }
         return available.count == 1 ? available.first : nil

@@ -1,6 +1,116 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Add ported app": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Add ported app"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Aggiungi app già convertita"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ajouter une app déjà portée"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Portierte App hinzufügen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Añadir app portada"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Adicionar app portado"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "添加已移植的 App"}}
+      }
+    },
+    "Copy a local nxnative app into Game apps.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Copy a local nxnative app into Game apps."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Copia un’app nxnative locale nella cartella delle app."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Copier une app nxnative locale dans le dossier des apps de jeu."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Eine lokale nxnative-App in den Spiele-App-Ordner kopieren."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Copia una app nxnative local en la carpeta de apps de juegos."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Copie um app nxnative local para a pasta de apps de jogos."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "将本地 nxnative App 复制到游戏 App 文件夹。"}}
+      }
+    },
+    "Add one app at a time.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Add one app at a time."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Aggiungi un’app alla volta."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ajoutez une seule app à la fois."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Füge jeweils nur eine App hinzu."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Añade una sola app a la vez."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Adicione um app por vez."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "每次只能添加一个 App。"}}
+      }
+    },
+    "Replace game app?": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Replace game app?"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Sostituire l’app del gioco?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Remplacer l’app du jeu ?"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spiele-App ersetzen?"}},
+        "es": {"stringUnit": {"state": "translated", "value": "¿Reemplazar la app del juego?"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Substituir o app do jogo?"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "替换游戏 App？"}}
+      }
+    },
+    "This title already exists. Replace it in the library with a copy of the selected app? The selected app stays where it is.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "This title already exists. Replace it in the library with a copy of the selected app? The selected app stays where it is."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Il titolo esiste già. Vuoi sostituirlo in libreria con una copia dell’app selezionata? L’app selezionata resta dov’è."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ce titre existe déjà. Le remplacer dans la bibliothèque par une copie de l’app sélectionnée ? L’app d’origine reste à sa place."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Dieser Titel existiert bereits. Soll ihn eine Kopie der ausgewählten App in der Bibliothek ersetzen? Das Original bleibt unverändert."}},
+        "es": {"stringUnit": {"state": "translated", "value": "El título ya existe. ¿Reemplazarlo en la biblioteca por una copia de la app elegida? La app original no se mueve."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Este título já existe. Substituir na biblioteca por uma cópia do app selecionado? O app original fica onde está."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "此游戏已存在。要用所选 App 的副本替换游戏库中的版本吗？所选 App 会保留在原位。"}}
+      }
+    },
+    "Choose files": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose files"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli i file"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisir des fichiers"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Dateien auswählen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elegir archivos"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolher arquivos"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "选择文件"}}
+      }
+    },
+    "Choose game files or one folder.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose game files or one folder."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli i file del gioco o una cartella."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez des fichiers de jeu ou un dossier."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle Spieldateien oder einen Ordner aus."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige archivos del juego o una carpeta."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha os arquivos do jogo ou uma pasta."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "请选择游戏文件或一个文件夹。"}}
+      }
+    },
+    "Choose game files or one folder, not both.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose game files or one folder, not both."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli i file del gioco oppure una sola cartella, non entrambi."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez des fichiers de jeu ou un seul dossier, pas les deux."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle entweder Spieldateien oder einen einzelnen Ordner aus."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige archivos del juego o una sola carpeta, no ambos."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha os arquivos do jogo ou uma única pasta, não ambos."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "请选择游戏文件或一个文件夹，不可同时选择两者。"}}
+      }
+    },
+    "Choose playable source files for title ID %@.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose playable source files for title ID %@."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli sorgenti compilabili per l’ID titolo %@."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez des fichiers sources compilables pour le titre %@."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle Quelldateien, aus denen sich Titel %@ erstellen lässt."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige archivos de origen que permitan compilar el título %@."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha arquivos de origem que permitam compilar o título %@."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "请选择可用于构建标题 ID %@ 的源文件。"}}
+      }
+    },
+    "Choose NSP, XCI, NSZ or XCZ files, or one Switch 2 NUP file.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose NSP, XCI, NSZ or XCZ files, or one Switch 2 NUP file."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli file NSP, XCI, NSZ o XCZ, oppure un file NUP per Switch 2."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez des fichiers NSP, XCI, NSZ ou XCZ, ou un fichier NUP pour Switch 2."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle NSP-, XCI-, NSZ- oder XCZ-Dateien oder eine einzelne Switch-2-NUP-Datei."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige archivos NSP, XCI, NSZ o XCZ, o un archivo NUP de Switch 2."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha arquivos NSP, XCI, NSZ ou XCZ, ou um arquivo NUP de Switch 2."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "请选择 NSP、XCI、NSZ 或 XCZ 文件，或一个 Switch 2 NUP 文件。"}}
+      }
+    },
     "Sort games": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Sort games"}},

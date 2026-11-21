@@ -66,14 +66,6 @@ public enum GameAppDestination {
     }
 
     private static func titleID(at app: URL) -> String? {
-        guard let data = try? Data(contentsOf: app.appendingPathComponent("Contents/Info.plist")),
-              let info = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else {
-            return nil
-        }
-        let bundleID = info["CFBundleIdentifier"] as? String
-        let suffix = bundleID?.hasPrefix("org.nxnative.") == true
-            ? bundleID?.split(separator: ".").last.map(String.init) : nil
-        return [info["DMTitleID"] as? String, suffix].compactMap { $0 }
-            .compactMap(ImportService.normalizedTitleId).first
+        ImportService.info(at: app).flatMap(ImportService.titleID(in:))
     }
 }

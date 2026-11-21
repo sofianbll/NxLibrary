@@ -29,6 +29,10 @@ extension AddGameView {
         let folder = porting.selectedGameFolder
         rows.append(AddGameRow(id: "chooseFiles", kind: .action { porting.selectGameFiles() },
                                icon: .add, title: L10n.text("Choose game files"), about: L10n.text("NSP, XCI, NSZ, XCZ or a Switch 2 NUP.")))
+        rows.append(AddGameRow(id: "adoptApp", kind: .action { viewModel.chooseLocalApp() },
+                               icon: .add, title: L10n.text("Add ported app"),
+                               about: L10n.text("Copy a local nxnative app into Game apps."),
+                               enabled: viewModel.canAdoptLocalApp))
         rows.append(AddGameRow(id: "choose", kind: .action { porting.selectGameFolder() },
                                icon: .folder, title: folder == nil ? L10n.text("Choose folder") : L10n.text("Change folder"),
                                about: folder.map { ($0.path as NSString).abbreviatingWithTildeInPath }

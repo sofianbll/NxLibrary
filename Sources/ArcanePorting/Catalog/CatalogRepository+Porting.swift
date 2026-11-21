@@ -143,6 +143,30 @@ extension CatalogRepository {
             game.modificationDate = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? Date()
         }
     }
+
+    /// Adopt a verified local build without borrowing the replaced app's build record.
+    public func recordLocalAppAdoption(_ imported: PortedGame, replacing expected: PortedGame?) throws -> CatalogDocument {
+        try mutateNXNativeGames(enablingSource: true, requiringEnabledSource: true) { games in
+            guard let index = games.firstIndex(where: { $0.titleId?.uppercased() == imported.titleId }) else {
+                guard expected == nil else { throw CatalogStoreError.staleRevision }
+                games.append(imported)
+                return
+            }
+            guard let expected, expected.id == games[index].id,
+                  Self.sameObservationGeneration(expected, games[index]), games[index].status != .building,
+                  games[index].pendingInstall == nil else { throw CatalogStoreError.staleRevision }
+            games[index].url = imported.url
+            games[index].sizeBytes = imported.sizeBytes
+            games[index].modificationDate = imported.modificationDate
+            games[index].bundleId = imported.bundleId
+            games[index].versionString = imported.versionString
+            games[index].toolchain = imported.toolchain
+            games[index].lastBuild = nil
+            games[index].portingFailure = nil
+            games[index].cloudImportPending = nil
+            games[index].status = GameResourceState.sourcesAvailable(for: games[index]) ? .built : .builtSourcesMissing
+        }
+    }
 }
 
 extension CatalogRepository {

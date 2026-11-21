@@ -11,6 +11,15 @@ extension AppViewModel {
     func handleDroppedURLs(_ urls: [URL]) {
         dropErrorMessage = nil
         guard let first = urls.first else { return }
+        if let app = urls.first(where: { $0.isFileURL && $0.pathExtension.lowercased() == "app" }) {
+            guard urls.count == 1 else {
+                dropErrorMessage = L10n.text("Add one app at a time.")
+                return
+            }
+            adoptLocalApp(app)
+            return
+        }
+        guard first.isFileURL else { return }
 
         var isDir: ObjCBool = false
         if FileManager.default.fileExists(atPath: first.path, isDirectory: &isDir) {
@@ -21,6 +30,117 @@ extension AppViewModel {
                 self.porting.selectedGameFolder = parent
             }
         }
+    }
+
+    var canAdoptLocalApp: Bool {
+        !isScanningLibrary && !isBuilding && !isCheckingCloudBuild && !isCleaningStorage &&
+            !isUpdatingApp && !cloudLibrary.isWorking && !cloudLibrary.isChangingConnection
+    }
+
+    func chooseLocalApp() {
+        guard canAdoptLocalApp else { return }
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = false
+        panel.allowedContentTypes = [.applicationBundle]
+        panel.resolvesAliases = false
+        panel.prompt = L10n.text("Add ported app")
+        if panel.runModal() == .OK, let url = panel.url { adoptLocalApp(url) }
+    }
+
+    private func adoptLocalApp(_ url: URL) {
+        guard canAdoptLocalApp else { return }
+        let folder = gameAppsFolder
+        let existing = libraryGames
+        let explicitFolder = libraryFolder != nil
+        isScanningLibrary = true
+        Task { @MainActor [weak self] in
+            let result = await Task.detached(priority: .userInitiated) {
+                Result {
+                    try GameAppDestination.prepareInitialFolder(folder, hasExplicitChoice: explicitFolder)
+                    return try ImportService().prepareAdoption(from: url, into: folder, existing: existing)
+                }
+            }.value
+            guard let self else { return }
+            isScanningLibrary = false
+            defer { if !isScanningLibrary && libraryRescanRequested { loadLibrary() } }
+            do {
+                let plan = try result.get()
+                guard folder == gameAppsFolder, router?.route == .addGame, porting.buildWizardStep == 1 else { return }
+                if plan.conflicts {
+                    showSettingsNotice(title: L10n.text("Replace game app?"),
+                        message: L10n.text("This title already exists. Replace it in the library with a copy of the selected app? The selected app stays where it is."),
+                        actionTitle: L10n.text("Replace"), cancelTitle: L10n.text("Cancel")) { [weak self] in
+                            self?.installLocalApp(plan, in: folder, replacing: true)
+                        }
+                } else {
+                    installLocalApp(plan, in: folder, replacing: false)
+                }
+            } catch { alertMessage = error.localizedDescription }
+        }
+    }
+
+    private func installLocalApp(_ plan: ImportService.Adoption, in folder: URL, replacing: Bool) {
+        let importer = ImportService()
+        var game = plan.existing ?? importer.makeGame(from: plan.app)
+        guard canAdoptLocalApp, gameAppsFolder == folder, let title = game.titleId,
+              plan.existing?.pendingInstall == nil, !appIcon.appIconsInFlight.contains(game.id),
+              !buildQueue.contains(game.id), let release = acquireSaveInstallLease(for: game) else {
+            alertMessage = CloudArchiveError.busy.localizedDescription
+            return
+        }
+        game.url = plan.destination
+        let destinationGame = game
+        isScanningLibrary = true
+        Task { @MainActor in
+            defer {
+                release()
+                finishLocalAppWork()
+                porting.scheduleNextBuild()
+            }
+            do {
+                let staged = try await Task.detached(priority: .userInitiated) {
+                    try ImportService().stageAdoption(plan, replacing: replacing)
+                }.value
+                var published = false
+                var needsRecovery = false
+                defer {
+                    if !needsRecovery {
+                        let installed = published
+                        Task.detached(priority: .utility) {
+                            ImportService().cleanupAdoption(staged, published: installed)
+                        }
+                    }
+                }
+                guard folder == gameAppsFolder, !isBuilding, !isCheckingCloudBuild, !cloudLibrary.isWorking,
+                      RunningGameMonitor.runningApplication(for: destinationGame) == nil else { throw CloudArchiveError.busy }
+                do {
+                    try importer.publishAdoption(staged) { imported in
+                        applyCatalog(try catalogRepository.recordLocalAppAdoption(importer.makeGame(from: imported),
+                                                                                   replacing: plan.existing))
+                    }
+                    published = true
+                } catch {
+                    needsRecovery = error as? CloudArchiveError == .installFailed
+                    throw error
+                }
+                if let installed = libraryGames.first(where: { $0.titleId == title }) {
+                    librarySelection.selectedGameID = installed.id
+                    if router?.route == .addGame, porting.buildWizardStep == 1, porting.selectedGameFolder == nil {
+                        porting.addGameDidLeave()
+                        router?.back()
+                        router?.requestSpotlightSelect(installed.id)
+                    }
+                    logs.append(LogEntry(level: .success, message: L10n.format("Added %@ to the library.", [installed.name])))
+                    appIcon.reconcileAppIcons()
+                    Task { await refreshCloudLibrary(installed) }
+                }
+            } catch { alertMessage = error.localizedDescription }
+        }
+    }
+
+    private func finishLocalAppWork() {
+        isScanningLibrary = false
+        if libraryRescanRequested { loadLibrary() }
     }
 
     // MARK: - Library
@@ -118,57 +238,65 @@ extension AppViewModel {
     /// Attach source files to an already-imported app. The app URL, version and
     /// build metadata stay intact; the library entry is merged, never duplicated.
     func locateSources(for game: PortedGame) {
-        guard let titleId = game.titleId, !titleId.isEmpty else {
-            alertMessage = "This game has no title ID, so its sources cannot be matched."
+        guard canAdoptLocalApp, !porting.isScanningGameFolder else { return }
+        guard let titleId = game.titleId, SaveLocation.validID(titleId) else {
+            alertMessage = L10n.text("This game has no valid title ID.")
             return
         }
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.prompt = "Locate Sources"
-        panel.message = "Choose the folder holding the base, update and DLC files for \(game.name)."
-        guard panel.runModal() == .OK, let folder = panel.url else { return }
+        guard let selected = porting.chooseGameFiles(allowFolder: true), let first = selected.first else { return }
+        let isFolder = selected.count == 1 && first.hasDirectoryPath
+        guard isFolder || !selected.contains(where: \.hasDirectoryPath) else {
+            alertMessage = L10n.text("Choose game files or one folder, not both.")
+            return
+        }
+        let folder = isFolder ? first : first.deletingLastPathComponent()
 
         porting.isScanningGameFolder = true
+        let generation = UUID()
+        porting.scanGeneration = generation
         let catalog = sourceCatalog
         let repo = URL(fileURLWithPath: setup.nxnativePath)
         let toolchain = setup.engineToolchain
         let keys = setup.isProdKeysValid ? setup.keyStore.keyURL : nil
         let developer = setup.resolvedDeveloperDir()
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let urls = ExtractedSourceCatalog.recognizes(folder) ? [] : PortingModel.sourceFileURLs(in: folder)
+            let urls = isFolder ? (ExtractedSourceCatalog.recognizes(folder) ? [] : PortingModel.sourceFileURLs(in: folder)) : selected
             let outcome = Result { try PortingModel.scanSources(in: folder, files: urls, catalog: catalog,
-                repo: repo, toolchain: toolchain, keys: keys, developerDir: developer) }
-            let detected = (try? outcome.get().games) ?? []
-            let match = detected.first {
-                String(format: "%016llX", $0.baseTitleId)
-                    .caseInsensitiveCompare(titleId) == .orderedSame
-            }
+                repo: repo, toolchain: toolchain, keys: keys, developerDir: developer, allowExtractedFolder: isFolder) }
             DispatchQueue.main.async {
-                guard let self else { return }
+                guard let self, self.porting.scanGeneration == generation else { return }
                 self.porting.isScanningGameFolder = false
-                guard let match, match.hasGame else {
-                    if case .failure(let error) = outcome { self.alertMessage = error.localizedDescription }
-                    else { self.alertMessage = "No base, update or DLC files for \(game.name) were found in that folder." }
-                    self.logs.append(LogEntry(level: .warning, message: self.alertMessage!))
-                    return
-                }
-                var selected = [match.base].compactMap { $0 }
-                if let newest = match.updates.max(by: {
-                    ($0.version ?? -1) < ($1.version ?? -1)
-                }) {
-                    selected.append(newest)
-                }
-                selected += match.dlcs
                 do {
-                    let updated = try self.porting.addGame(
-                        detected: match,
-                        selected: selected,
-                        folder: nil,
-                        bundleId: game.bundleId
-                    )
-                    self.librarySelection.selectedGameID = updated.id
+                    let detected = try outcome.get()
+                    guard let match = SourceSelection.attachmentMatch(in: detected.games, titleID: titleId) else {
+                        self.alertMessage = L10n.format("Choose playable source files for title ID %@.", [titleId])
+                        return
+                    }
+                    let files = PortingModel.selectableGame(from: match).files
+                    let choices = SourceSelection.initial(in: files)
+                    let sources = files.filter { choices.contains($0.id) }.map {
+                        var file = $0
+                        file.isSymlink = true
+                        return file
+                    }
+                    guard self.porting.supportsSources(sources), SourceSelection.hasGame(sources),
+                          SourceSelection.matchesNUPProgram(sources, titleID: titleId) else {
+                        throw NXLibraryError.environmentBlocked(L10n.text("These sources need an engine with extracted-folder or multi-title support."))
+                    }
+                    guard self.canAdoptLocalApp, !self.buildQueue.contains(game.id) else { throw CloudArchiveError.busy }
+                    let scratch = BuildScratch.choose(core: self.core, appFolder: self.gameAppsFolder)
+                    let workspace = WorkspaceManager(root: scratch.workspaces).plannedWorkspace(for: match, mode: .staged)
+                    self.applyCatalog(try self.catalogRepository.updateNXNative(id: game.id) { stored in
+                        guard stored.titleId == titleId, stored.sources == game.sources, stored.pendingInstall == nil else {
+                            throw CatalogStoreError.staleRevision
+                        }
+                        stored.sources = sources
+                        stored.workspacePath = stored.workspacePath ?? workspace.directory.path
+                        stored.buildCachePath = stored.buildCachePath ?? workspace.buildCache.path
+                        stored.status = GameResourceState.reconciledStatus(for: stored,
+                            appExists: FileManager.default.fileExists(atPath: stored.url.path),
+                            sourcesAvailable: GameResourceState.sourcesAvailable(for: stored))
+                    })
                     self.logs.append(LogEntry(level: .success,
                         message: L10n.format("Sources attached to %@; rebuild is now available if the toolchain gate allows it.", [String(describing: game.name)])))
                 } catch {

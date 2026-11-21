@@ -200,14 +200,7 @@ extension PortingModel {
 
     @discardableResult
     func selectGameFiles(startingNewGameWith defaults: GameRuntimeConfig? = nil) -> Bool {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = true
-        panel.allowedContentTypes = ["nsp", "xci", "nsz", "xcz", "nup"].compactMap { UTType(filenameExtension: $0) }
-        panel.prompt = "Choose files"
-        panel.message = "Choose NSP, XCI, NSZ or XCZ files, or one Switch 2 NUP file."
-        guard panel.runModal() == .OK, let first = panel.urls.first else { return false }
+        guard let urls = chooseGameFiles(), let first = urls.first else { return false }
         if let defaults { startNewAddGame(defaults: defaults) }
         let folder = first.deletingLastPathComponent()
         restoringGameFolder = true
@@ -215,9 +208,22 @@ extension PortingModel {
         selectedGameFolder = folder
         keepsRememberedGameFolder = false
         restoringGameFolder = false
-        selectedPackageURLs = panel.urls
+        selectedPackageURLs = urls
         scanGameFolder(folder)
         return true
+    }
+
+    func chooseGameFiles(allowFolder: Bool = false) -> [URL]? {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = allowFolder
+        panel.allowsMultipleSelection = true
+        panel.allowedContentTypes = ["nsp", "xci", "nsz", "xcz", "nup"].compactMap { UTType(filenameExtension: $0) }
+        panel.directoryURL = gameFilesFolder
+        panel.prompt = L10n.text("Choose files")
+        panel.message = allowFolder ? L10n.text("Choose game files or one folder.")
+            : L10n.text("Choose NSP, XCI, NSZ or XCZ files, or one Switch 2 NUP file.")
+        return panel.runModal() == .OK ? panel.urls : nil
     }
 
     func goToWizardStep(_ step: Int) {
