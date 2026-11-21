@@ -198,13 +198,8 @@ struct DetailsTopBlock: View {
     private var cloudPill: some View {
         let index = pillSet.detailsCloudIndex
         let indicator = CloudLibraryIndicator(state: cloud.states[game.id] ?? CloudLibraryState())
-        return SelenePillButton(title: nil, minWidth: 52, height: 52, horizontalPadding: 0,
-                               focused: focusedPill == index) { onPill(index) }
-            .overlay {
-                CloudLibraryBadge(indicator: indicator)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-            }
+        return SelenePillButton(title: nil, icon: indicator.pillIcon, iconSize: 20, minWidth: 52, height: 52,
+                               horizontalPadding: 0, focused: focusedPill == index) { onPill(index) }
             .onHover { if $0 { onHoverPill(index) } }
             .accessibilityLabel(L10n.text("Cloud library"))
             .accessibilityValue(indicator.label(context: localization))

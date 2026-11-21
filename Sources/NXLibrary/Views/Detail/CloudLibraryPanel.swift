@@ -399,6 +399,23 @@ struct CloudLibraryIndicator {
         return Self.copyColor(copy)
     }
 
+    /// The Details and Spotlight pill: one Material glyph drawn like the favorite heart (white, dark when focused).
+    var pillIcon: MaterialIcon {
+        if queued { return .cloudQueue }
+        if progress {
+            switch state.action {
+            case .upload, .uploadSources: return .cloudUpload
+            default: return .cloudDownload
+            }
+        }
+        switch copy {
+        case .synchronized: return .cloudDone
+        case .cloudOnly: return .cloudDownload
+        case .newerOnThisMac: return .cloudUpload
+        case .notInCloud, .unknown: return .cloud
+        }
+    }
+
     static func copyColor(_ copy: CloudArtifactStatus.State) -> Color {
         switch copy {
         case .synchronized: return SeleneTheme.success
