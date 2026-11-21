@@ -38,7 +38,7 @@ enum CloudArchiveStream {
     private static func pump(_ arguments: [String], to sink: Process, kind: CloudArtifactKind,
                              estimatedBytes: Int64, progress: (@Sendable (StorageProgress) -> Void)?,
                              archiver: CommandCancellation, uploader: CommandCancellation) throws -> Result {
-        let fromAA = Pipe(), toRclone = Pipe(), toDecoder = Pipe()
+        let fromAA = Pipe(), toRclone = Pipe(), toDecoder = Pipe(), errors = Pipe()
         let producer = Process()
         producer.executableURL = URL(fileURLWithPath: "/usr/bin/aa")
         producer.arguments = arguments
@@ -47,13 +47,24 @@ enum CloudArchiveStream {
         producer.standardOutput = fromAA
         sink.standardInput = toRclone
         sink.standardOutput = FileHandle.nullDevice
-        sink.standardError = FileHandle.nullDevice
+        sink.standardError = errors
 
         let send = toRclone.fileHandleForWriting, inspect = toDecoder.fileHandleForWriting
         for writer in [send, inspect] {
             guard fcntl(writer.fileDescriptor, F_SETNOSIGPIPE, 1) == 0 else { throw CloudArchiveError.invalidArchive }
         }
         try uploader.launch(sink)
+        var diagnostic: CloudLibraryFailure?
+        let readErrors = DispatchWorkItem {
+            // Drain the pipe without storing logs; retain only a safe category.
+            var tail = Data()
+            try? errors.fileHandleForReading.forEachChunk { chunk in
+                let text = String(decoding: tail + chunk, as: UTF8.self)
+                diagnostic = CloudLibraryFailure.rclone(text, status: 1) ?? diagnostic
+                tail = Data(chunk.suffix(256))
+            }
+        }
+        DispatchQueue.global(qos: .utility).async(execute: readErrors)
         defer { uploader.cancel(); sink.waitUntilExit(); uploader.finish() }
         try archiver.launch(producer)
         defer { archiver.cancel(); producer.waitUntilExit(); archiver.finish() }
@@ -89,6 +100,9 @@ enum CloudArchiveStream {
             try? send.close()
             try? inspect.close()
             decoded.wait()
+            sink.waitUntilExit()
+            readErrors.wait()
+            if let diagnostic { throw diagnostic }
             if case .failure(let failure) = inventory { throw failure }
             throw error
         }
@@ -97,6 +111,8 @@ enum CloudArchiveStream {
         decoded.wait()
         producer.waitUntilExit()
         sink.waitUntilExit()
+        readErrors.wait()
+        if sink.terminationStatus != 0, let diagnostic { throw diagnostic }
         guard producer.terminationStatus == 0, bytes > 0 else { throw CloudArchiveError.invalidArchive }
         guard sink.terminationStatus == 0 else { throw StorageBackendError.processFailed(status: sink.terminationStatus) }
         guard let inventory else { throw CloudArchiveError.invalidArchive }

@@ -342,7 +342,8 @@ struct CloudSetupAssistant: View {
             catch is CancellationError {}
             catch {
                 if !Task.isCancelled && work?.id == id {
-                    issue = (error as? RcloneConfiguration.Failure)?.key ?? RcloneConfiguration.Failure.test.key
+                    issue = (error as? CloudLibraryFailure)?.messageKey
+                        ?? (error as? RcloneConfiguration.Failure)?.key ?? RcloneConfiguration.Failure.test.key
                 }
             }
         })
@@ -407,7 +408,7 @@ struct CloudSetupAssistant: View {
             do { result = try await service.list(path, ticket: ticket) }
             catch StorageBackendError.notFound {
                 if !Task.isCancelled && draft.matches(ticket) { folderMissing = !path.isEmpty }
-                throw RcloneConfiguration.Failure.test
+                throw CloudLibraryFailure.folderMissing
             }
             guard !Task.isCancelled, draft.matches(result.ticket) else { return }
             checkingMove = checkOld

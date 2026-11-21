@@ -191,11 +191,22 @@ public struct RcloneConfiguration: Sendable {
         let path = "\(remote):\(preference.root)"
         let flags = ["--drive-skip-shortcuts", "--retries", "1", "--low-level-retries", "1",
                      "--contimeout", "5s", "--timeout", "10s"]
-        let output = try await checked(["lsjson", path, "--stat"] + flags, or: .test)
+        func checkFolder(_ arguments: [String]) async throws -> String {
+            let result = try await command(arguments + flags, or: .test)
+            guard result.status == 0 else {
+                if let failure = CloudLibraryFailure.rclone(result.stderr, status: result.status, listingFolder: true) {
+                    throw failure
+                }
+                throw Failure.test
+            }
+            return result.stdout
+        }
+        let output = try await checkFolder(["lsjson", path, "--stat"])
+        if output.trimmingCharacters(in: .whitespacesAndNewlines) == "null" { throw CloudLibraryFailure.folderMissing }
         guard let item = try? JSONDecoder().decode(Item.self, from: Data(output.utf8)), item.isDirectory else {
             throw Failure.test
         }
-        _ = try await checked(["lsf", path, "--max-depth", "1"] + flags, or: .test)
+        _ = try await checkFolder(["lsf", path, "--max-depth", "1"])
     }
 
     private struct Item: Decodable {

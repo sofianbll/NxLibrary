@@ -84,15 +84,28 @@ extension CatalogRepository {
 
     /// Cloud discovery only adds missing titles; no local observation or personal choice is replaced.
     public func importCloudGames(_ manifests: [CloudGameManifest], in folder: URL,
-                                 legacyNames: [String: String] = [:]) throws -> CatalogDocument {
+                                 legacyNames: [String: String] = [:],
+                                 sourceRoot: URL = AppData.supportRoot) throws -> CatalogDocument {
         try transactionIfChanged { draft in
             let count = draft.games.count
-            var known = Set(draft.nxnativeGames.compactMap { $0.titleId?.uppercased() })
-            known.formUnion(draft.cloudImportExclusions ?? [])
+            var seen = draft.cloudImportExclusions ?? []
+            let known = Dictionary(draft.games.enumerated().compactMap { index, record in
+                record.nxnativeGame?.titleId.map { ($0.uppercased(), index) }
+            }, uniquingKeysWith: { first, _ in first })
+            var adopted = false
             for manifest in manifests {
                 let title = manifest.titleID.uppercased()
                 guard SaveLocation.validID(title), let app = manifest.artifacts.first(where: { $0.kind == .app }),
-                      known.insert(title).inserted else { continue }
+                      seen.insert(title).inserted else { continue }
+                if let index = known[title] {
+                    guard var game = draft.games[index].nxnativeGame, game.cloudImportPending == true, game.sources.isEmpty,
+                          let sources = manifest.sourceSelection?.adopted(
+                              in: CloudGameSources.importedFolder(for: game.id, in: sourceRoot), titleID: title) else { continue }
+                    game.sources = sources
+                    try draft.games[index].updateNXNative(game)
+                    adopted = true
+                    continue
+                }
                 let name = [manifest.gameName, legacyNames[title]].compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
                     .first { !$0.isEmpty } ?? title
                 let bundle = manifest.bundleName.flatMap { value -> String? in
@@ -107,9 +120,11 @@ extension CatalogRepository {
                     titleId: title, versionString: manifest.gameVersion)
                 game.status = .appMissing
                 game.cloudImportPending = true
+                game.sources = manifest.sourceSelection?.adopted(
+                    in: CloudGameSources.importedFolder(for: game.id, in: sourceRoot), titleID: title) ?? []
                 draft.games.append(.init(nxnative: game))
             }
-            guard draft.games.count != count else { return false }
+            guard draft.games.count != count else { return adopted }
             var source = draft.source(.nxnative) ?? .init(integration: .nxnative)
             if !source.isEnabled {
                 source.isEnabled = true

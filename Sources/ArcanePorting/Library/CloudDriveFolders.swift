@@ -312,12 +312,17 @@ public struct CloudDriveFolders: Sendable {
                 + RcloneConfiguration.flags(config: config, environment: environment), environment)
             try Task.checkCancellation()
             if result.status == 3 && arguments.first == "lsjson" { throw StorageBackendError.notFound }
+            if result.status != 0, let failure = CloudLibraryFailure.rclone(result.stderr, status: result.status) {
+                throw failure
+            }
             guard result.status == 0 else { throw RcloneConfiguration.Failure.test }
             return result.stdout
         } catch is CancellationError {
             throw CancellationError()
         } catch StorageBackendError.notFound {
             throw StorageBackendError.notFound
+        } catch let failure as CloudLibraryFailure {
+            throw failure
         } catch {
             throw RcloneConfiguration.Failure.test
         }

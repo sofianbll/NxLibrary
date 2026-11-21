@@ -1,4 +1,5 @@
 import Foundation
+import os
 import OSLog
 import NXLibraryCore
 
@@ -62,6 +63,7 @@ public final class CloudTransferQueue: Sendable {
 
     private let file: URL
     private let io = DispatchQueue(label: "local.nxlibrary.cloud-transfer-queue", qos: .utility)
+    private let reportedSaveFailure = OSAllocatedUnfairLock(initialState: false)
     private static let log = Logger(subsystem: "local.nxlibrary", category: "cloud-transfer-queue")
 
     public init(file: URL = AppData.supportRoot.appendingPathComponent("cloud-transfer-queue.json")) {
@@ -88,13 +90,19 @@ public final class CloudTransferQueue: Sendable {
         }
     }
 
-    public func save(_ entries: [Entry]) {
+    public func save(_ entries: [Entry], onFailure: @escaping @Sendable (CloudLibraryFailure) -> Void = { _ in }) {
         io.async {
             do {
                 try FileManager.default.createDirectory(at: self.file.deletingLastPathComponent(), withIntermediateDirectories: true)
                 try JSONEncoder().encode(Snapshot(version: 1, entries: entries)).write(to: self.file, options: .atomic)
             } catch {
                 Self.log.error("Could not save the cloud transfer queue")
+                if self.reportedSaveFailure.withLock({ reported in
+                    defer { reported = true }
+                    return !reported
+                }) {
+                    onFailure(.queueNotSaved)
+                }
             }
         }
     }

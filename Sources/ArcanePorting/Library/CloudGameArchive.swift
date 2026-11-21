@@ -63,13 +63,15 @@ public struct CloudArchiveGame: Sendable {
     public let locations: [CloudArtifactKind: URL]
     public let engineCommit: String?
     let cacheIsRegistered: Bool
+    public let sourceSelection: CloudGameSources.ArchivedSelection?
 
     public init(titleID: String, locations: [CloudArtifactKind: URL], engineCommit: String? = nil,
-                cacheIsRegistered: Bool? = nil) {
+                cacheIsRegistered: Bool? = nil, sourceSelection: CloudGameSources.ArchivedSelection? = nil) {
         self.titleID = titleID.uppercased()
         self.locations = locations
         self.engineCommit = engineCommit
         self.cacheIsRegistered = cacheIsRegistered ?? (locations[.cache] != nil)
+        self.sourceSelection = sourceSelection
     }
 }
 
@@ -104,6 +106,7 @@ public struct CloudGameManifest: Codable, Equatable, Sendable {
     public let artifacts: [Artifact]
     public let gameName: String?
     public let bundleName: String?
+    public let sourceSelection: CloudGameSources.ArchivedSelection?
     public var gameVersion: String? { artifacts.first { $0.kind == .app }?.options["CFBundleShortVersionString"] }
     public var cloudOnlyApp: CloudArtifactStatus? {
         artifacts.first { $0.kind == .app }.map {
@@ -112,19 +115,22 @@ public struct CloudGameManifest: Codable, Equatable, Sendable {
     }
 
     init(version: Int, titleID: String, createdAt: Date, artifacts: [Artifact],
-         gameName: String? = nil, bundleName: String? = nil) {
+         gameName: String? = nil, bundleName: String? = nil,
+         sourceSelection: CloudGameSources.ArchivedSelection? = nil) {
         self.version = version
         self.titleID = titleID
         self.createdAt = createdAt
         self.artifacts = artifacts
         self.gameName = gameName
         self.bundleName = bundleName
+        self.sourceSelection = sourceSelection
     }
 
     enum CodingKeys: String, CodingKey {
         case version, artifacts
         case titleID = "title_id", createdAt = "created_at"
         case gameName = "game_name", bundleName = "bundle_name"
+        case sourceSelection = "source_selection"
     }
 }
 
@@ -296,11 +302,11 @@ public actor CloudGameArchive {
     }
 
     @MainActor public static func checkCatalogAvailability<Game>(_ games: [Game], titleID: (Game) -> String?,
-                                                                visit: (Game) async -> Void) async {
+                                                                visit: (Game) async throws -> Void) async rethrows {
         for game in games {
             guard !Task.isCancelled else { return }
             guard titleID(game).map(SaveLocation.validID) == true else { continue }
-            await visit(game)
+            try await visit(game)
         }
     }
 
@@ -348,19 +354,27 @@ public actor CloudGameArchive {
         return manifests
     }
 
-    public func latest(titleID: String) async throws -> CloudGameManifest? {
+    public func latest(titleID: String, expectingArchive: Bool = false) async throws -> CloudGameManifest? {
         let title = titleID.uppercased()
         guard SaveLocation.validID(title) else { throw CloudArchiveError.unsafePath }
         let directory = StorageObjectKey("\(title)/manifests")
-        guard let newest = try await backend.list(in: directory)
+        let entries: [StorageObject]
+        do { entries = try await backend.list(in: directory) }
+        catch CloudLibraryFailure.folderMissing {
+            // The per-title manifests folder is implicit until the first archive is published.
+            if expectingArchive { throw CloudLibraryFailure.folderMissing }
+            _ = try await backend.rootDirectories()
+            return nil
+        }
+        guard let newest = entries
             .filter({ $0.key.value.hasPrefix(directory.value + "/") && $0.key.value.hasSuffix(".json") })
             .max(by: { $0.key.value < $1.key.value }) else { return nil }
         return try await readManifest(newest, titleID: title)
     }
 
     /// Fetch just the newest manifest; local availability uses a single stat per registered artifact.
-    public func availability(_ game: CloudArchiveGame) async throws -> [CloudArtifactKind: CloudArtifactStatus] {
-        let manifest = try await latest(titleID: game.titleID)
+    public func availability(_ game: CloudArchiveGame, expectingArchive: Bool = false) async throws -> [CloudArtifactKind: CloudArtifactStatus] {
+        let manifest = try await latest(titleID: game.titleID, expectingArchive: expectingArchive)
         try Task.checkCancellation()
         return Dictionary(uniqueKeysWithValues: CloudArtifactKind.allCases.map { kind in
             let local: Bool?
@@ -417,6 +431,7 @@ public actor CloudGameArchive {
         guard !selected.isEmpty else { throw CloudArchiveError.needsFullUpload }
         var artifacts: [Artifact] = []
         var gameName: String?, bundleName: String?
+        var sourceSelection = game.sourceSelection
         if selected.count == 1 {
             do {
                 let previous = try await latest(titleID: game.titleID)
@@ -431,6 +446,7 @@ public actor CloudGameArchive {
                         throw CloudArchiveError.needsFullUpload
                     }
                 }
+                sourceSelection = sourceSelection ?? previous?.sourceSelection
             } catch CloudArchiveError.invalidManifest, StorageBackendError.notFound, StorageBackendError.hashMismatch {
                 throw CloudArchiveError.needsFullUpload
             }
@@ -502,7 +518,8 @@ public actor CloudGameArchive {
         let now = Date()
         let manifest = CloudGameManifest(version: 1, titleID: game.titleID,
                                          createdAt: Date(timeIntervalSince1970: now.timeIntervalSince1970.rounded(.down)),
-                                         artifacts: artifacts, gameName: gameName, bundleName: bundleName)
+                                         artifacts: artifacts, gameName: gameName, bundleName: bundleName,
+                                         sourceSelection: sourceSelection)
         let stage = try staging(in: FileManager.default.temporaryDirectory)
         defer { try? FileManager.default.removeItem(at: stage) }
         let file = stage.appendingPathComponent("manifest.json")

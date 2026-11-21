@@ -2201,6 +2201,105 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "云端存储不可用。请检查 rclone 后重试。"}}
       }
     },
+    "Offline — Google Drive is unreachable.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Offline – Google Drive ist nicht erreichbar."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Offline — Google Drive is unreachable."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Sin conexión: no se puede acceder a Google Drive."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Hors ligne : Google Drive est injoignable."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Offline: Google Drive non è raggiungibile."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Offline: não foi possível acessar o Google Drive."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "离线：无法连接到 Google Drive。"}}
+      }
+    },
+    "Google Drive sign-in expired or was revoked.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Die Anmeldung bei Google Drive ist abgelaufen oder wurde widerrufen."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Google Drive sign-in expired or was revoked."}},
+        "es": {"stringUnit": {"state": "translated", "value": "La sesión de Google Drive ha caducado o se ha revocado."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "La connexion à Google Drive a expiré ou a été révoquée."}},
+        "it": {"stringUnit": {"state": "translated", "value": "L'accesso a Google Drive è scaduto o è stato revocato."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O acesso ao Google Drive expirou ou foi revogado."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "Google Drive 登录已过期，或访问权限已被撤销。"}}
+      }
+    },
+    "Cloud folder not found.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Ordner nicht gefunden."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Cloud folder not found."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se encuentra la carpeta en la nube."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Dossier cloud introuvable."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cartella cloud non trovata."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Pasta na nuvem não encontrada."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "未找到云端文件夹。"}}
+      }
+    },
+    "Google Drive is full.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Google Drive ist voll."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Google Drive is full."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Google Drive está lleno."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Google Drive est plein."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Google Drive è pieno."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O Google Drive está cheio."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "Google Drive 存储空间已满。"}}
+      }
+    },
+    "Not enough space on this Mac.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Nicht genug Speicherplatz auf diesem Mac."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Not enough space on this Mac."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No hay espacio suficiente en este Mac."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Espace insuffisant sur ce Mac."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Spazio insufficiente su questo Mac."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não há espaço suficiente neste Mac."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "此 Mac 的可用空间不足。"}}
+      }
+    },
+    "The cloud queue could not be saved. Transfers continue, but may not resume after quitting.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Die Cloud-Warteschlange konnte nicht gespeichert werden. Übertragungen laufen weiter, werden nach dem Beenden aber möglicherweise nicht fortgesetzt."}},
+        "en": {"stringUnit": {"state": "translated", "value": "The cloud queue could not be saved. Transfers continue, but may not resume after quitting."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se pudo guardar la cola de la nube. Las transferencias siguen, pero quizá no se reanuden al volver a abrir la aplicación."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "La file cloud n’a pas pu être enregistrée. Les transferts continuent, mais pourraient ne pas reprendre après avoir quitté Arcane."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Impossibile salvare la coda cloud. I trasferimenti continuano, ma potrebbero non riprendere dopo la chiusura."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível salvar a fila da nuvem. As transferências continuam, mas talvez não sejam retomadas ao reabrir o app."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "无法保存云端传输队列。传输会继续，但退出后可能无法恢复。"}}
+      }
+    },
+    "Reconnect": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Erneut anmelden"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Reconnect"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Volver a conectar"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Se reconnecter"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Riconnetti"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Reconectar"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "重新连接"}}
+      }
+    },
+    "Choose a folder": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Ordner auswählen"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Choose a folder"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elegir una carpeta"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisir un dossier"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli una cartella"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolher uma pasta"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "选择文件夹"}}
+      }
+    },
+    "Manage Google storage": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Google-Speicher verwalten"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Manage Google storage"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Gestionar el almacenamiento de Google"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Gérer le stockage Google"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Gestisci lo spazio Google"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Gerenciar armazenamento do Google"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "管理 Google 存储空间"}}
+      }
+    },
     "Close the game and wait for other operations to finish.": {
       "localizations": {
         "de": {"stringUnit": {"state": "translated", "value": "Schließe das Spiel und warte, bis andere Vorgänge abgeschlossen sind."}},

@@ -272,7 +272,13 @@ struct AppShellView: View {
         }
         .task(id: welcomeTrigger) { await presentWelcomeIfDue() }
         .onChange(of: viewModel.settingsNotice?.id) { _, id in
-            if id == nil { presentLegacyNotice() }
+            if id == nil {
+                presentLegacyNotice()
+                presentCloudNotice()
+            }
+        }
+        .onReceive(viewModel.cloudLibrary.$queueFailure.combineLatest(viewModel.cloudLibrary.$startupFailure)) { queue, startup in
+            if queue != nil || startup != nil { Task { @MainActor in presentCloudNotice() } }
         }
     }
 

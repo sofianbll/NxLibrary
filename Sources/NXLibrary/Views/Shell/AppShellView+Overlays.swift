@@ -114,6 +114,20 @@ extension AppShellView {
         viewModel.showSettingsNotice(title: AppIdentity.name, message: message)
     }
 
+    func presentCloudNotice() {
+        guard viewModel.settingsNotice == nil, !viewModel.cloudLibrary.isQuitting else { return }
+        if let failure = viewModel.cloudLibrary.queueFailure {
+            viewModel.cloudLibrary.queueFailure = nil
+            viewModel.showCloudFailure(failure, title: L10n.text("Cloud library"), retry: {})
+        } else if let failure = viewModel.cloudLibrary.startupFailure {
+            viewModel.cloudLibrary.startupFailure = nil
+            viewModel.showCloudFailure(failure, title: L10n.text("Cloud library"),
+                                       sourceFolder: viewModel.cloudLibrary.checkFailureOnSources) {
+                viewModel.retryCloudCheck()
+            }
+        }
+    }
+
     func settingsNoticeInput(_ action: GamepadAction) {
         switch action {
         case .navigateLeft, .navigateUp: viewModel.settingsNoticeFocus = max(0, viewModel.settingsNoticeFocus - 1)

@@ -4,6 +4,31 @@ import XCTest
 @testable import ArcanePorting
 
 final class CloudGameSourcesTests: XCTestCase {
+    func testDownloadRefusesInsufficientSpaceBeforeAnyPayloadOrStaging() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let backend = RcloneStorageBackend(remote: "fixture", root: "Games") { _, args, _ in
+            XCTAssertEqual(args.first, "lsjson")
+            XCTAssertFalse(args.contains("--stat"))
+            let reply = """
+            [{"Name":"Game.nup","Path":"Game.nup","Size":600000,"Hashes":{"md5":"0123456789abcdef0123456789abcdef"}},
+             {"Name":"Update.nup","Path":"Update.nup","Size":600000,"Hashes":{"md5":"0123456789abcdef0123456789abcdef"}}]
+            """
+            return .init(status: 0, stdout: reply, stderr: "")
+        }
+        let service = CloudGameSources(backend: backend, root: "Games/Sources", capacity: { _ in 2_000_000 }, trash: { _ in })
+        do {
+            try await service.download(folderName: "Fixture [0100000000000001]",
+                                       files: ["Game.nup", "Update.nup"].map { root.appendingPathComponent($0) }, progress: nil)
+            XCTFail("Enough space for one file, but not both")
+        } catch {
+            XCTAssertEqual(error as? CloudLibraryFailure, .macFull)
+            XCTAssertEqual(CloudLibraryFailure.macFull.action, .freeMacStorage)
+        }
+        XCTAssertTrue(try FileManager.default.contentsOfDirectory(atPath: root.path).isEmpty)
+    }
+
     func testAvailabilityListsCopiesWithoutTreatingEqualSizesAsSynchronized() async throws {
         let f = try Fixture()
         let base = try f.local("Base.nsp", "same")
@@ -195,6 +220,7 @@ final class CloudGameSourcesTests: XCTestCase {
             let sourcesRoot = directory.appendingPathComponent("Sources", isDirectory: true)
             remoteFolder = sourcesRoot.appendingPathComponent(folder, isDirectory: true)
             try FileManager.default.createDirectory(at: localFolder, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(at: sourcesRoot, withIntermediateDirectories: true)
             let config = directory.appendingPathComponent("rclone.conf")
             try Data().write(to: config)
             var executable = rclone
