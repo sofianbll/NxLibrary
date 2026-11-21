@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 21 novembre 2026. Copertura di **834 file** del progetto, compresi i controlli di pubblicazione, la CI con regressioni app senza UI, il master dell’icona, le guide per sviluppo e media, gli screenshot del README, l'integrazione di nxnative, il canale di aggiornamento e il primo avvio che parte da ciò che è già sul Mac, il setup del porting con cartella unica per scoperta e installazione dei giochi. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 21 novembre 2026. Copertura di **841 file** del progetto, compresi i controlli di pubblicazione, la CI con regressioni app senza UI, il master dell’icona, le guide per sviluppo e media, gli screenshot del README, l'integrazione di nxnative, il canale di aggiornamento e il primo avvio che parte da ciò che è già sul Mac, il setup del porting con cartella unica per scoperta e installazione dei giochi. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -226,6 +226,9 @@ Cartella `Sources/NXLibraryCore/Library/`.
 | [Sources/NXLibraryCore/Library/DirectorySize.swift](../../Sources/NXLibraryCore/Library/DirectorySize.swift) | Misura le cartelle con fts; il modulo Porting può contare anche i file nascosti nelle cartelle cache ignorate. |
 | [Sources/NXLibraryCore/Library/StorageBackend.swift](../../Sources/NXLibraryCore/Library/StorageBackend.swift) | Contratto oggetti remoti: chiavi, impronte, trasferimenti, avanzamento e lease condiviso. |
 | [Sources/NXLibraryCore/Library/RcloneStorageBackend.swift](../../Sources/NXLibraryCore/Library/RcloneStorageBackend.swift) | Staging, verifica SHA-256, movimento nativo e pulizia della copia appena pubblicata se non verificabile. |
+| [Sources/NXLibraryCore/Library/CloudDriveFolders.swift](../../Sources/NXLibraryCore/Library/CloudDriveFolders.swift) | Elenca e verifica cartelle remote; crea una cartella solo su richiesta esplicita. |
+| [Sources/NXLibraryCore/Library/CloudSetupAssistant.swift](../../Sources/NXLibraryCore/Library/CloudSetupAssistant.swift) | Bozza dell'assistente: passi, selezione, verifica e formato dell'ID client. |
+| [Sources/NXLibraryCore/Selene/CloudSetupAssistantFocus.swift](../../Sources/NXLibraryCore/Selene/CloudSetupAssistantFocus.swift) | Focus dell'assistente per tastiera e controller. |
 | [Sources/NXLibraryCore/Library/RcloneConfiguration.swift](../../Sources/NXLibraryCore/Library/RcloneConfiguration.swift) | Preferenza compatibile, remoti e tool locali, prova di lettura, OAuth Drive annullabile e cifratura con portachiavi. |
 | [Sources/NXLibraryCore/Library/RcloneRemoteControl.swift](../../Sources/NXLibraryCore/Library/RcloneRemoteControl.swift) | Riusa un daemon locale per le letture; chiude la sessione al cambio di configurazione o all’uscita. |
 | [Sources/NXLibraryCore/Library/CollectionRow.swift](../../Sources/NXLibraryCore/Library/CollectionRow.swift) | Definisce proporzioni delle copertine e geometria della riga Collection. |
@@ -651,6 +654,8 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Sources/NXLibrary/Views/Components/IGDBCredentialsDialog.swift](../../Sources/NXLibrary/Views/Components/IGDBCredentialsDialog.swift) | Guida sintetica in cinque passi, Client ID, Client Secret nascosto, verifica/salvataggio e annullamento; input Settings sospeso. |
 | [Sources/NXLibrary/Views/Settings/SettingsAPISection.swift](../../Sources/NXLibrary/Views/Settings/SettingsAPISection.swift) | Servizi facoltativi: IGDB, SteamGridDB e scheda Nextendo con profilo, stato e amici. |
 | [Sources/NXLibrary/Views/Settings/SettingsCloudLibrarySection.swift](../../Sources/NXLibrary/Views/Settings/SettingsCloudLibrarySection.swift) | Porting → Cloud library: riepilogo, apertura della configurazione e strumenti di connessione in Advanced. |
+| [Sources/NXLibrary/Views/Settings/CloudSetupAssistant.swift](../../Sources/NXLibrary/Views/Settings/CloudSetupAssistant.swift) | Assistente account, cartella e attivazione dopo la verifica. |
+| [Sources/NXLibrary/Views/Settings/CloudSetupAssistant+Input.swift](../../Sources/NXLibrary/Views/Settings/CloudSetupAssistant+Input.swift) | Traduce tastiera e controller in azioni del focus dell'assistente. |
 | [Sources/NXLibrary/Views/Settings/NextendoClientDialog.swift](../../Sources/NXLibrary/Views/Settings/NextendoClientDialog.swift) | Dialogo Selene per scegliere e validare l’ID client pubblico o riprendere il default della build. |
 
 ## UI · Game Options, cheats e salvataggi
@@ -853,6 +858,8 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/NXLibraryCoreTests/CommandRunnerTests.swift](../../Tests/NXLibraryCoreTests/CommandRunnerTests.swift) | Verifica stdout, stderr, attesa senza run loop e annullamento del sottoprocesso. |
 | [Tests/NXLibraryCoreTests/RcloneStorageBackendTests.swift](../../Tests/NXLibraryCoreTests/RcloneStorageBackendTests.swift) | Oggetti, impronte, avanzamento, annullamento ed errori con il backend locale rclone. |
 | [Tests/NXLibraryCoreTests/RcloneConfigurationTests.swift](../../Tests/NXLibraryCoreTests/RcloneConfigurationTests.swift) | Preferenza, parsing e comandi OAuth e cifratura con runner finto, senza usare configurazione o portachiavi reali. |
+| [Tests/NXLibraryCoreTests/CloudDriveFoldersTests.swift](../../Tests/NXLibraryCoreTests/CloudDriveFoldersTests.swift) | Cartelle di un remote locale, conteggio e configurazione candidata. |
+| [Tests/NXLibraryCoreTests/CloudSetupAssistantTests.swift](../../Tests/NXLibraryCoreTests/CloudSetupAssistantTests.swift) | Bozza, verifica, formato dell'ID client e focus. |
 | [Tests/ArcanePortingTests/CloudGameArchiveTests.swift](../../Tests/ArcanePortingTests/CloudGameArchiveTests.swift) | Round trip con app sintetica firmata e rclone locale, impronte, spazio, link, annullamento e dati preservati. |
 | [Tests/ArcanePortingTests/GameAppDestinationTests.swift](../../Tests/ArcanePortingTests/GameAppDestinationTests.swift) | Installazione e scoperta nella cartella scelta, rebuild dopo il cambio cartella, conflitti di nome, sorgenti protette e cartelle non disponibili o di sola lettura. |
 | [Tests/NXLibraryCoreTests/ButtonPromptsTests.swift](../../Tests/NXLibraryCoreTests/ButtonPromptsTests.swift) | Etichette e simboli per tastiera, controller e scelte esplicite dell’utente. |

@@ -183,9 +183,10 @@ final class CloudLibraryModel: ObservableObject {
         rebuildArchive()
     }
 
-    @MainActor func configure(remote: String?, root: String, enabled: Bool) {
+    /// `reload` restarts the backend for an unchanged preference, after new Google credentials replaced the remote's token.
+    @MainActor func configure(remote: String?, root: String, enabled: Bool, reload: Bool = false) {
         let next = CloudLibraryPreference(storage: "\(remote ?? ""):\(root)", enabled: enabled)
-        guard next != preference else { return }
+        guard next != preference || reload else { return }
         AppData.preferences.set(next.storage, forKey: CloudLibraryPreference.storageKey)
         AppData.preferences.set(next.enabled, forKey: CloudLibraryPreference.enabledKey)
         preference = next

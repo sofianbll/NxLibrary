@@ -415,9 +415,10 @@ struct CloudSetupAssistant: View {
     private func activate() {
         guard let preference = draft.activation, primaryEnabled else { return }
         do {
+            let replaced = replacement != nil
             try replacement?.apply()
             activated = true
-            model.configure(remote: preference.remote, root: preference.root, enabled: true)
+            model.configure(remote: preference.remote, root: preference.root, enabled: true, reload: replaced)
             onClose()
         } catch {
             issue = RcloneConfiguration.Failure.configuration.key
