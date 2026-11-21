@@ -379,7 +379,11 @@ struct CloudLibraryIndicator {
         guard let active = state.activeItem else { return false }
         return item.map { $0 == active } ?? (active != .sources)
     }
-    var progress: Bool { showsAction && !state.queued }
+    var progress: Bool { (showsAction || sentAwaitingPublish) && !state.queued }
+    /// A full upload sends the app, then the cache; the app becomes the cloud copy only when the manifest is published at the end.
+    private var sentAwaitingPublish: Bool {
+        item == .app && state.action == .upload(nil) && state.activeItem == .cache
+    }
     var queued: Bool { showsAction && state.queued }
     var copy: CloudArtifactStatus.State { state.copy(item ?? .app) ?? .unknown }
     // Bound once: comparing two optional-chained tuple fields crashes Swift 6.4.2's Release optimizer (SemanticARCOpts).
@@ -407,6 +411,7 @@ struct CloudLibraryIndicator {
     func label(context: AppLocale, showingFailure: Bool = true) -> String {
         if queued { return L10n.text("Queued", context: context) }
         if progress {
+            if sentAwaitingPublish { return L10n.text("Sent · published when the upload ends", context: context) }
             if let fraction = CloudLibraryProgressView.fraction(state.progress) {
                 let key = state.progress?.phase == .uploading || state.action == .uploadSources ? "Sending %@" : "Downloading %@"
                 return L10n.format(key, [CloudLibraryProgressView.percent(fraction, context: context)], context: context)

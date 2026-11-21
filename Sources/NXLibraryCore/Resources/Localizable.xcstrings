@@ -1,6 +1,16 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Sent · published when the upload ends": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Sent · published when the upload ends"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Inviata · pubblicata a fine invio"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoyée · publiée à la fin de l'envoi"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Gesendet · wird am Ende veröffentlicht"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enviada · se publica al terminar el envío"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviado · publicado ao fim do envio"}}
+      }
+    },
     "A game file differs from its cloud copy. No existing copy is replaced.": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "A game file differs from its cloud copy. No existing copy is replaced."}},
