@@ -118,6 +118,8 @@ public enum SettingsCatalog {
         row("remotePlayMode", .apiServices, "Remote play via ZeroTier", remotePlayHelp) { $0.remotePlayMode },
 
         // Games (Library)
+        row("librarySort", .libraryGames, "Sort games",
+            "Order of games in Spotlight and Collection.") { $0.librarySort },
         row("launchStyle", .libraryGames, "Launch screen style",
             "What shows while a game starts: art and logo, art only, logo on black, or minimal.") { $0.launchStyle },
         row("launchMotion", .libraryGames, "Launch screen motion",

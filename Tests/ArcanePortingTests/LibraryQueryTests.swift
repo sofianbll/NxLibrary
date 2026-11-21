@@ -29,7 +29,9 @@ final class LibraryQueryTests: XCTestCase {
 
     private struct StubHistory: PlayHistory {
         var dates: [UUID: Date] = [:]
+        var durations: [UUID: TimeInterval] = [:]
         func lastPlayed(for gameID: UUID) -> Date? { dates[gameID] }
+        func totalDuration(for gameID: UUID) -> TimeInterval { durations[gameID] ?? 0 }
     }
 
     private func fixtures() -> (games: [PortedGame], history: StubHistory) {
@@ -53,6 +55,26 @@ final class LibraryQueryTests: XCTestCase {
         let extra = game("Banana")
         let result = LibraryQuery().apply(to: games + [extra], history: h)
         XCTAssertEqual(result.map(\.name), ["Mario", "Zelda", "Animal", "Banana"])
+    }
+
+    func testSortModesAndNameTiesInMixedLibrary() {
+        let a = game("alpha", modified: 10)
+        let b = game("Bravo", modified: 20)
+        let c = game("charlie", modified: 20)
+        let steam = SteamCatalogGame(appID: 10, name: "Delta")
+        let games = [CatalogGame(steam: steam), .init(nxnative: c), .init(nxnative: b), .init(nxnative: a)]
+        let today = Date(timeIntervalSince1970: 100)
+        let history = StubHistory(dates: [a.id: today, b.id: today, steam.id: today.addingTimeInterval(1)],
+                                  durations: [b.id: 5, c.id: 10, steam.id: 10])
+        func names(_ query: LibraryQuery) -> [String] {
+            query.applyCatalog(to: games, history: history).map(\.name)
+        }
+        XCTAssertEqual(names(LibraryQuery()), ["Delta", "alpha", "Bravo", "charlie"])
+        XCTAssertEqual(names(LibraryQuery(sort: .recent)), names(LibraryQuery()))
+        XCTAssertEqual(names(LibraryQuery(sort: .name)), ["alpha", "Bravo", "charlie", "Delta"])
+        XCTAssertEqual(names(LibraryQuery(sort: .added)), ["Bravo", "charlie", "alpha", "Delta"])
+        XCTAssertEqual(names(LibraryQuery(sort: .playtime)), ["charlie", "Delta", "Bravo", "alpha"])
+        XCTAssertEqual(names(LibraryQuery(filter: .recentlyPlayed, sort: .added)), ["Bravo", "alpha", "Delta"])
     }
 
     func testInstalledOnlyPlayable() {

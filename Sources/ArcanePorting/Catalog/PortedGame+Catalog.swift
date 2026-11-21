@@ -36,6 +36,7 @@ extension PortedGame: CatalogSourceRecord {
 
     public var isInstalledForLibrary: Bool { isPlayableLocally }
     public var librarySearchTerms: [String] { [titleId, bundleId].compactMap { $0 } }
+    public var libraryModificationDate: Date? { modificationDate }
 }
 
 extension CatalogGame {

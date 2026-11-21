@@ -418,7 +418,7 @@ Cartella `Sources/ArcanePorting/Library/`.
 | [Sources/ArcanePorting/Library/CloudTransferQueue.swift](../../Sources/ArcanePorting/Library/CloudTransferQueue.swift) | Salva le richieste cloud nel profilo e rimette il lavoro interrotto in testa. |
 | [Sources/ArcanePorting/Library/CloudDriveFolders.swift](../../Sources/ArcanePorting/Library/CloudDriveFolders.swift) | Elenca cartelle, conta gli archivi Porting e coordina il trasferimento fra radici. |
 | [Sources/ArcanePorting/GameSettings/RemotePlayAdapters.swift](../../Sources/ArcanePorting/GameSettings/RemotePlayAdapters.swift) | Rileva interfacce ZeroTier e altre VPN per il gioco locale a distanza. |
-| [Sources/ArcanePorting/Build/BuildQueue.swift](../../Sources/ArcanePorting/Build/BuildQueue.swift) | Coda FIFO di sessione con deduplica e nuova verifica prima dell'avvio. |
+| [Sources/ArcanePorting/Library/BuildQueue.swift](../../Sources/ArcanePorting/Library/BuildQueue.swift) | Coda FIFO di sessione con deduplica e nuova verifica prima dell'avvio. |
 | [Sources/ArcanePorting/Library/GameStorageUsage.swift](../../Sources/ArcanePorting/Library/GameStorageUsage.swift) | Dimensioni per gioco e totali: distingue assenza e indisponibilità, segnala cache condivise e conserva identità stabili per il focus. |
 
 ## Porting · pagina del gioco

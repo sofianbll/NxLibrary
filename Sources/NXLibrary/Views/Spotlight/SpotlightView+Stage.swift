@@ -60,8 +60,9 @@ extension SpotlightView {
     func stage(_ model: Snapshot, state: SpotlightState) -> some View {
         let items = model.items
         return ZStack(alignment: .topLeading) {
-            SpotlightTopBar(filter: filter, showClock: settings.settings.showClock,
-                            onSelect: { if !state.isLifted { setFilter($0) } })
+            SpotlightTopBar(filter: filter, sort: settings.settings.librarySort, showClock: settings.settings.showClock,
+                            sortUsesRightStick: true,
+                            onSelect: { if !state.isLifted { setFilter($0) } }, onCycleSort: cycleSort)
                 // Comes in last with the hints (`finishEntrance`).
                 .opacity(rowShown && controlsShown ? 1 : 0)
                 .allowsHitTesting(rowShown && entrance.takesInput)

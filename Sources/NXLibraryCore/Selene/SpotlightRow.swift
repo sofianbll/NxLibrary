@@ -50,7 +50,8 @@ public enum SpotlightRow {
     /// `front` (the game being ported, then the games Steam downloads: `leaders`) become
     /// the first games, in that order: right after the Add game card wherever it is, or
     /// in the first game's place without it.
-    public static func build(gameIDs: [UUID], enabledCards: [SpotlightCard], order: [String], front: [UUID] = []) -> [SpotlightItem] {
+    public static func build(gameIDs: [UUID], enabledCards: [SpotlightCard], order: [String],
+                             front: [UUID] = [], sort: LibrarySort = .recent) -> [SpotlightItem] {
         let enabled = Set(enabledCards)
         let defaults: [SpotlightItem] =
             SpotlightCard.allCases.filter(enabled.contains).map { .card($0) }
@@ -79,6 +80,13 @@ public enum SpotlightRow {
         for item in ordered {
             result.append(item)
             result.append(contentsOf: trailing[item.key] ?? [])
+        }
+        if sort != .recent {
+            // Keep the player's card positions, but let the explicit sort fill the game slots.
+            var sortedGames = gameIDs.makeIterator()
+            for index in result.indices {
+                if case .game = result[index], let id = sortedGames.next() { result[index] = .game(id) }
+            }
         }
         let leaders = front.map { SpotlightItem.game($0) }.filter(result.contains)
         guard !leaders.isEmpty else { return result }

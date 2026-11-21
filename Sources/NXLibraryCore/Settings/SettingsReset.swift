@@ -54,6 +54,7 @@ public enum SettingsReset {
             next.showClock = defaults.showClock
             next.reduceMotion = defaults.reduceMotion
         case .libraryGames:
+            next.librarySort = defaults.librarySort
             next.launchStyle = defaults.launchStyle
             next.launchMotion = defaults.launchMotion
             next.launchShade = defaults.launchShade

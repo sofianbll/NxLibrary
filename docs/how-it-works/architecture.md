@@ -182,6 +182,8 @@ La variante asincrona attende su una coda utility e invia SIGTERM al sottoproces
 
 **La libreria mostrata.**
 - `CatalogLibraryProjection` seleziona le voci delle fonti attive. Spotlight, Collection e ricerca usano gli stessi record, UUID, filtri e ordine salvato; le viste specifiche ricevono il record reale.
+- Spotlight e Collection usano i filtri condivisi e `AppSettings.librarySort`. `LibraryQuery` ordina per ultima partita (default), nome, aggiunta recente o tempo totale da `PlaySessionStore`, con il nome a parità. Non c'è una data di aggiunta nel catalogo: si usa `PortedGame.modificationDate`, mettendo i titoli senza data in fondo. Le osservazioni Steam non sono date di modifica.
+- La pillola a destra dei filtri cambia ordine in entrambe le viste; R3 lo cambia sulla riga Spotlight e continua a cambiare filtro in Collection. La stessa scelta è in Settings → Library → Games. In Spotlight l'ordine predefinito conserva i riordini salvati; gli altri riempiono i posti dei giochi senza scambiare le card. Porting e download mantengono la precedenza. Confermare lo spostamento manuale di un gioco torna a Recenti per rendere effettivo l'ordine manuale.
 - I giochi Steam mostrano l'icona della propria app Mac e la fonte, senza interrogare servizi Nintendo né riscrivere bundle. Hanno la stessa testata, pagina e Opzioni dei giochi nxnative. I titoli nascosti restano recuperabili dalle fonti.
 - Menu e comandi specifici nxnative ricevono soltanto `PortedGame`: selezionare un gioco Steam non può avviare una build né aprire salvataggi o mod Switch.
 

@@ -90,7 +90,7 @@ extension SpotlightView {
         case .menuHold:
             router.openSettings(.startUp)
         case .rightStickPress:
-            break
+            cycleSort()
         }
         if moved { SoundEffectService.shared.play(.focus) }
     }
@@ -239,12 +239,15 @@ extension SpotlightView {
             mutate { moved = $0.moveLifted(by: delta, in: items) }
             if moved { SoundEffectService.shared.play(.focus) }
         case .confirm:
+            let lift = viewModel.spotlight.lift
             var order: [String]?
             mutate { order = $0.drop() }
-            if let order {
+            if let lift, let order, order != lift.before {
                 settings.settings.spotlightOrder = SpotlightRow.saving(
                     visibleOrder: order, gameIDs: viewModel.catalogGames.map(\.id),
                     previousOrder: settings.settings.spotlightOrder)
+                // Manual game placement takes precedence only in the default sort.
+                if lift.key.hasPrefix("game:") { settings.settings.librarySort = .recent }
             }
             SoundEffectService.shared.play(.click)
         case .cancel:

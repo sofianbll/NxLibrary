@@ -60,6 +60,7 @@ Come si aggiorna:
 | Uscita dalla schermata del porting | in attesa | Provare B ed Esc dopo una build senza Review, il ritorno a Review con una bozza e Hide durante una build attiva. |
 | Centro attività | in attesa | Verificare apertura, focus, ritorno al porting, code lunghe, annullamento di richieste attive o in attesa e sospensione dell'input sottostante. |
 | Coda delle compilazioni | in attesa | Avviare A e accodare B e C; verificare deduplica, annullamento, ordine, attesa del lease e avvio dopo successo o errore. |
+| Ordinamento della libreria | in attesa | Verificare i quattro ordini, R3, precedenza di porting e download, riordino manuale, persistenza e reset. |
 | File del gioco nel cloud (Porting) | in attesa | Su un remote di prova, verificare riuso, conflitto senza sostituzione, ripristino dei file mancanti e recupero dal Cestino. |
 | Cloud library → file del gioco | in attesa | Con pacchetti sintetici, verificare stato, dimensione, conflitti, focus e selezione per il Cestino. Con file mancanti, provare Build e Rebuild: download verificato, annullamento, errore senza build e ripresa dopo il successo; Play e badge dell'app non cambiano. |
 | Apertura immediata di Game Options con Y | in attesa | A freddo, premere subito Y su un gioco portato con un checkout nxnative personalizzato; verificare che Game Options si apra senza crash e che la riga Cheats sia corretta. |

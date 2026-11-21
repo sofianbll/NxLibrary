@@ -30,9 +30,11 @@ public protocol CatalogSourceRecord: Codable, Equatable {
     var isInstalledForLibrary: Bool { get }
     /// Words a library search also matches besides the name.
     var librarySearchTerms: [String] { get }
+    var libraryModificationDate: Date? { get }
 }
 
 extension CatalogSourceRecord {
+    public var libraryModificationDate: Date? { nil }
     /// Records of different sources are never equal.
     func isEqual(to other: any CatalogSourceRecord) -> Bool { (other as? Self) == self }
 }

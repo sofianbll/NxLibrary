@@ -83,6 +83,7 @@ struct CollectionView: View {
         }
         .onChange(of: viewModel.catalogSourceConfigurations) { reconcile() }
         .onChange(of: filter) { reconcile() }
+        .onChange(of: settings.settings.librarySort) { reconcile() }
         .onChange(of: viewModel.librarySelection.selectedGameID) { selectionChanged() }
         .onReceive(NotificationCenter.default.publisher(for: .nxCollectionGamepadAction)) { note in
             guard viewModel.alertMessage == nil, viewModel.settingsNotice == nil else { return }
@@ -104,8 +105,12 @@ struct CollectionView: View {
 
     private func stage(games: [CatalogGame], game: PortedGame?) -> some View {
         ZStack(alignment: .topLeading) {
-            SpotlightTopBar(filter: filter, showClock: settings.settings.showClock,
-                            onSelect: { setFilter($0) })
+            SpotlightTopBar(filter: filter, sort: settings.settings.librarySort, showClock: settings.settings.showClock,
+                            onSelect: { setFilter($0) }, onCycleSort: {
+                                settings.settings.librarySort = settings.settings.librarySort.stepped(1)
+                                reconcile()
+                                SoundEffectService.shared.play(.tabSwitch)
+                            })
 
             if let game {
                 CollectionInfoView(game: game, logo: art.logo(for: game),
@@ -213,6 +218,7 @@ struct CollectionView: View {
     /// Keeps the selection inside the filtered list, in the same frame as any change to it.
     func reconcile() {
         var state = viewModel.librarySelection
+        state.query.sort = settings.settings.librarySort
         state.reconcileCatalog(with: viewModel.visibleCatalogGames, history: playSessions,
                         preferredGameID: settings.settings.restoreLastGame ? settings.lastSelectedGameID : nil)
         if state != viewModel.librarySelection { viewModel.librarySelection = state }

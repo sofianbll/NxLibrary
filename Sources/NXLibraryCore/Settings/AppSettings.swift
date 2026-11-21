@@ -164,6 +164,7 @@ public struct AppSettings: Codable, Equatable {
     }
     public var spotlightOrder: [String]
     public var startingTab: LibraryFilter.RawValue
+    public var librarySort: LibrarySort
     public var surprisePool: SurprisePool
     public var showsCloudPlayIcon = true
     public var showsCloudDetailsLink = true
@@ -221,6 +222,7 @@ public struct AppSettings: Codable, Equatable {
                 showsModsCard: Bool = true,
                 spotlightOrder: [String] = [],
                 startingTab: LibraryFilter.RawValue = "All games",
+                librarySort: LibrarySort = .recent,
                 surprisePool: SurprisePool = .installed,
                 startOn: StartScreen = .spotlight,
                 lastHome: StartScreen = .spotlight,
@@ -254,6 +256,7 @@ public struct AppSettings: Codable, Equatable {
         self.showsModsCard = showsModsCard
         self.spotlightOrder = spotlightOrder
         self.startingTab = startingTab
+        self.librarySort = librarySort
         self.surprisePool = surprisePool
         self.startOn = startOn
         self.lastHome = lastHome
@@ -280,6 +283,7 @@ public struct AppSettings: Codable, Equatable {
         case startInFullscreen
         case colorThemeID, buttonNames
         case spotlightCards, showsModsCard, spotlightOrder, startingTab, surprisePool
+        case librarySort
         case showsCloudPlayIcon, showsCloudDetailsLink, cloudTileBadges
         case startOn, lastHome
         case introAnimation, viewButtonSwitches, interfaceSounds, soundVolume, quietLaunch
@@ -312,6 +316,8 @@ public struct AppSettings: Codable, Equatable {
         self.showsModsCard = try container.decodeIfPresent(Bool.self, forKey: .showsModsCard) ?? true
         self.spotlightOrder = try container.decodeIfPresent([String].self, forKey: .spotlightOrder) ?? []
         self.startingTab = try container.decodeIfPresent(String.self, forKey: .startingTab) ?? "All games"
+        self.librarySort = try container.decodeIfPresent(String.self, forKey: .librarySort)
+            .flatMap(LibrarySort.init(rawValue:)) ?? .recent
         self.surprisePool = try container.decodeIfPresent(SurprisePool.self, forKey: .surprisePool) ?? .installed
         self.showsCloudPlayIcon = try container.decodeIfPresent(Bool.self, forKey: .showsCloudPlayIcon) ?? true
         self.showsCloudDetailsLink = try container.decodeIfPresent(Bool.self, forKey: .showsCloudDetailsLink) ?? true
@@ -365,6 +371,7 @@ public struct AppSettings: Codable, Equatable {
         try c.encode(showsModsCard, forKey: .showsModsCard)
         try c.encode(spotlightOrder, forKey: .spotlightOrder)
         try c.encode(startingTab, forKey: .startingTab)
+        try c.encode(librarySort, forKey: .librarySort)
         try c.encode(surprisePool, forKey: .surprisePool)
         try c.encode(remotePlayMode, forKey: .remotePlayMode)
         try c.encode(showsCloudPlayIcon, forKey: .showsCloudPlayIcon)

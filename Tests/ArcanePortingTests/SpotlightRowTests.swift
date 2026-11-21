@@ -53,6 +53,14 @@ final class SpotlightRowTests: XCTestCase {
         XCTAssertEqual(row, [.game(b.id), .card(.activity), .game(a.id), .card(.surprise)])
     }
 
+    func testExplicitSortFillsSavedGameSlotsButKeepsLeaders() {
+        let a = game("a"), b = game("b"), c = game("c")
+        let order = [SpotlightItem.game(c.id), .card(.activity), .game(b.id), .game(a.id)].map(\.key)
+        let row = SpotlightRow.build(gameIDs: [a.id, b.id, c.id], enabledCards: [.activity],
+                                     order: order, front: [c.id], sort: .name)
+        XCTAssertEqual(row, [.game(c.id), .game(a.id), .card(.activity), .game(b.id)])
+    }
+
     func testNewGameNotInOrderAppendsAfterOrdered() {
         let a = game("a"), b = game("b"), c = game("c")
         let order = [SpotlightItem.game(a.id).key, SpotlightItem.game(b.id).key]

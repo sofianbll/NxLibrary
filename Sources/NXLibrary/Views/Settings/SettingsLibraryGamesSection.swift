@@ -31,6 +31,10 @@ struct SettingsLibraryGamesSection: View {
         VStack(spacing: canvas.u(8)) {
             SettingsSubheading(L10n.text("All games"))
 
+            SeleneCycleRow("Sort games",
+                           subtitle: "Order of games in Spotlight and Collection.",
+                           value: settings.settings.librarySort.title, cycle: stepSort)
+
             SeleneCycleRow("Launch screen style",
                            subtitle: "Artwork layout",
                            value: settings.settings.launchStyle.title) { step in
@@ -83,7 +87,11 @@ struct SettingsLibraryGamesSection: View {
         let hidden = hiddenGames.map { game in
             SettingsRowAction(id: "hidden-\(game.id)", title: game.name, rowID: "hidden-\(game.id)") { unhide(game) }
         }
-        onActions(launchActions + hidden)
+        onActions([.value("librarySort", "Sort games", cycle: stepSort)] + launchActions + hidden)
+    }
+
+    private func stepSort(_ step: Int) {
+        settings.settings.librarySort = settings.settings.librarySort.stepped(step)
     }
 
     private var launchActions: [SettingsRowAction] {

@@ -240,7 +240,16 @@ final class AppSettingsStoreTests: XCTestCase {
         XCTAssertEqual(s.spotlightCards, [.surprise, .activity, .addGame])
         XCTAssertEqual(s.spotlightOrder, [])
         XCTAssertEqual(s.startingTab, "All games")
+        XCTAssertEqual(s.librarySort, .recent)
         XCTAssertEqual(s.surprisePool, .installed)
+    }
+
+    func testLibrarySortRoundTripsAndUnknownValuesUseDefault() throws {
+        let settings = AppSettings(librarySort: .playtime)
+        let data = try JSONEncoder().encode(settings)
+        XCTAssertEqual(try JSONDecoder().decode(AppSettings.self, from: data).librarySort, .playtime)
+        let future = Data(#"{"librarySort":"future"}"#.utf8)
+        XCTAssertEqual(try JSONDecoder().decode(AppSettings.self, from: future).librarySort, .recent)
     }
 
     func testModsCardIsShownAndNeverSavedWhereTheReleasedAppReadsCards() throws {

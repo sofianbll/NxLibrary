@@ -136,13 +136,10 @@ struct SpotlightView: View {
 
     var filter: LibraryFilter { viewModel.librarySelection.query.filter }
 
-    /// The filtered, visible games, most recently played first.
-    var games: [PortedGame] {
-        LibraryQuery(filter: filter).apply(to: viewModel.libraryGames, history: playSessions)
-    }
+    private var rowQuery: LibraryQuery { LibraryQuery(filter: filter, sort: settings.settings.librarySort) }
 
     var rowGames: [CatalogGame] {
-        LibraryQuery(filter: filter).applyCatalog(to: viewModel.visibleCatalogGames, history: playSessions)
+        rowQuery.applyCatalog(to: viewModel.visibleCatalogGames, history: playSessions)
     }
     var selectedCatalogGame: CatalogGame? {
         guard case .game(let id) = selectedItem else { return nil }
@@ -156,7 +153,8 @@ struct SpotlightView: View {
                                   enabledCards: settings.settings.visibleSpotlightCards,
                                   order: viewModel.spotlight.lift?.order ?? settings.settings.spotlightOrder,
                                   front: SpotlightRow.leaders(porting: viewModel.frontGameID,
-                                                              downloads: viewModel.sessionDownloads.ids, row: ids))
+                                                              downloads: viewModel.sessionDownloads.ids, row: ids),
+                                  sort: viewModel.spotlight.isLifted ? .recent : settings.settings.librarySort)
     }
 
     var selectedItem: SpotlightItem? { viewModel.spotlight.selectedItem(in: items) }
@@ -179,7 +177,7 @@ struct SpotlightView: View {
 
     private func snapshot() -> Snapshot {
         let visible = viewModel.visibleCatalogGames
-        let rowGames = LibraryQuery(filter: filter).applyCatalog(to: visible, history: playSessions)
+        let rowGames = rowQuery.applyCatalog(to: visible, history: playSessions)
         let items = rowItems(for: rowGames)
         let gamesByID = Dictionary(viewModel.libraryGames.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         let item = viewModel.spotlight.selectedItem(in: items)
@@ -321,6 +319,7 @@ struct SpotlightView: View {
         }
         .onChange(of: settings.settings.visibleSpotlightCards) { reconcile() }
         .onChange(of: settings.settings.spotlightOrder) { reconcile() }
+        .onChange(of: settings.settings.librarySort) { reconcile() }
         .onChange(of: viewModel.spotlight.selectedKey) {
             aboutExpanded = false
             selectionChanged()

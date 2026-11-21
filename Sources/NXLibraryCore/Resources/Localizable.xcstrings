@@ -1,6 +1,66 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Sort games": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Sort games"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ordina i giochi"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Trier les jeux"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spiele sortieren"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ordenar juegos"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Ordenar jogos"}}
+      }
+    },
+    "Order of games in Spotlight and Collection.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Order of games in Spotlight and Collection."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ordine dei giochi in Spotlight e Collection."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ordre des jeux dans Spotlight et Collection."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Reihenfolge der Spiele in Spotlight und Sammlung."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Orden de los juegos en Spotlight y Colección."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Ordem dos jogos no Spotlight e na Coleção."}}
+      }
+    },
+    "Sort: Recent": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Recent"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Recenti"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Récents"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Zuletzt gespielt"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Recientes"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Recentes"}}
+      }
+    },
+    "Sort: Name": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Name"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nome"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Nom"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Name"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Nombre"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nome"}}
+      }
+    },
+    "Sort: Recently added": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Recently added"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ultimi aggiunti"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ajouts récents"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Zuletzt hinzugefügt"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Últimos añadidos"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Adições recentes"}}
+      }
+    },
+    "Sort: Playtime": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Playtime"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Tempo di gioco"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Temps de jeu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spielzeit"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Tiempo de juego"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Tempo de jogo"}}
+      }
+    },
     "Build queued": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Build queued"}},

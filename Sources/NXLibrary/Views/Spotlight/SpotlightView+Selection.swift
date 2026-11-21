@@ -93,6 +93,14 @@ extension SpotlightView {
         SoundEffectService.shared.play(.tabSwitch)
     }
 
+    func cycleSort() {
+        guard viewModel.spotlight.focus == .row, !viewModel.spotlight.isLifted,
+              cardMenu == nil, viewer == nil, achievementsScreen == nil,
+              !router.overlayHasHints(viewModel) else { return }
+        settings.settings.librarySort = settings.settings.librarySort.stepped(1)
+        SoundEffectService.shared.play(.tabSwitch)
+    }
+
     func selectionChanged() {
         if selectedItem == .card(.mods) { openStore() } else { storeHost.close() }
         updateModsBackdrop()

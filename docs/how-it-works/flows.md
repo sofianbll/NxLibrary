@@ -60,7 +60,10 @@ flowchart TD
     N3 --> W["CatalogRepository<br/>unico writer di catalog.json"]
     S3 --> W
     W --> P["CatalogLibraryProjection<br/>solo fonti attive"]
-    P --> V["Spotlight · Collection · Ricerca<br/>(stessi UUID, filtri, ordine)"]
+    P --> S["Ricerca"]
+    P --> H["LibraryQuery ordina i giochi visibili"]
+    Q["AppSettings.librarySort"] --> H
+    H --> V["Spotlight · Collection"]
 ```
 
 Punti fissi:
@@ -219,6 +222,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     A["Riga in Settings (SettingsCatalog)"] --> B["AppSettings modificato"]
+    H["Pillola dei filtri o R3 in Spotlight"] --> B
     B --> C["AppSettingsStore.save: file temporaneo e sostituzione"]
     C -->|"errore"| X["Dialogo Selene con Retry"]
     C --> D["Pubblicazione: le viste si aggiornano"]

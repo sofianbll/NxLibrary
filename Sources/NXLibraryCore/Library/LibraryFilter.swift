@@ -2,6 +2,11 @@ import Foundation
 
 public protocol PlayHistory {
     func lastPlayed(for gameID: UUID) -> Date?
+    func totalDuration(for gameID: UUID) -> TimeInterval
+}
+
+public extension PlayHistory {
+    func totalDuration(for gameID: UUID) -> TimeInterval { 0 }
 }
 
 public struct NoPlayHistory: PlayHistory {
@@ -19,20 +24,36 @@ public enum LibraryFilter: String, CaseIterable, Identifiable, Equatable {
     public var id: String { rawValue }
 }
 
+public enum LibrarySort: String, Codable, CaseIterable {
+    case recent, name, added, playtime
+
+    public var title: String {
+        switch self {
+        case .recent: return "Sort: Recent"
+        case .name: return "Sort: Name"
+        case .added: return "Sort: Recently added"
+        case .playtime: return "Sort: Playtime"
+        }
+    }
+}
+
 public struct LibraryQuery: Equatable {
     public var filter: LibraryFilter
     public var searchText: String
+    public var sort: LibrarySort
 
-    public init(filter: LibraryFilter = .all, searchText: String = "") {
+    public init(filter: LibraryFilter = .all, searchText: String = "", sort: LibrarySort = .recent) {
         self.filter = filter
         self.searchText = searchText
+        self.sort = sort
     }
 
     public func applyCatalog(to games: [CatalogGame], history: PlayHistory) -> [CatalogGame] { applyRecords(games, history: history) }
 
     package func applyRecords<Game: LibraryQueryRecord>(_ games: [Game], history: PlayHistory) -> [Game] {
         let visible = games.filter { !$0.isHidden }
-        let dates = Dictionary(uniqueKeysWithValues: visible.map { ($0.id, history.lastPlayed(for: $0.id)) })
+        let needsHistory = sort == .recent || filter == .recentlyPlayed || filter == .notPlayed
+        let dates = needsHistory ? Dictionary(uniqueKeysWithValues: visible.map { ($0.id, history.lastPlayed(for: $0.id)) }) : [:]
         func played(_ game: Game) -> Date? { dates[game.id] ?? nil }
 
         let filtered: [Game]
@@ -50,14 +71,25 @@ public struct LibraryQuery: Equatable {
                 || game.librarySearchTerms.contains { normalized($0).contains(query) }
         }
 
-        return searched.sorted { lhs, rhs in
-            switch (played(lhs), played(rhs)) {
-            case let (l?, r?) where l != r: return l > r
-            case (.some, .none): return true
-            case (.none, .some): return false
-            default:
-                return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
-            }
+        func byName(_ lhs: Game, _ rhs: Game) -> Bool {
+            lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+        }
+        // Compute each sort value once, especially the aggregates from play history.
+        func descending<Value: Comparable>(by value: (Game) -> Value?) -> [Game] {
+            searched.map { (game: $0, value: value($0)) }.sorted { lhs, rhs in
+                switch (lhs.value, rhs.value) {
+                case let (l?, r?) where l != r: return l > r
+                case (.some, .none): return true
+                case (.none, .some): return false
+                default: return byName(lhs.game, rhs.game)
+                }
+            }.map(\.game)
+        }
+        switch sort {
+        case .recent: return descending(by: played)
+        case .name: return searched.sorted(by: byName)
+        case .added: return descending { $0.libraryModificationDate }
+        case .playtime: return descending { history.totalDuration(for: $0.id) }
         }
     }
 
@@ -76,8 +108,10 @@ package protocol LibraryQueryRecord {
     var isHidden: Bool { get }
     var isInstalledForLibrary: Bool { get }
     var librarySearchTerms: [String] { get }
+    var libraryModificationDate: Date? { get }
 }
 extension CatalogGame: LibraryQueryRecord {
     package var isInstalledForLibrary: Bool { record.isInstalledForLibrary }
     package var librarySearchTerms: [String] { record.librarySearchTerms }
+    package var libraryModificationDate: Date? { record.libraryModificationDate }
 }

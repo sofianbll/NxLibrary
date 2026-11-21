@@ -32,7 +32,7 @@ final class SettingsCatalogTests: XCTestCase {
         "viewButtonSwitches", "spotlightCards", "startingTab", "spotlightOrder", "interfaceSounds", "soundVolume",
         "quietLaunch", "importSeleneSounds", "colorThemeID", "wallpaperID", "settingsWallpaperID", "backgroundSizing",
         "wallpaperBrightness", "animatedBackground", "keepWallpaperOnGames", "backgroundShade", "readableText",
-        "showClock", "reduceMotion", "iconAppearance", "boxCovers", "igdb", "steamGridDB", "launchStyle",
+        "showClock", "reduceMotion", "iconAppearance", "boxCovers", "igdb", "steamGridDB", "librarySort", "launchStyle",
         "launchMotion", "launchShade", "surprisePool", "cloudSaves", "cloudSavesPickedFolder", "showsSessionCard",
         "cloudLibraryEnabled", "cloudLibraryService", "cloudLibraryConnect", "cloudLibraryFolder", "cloudLibraryImport",
         "showsCloudPlayIcon", "showsCloudDetailsLink", "cloudTileBadges",
@@ -54,7 +54,7 @@ final class SettingsCatalogTests: XCTestCase {
 
     func testEveryRowSitsInItsNewSection() {
         let groups = Dictionary(uniqueKeysWithValues: SettingsCatalog.all.map { ($0.id, $0.group) })
-        for id in ["launchStyle", "launchMotion", "launchShade", "surprisePool", "showsSessionCard", "hiddenGames"] {
+        for id in ["librarySort", "launchStyle", "launchMotion", "launchShade", "surprisePool", "showsSessionCard", "hiddenGames"] {
             XCTAssertEqual(groups[id], .libraryGames, id)
         }
         XCTAssertEqual(groups["cloudSaves"], .cloudSaves)
@@ -93,6 +93,7 @@ final class SettingsCatalogTests: XCTestCase {
     func testGroupResetCoversMovedRows() {
         var settings = AppSettings()
         settings.launchMotion.toggle()
+        settings.librarySort = .name
         settings.showsSessionCard.toggle()
         settings.gameDefaults.rumble.toggle()
         settings.gameDefaults.fullscreen.toggle()
@@ -100,6 +101,8 @@ final class SettingsCatalogTests: XCTestCase {
 
         let library = SettingsReset.reset(.libraryGames, in: settings)
         XCTAssertEqual(library.launchMotion, AppSettings().launchMotion)
+        XCTAssertEqual(library.librarySort, .recent)
+        XCTAssertTrue(SettingsCatalog.changed(in: settings).contains { $0.id == "librarySort" })
         XCTAssertEqual(library.showsSessionCard, AppSettings().showsSessionCard)
         XCTAssertEqual(library.gameDefaults.rumble, settings.gameDefaults.rumble, "Rumble is a new-game default")
         XCTAssertEqual(library.cloudSavesPickedFolder, "/Volumes/Saves")
@@ -154,7 +157,7 @@ final class SettingsCatalogTests: XCTestCase {
         "wallpaperID", "settingsWallpaperID", "backgroundSizing", "wallpaperBrightness", "animatedBackground",
         "keepWallpaperOnGames", "backgroundShade", "readableText", "showClock", "reduceMotion", "iconAppearance",
         "controllerStatus", "buttonLayout", "controllerDeadzone", "igdb", "steamGridDB", "zeroTier", "remotePlayMode", "steamSource",
-        "steamRefresh", "steamFolder", "steamInBackground", "launchStyle", "launchMotion", "launchShade",
+        "steamRefresh", "steamFolder", "steamInBackground", "librarySort", "launchStyle", "launchMotion", "launchShade",
         "surprisePool", "showsSessionCard", "hiddenGames", "storageUsage", "logs", "metadataCache", "artworkCache",
         "saveBackups", "checkEngineAtLaunch", "engineFolder", "engineStatus", "toolchainOverride", "upstream",
         "newestEngine", "compare", "setup", "keys", "refreshLibraryAtLaunch", "boxCovers", "gameFolder",

@@ -2,15 +2,20 @@ import SwiftUI
 import NXLibraryCore
 
 /// Selene's top bar (Main.xaml HubTopBarBackground + HomeNav.RenderFilterTabs):
-/// 110 high, 64 side margins, LB · filter tabs · RB centered, clock on the right.
+/// 110 high, 64 side margins, LB · filter tabs · RB · sort centered, clock on the right.
 /// Shared by Spotlight and Collection.
 struct SpotlightTopBar: View {
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneReduceMotion) private var reduceMotion
+    @Environment(\.nxAppLocale) private var locale
+    @ObservedObject private var controller = GameControllerService.shared
 
     let filter: LibraryFilter
+    let sort: LibrarySort
     var showClock: Bool = true
+    var sortUsesRightStick = false
     var onSelect: (LibraryFilter) -> Void = { _ in }
+    let onCycleSort: () -> Void
 
     @State private var popScale: CGFloat = 1
     @State private var popOpacity: Double = 1
@@ -21,6 +26,14 @@ struct SpotlightTopBar: View {
                 badge(.lb)
                 ForEach(LibraryFilter.allCases) { tab($0) }
                 badge(.rb)
+                HStack(spacing: 0) {
+                    if sortUsesRightStick && controller.isGamepadConnected { badge(.rs) }
+                    SelenePillButton(title: sort.title, icon: .swap, iconSize: 20, minWidth: 0, height: 34,
+                                     horizontalPadding: 16, focused: false, action: onCycleSort)
+                        .accessibilityLabel(L10n.text("Sort games", context: locale))
+                        .accessibilityValue(L10n.text(sort.title, context: locale))
+                }
+                .padding(.leading, canvas.u(12))
             }
             HStack {
                 Spacer()
