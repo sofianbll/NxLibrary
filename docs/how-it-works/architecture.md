@@ -879,8 +879,8 @@ Nel repository, `.build/` contiene gli output SwiftPM, `work/Runtime` il runtime
 
 **Script di build e release.**
 - `bundle_runtime.sh` prepara Python e strumenti da `runtime.lock`, controlla gli hash e sistema i riferimenti Mach-O con `relink_macho.py`.
-- `build_app.sh` compila e confeziona bundle, risorse, plist e firma ad hoc, poi installa il bundle completo attraverso `BuildOutputInstaller` dopo firma e verifica. Il suo parametro di destinazione permette di preparare una copia temporanea prima di sostituire quella installata.
-- `release.sh` richiede un albero pulito e il runtime pronto, esegue suite Swift e tutti i controlli `Tests/CatalogAppChecks/run_*.py` senza UI, imposta versione e marker di release e crea ZIP e DMG. `--publish` abilita tag e pubblicazione su GitHub, solo con autorizzazione esplicita dell'utente. `build_dmg.sh` confeziona un bundle già costruito.
+- `build_app.sh` compila e confeziona bundle, risorse, plist e firma ad hoc, poi installa il bundle completo attraverso `BuildOutputInstaller` dopo firma e verifica. Il suo parametro di destinazione permette di preparare una copia temporanea prima di sostituire quella installata. Nella build di release verifica lo SHA-256 di rclone arm64 sia contro il pin sia contro l'elenco ufficiale, poi firma il binario in `Contents/Helpers` prima di firmare l'app. Se sono forniti entrambi i valori OAuth Google, `inject_google_client.py` li scrive nel plist senza inserirli negli argomenti dei processi.
+- `release.sh` richiede un albero pulito e il runtime pronto, esegue suite Swift e tutti i controlli `Tests/CatalogAppChecks/run_*.py` senza UI, imposta versione e marker di release e crea ZIP e DMG. `--publish` abilita tag e pubblicazione su GitHub, solo con autorizzazione esplicita dell'utente, e rifiuta le variabili del client Google privato. `build_dmg.sh` confeziona un bundle già costruito.
 - Il runtime e i contenuti versionati si verificano con `scripts/check_publication.py`.
 
 ## Verifica e manutenzione

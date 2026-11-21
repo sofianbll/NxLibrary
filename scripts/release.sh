@@ -33,6 +33,8 @@ fail() { echo "error: $*" >&2; exit 1; }
 [[ "$VERSION" =~ ^[0-9]+(\.[0-9]+){1,3}$ ]] || fail "the version must be dotted numbers, like 0.2.0"
 TAG="v$VERSION"
 if [ "$PUBLISH" = "1" ]; then
+  [ -z "${ARCANE_GOOGLE_CLIENT_ID:-}${ARCANE_GOOGLE_CLIENT_SECRET:-}" ] \
+    || fail "unset the private Google OAuth client before publishing"
   [ -n "$NOTES" ] && [ -f "$NOTES" ] || fail "--publish needs --notes <file> with the release notes"
   command -v gh >/dev/null || fail "--publish needs the GitHub CLI (gh)"
   REPOSITORY="$(sed -n 's/.*defaultRepository: String? = "\([^"]*\)".*/\1/p' "$ROOT/Sources/NXLibraryCore/App/AppUpdate.swift")"
@@ -40,8 +42,15 @@ if [ "$PUBLISH" = "1" ]; then
   [ "$(gh api "repos/$REPOSITORY" --jq .private)" = "false" ] \
     || fail "the update repository must be publicly accessible before publishing"
 fi
+GOOGLE_CLIENT_ID="${ARCANE_GOOGLE_CLIENT_ID:-}"
+GOOGLE_CLIENT_SECRET="${ARCANE_GOOGLE_CLIENT_SECRET:-}"
+unset ARCANE_GOOGLE_CLIENT_ID ARCANE_GOOGLE_CLIENT_SECRET
 [ -z "$(git status --porcelain)" ] || fail "the working tree has changes; commit or stash them first"
-if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then fail "the tag $TAG already exists"; fi
+PRIVATE=0
+if [ -n "$GOOGLE_CLIENT_ID" ] && [ -n "$GOOGLE_CLIENT_SECRET" ]; then PRIVATE=1; fi
+if [ "$PRIVATE" = "0" ] && git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+  fail "the tag $TAG already exists"
+fi
 [ "$(tr -d '[:space:]' < "$ROOT/VERSION")" = "$VERSION" ] || fail "VERSION says $(tr -d '[:space:]' < "$ROOT/VERSION"); set it to $VERSION first"
 if [ "$PUBLISH" = "1" ]; then
   # The tag goes on what players can see: the tip of the pushed main branch.
@@ -70,12 +79,15 @@ REQUIRES="<!-- nxlibrary-requires xcode=$MIN_XCODE engine=$ENGINE -->"
 echo "Requires: Xcode $MIN_XCODE, nxnative ${ENGINE:0:7}"
 
 OUT="$ROOT/work/release"
+if [ "$PRIVATE" = "1" ]; then OUT="$ROOT/work/release-private"; fi
 APP="$OUT/NXLibrary.app"
 ZIP="$OUT/NXLibrary-$VERSION.zip"
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
-NX_VERSION="$VERSION" NX_RELEASE=1 bash "$ROOT/scripts/build_app.sh" "$APP"
+ARCANE_GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" ARCANE_GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
+  NX_VERSION="$VERSION" NX_RELEASE=1 bash "$ROOT/scripts/build_app.sh" "$APP"
+unset GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET
 codesign --verify --deep --strict "$APP"
 if /usr/libexec/PlistBuddy -c 'Print :NXLibraryDevelopmentProfile' "$APP/Contents/Info.plist" >/dev/null 2>&1; then
   fail "a release must not select the development data profile"

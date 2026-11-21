@@ -27,6 +27,9 @@ fi
 RELEASE_KEY="  <key>NXLibraryDevelopmentProfile</key><true/>"
 [ "${NX_RELEASE:-0}" = "1" ] && RELEASE_KEY="  <key>NXLibraryRelease</key><true/>"
 NEXTENDO_CLIENT_ID="${DM_NEXTENDO_CLIENT_ID:-}"
+GOOGLE_CLIENT_ID="${ARCANE_GOOGLE_CLIENT_ID:-}"
+GOOGLE_CLIENT_SECRET="${ARCANE_GOOGLE_CLIENT_SECRET:-}"
+unset ARCANE_GOOGLE_CLIENT_ID ARCANE_GOOGLE_CLIENT_SECRET
 if [[ -n "$NEXTENDO_CLIENT_ID" && ! "$NEXTENDO_CLIENT_ID" =~ ^[A-Za-z0-9._-]{1,128}$ ]]; then
   echo "error: DM_NEXTENDO_CLIENT_ID must be a valid public client ID" >&2
   exit 1
@@ -62,6 +65,21 @@ for icon in "$ROOT"/Resources/AppIcon-*.png; do
 done
 [ -f "$ROOT/LICENSE" ] && cp "$ROOT/LICENSE" "$APP/Contents/Resources/LICENSE"
 [ -f "$ROOT/NOTICE" ] && cp "$ROOT/NOTICE" "$APP/Contents/Resources/NOTICE"
+if [ "${NX_RELEASE:-0}" = "1" ]; then
+  RCLONE_VERSION=1.75.2
+  RCLONE_SHA256=610ab7d48615135dfc60b763858b11a426a0d3d1160c1bb76fb0ae6011b02edd
+  RCLONE_BASE="https://downloads.rclone.org/v$RCLONE_VERSION"
+  RCLONE_NAME="rclone-v$RCLONE_VERSION-osx-arm64"
+  curl -qfsSL --proto '=https' --proto-redir '=https' --max-time 120 "$RCLONE_BASE/SHA256SUMS" -o "$STAGE/SHA256SUMS"
+  grep -Fx "$RCLONE_SHA256  $RCLONE_NAME.zip" "$STAGE/SHA256SUMS" >/dev/null \
+    || { echo "error: official rclone checksum differs from the pin" >&2; exit 1; }
+  curl -qfsSL --proto '=https' --proto-redir '=https' --max-time 120 "$RCLONE_BASE/$RCLONE_NAME.zip" -o "$STAGE/$RCLONE_NAME.zip"
+  (cd "$STAGE" && printf '%s  %s.zip\n' "$RCLONE_SHA256" "$RCLONE_NAME" | shasum -a 256 -c -)
+  mkdir -p "$APP/Contents/Helpers"
+  unzip -p "$STAGE/$RCLONE_NAME.zip" "$RCLONE_NAME/rclone" > "$APP/Contents/Helpers/rclone"
+  chmod 755 "$APP/Contents/Helpers/rclone"
+  codesign --force --sign - "$APP/Contents/Helpers/rclone"
+fi
 cp "$ROOT/scripts/validate_update.py" "$APP/Contents/Resources/validate_update.py"
 [ -d "$ROOT/Resources/Selene" ] && cp -R "$ROOT/Resources/Selene" "$APP/Contents/Resources/Selene"
 [ -d "$ROOT/Resources/Brands" ] && cp -R "$ROOT/Resources/Brands" "$APP/Contents/Resources/Brands"
@@ -112,6 +130,9 @@ fi
 PROFILE_PROBE="$STAGE/ProfileCheck.app"
 mkdir -p "$PROFILE_PROBE/Contents/MacOS"
 cp "$APP/Contents/Info.plist" "$PROFILE_PROBE/Contents/Info.plist"
+ARCANE_GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" ARCANE_GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
+  python3 "$ROOT/scripts/inject_google_client.py" "$APP/Contents/Info.plist"
+unset GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET
 swiftc -I "$ROOT/.build/$CONFIG" "$ROOT/scripts/check_app_profile.swift" \
   "$ROOT/.build/$CONFIG/NXLibraryCore.o" -o "$PROFILE_PROBE/Contents/MacOS/NXLibrary"
 "$PROFILE_PROBE/Contents/MacOS/NXLibrary"

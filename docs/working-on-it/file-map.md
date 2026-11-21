@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 21 novembre 2026. Copertura di **852 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 21 novembre 2026. Copertura di **853 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -63,7 +63,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 | [AGENTS.md](../../AGENTS.md) | Definisce vincoli per gli agenti, procedura di upgrade del motore e verifiche assegnate all’utente. |
 | [CHANGELOG.md](../../CHANGELOG.md) | Registra le modifiche visibili all'utente per versione. |
 | [LICENSE](../../LICENSE) | Contiene la licenza MIT di Arcane. |
-| [NOTICE](../../NOTICE) | Conserva attribuzioni del motore al pin corrente, dei componenti, dei loghi e delle altre risorse riutilizzate. |
+| [NOTICE](../../NOTICE) | Conserva attribuzioni del motore al pin corrente, di rclone, dei componenti, dei loghi e delle altre risorse riutilizzate. |
 | [Package.swift](../../Package.swift) | Dichiara i target SwiftPM (`NXLibraryCore`, il modulo `ArcanePorting` che dipende dalla base, l'app che li importa entrambi, i test), le loro dipendenze e il deployment macOS minimo. |
 | [README.md](../../README.md) | Presenta Arcane come libreria e launcher Mac, con guide, requisiti, sostegno volontario, crediti e note legali. |
 | [runtime.lock](../../runtime.lock) | Fissa versioni, download e hash del runtime Python e degli strumenti inclusi nel bundle. |
@@ -1063,18 +1063,19 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [SteamArtworkRequestTests.swift](../../Tests/NXLibraryCoreTests/SteamArtworkRequestTests.swift) | Quadrato dall’icona originale e mai dalla copertina, scelta personale prima, link che escono dal bundle ignorati, icona automatica solo senza app. |
 | [SteamAutomaticIconTests.swift](../../Tests/NXLibraryCoreTests/SteamAutomaticIconTests.swift) | Quadrato LaunchBox della voce PC preso intero, scaricato una volta e conservato; nessun quadrato non si richiede di nuovo nella sessione. |
 | [SteamBackdropChoiceTests.swift](../../Tests/NXLibraryCoreTests/SteamBackdropChoiceTests.swift) | Solo arte in formato schermo, ordine store → screenshot → banner, fan art LaunchBox fra store e screenshot, ripiego sulla prima immagine che si carica. |
-| [test_app_bundle.py](../../Tests/PublicationChecks/test_app_bundle.py) | Verifica che il bundle del launcher rinunci a Game Mode. |
+| [test_app_bundle.py](../../Tests/PublicationChecks/test_app_bundle.py) | Verifica che il bundle del launcher rinunci a Game Mode e che la coppia OAuth facoltativa venga aggiunta al plist solo se completa. |
 
 ## Script di sviluppo e packaging
 
 | File | Responsabilità |
 |---|---|
-| [scripts/build_app.sh](../../scripts/build_app.sh) | Compila in staging, prepara plist (con ID client Nextendo pubblico facoltativo), runtime e risorse, verifica la firma e pubblica il bundle con sostituzione atomica. |
+| [scripts/build_app.sh](../../scripts/build_app.sh) | Compila in staging; prepara plist, runtime, risorse e, in release, rclone verificato; firma e pubblica il bundle con sostituzione atomica. |
+| [scripts/inject_google_client.py](../../scripts/inject_google_client.py) | Scrive la coppia OAuth Google nel plist della build privata solo se completa, senza argomenti con credenziali. |
 | [scripts/install_built_app.swift](../../scripts/install_built_app.swift) | Piccolo ingresso CLI che riusa BuildOutputInstaller per installare Arcane dopo il packaging. |
 | [scripts/check_publication.py](../../scripts/check_publication.py) | Rifiuta contenuti personali o di gioco versionati e formati di segreto riconoscibili; verifica il runtime rispetto al lock prima del packaging. |
 | [scripts/build_dmg.sh](../../scripts/build_dmg.sh) | Confeziona un bundle già costruito in un’immagine DMG di sviluppo. |
 | [scripts/bundle_runtime.sh](../../scripts/bundle_runtime.sh) | Prepara Python e strumenti dalle versioni bloccate, verifica gli hash e firma il runtime incluso. |
-| [scripts/release.sh](../../scripts/release.sh) | Controlla prerequisiti, suite Swift e tutti gli script headless delle regressioni app; produce ZIP e DMG di release, con pubblicazione esplicita opzionale. |
+| [scripts/release.sh](../../scripts/release.sh) | Controlla prerequisiti, suite Swift e regressioni app; produce ZIP e DMG di release. La pubblicazione esplicita rifiuta il client Google privato. |
 | [scripts/validate_update.py](../../scripts/validate_update.py) | Verifica struttura, percorsi e limiti degli archivi prima dell'estrazione, sia nel bundle sia durante il packaging delle release. |
 | [scripts/relink_macho.py](../../scripts/relink_macho.py) | Riscrive riferimenti Mach-O dei binari e delle librerie affinché il runtime incluso sia rilocabile. |
 | [scripts/make_icons.swift](../../scripts/make_icons.swift) | Genera le risorse dell’icona dell’app nelle varianti usate dal bundle. |
