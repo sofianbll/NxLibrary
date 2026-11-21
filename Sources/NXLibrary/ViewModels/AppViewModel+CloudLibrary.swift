@@ -317,6 +317,9 @@ extension AppViewModel {
             } catch is CancellationError {
                 self.cloudLibrary.update(id) { $0.operationMessage = L10n.text("Transfer cancelled.") }
             } catch {
+                if let detail = (error as? CloudArchiveError)?.diagnosticDetail {
+                    self.logs.append(LogEntry(level: .error, message: detail))
+                }
                 self.cloudLibrary.update(id) {
                     $0.operationMessage = self.cloudMessage(for: error)
                     if error is StorageBackendError || error as? CloudArchiveError == .invalidManifest { $0.remote = nil }

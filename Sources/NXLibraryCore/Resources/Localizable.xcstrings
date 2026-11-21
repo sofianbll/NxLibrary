@@ -831,6 +831,26 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "A cópia local mudou. Verifique-a antes de tentar novamente."}}
       }
     },
+    "The app changed during upload (%@). Try again.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Die App hat sich beim Hochladen geändert (%@). Versuche es erneut."}},
+        "en": {"stringUnit": {"state": "translated", "value": "The app changed during upload (%@). Try again."}},
+        "es": {"stringUnit": {"state": "translated", "value": "La app cambió durante el envío (%@). Inténtalo de nuevo."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "L’app a changé pendant l’envoi (%@). Réessaie."}},
+        "it": {"stringUnit": {"state": "translated", "value": "L’app è cambiata durante l’invio (%@). Riprova."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O app mudou durante o envio (%@). Tente novamente."}}
+      }
+    },
+    "The build cache changed during upload (%@). Try again.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Der Build-Cache hat sich beim Hochladen geändert (%@). Versuche es erneut."}},
+        "en": {"stringUnit": {"state": "translated", "value": "The build cache changed during upload (%@). Try again."}},
+        "es": {"stringUnit": {"state": "translated", "value": "La caché de compilación cambió durante el envío (%@). Inténtalo de nuevo."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Le cache de compilation a changé pendant l’envoi (%@). Réessaie."}},
+        "it": {"stringUnit": {"state": "translated", "value": "La cache di compilazione è cambiata durante l’invio (%@). Riprova."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O cache de compilação mudou durante o envio (%@). Tente novamente."}}
+      }
+    },
     "A local folder is missing, unavailable or shared with another game.": {
       "localizations": {
         "de": {"stringUnit": {"state": "translated", "value": "Ein lokaler Ordner fehlt, ist nicht verfügbar oder gehört auch zu einem anderen Spiel."}},

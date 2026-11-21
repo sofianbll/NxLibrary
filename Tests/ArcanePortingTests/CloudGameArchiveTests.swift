@@ -125,6 +125,54 @@ final class CloudGameArchiveTests: XCTestCase {
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: f.trash.path), [])
     }
 
+    func testUploadRefusesAnAppThatChangesAfterItsSnapshotAndNamesTheEntry() async throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let path = "Contents/_CodeSignature/CodeResources"
+        let file = f.app.appendingPathComponent(path)
+        let changed = Data(repeating: 42, count: try Data(contentsOf: file).count + 1)
+        let service = f.service
+        do {
+            _ = try await service.upload(f.game) { progress in
+                // The app was already scanned when the cache scan starts.
+                if progress.phase == .archiving, progress.kind == .cache {
+                    do { try changed.write(to: file) }
+                    catch { XCTFail("Could not mutate the fixture: \(error)") }
+                }
+            }
+            XCTFail("A changed app must not be published")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains(path), error.localizedDescription)
+            let mismatch = error as? CloudArchiveError
+            XCTAssertEqual(mismatch, .uploadMismatch(.app, path: path, reason: .size))
+            XCTAssertEqual(mismatch?.diagnosticDetail, "Cloud upload: app \"Contents/_CodeSignature/CodeResources\" — size")
+        }
+        let remote = try await f.backend.list()
+        XCTAssertEqual(remote, [])
+    }
+
+    func testResendDoesNotReplaceManifestWhenCachePermissionsChange() async throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let service = f.service
+        let before = try await service.upload(f.game)
+        let file = f.cache.appendingPathComponent("run.key")
+        do {
+            _ = try await service.upload(f.game) { progress in
+                if progress.phase == .verifying, progress.kind == .app {
+                    XCTAssertEqual(chmod(file.path, 0o600), 0)
+                }
+            }
+            XCTFail("A changed cache must not be published")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("run.key"), error.localizedDescription)
+            let mismatch = error as? CloudArchiveError
+            XCTAssertEqual(mismatch, .uploadMismatch(.cache, path: "run.key", reason: .permissions))
+        }
+        let latest = try await service.latest(titleID: title)
+        XCTAssertEqual(latest, before)
+    }
+
     func testChecksSpaceBeforeArchiveOrRestore() async throws {
         let f = try fixture()
         defer { try? FileManager.default.removeItem(at: f.root) }

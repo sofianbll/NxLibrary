@@ -77,8 +77,19 @@ public struct CloudGameManifest: Codable, Equatable, Sendable {
 }
 
 public enum CloudArchiveError: LocalizedError, Equatable {
+    public enum UploadDifference: String {
+        case added, removed, type, size, linkTarget, permissions, parentDirectory
+    }
+
     case busy, confirmationRequired, insufficientSpace, unsafePath, localMissing
     case noRemoteCopy, invalidManifest, invalidArchive, invalidApp, localChanged, excludedFiles, installFailed
+    case uploadMismatch(CloudArtifactKind, path: String, reason: UploadDifference)
+
+    public var diagnosticDetail: String? {
+        guard case .uploadMismatch(let kind, let path, let reason) = self else { return nil }
+        return DiagnosticsReport.scrub("Cloud upload: \(kind.rawValue) \(String(reflecting: path)) — \(reason.rawValue)",
+                                       home: NSHomeDirectory())
+    }
 
     public var errorDescription: String? {
         switch self {
@@ -92,6 +103,9 @@ public enum CloudArchiveError: LocalizedError, Equatable {
             return L10n.text("This folder contains files that must stay on this Mac.")
         case .localChanged:
             return L10n.text("The local copy changed. Check it before trying again.")
+        case .uploadMismatch(let kind, let path, _):
+            return L10n.format(kind == .app ? "The app changed during upload (%@). Try again."
+                               : "The build cache changed during upload (%@). Try again.", [path])
         case .unsafePath, .localMissing:
             return L10n.text("A local folder is missing, unavailable or shared with another game.")
         case .invalidManifest, .invalidArchive:
@@ -234,8 +248,11 @@ public actor CloudGameArchive {
                                          "-include-field", "siz"] + exclusions)
             progress?(.init(.verifying, kind: kind))
             let listed = try await inventory(in: archive, kind: kind)
-            guard ordered(listed) == ordered(initial.entries), try sameDirectory(volume, at: parent) else {
-                throw CloudArchiveError.localChanged
+            if let (path, reason) = firstDifference(from: initial.entries, to: listed) {
+                throw CloudArchiveError.uploadMismatch(kind, path: path.isEmpty ? "." : path, reason: reason)
+            }
+            guard (try? sameDirectory(volume, at: parent)) == true else {
+                throw CloudArchiveError.uploadMismatch(kind, path: "..", reason: .parentDirectory)
             }
             try requireSpace(in: parent, bytes: initial.bytes, entries: initial.entries.count)
             let check = stage.appendingPathComponent(source.lastPathComponent, isDirectory: true)
@@ -432,6 +449,24 @@ public actor CloudGameArchive {
 
     private func ordered(_ entries: [CloudArchiveInventory.Entry]) -> [CloudArchiveInventory.Entry] {
         entries.sorted { $0.path.utf8.lexicographicallyPrecedes($1.path.utf8) }
+    }
+
+    private func firstDifference(from initial: [CloudArchiveInventory.Entry], to listed: [CloudArchiveInventory.Entry])
+        -> (String, CloudArchiveError.UploadDifference)? {
+        let before = ordered(initial), after = ordered(listed)
+        for (old, new) in zip(before, after) where old != new {
+            if old.path != new.path {
+                return old.path.utf8.lexicographicallyPrecedes(new.path.utf8)
+                    ? (old.path, .removed) : (new.path, .added)
+            }
+            if old.type != new.type { return (old.path, .type) }
+            if old.size != new.size { return (old.path, .size) }
+            if old.link != new.link { return (old.path, .linkTarget) }
+            return (old.path, .permissions)
+        }
+        if before.count > after.count { return (before[after.count].path, .removed) }
+        if after.count > before.count { return (after[before.count].path, .added) }
+        return nil
     }
 
     private func verifiedApp(_ app: URL, titleID: String) async throws -> [String: String] {
