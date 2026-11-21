@@ -193,7 +193,15 @@ struct SpotlightView: View {
 
     /// One pill while the selected game ports, three otherwise.
     var selectedPillCount: Int {
-        selectedGame.map { viewModel.portingPills($0).count } ?? SpotlightState.pillCount
+        selectedGame.map { viewModel.portingPills($0).count + (showsCloudPill($0) ? 1 : 0) } ?? SpotlightState.pillCount
+    }
+
+    func showsCloudPill(_ game: PortedGame) -> Bool {
+        guard settings.settings.showsCloudPlayIcon, viewModel.showsCloudLibrary(game) else { return false }
+        switch viewModel.portingPills(game) {
+        case .normal, .normalAfterFailure, .unavailable: return true
+        case .porting, .failed: return false
+        }
     }
 
     var screenshotCount: Int {

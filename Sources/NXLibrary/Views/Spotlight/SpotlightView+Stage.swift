@@ -180,6 +180,8 @@ extension SpotlightView {
                         mutate { $0.pillIndex = index }
                     },
                     pillSet: viewModel.portingPills(game),
+                    cloud: viewModel.cloudLibrary,
+                    showsCloudPill: showsCloudPill(game),
                     canCheckCloudSources: viewModel.canCheckCloudSources(for: game),
                     etaText: viewModel.portingETAText,
                     onOpenLog: { viewModel.revealLog(for: game) }

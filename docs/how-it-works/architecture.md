@@ -735,6 +735,7 @@ Prove e misure di queste scelte: [docs/history/reviews/2026-11-16-ratings-metada
 
 ## Interfaccia Selene e input
 
+- La pillola Cloud (badge delle tessere) compare anche fra le pillole di Spotlight, in `GamePrimaryActions` fra Options e preferito, con lo stesso interruttore di Details.
 - Il tasto Home del controller apre il centro di controllo come Menu. Le pillole Power sono Quit, Sleep (`pmset sleepnow`, rinviato durante un trasferimento cloud), Hide e Restart app (`PowerAction`, `AppShellView.runPower`).
 
 **Canvas, temi e componenti.**

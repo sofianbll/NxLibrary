@@ -22,6 +22,8 @@ struct SpotlightGameInfoView: View {
     let onHoverPill: (Int) -> Void
     /// The pills follow the porting (`PortingPills`).
     var pillSet: PortingPills = .normal
+    @ObservedObject var cloud: CloudLibraryModel
+    var showsCloudPill = false
     var canCheckCloudSources = false
     /// "About 8 min left" under the Porting pill.
     var etaText: String? = nil
@@ -139,6 +141,7 @@ struct SpotlightGameInfoView: View {
                            secondaryTitle: isRunning ? "Close Game" : "Options",
                            isFavorite: game.isFavorite, focused: focusedPill,
                            primaryEnabled: isRunning || pillSet.unavailableReason == nil,
+                           cloud: showsCloudPill ? CloudLibraryIndicator(state: cloud.states[game.id] ?? CloudLibraryState()) : nil,
                            onAction: onPill, onHover: onHoverPill)
     }
 

@@ -347,6 +347,10 @@ extension SpotlightView {
         case .normal, .normalAfterFailure:
             break
         }
+        if showsCloudPill(game), index == 2 {
+            DetailsLink.openCloud(for: game, viewModel: viewModel)
+            return
+        }
         switch index {
         case 0:
             // Resume while the game runs; otherwise Play.
