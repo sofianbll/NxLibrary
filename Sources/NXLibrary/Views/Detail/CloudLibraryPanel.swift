@@ -96,7 +96,7 @@ struct CloudLibraryPanel: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
-        .modifier(SeleneDialogCard())
+        .modifier(SeleneDialogCard(width: 920))
     }
 
     private func artifactRow(_ item: CloudLibraryItem) -> some View {
