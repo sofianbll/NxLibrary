@@ -28,9 +28,12 @@ struct GameDetailView: View {
     let game: PortedGame
     @ObservedObject private var cloud: CloudLibraryModel
 
-    init(viewModel: AppViewModel, router: AppRouter, settings: AppSettingsStore, playSessions: PlaySessionStore,
+    init(viewModel: AppViewModel, setup: SetupModel, store: StoreMetadataModel, router: AppRouter,
+         settings: AppSettingsStore, playSessions: PlaySessionStore,
          runningGames: RunningGameMonitor, artwork: ArtworkStore, game: PortedGame) {
         self.viewModel = viewModel
+        self.setup = setup
+        self.store = store
         self.router = router
         self.settings = settings
         self.playSessions = playSessions
