@@ -1,5 +1,6 @@
 import Foundation
 import Darwin
+import NXLibraryCore
 
 public struct CloudDriveFolders: Sendable {
     public struct Listing: Sendable {

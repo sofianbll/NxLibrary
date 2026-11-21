@@ -110,6 +110,7 @@ struct SpotlightPageModel { var links = [1]; var more: [Int] = [] }
     var gameToClose: Int?
     var gameToRemove: Int?
     var cloudLibraryGameID: UUID?
+    var cloudQuitRequested = false
     var launchOverlay: Int?
     var isBuilding = false
     var catalogBuildRecoveries: [Int] = []
@@ -117,6 +118,8 @@ struct SpotlightPageModel { var links = [1]; var more: [Int] = [] }
     var currentFocusedGame: PortedGame? { currentFocusedCatalogGame?.nxnativeGame }
     var launches: [UUID] = []
     func launchGame(_ game: PortedGame) { launches.append(game.id) }
+    func portingPills(_ game: PortedGame) -> PortingPills { .normal }
+    func canCheckCloudSources(for game: PortedGame) -> Bool { false }
 }
 @MainActor final class SoundEffectService {
     enum Cue { case focus, click, error }
@@ -279,6 +282,7 @@ final class NativeMenus { var isTracking = false }
     func closeGameInput(_ action: GamepadAction) { dialogActions.append(action) }
     func removeGameInput(_ action: GamepadAction) { dialogActions.append(action) }
     func updateOfferInput(_ action: GamepadAction) { dialogActions.append(action) }
+    func cloudQuitInput(_ action: GamepadAction) { dialogActions.append(action) }
     func menuInput(_ action: GamepadAction) { dialogActions.append(action) }
     // ACTUAL_DIALOG
     // ACTUAL_MENU
@@ -464,6 +468,12 @@ final class NativeMenus { var isTracking = false }
                                                                 object: nil, queue: nil) { note in
             if let action = note.object as? GamepadAction { MainActor.assumeIsolated { cloud.actions.append(action) } }
         }
+        input.viewModel.cloudQuitRequested = true
+        input.dialogActions = []
+        GameControllerService.shared.onAction?(.cancel)
+        require(input.dialogActions == [.cancel] && cloud.actions.isEmpty && received.actions.isEmpty,
+                "Quit confirmation must take controller input before the cloud panel")
+        input.viewModel.cloudQuitRequested = false
         for action: GamepadAction in [.navigateDown, .confirm, .menuHold] {
             GameControllerService.shared.onAction?(action)
         }
@@ -553,7 +563,7 @@ host = host.replace('// ACTUAL_PRIMARY_ACTION', declaration(
     'Sources/NXLibrary/Views/Detail/GameDetailView+Input.swift', '    func primaryAction()'))
 host = host.replace('// ACTUAL_INACTIVE_ONLINE_MODS', declaration(
     'Sources/NXLibrary/Views/GameOptions/ModsPanel.swift', '    private var inactiveOnlineCodeMods:'))
-controller = declaration('Sources/NXLibrary/Views/Shell/AppShellView.swift',
+controller = declaration('Sources/NXLibrary/Views/Shell/AppShellView+Startup.swift',
                          '        GameControllerService.shared.onAction =')
 host = host.replace('// ACTUAL_CONTROLLER', controller.replace('[weak viewModel, weak router]', '[self, weak viewModel, weak router]'))
 names = sorted(set(re.findall(r'name: \.(nx\w+)', controller)))

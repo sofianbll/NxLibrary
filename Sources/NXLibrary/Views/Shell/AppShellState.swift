@@ -21,6 +21,13 @@ final class AppShellState {
         ThemeStore.shared.apply(id: settings.settings.colorThemeID)
         let model = AppViewModel(settingsStore: settings, catalog: catalog, repository: repository)
         viewModel = model
+        AppDelegate.cloudLibrary = model.cloudLibrary
+        AppDelegate.showCloudQuit = { [weak model] in
+            guard let model else { return false }
+            model.dismissLaunchOverlay()
+            model.cloudQuitRequested = true
+            return true
+        }
         AppDelegate.isBusy = { [weak model] in
             guard let model else { return false }
             return model.isBuilding || model.isUpdatingApp || model.hasActiveSaveOperations

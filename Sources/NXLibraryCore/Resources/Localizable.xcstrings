@@ -11,6 +11,36 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviado · publicado ao fim do envio"}}
       }
     },
+    "A cloud transfer is in progress": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "A cloud transfer is in progress"}},
+        "it": {"stringUnit": {"state": "translated", "value": "È in corso un trasferimento cloud"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Un transfert cloud est en cours"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Eine Cloud-Übertragung läuft"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Hay una transferencia en la nube en curso"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Há uma transferência na nuvem em andamento"}}
+      }
+    },
+    "Quitting stops it. Your files and cloud copies stay intact; the queue resumes the next time you open Arcane.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Quitting stops it. Your files and cloud copies stay intact; the queue resumes the next time you open Arcane."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Uscire interrompe il trasferimento. I tuoi file e le copie nel cloud restano intatti; la coda riprende al prossimo avvio."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Quitter l'arrête. Tes fichiers et le cloud restent intacts ; la file reprendra au prochain lancement."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Beim Beenden wird die Übertragung gestoppt. Deine Dateien und Cloud-Kopien bleiben erhalten; die Warteschlange wird beim nächsten Start fortgesetzt."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Salir detiene la transferencia. Tus archivos y las copias en la nube se conservan; la cola se reanuda al volver a abrir Arcane."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Sair interrompe a transferência. Seus arquivos e as cópias na nuvem ficam intactos; a fila continua na próxima vez que você abrir o Arcane."}}
+      }
+    },
+    "Stay": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Stay"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Resta"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Rester"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Bleiben"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Quedarse"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Ficar"}}
+      }
+    },
     "A game file differs from its cloud copy. No existing copy is replaced.": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "A game file differs from its cloud copy. No existing copy is replaced."}},

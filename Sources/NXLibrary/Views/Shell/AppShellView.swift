@@ -22,6 +22,7 @@ struct AppShellView: View {
     @ObservedObject private var theme = ThemeStore.shared
     @ObservedObject var localization = AppLocalization.shared
     @State var gestureKeyMonitor: Any?
+    @State var cloudQuitFocus: SeleneConfirmButton = .cancel
     /// Rescans the Steam source when Steam rewrites a manifest (a download finishing, a game installed or removed).
     @State var steamWatcher = SteamManifestWatcher()
     @State var setupSourceEntryID: UUID?
@@ -80,7 +81,7 @@ struct AppShellView: View {
     /// A shell dialog is open; menu commands wait for it.
     var isCloseGameOpen: Bool {
         viewModel.gameToClose != nil || viewModel.gameToRemove != nil || showsUpdateOffer || showsInstallFailure
-            || showsSettingsNotice || viewModel.cloudLibraryGameID != nil
+            || showsSettingsNotice || viewModel.cloudLibraryGameID != nil || viewModel.cloudQuitRequested
     }
     var showsInstallFailure: Bool {
         viewModel.gameWithInstallFailure != nil && !viewModel.showSetupCheck

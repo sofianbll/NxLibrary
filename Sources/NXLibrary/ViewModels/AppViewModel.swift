@@ -24,6 +24,7 @@ final class AppViewModel: ObservableObject {
     static let automaticIconArtwork = ArtworkStore()
     let saveGate = SaveOperationGate()
     let cloudLibrary = CloudLibraryModel()
+    @Published var cloudQuitRequested = false
     @Published var cloudLibraryGameID: UUID?
     @Published var isCheckingCloudBuild = false
     let saveQueue = DispatchQueue(label: "local.nxlibrary.saves", qos: .userInitiated)
@@ -70,7 +71,8 @@ final class AppViewModel: ObservableObject {
     @Published var defaultInstallPath: String = ""
 
     /// The shell's update dialog owns input; screens leave the keyboard to it.
-    var shellDialogOwnsInput = false
+    var appUpdateDialogOwnsInput = false
+    var shellDialogOwnsInput: Bool { appUpdateDialogOwnsInput || cloudQuitRequested }
     /// "Welcome to Arcane" is on screen, until its fade has ended: screens' own keyboard monitors let Return and
     /// the arrows go to it, and Spotlight holds its entrance until it has gone.
     @Published var isWelcomeOpen = false

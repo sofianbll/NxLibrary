@@ -1,6 +1,7 @@
 import Foundation
 import XCTest
 @testable import NXLibraryCore
+@testable import ArcanePorting
 
 final class CloudDriveFoldersTests: XCTestCase {
     func testListAndExplicitCreateWithLocalRemote() async throws {

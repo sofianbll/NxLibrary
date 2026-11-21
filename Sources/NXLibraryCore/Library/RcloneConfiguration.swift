@@ -37,7 +37,7 @@ public struct CloudLibraryPreference: Equatable, Sendable {
             && !path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." })
     }
 
-    static func validRemote(_ name: String) -> Bool {
+    package static func validRemote(_ name: String) -> Bool {
         name.range(of: #"^[A-Za-z0-9_][A-Za-z0-9_. -]*\z"#, options: .regularExpression) != nil
     }
 
@@ -64,7 +64,7 @@ public struct RcloneConfiguration: Sendable {
     private static let service = "rclone-config"
     private static let account = "rclone"
 
-    typealias Run = @Sendable (URL, [String], [String: String]) async throws -> CommandResult
+    package typealias Run = @Sendable (URL, [String], [String: String]) async throws -> CommandResult
     private let executable: URL
     private let config: URL?
     private let run: Run
@@ -88,13 +88,13 @@ public struct RcloneConfiguration: Sendable {
         self.environment = environment
     }
 
-    static func environment() -> [String: String] {
+    package static func environment() -> [String: String] {
         ProcessInfo.processInfo.environment.filter {
             !$0.key.hasPrefix("RCLONE_") || ["RCLONE_CONFIG", "RCLONE_CONFIG_PASS", "RCLONE_PASSWORD_COMMAND"].contains($0.key)
         }
     }
 
-    static func flags(config: URL?, environment: [String: String]) -> [String] {
+    package static func flags(config: URL?, environment: [String: String]) -> [String] {
         var flags = ["--ask-password=false"]
         if let config { flags += ["--config", config.path] }
         if environment["RCLONE_CONFIG_PASS"] == nil, environment["RCLONE_PASSWORD_COMMAND"] == nil {

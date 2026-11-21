@@ -3,17 +3,7 @@ import Combine
 import NXLibraryCore
 import ArcanePorting
 
-enum CloudLibraryItem: Hashable, CaseIterable {
-    case app, cache, sources
-
-    init(_ kind: CloudArtifactKind) { self = kind == .app ? .app : .cache }
-    var artifact: CloudArtifactKind? {
-        switch self {
-        case .app: return .app
-        case .cache: return .cache
-        case .sources: return nil
-        }
-    }
+extension CloudLibraryItem {
     var title: String {
         switch self {
         case .app: return "Game app"
@@ -62,14 +52,7 @@ struct CloudFreeSelection {
     }
 }
 
-enum CloudLibraryAction: Equatable {
-    case upload(CloudArtifactKind? = nil)
-    case free(Set<CloudLibraryItem>)
-    case restore(CloudArtifactKind)
-    case restoreBuildCache
-    case uploadSources
-    case downloadSources
-
+extension CloudLibraryAction {
     func item(during progress: CloudArchiveProgress?) -> CloudLibraryItem {
         switch self {
         case .upload(let kind): return .init(kind ?? progress?.kind ?? (progress == nil ? .app : .cache))
@@ -157,6 +140,9 @@ final class CloudLibraryModel: ObservableObject {
         let scope: CloudWorkScope
         let sourceFiles: CloudSourceFiles?
         let onSuccess: (() -> Void)?
+        var resumed = false
+
+        var entry: CloudTransferQueue.Entry { .init(id: id, action: action) }
     }
 
     @Published private(set) var preference: CloudLibraryPreference
@@ -169,7 +155,29 @@ final class CloudLibraryModel: ObservableObject {
     var reads: [UUID: (token: UUID, task: Task<Void, Never>)] = [:]
     var queue: [Request] = []
     var active: (request: Request, task: Task<Void, Never>)?
+    let queueStore = CloudTransferQueue()
+    var isRestoringQueue = false
+    var hasRestoredQueue = false
+    private(set) var isQuitting = false
+    private(set) var hasQueueWrites = false
     var isWorking: Bool { active != nil || !queue.isEmpty }
+
+    @MainActor func persistQueue() {
+        guard hasRestoredQueue, !isQuitting else { return }
+        hasQueueWrites = true
+        queueStore.save((active.map { [$0.request.entry] } ?? []) + queue.map(\.entry))
+    }
+
+    @MainActor func stopForQuit() -> Task<Void, Never>? {
+        guard !isQuitting else { return nil }
+        isQuitting = true
+        let transfer = active?.task
+        transfer?.cancel()
+        return Task {
+            await transfer?.value
+            await queueStore.flush()
+        }
+    }
 
     func conflicts(with scope: CloudWorkScope) -> Bool {
         active?.request.scope.overlaps(scope) == true || queue.contains { $0.scope.overlaps(scope) }
@@ -222,6 +230,40 @@ final class CloudLibraryModel: ObservableObject {
 }
 
 extension AppViewModel {
+    @MainActor func restoreCloudQueue() {
+        guard let archive = cloudLibrary.archive, !isScanningLibrary, !cloudLibrary.hasRestoredQueue,
+              !cloudLibrary.isRestoringQueue, !cloudLibrary.isQuitting else { return }
+        cloudLibrary.isRestoringQueue = true
+        Task { [weak self] in
+            guard let self else { return }
+            let entries = await self.cloudLibrary.queueStore.load()
+            self.cloudLibrary.isRestoringQueue = false
+            guard !self.cloudLibrary.isQuitting else { return }
+            guard self.cloudLibrary.archive === archive, !self.isScanningLibrary else {
+                self.restoreCloudQueue()
+                return
+            }
+            self.cloudLibrary.hasRestoredQueue = true
+            let games = self.libraryGames
+            guard !entries.isEmpty else { return }
+            let restored = CloudTransferQueue.restoring(entries, gameIDs: Set(games.map(\.id)))
+            self.objectWillChange.send()
+            let requests: [CloudLibraryModel.Request] = restored.compactMap { entry in
+                guard let game = games.first(where: { $0.id == entry.id }),
+                      game.titleId.map(SaveLocation.validID) == true else { return nil }
+                self.cloudLibrary.reads[game.id]?.task.cancel()
+                self.cloudLibrary.reads[game.id] = nil
+                self.cloudLibrary.update(game.id) {
+                    $0.action = entry.action; $0.queued = true; $0.refreshing = false
+                }
+                return .init(id: game.id, action: entry.action, scope: CloudWorkScope(game),
+                             sourceFiles: CloudSourceFiles(game), onSuccess: nil, resumed: true)
+            }
+            self.cloudLibrary.queue = requests
+            self.startNextCloudOperation()
+        }
+    }
+
     var hasCloudLibrary: Bool { cloudLibrary.archive != nil }
 
     func showsCloudLibrary(_ game: PortedGame) -> Bool {
@@ -446,7 +488,8 @@ extension AppViewModel {
     @MainActor @discardableResult
     private func enqueueCloudLibrary(_ action: CloudLibraryAction, for selected: PortedGame,
                                      onSuccess: (() -> Void)? = nil) -> Bool {
-        guard cloudLibrary.archive != nil,
+        guard cloudLibrary.archive != nil, !cloudLibrary.isQuitting,
+              cloudLibrary.hasRestoredQueue,
               let game = libraryGames.first(where: { $0.id == selected.id }),
               CloudWorkScope(game) == CloudWorkScope(selected),
               game.sources == selected.sources,
@@ -487,6 +530,8 @@ extension AppViewModel {
     }
 
     @MainActor private func startNextCloudOperation() {
+        guard cloudLibrary.hasRestoredQueue, !cloudLibrary.isQuitting else { return }
+        defer { cloudLibrary.persistQueue() }
         guard cloudLibrary.active == nil else { return }
         while !cloudLibrary.queue.isEmpty {
             let request = cloudLibrary.queue.removeFirst()
@@ -524,10 +569,12 @@ extension AppViewModel {
                     if action != .uploadSources && action != .downloadSources { $0.copies = [:] }
                     $0.action = nil; $0.progress = nil
                 }
-                if succeeded { request.onSuccess?() }
-                self.startNextCloudOperation()
-                self.appIcon.syncPendingAppIcons()
-                Task { await self.refreshCloudLibrary(game) }
+                if !self.cloudLibrary.isQuitting {
+                    if succeeded { request.onSuccess?() }
+                    self.startNextCloudOperation()
+                    self.appIcon.syncPendingAppIcons()
+                    Task { await self.refreshCloudLibrary(game) }
+                }
             }
             let target = await self.cloudLocations(for: game)
             let (updates, continuation) = AsyncStream.makeStream(of: CloudArchiveProgress.self, bufferingPolicy: .bufferingNewest(1))
@@ -545,7 +592,14 @@ extension AppViewModel {
             }
             do {
                 try Task.checkCancellation()
-                switch action {
+                let operation: CloudLibraryAction
+                if request.resumed {
+                    guard let eligible = try await self.resumableCloudAction(request, archive: archive, game: game, target: target)
+                    else { return }
+                    operation = eligible
+                } else { operation = action }
+                try Task.checkCancellation()
+                switch operation {
                 case .upload(let kind):
                     _ = try await archive.upload(target, kinds: Set(kind.map { [$0] } ?? CloudArtifactKind.allCases),
                                                  progress: progress)
@@ -613,6 +667,43 @@ extension AppViewModel {
         }
     }
 
+    @MainActor private func resumableCloudAction(_ request: CloudLibraryModel.Request, archive: CloudGameArchive,
+                                                 game: PortedGame, target: CloudArchiveGame) async throws -> CloudLibraryAction? {
+        let action = request.action
+        if action == .uploadSources || action == .downloadSources {
+            guard let files = request.sourceFiles else { return nil }
+            let state = try await readCloudSourceStatus(files)?.get()
+            if action == .uploadSources {
+                return state?.state == .notInCloud && GameResourceState.sourcesAvailable(for: game) ? action : nil
+            }
+            return state?.state == .cloudOnly ? action : nil
+        }
+        var kinds = Set(CloudArtifactKind.allCases)
+        if case .free(let items) = action { kinds = Set(items.compactMap(\.artifact)) }
+        let manifest = kinds.isEmpty ? nil : try await archive.latest(titleID: target.titleID)
+        let copies = kinds.isEmpty ? [:] : try await archive.copyStatuses(target, manifest: .success(manifest))
+        switch action {
+        case .upload(let kind):
+            return (kind.map { CloudArtifactStatus.canUploadAlone($0, statuses: copies) }
+                    ?? CloudArtifactStatus.needsUpload(copies)) ? action : nil
+        case .restore(let kind):
+            return copies[kind]?.state == .cloudOnly ? action : nil
+        case .restoreBuildCache:
+            return target.locations[.cache] != nil && manifest?.artifacts.contains(where: { $0.kind == .cache }) == true
+                && copies[.cache]?.state != .synchronized ? action : nil
+        case .free(let items):
+            var synchronized = Set(kinds.filter { copies[$0]?.state == .synchronized }.map(CloudLibraryItem.init))
+            if items.contains(.sources), let files = request.sourceFiles, canFreeCloudSources(files, for: game),
+               let status = try await readCloudSourceStatus(files)?.get(),
+               status.files.contains(where: { $0.state == .synchronized }),
+               status.files.allSatisfy({ $0.state == .synchronized || $0.state == .cloudOnly }) {
+                synchronized.insert(.sources)
+            }
+            return action.resumableFree(synchronized: synchronized)
+        case .uploadSources, .downloadSources: return nil
+        }
+    }
+
     @MainActor private func runCloudSources(_ phase: CloudArchiveProgress.Phase, request: CloudLibraryModel.Request,
                                             game: PortedGame,
                                             progress: @escaping CloudGameArchive.Progress, gameClosed: () throws -> Void) async throws {
@@ -646,6 +737,7 @@ extension AppViewModel {
             objectWillChange.send()
             cloudLibrary.queue.remove(at: index)
             cloudLibrary.update(game.id) { $0.action = nil; $0.queued = false }
+            cloudLibrary.persistQueue()
             appIcon.syncPendingAppIcons()
         } else if let active = cloudLibrary.active, active.request.id == game.id, active.request.action == action {
             active.task.cancel()

@@ -5,20 +5,49 @@ import NXLibraryCore
 
 /// Keyboard equivalents of the controller gestures, the menu's input and its actions.
 extension AppShellView {
+    func cloudQuitInput(_ action: GamepadAction) {
+        switch action {
+        case .navigateLeft, .navigateRight:
+            let next: SeleneConfirmButton = action == .navigateLeft ? .cancel : .confirm
+            if cloudQuitFocus != next {
+                cloudQuitFocus = next
+                SoundEffectService.shared.play(.focus)
+            }
+        case .confirm: finishCloudQuit(cloudQuitFocus == .confirm)
+        case .cancel: finishCloudQuit(false)
+        default: break
+        }
+    }
+
+    private func cloudQuitKey(_ keyCode: UInt16) {
+        switch keyCode {
+        case 123: cloudQuitInput(.navigateLeft)
+        case 124: cloudQuitInput(.navigateRight)
+        case 36, 76, 49: cloudQuitInput(.confirm)
+        case 53: cloudQuitInput(.cancel)
+        default: break
+        }
+    }
+
     /// App-level monitor for the keyboard equivalents of the controller gestures.
     /// Handles only Tab, Cmd+F, Cmd+, , Home and End; every other event passes through.
     func installGestureKeyMonitor() {
         guard gestureKeyMonitor == nil else { return }
         gestureKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [router, viewModel] event in
             if nativeMenus.isTracking { return event }
-            // The screenshot viewer owns the keyboard (its own monitor handles it); no navigating underneath.
-            if router.isScreenshotViewerOpen { return event }
             // An alert or another window's sheet owns Return and Esc.
             if nativeDialogOwnsInput
                 || event.window?.attachedSheet != nil || event.window?.isSheet == true {
                 return event
             }
             let mods = event.modifierFlags.intersection([.command, .control, .option, .shift])
+            if viewModel.cloudQuitRequested {
+                guard mods.isEmpty else { return event }
+                cloudQuitKey(event.keyCode)
+                return nil
+            }
+            // The screenshot viewer owns the keyboard (its own monitor handles it); no navigating underneath.
+            if router.isScreenshotViewerOpen { return event }
             // The Setup check and the welcome take the keyboard: arrows, Return, Space and Esc go to them.
             if viewModel.showSetupCheck || (showsWelcome && !showsSettingsNotice && !showsInstallFailure
                                             && !showsUpdateOffer && viewModel.gameToClose == nil
@@ -207,6 +236,10 @@ extension AppShellView {
     /// the new one must start after this one has gone.
     private func relaunchApp() {
         router.closeMenu()
+        guard !viewModel.cloudLibrary.isWorking else {
+            viewModel.showSettingsNotice(title: L10n.text("Restart app"), message: L10n.text("After the cloud transfer"))
+            return
+        }
         let helper = Process()
         helper.executableURL = URL(fileURLWithPath: "/bin/sh")
         helper.arguments = [

@@ -190,6 +190,9 @@ extension AppShellView {
                              metadata: store.storeMetadata, artwork: artwork)
         }
         .background { launchCover }
+        .overlay {
+            if viewModel.cloudQuitRequested { cloudQuitOverlay() }
+        }
         .modifier(SoundCueHooks(router: router, viewModel: viewModel))
         // Inside the canvas root so the sheet inherits the window's canvas units.
         .seleneCanvasRoot()
@@ -226,6 +229,12 @@ extension AppShellView {
         .preferredColorScheme(.dark)
         .frame(minWidth: 1100, minHeight: 700)
         .onAppear(perform: startRuntime)
+        .onReceive(viewModel.cloudLibrary.$archive) { _ in
+            Task { @MainActor in viewModel.restoreCloudQueue() }
+        }
+        .onChange(of: viewModel.isScanningLibrary) { _, scanning in
+            if !scanning { viewModel.restoreCloudQueue() }
+        }
         .onReceive(settings.$loadError) { error in
             guard error != nil else { return }
             let writing = settings.errorKind == .writing
@@ -299,7 +308,7 @@ extension AppShellView {
         .onChange(of: settings.settings.showsSessionCard) { _, on in
             if !on { sessionCard.clear() }
         }
-        .onChange(of: showsUpdateOffer) { viewModel.shellDialogOwnsInput = $1 }
+        .onChange(of: showsUpdateOffer) { viewModel.appUpdateDialogOwnsInput = $1 }
         // Closing clears it once the fade has ended (`closeWelcome`), so nothing under it moves or takes input before.
         .onChange(of: showsWelcome) { if $1 { viewModel.isWelcomeOpen = true } }
         .onChange(of: router.route) { _, route in

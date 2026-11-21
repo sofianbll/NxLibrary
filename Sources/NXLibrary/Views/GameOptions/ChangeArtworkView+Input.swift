@@ -104,6 +104,7 @@ extension ChangeArtworkView {
         guard keyMonitor == nil else { return }
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             guard viewModel.optionsGameID == subject.id, !viewModel.isEditingSteamGridDBKey,
+                  !viewModel.cloudQuitRequested,
                   let window = event.window, !window.isSheet, window.attachedSheet == nil,
                   NSApp.modalWindow == nil, !(window.firstResponder is NSText) else { return event }
             guard event.modifierFlags.intersection([.command, .control, .option]).isEmpty else { return event }

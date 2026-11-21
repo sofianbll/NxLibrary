@@ -10,8 +10,8 @@ struct StartupWindowView: NSViewRepresentable {
     func makeNSView(context: Context) -> StartupWindowObserver {
         StartupWindowObserver(fullscreen: fullscreen, onSettled: onSettled)
     }
-    func updateNSView(_ view: StartupWindowObserver, context: Context) {}
-    static func dismantleNSView(_ view: StartupWindowObserver, coordinator: ()) { view.stop() }
+    func updateNSView(_ view: StartupWindowObserver, context: Context) { view.guardWindowClose() }
+    static func dismantleNSView(_ view: StartupWindowObserver, coordinator: ()) { view.detach() }
 }
 
 final class StartupWindowObserver: NSView {
@@ -21,6 +21,8 @@ final class StartupWindowObserver: NSView {
     private var settled = false
     private var observer: NSObjectProtocol?
     private var transition: [NSObjectProtocol] = []
+    private let closeGuard = CloudWindowCloseGuard()
+    private weak var observedWindow: NSWindow?
 
     init(fullscreen: Bool, onSettled: @escaping () -> Void) {
         self.fullscreen = fullscreen
@@ -32,7 +34,8 @@ final class StartupWindowObserver: NSView {
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        stop()
+        detach()
+        guardWindowClose()
         guard !applied, let window else { return }
         observer = NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification,
             object: window, queue: .main) { [weak self] _ in self?.applyWhenReady() }
@@ -75,5 +78,43 @@ final class StartupWindowObserver: NSView {
     func stop() {
         if let observer { NotificationCenter.default.removeObserver(observer) }
         observer = nil
+    }
+
+    func detach() {
+        stop()
+        if AppDelegate.shellWindow === observedWindow { AppDelegate.shellWindow = nil }
+        if observedWindow?.delegate === closeGuard { observedWindow?.delegate = closeGuard.original }
+        observedWindow = nil
+        closeGuard.original = nil
+    }
+
+    func guardWindowClose() {
+        guard let window, window.delegate !== closeGuard else { return }
+        observedWindow = window
+        AppDelegate.shellWindow = window
+        closeGuard.original = window.delegate
+        window.delegate = closeGuard
+    }
+}
+
+/// Keep the shell visible for the confirmation instead of closing its only window first.
+private final class CloudWindowCloseGuard: NSObject, NSWindowDelegate {
+    weak var original: NSWindowDelegate?
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        if AppDelegate.cloudLibrary?.isWorking == true {
+            NSApp.terminate(nil)
+            return false
+        }
+        return original?.windowShouldClose?(sender) ?? true
+    }
+
+    override func responds(to selector: Selector!) -> Bool {
+        super.responds(to: selector) || original?.responds(to: selector) == true
+    }
+
+    override func forwardingTarget(for selector: Selector!) -> Any? {
+        if original?.responds(to: selector) == true { return original }
+        return super.forwardingTarget(for: selector)
     }
 }

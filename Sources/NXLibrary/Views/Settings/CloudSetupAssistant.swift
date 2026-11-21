@@ -1,5 +1,6 @@
 import AppKit
 import NXLibraryCore
+import ArcanePorting
 import SwiftUI
 
 struct CloudSetupAssistant: View {

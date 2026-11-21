@@ -6,6 +6,28 @@ import ArcanePorting
 
 /// The shell's dialogs and notices: settings notices, welcome, install failure, Close Game, removal and the update offer.
 extension AppShellView {
+    func cloudQuitOverlay() -> some View {
+        ZStack {
+            SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle())
+            SeleneConfirmDialog(title: "A cloud transfer is in progress",
+                                message: L10n.text("Quitting stops it. Your files and cloud copies stay intact; the queue resumes the next time you open Arcane."),
+                                confirmTitle: "Quit", cancelTitle: "Stay", focus: $cloudQuitFocus,
+                                onCancel: { finishCloudQuit(false) },
+                                onConfirm: { finishCloudQuit(true) })
+        }
+    }
+
+    func finishCloudQuit(_ quit: Bool) {
+        guard viewModel.cloudQuitRequested, !viewModel.cloudLibrary.isQuitting else { return }
+        if quit {
+            AppDelegate.finishCloudQuit(NSApp)
+        } else {
+            cloudQuitFocus = .cancel
+            viewModel.cloudQuitRequested = false
+            NSApp.reply(toApplicationShouldTerminate: false)
+        }
+    }
+
     // MARK: - Retry a ready build
 
     func settingsNoticeOverlay(_ notice: SettingsNotice) -> some View {
