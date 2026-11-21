@@ -52,12 +52,13 @@ extension SetupModel {
         let pinned = app.pinnedEngineCommit
         let commit = status.upstreamCommit
         let ahead = status.newCommitsCount
+        let upstream = app.engineOverride.map { _ in SetupActions.engineRemote }
         isSwitchingEngine = true
         newestEngineProblem = nil
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let switcher = NewestEngineSwitcher(repo: repo)
             let tested = switcher.lockMetal(at: pinned) ?? ToolchainRequirements.current.fallbackMetal
-            let result = Result { try switcher.useNewest(commit: commit, testedMetal: tested) }
+            let result = Result { try switcher.useNewest(commit: commit, testedMetal: tested, remote: upstream) }
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.isSwitchingEngine = false
@@ -93,10 +94,11 @@ extension SetupModel {
         guard canSwitchEngine, usesNewestEngine else { return }
         let repo = URL(fileURLWithPath: nxnativePath)
         let pinned = app.pinnedEngineCommit
+        let remote = app.engineOverride?.remote
         isSwitchingEngine = true
         newestEngineProblem = nil
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let result = Result { try NewestEngineSwitcher(repo: repo).useTested(pinned: pinned) }
+            let result = Result { try NewestEngineSwitcher(repo: repo).useTested(pinned: pinned, remote: remote) }
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.isSwitchingEngine = false

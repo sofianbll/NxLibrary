@@ -78,6 +78,18 @@ final class AppUpdateTests: XCTestCase {
         XCTAssertEqual(release.digest, "sha256:" + String(repeating: "a", count: 64))
     }
 
+    func testPersonalReleaseUsesNumericDateAsFourthComponent() throws {
+        let repo = try XCTUnwrap(AppUpdate.defaultRepository)
+        let json = releaseJSON.replacingOccurrences(of: "0.3.0", with: "0.2.1.20261121")
+            .replacingOccurrences(of: "Bium23/NxLibrary", with: repo)
+        let release = try XCTUnwrap(AppUpdate.parseRelease(Data(json.utf8), repository: repo))
+        XCTAssertEqual(release.tag, "v0.2.1.20261121")
+        XCTAssertTrue(AppUpdate.isNewer(release.version, than: "0.2.1"))
+        XCTAssertTrue(AppUpdate.isNewer(release.version, than: "0.2.1.2"))
+        XCTAssertTrue(AppUpdate.isNewer("0.2.1.20261122", than: release.version))
+        XCTAssertTrue(AppUpdate.isNewer("0.2.2", than: release.version))
+    }
+
     private func changingAsset(_ change: (inout [String: Any]) -> Void) throws -> Data {
         var object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(releaseJSON.utf8)) as? [String: Any])
         var assets = try XCTUnwrap(object["assets"] as? [[String: Any]])
@@ -232,7 +244,7 @@ final class AppUpdateTests: XCTestCase {
         let requirements = try String(contentsOf: root.appendingPathComponent("Sources/ArcanePorting/Setup/ToolchainRequirements.swift"), encoding: .utf8)
         XCTAssertNotNil(requirements.range(of: #"minimumXcode: "[0-9.]+""#, options: .regularExpression))
         let viewModel = try String(contentsOf: root.appendingPathComponent("Sources/NXLibrary/ViewModels/AppViewModel.swift"), encoding: .utf8)
-        XCTAssertNotNil(viewModel.range(of: #"let pinnedEngineCommit = "[0-9a-f]{40}""#, options: .regularExpression))
+        XCTAssertNotNil(viewModel.range(of: #"let defaultPinnedEngineCommit = "[0-9a-f]{40}""#, options: .regularExpression))
         let script = try String(contentsOf: root.appendingPathComponent("scripts/release.sh"), encoding: .utf8)
         XCTAssertTrue(script.contains("nxlibrary-requires"))
     }

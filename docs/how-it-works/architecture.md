@@ -12,7 +12,7 @@ Ordine di lettura per chi lavora sul codice:
 
 Il [README](../../README.md) è la guida d'uso; la [guida di sviluppo](../working-on-it/development.md) raccoglie build, runtime, CI e release.
 
-**Engine attuale:** pin `99224562186a8fdb7e97afb872319a21941ec317`, definito in `AppViewModel.pinnedEngineCommit`. Il suo lock certifica Metal `32023.922`, asset Apple `27B47`, con Xcode minimo `27.2`. Le revisioni di ogni pin sono in [upstream-upgrades](../history/engine-upgrades/README.md).
+**Engine predefinito:** pin `99224562186a8fdb7e97afb872319a21941ec317` di `seedds/nxnative`, definito in `AppViewModel.defaultPinnedEngineCommit`. Il suo lock certifica Metal `32023.922`, asset Apple `27B47`, con Xcode minimo `27.2`. Le revisioni di ogni pin sono in [upstream-upgrades](../history/engine-upgrades/README.md).
 
 ## Indice
 
@@ -312,6 +312,7 @@ Regole della barra:
 
 **Setup.**
 - `SetupProbe` raccoglie i dati del Setup. `SetupCheck` li traduce in schede, stati e azioni. `SetupCheckModel` esegue i controlli in background, compresa la lettura di `xcode-select` a ogni ricontrollo (4 s), e coordina installazioni e avanzamento. `SetupActions` prepara gli argomenti Git per portare un checkout gestibile al pin.
+- `SetupActions.engineOverride` legge insieme `NXLibraryEngineRepository` e `NXLibraryEngineCommit` dal plist. Senza una coppia valida, rimangono i default upstream. Con un pin personalizzato, la scheda motore indica il deposito; Setup clona da lì o scarica il solo pin senza modificare `origin`. `UpstreamChecker` confronta sempre con `seedds/nxnative` `main`.
 - Get ready mostra soltanto i cinque requisiti tecnici, in una griglia 3 + 2. I problemi alle cartelle non riaprono questa schermata.
 - Your games presenta Game apps, la cartella unica in cui cercare giochi nxnative esistenti e installare le prime build.
   - Il default `~/Applications` si prepara al primo uso solo se non è già stato scelto o ricordato un percorso. Le destinazioni personalizzate o confermate restano ricordate anche quando non sono disponibili.
@@ -880,7 +881,7 @@ Nel repository, `.build/` contiene gli output SwiftPM, `work/Runtime` il runtime
 **Script di build e release.**
 - `bundle_runtime.sh` prepara Python e strumenti da `runtime.lock`, controlla gli hash e sistema i riferimenti Mach-O con `relink_macho.py`.
 - `build_app.sh` compila e confeziona bundle, risorse, plist e firma ad hoc, poi installa il bundle completo attraverso `BuildOutputInstaller` dopo firma e verifica. Il suo parametro di destinazione permette di preparare una copia temporanea prima di sostituire quella installata.
-- `release.sh` richiede un albero pulito e il runtime pronto, esegue suite Swift e tutti i controlli `Tests/CatalogAppChecks/run_*.py` senza UI, imposta versione e marker di release e crea ZIP e DMG. `--publish` abilita tag e pubblicazione su GitHub, solo con autorizzazione esplicita dell'utente. `build_dmg.sh` confeziona un bundle già costruito.
+- `release.sh` richiede un albero pulito e il runtime pronto, esegue suite Swift e tutti i controlli `Tests/CatalogAppChecks/run_*.py` senza UI, imposta versione e marker di release e crea ZIP e DMG. Un pin personalizzato è verificato contro i rami remoti e scritto nel bundle prima della firma e nelle note di pubblicazione. `--publish` abilita tag e pubblicazione su GitHub, solo con autorizzazione esplicita dell'utente. `build_dmg.sh` confeziona un bundle già costruito.
 - Il runtime e i contenuti versionati si verificano con `scripts/check_publication.py`.
 
 ## Verifica e manutenzione

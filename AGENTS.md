@@ -20,7 +20,7 @@ The documentation is how the next session understands the structure. Keep it exa
 
 ## Non-negotiables
 
-- Use upstream nxnative in place. Never patch `~/nxnative`; engine updates are manual and re-pinned in `AppViewModel.pinnedEngineCommit`.
+- Use nxnative in place. Never patch `~/nxnative`; upstream re-pins change `AppViewModel.defaultPinnedEngineCommit`. Fork releases can package a tested pin using the [release guide](docs/working-on-it/development.md#publication-perso-sofian).
 - No Nintendo assets, keys, ROMs, or game content in the repository.
 - Sources are symlinked, never copied. New builds install to the selected **Game apps** folder (default `~/Applications`); rebuilds replace the existing app atomically in its current location. Changing the folder never moves installed apps.
 - Keys stay mode `0600`; never log key values.

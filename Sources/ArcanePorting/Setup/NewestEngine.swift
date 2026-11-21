@@ -198,9 +198,11 @@ public struct NewestEngineSwitcher {
     }
 
     /// Downloads `commit`, reads its lock and switches to it only when it certifies `testedMetal`.
-    public func useNewest(commit: String, testedMetal: String?) throws {
+    public func useNewest(commit: String, testedMetal: String?, remote: String? = nil) throws {
         try requireClean()
-        guard git(["fetch", "--quiet", "origin"]).status == 0 else { throw NewestEngineError.downloadFailed }
+        guard git(["fetch", "--quiet"] + SetupActions.fetchSource(remote: remote, commit: commit)).status == 0 else {
+            throw NewestEngineError.downloadFailed
+        }
         let lock = git(["show", "\(commit):\(NewestEngine.lockPath)"])
         guard lock.status == 0 else { throw NewestEngineError.downloadFailed }
         if case .needsNewerApp(let metal) = NewestEngine.readiness(newestLock: lock.stdout, testedMetal: testedMetal) {
@@ -210,10 +212,10 @@ public struct NewestEngineSwitcher {
     }
 
     /// Returns to the tested pin, downloading it first if the checkout does not have it.
-    public func useTested(pinned: String) throws {
+    public func useTested(pinned: String, remote: String? = nil) throws {
         try requireClean()
         if git(["cat-file", "-e", "\(pinned)^{commit}"]).status != 0,
-           git(["fetch", "--quiet", "origin"]).status != 0 {
+           git(["fetch", "--quiet"] + SetupActions.fetchSource(remote: remote, commit: pinned)).status != 0 {
             throw NewestEngineError.downloadFailed
         }
         try checkout(pinned)

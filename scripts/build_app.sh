@@ -26,6 +26,14 @@ if ! [[ "$VERSION" =~ ^[0-9]+(\.[0-9]+){1,3}$ ]]; then
 fi
 RELEASE_KEY="  <key>NXLibraryDevelopmentProfile</key><true/>"
 [ "${NX_RELEASE:-0}" = "1" ] && RELEASE_KEY="  <key>NXLibraryRelease</key><true/>"
+# release.sh validates reachability; reject incomplete/malformed pins in direct builds too.
+ENGINE_REPO="${NX_ENGINE_REPO:-}"
+ENGINE_COMMIT="${NX_ENGINE_COMMIT:-}"
+if [[ -n "$ENGINE_REPO$ENGINE_COMMIT" ]] &&
+   ! [[ "$ENGINE_REPO" =~ ^https://github\.com/[A-Za-z0-9_-]+/[A-Za-z0-9_-][A-Za-z0-9_.-]*$ && "$ENGINE_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "error: NX_ENGINE_REPO and NX_ENGINE_COMMIT must name a GitHub HTTPS repository and a full lowercase SHA" >&2
+  exit 1
+fi
 NEXTENDO_CLIENT_ID="${DM_NEXTENDO_CLIENT_ID:-}"
 if [[ -n "$NEXTENDO_CLIENT_ID" && ! "$NEXTENDO_CLIENT_ID" =~ ^[A-Za-z0-9._-]{1,128}$ ]]; then
   echo "error: DM_NEXTENDO_CLIENT_ID must be a valid public client ID" >&2
@@ -105,6 +113,10 @@ $RELEASE_KEY
 PLIST
 if [[ -n "$NEXTENDO_CLIENT_ID" ]]; then
   /usr/bin/plutil -insert DMNextendoClientID -string "$NEXTENDO_CLIENT_ID" "$APP/Contents/Info.plist"
+fi
+if [[ -n "$ENGINE_REPO" ]]; then
+  /usr/bin/plutil -insert NXLibraryEngineRepository -string "$ENGINE_REPO" "$APP/Contents/Info.plist"
+  /usr/bin/plutil -insert NXLibraryEngineCommit -string "$ENGINE_COMMIT" "$APP/Contents/Info.plist"
 fi
 
 # Exercise the real profile/defaults accessor under this bundle identity, without

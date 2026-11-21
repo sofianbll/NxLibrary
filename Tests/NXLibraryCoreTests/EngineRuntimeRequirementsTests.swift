@@ -24,11 +24,11 @@ final class EngineRuntimeRequirementsTests: XCTestCase {
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let viewModel = try String(contentsOf: root.appendingPathComponent("Sources/NXLibrary/ViewModels/AppViewModel.swift"),
                                    encoding: .utf8)
-        guard let match = viewModel.range(of: #"pinnedEngineCommit = "[0-9a-f]{40}""#, options: .regularExpression) else {
-            return XCTFail("no pinnedEngineCommit in AppViewModel.swift")
+        guard let match = viewModel.range(of: #"defaultPinnedEngineCommit = "[0-9a-f]{40}""#, options: .regularExpression) else {
+            return XCTFail("no defaultPinnedEngineCommit in AppViewModel.swift")
         }
         let pin = ProcessInfo.processInfo.environment["NX_TEST_ENGINE_COMMIT"]
-            ?? String(viewModel[match].dropFirst("pinnedEngineCommit = \"".count).dropLast())
+            ?? String(viewModel[match].dropFirst("defaultPinnedEngineCommit = \"".count).dropLast())
 
         guard let readme = gitShow("\(pin):README.md", in: engine) else { throw XCTSkip("\(pin) is not in the engine checkout") }
         let fromReadme = Self.pipPackages(in: readme)

@@ -126,6 +126,19 @@ final class SetupCheckTests: XCTestCase {
         XCTAssertTrue(broken.detail.contains("capstone 6"))
     }
 
+    func testDivergedPersonalEngineNamesTheConfiguredRepositoryAndPin() {
+        let fork = "https://github.com/sofianbll/nxnative"
+        let card = item(.engine) {
+            $0.engine = .checkout(head: "ee369f0", dirty: false)
+            $0.engineBehind = false
+            $0.engineRemote = fork
+            $0.pinnedCommit = "a35babeade0c34b3f928e0b32310ba66eb98bc86"
+        }
+        XCTAssertEqual(card.about, fork)
+        XCTAssertEqual(card.actionTitle, "Switch")
+        XCTAssertTrue(card.detail.contains("a35babe"))
+    }
+
     func testKeys() {
         let ready = item(.keys)
         XCTAssertEqual(ready.state, .ready)
