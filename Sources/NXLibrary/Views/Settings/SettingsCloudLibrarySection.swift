@@ -204,7 +204,7 @@ struct SettingsCloudLibrarySection: View {
 
     private func setEnabled(_ enabled: Bool) {
         guard editable else { return }
-        model.configure(remote: selection.remote, root: selection.root, enabled: enabled)
+        model.configure(remote: selection.remote, root: selection.root, enabled: enabled, sourcesRoot: selection.sourcesRootOverride)
     }
 
     private func importGames() {
@@ -247,7 +247,7 @@ struct SettingsCloudLibrarySection: View {
         defer { if !Task.isCancelled { inspecting = false } }
         do {
             let chosen = model.chosenExecutable
-            let found = await Task.detached(priority: .utility) { chosen ?? RcloneStorageBackend.findExecutable() }.value
+            let found = await Task.detached(priority: .utility) { RcloneStorageBackend.findExecutable(preferred: chosen) }.value
             try Task.checkCancellation()
             tool = found
             guard let found else { return }
@@ -294,7 +294,7 @@ struct SettingsCloudLibrarySection: View {
                     defer { model.isChangingConnection = false }
                     do {
                         try await RcloneConfiguration(executable: tool).disconnect(name)
-                        model.configure(remote: nil, root: selection.root, enabled: false)
+                        model.configure(remote: nil, root: selection.root, enabled: false, sourcesRoot: selection.sourcesRootOverride)
                     } catch {
                         viewModel.showSettingsNotice(title: text("Disconnect"),
                                                      message: text(RcloneConfiguration.Failure.disconnect.key))

@@ -2,6 +2,26 @@ import XCTest
 @testable import NXLibraryCore
 
 final class RcloneConfigurationTests: XCTestCase {
+    func testRCConfigMutationTransfersParametersOverStdinToLocalFixture() async throws {
+        guard let executable = RcloneStorageBackend.findExecutable() else { throw XCTSkip("rclone is not installed") }
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let config = directory.appendingPathComponent("rclone.conf")
+        let environment = ["RCLONE_CONFIG_PASS": "test-only"]
+        let control = RcloneRemoteControl()
+        defer { control.stop() }
+        let response = try await control.call("config/create", [
+            "name": "local-fixture", "type": "local", "parameters": ["description": "stdin marker"],
+        ], executable: executable, environment: environment,
+           flags: RcloneConfiguration.flags(config: config, environment: environment), sensitive: true)
+        XCTAssertNotNil(response)
+        let result = try await SystemCommandRunner().runCancellable(executable, ["config", "show", "local-fixture"]
+            + RcloneConfiguration.flags(config: config, environment: environment), environment: environment)
+        XCTAssertEqual(result.status, 0)
+        XCTAssertTrue(result.stdout.contains("description = stdin marker"))
+    }
+
     func testLegacyPreferenceAndDisabledSelection() {
         XCTAssertFalse(CloudLibraryPreference(storage: nil, enabled: nil).enabled)
         XCTAssertEqual(CloudLibraryPreference(storage: "gdrive", enabled: nil).root, "Games")
@@ -61,10 +81,9 @@ final class RcloneConfigurationTests: XCTestCase {
         XCTAssertEqual(commands, [
             ["listremotes", "--json"], ["config", "encryption", "check"],
             ["KEYCHAIN"], ["config", "encryption", "set"], ["config", "encryption", "check"],
-            ["config", "create", "gdrive-2", "drive", "client_id=fake-client", "client_secret=fake-secret",
-             "scope=drive", "config_is_local=true", "--no-output"],
+            ["AUTHORIZE", "gdrive-2"],
             ["listremotes", "--json"],
-        ].map { $0 == ["KEYCHAIN"] ? $0 : $0 + flags })
+        ].map { ["KEYCHAIN", "AUTHORIZE"].contains($0[0]) ? $0 : $0 + flags })
     }
 
     func testEncryptedConfigIsNotChangedAndFailureDropsProcessOutput() async throws {
@@ -144,7 +163,11 @@ final class RcloneConfigurationTests: XCTestCase {
             let recorder = recorder
             return RcloneConfiguration(executable: URL(fileURLWithPath: "/fake/rclone"), config: config,
                 run: { _, args, _ in await recorder.run(args) },
-                ensurePassword: { await recorder.recordPassword() })
+                ensurePassword: { await recorder.recordPassword() },
+                authorize: { _, _, _, name, _, _, replacing in
+                    let result = await recorder.run(["AUTHORIZE", name])
+                    guard result.status == 0, !replacing else { throw RcloneConfiguration.Failure.connect }
+                })
         }
     }
 

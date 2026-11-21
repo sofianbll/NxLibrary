@@ -38,6 +38,12 @@ Register a public PKCE application with Nextendo for `http://127.0.0.1:47823/cal
 
 `BuildCommandBuilder` adds `--nextendo` to `scripts/build_ipa_from_nsp.py` only when the selected checkout declares it and a valid public client ID is available (settings first, then Arcane's `Info.plist`). Only that command gets `DM_NEXTENDO_CLIENT_ID` in its environment; building does not check the player's session. The engine can reuse a valid cached patch catalog and can continue when a verified catalog has no patch for the exact game build. A fetch or verification failure fails the build; Arcane shows the engine error and does not retry without Nextendo. The engine pin is unchanged.
 
+### Private Google Drive builds
+
+Supply both `ARCANE_GOOGLE_CLIENT_ID` and `ARCANE_GOOGLE_CLIENT_SECRET` in the environment of `scripts/release.sh` (without `--publish`) or `scripts/build_app.sh`. Use a desktop OAuth client. If either variable is missing or blank, no Google client keys are added to `Info.plist`. These keys are readable by anyone with the app, ZIP or DMG: keep the artifacts private and don't run the scripts with shell tracing. `release.sh --publish` refuses either variable even if set to an empty string and checks that the built plist has neither key. Personal releases go to `work/release-private`, accept an existing version tag without changing it, and can lose the embedded client when a public update replaces the app.
+
+The release build downloads the official macOS arm64 rclone 1.75.2 archive, verifies it against both the pinned SHA-256 and the upstream `SHA256SUMS`, then signs the helper in `Contents/Helpers`. Development builds use a local rclone; Arcane never downloads a helper at runtime.
+
 ### Bundled runtime
 
 `bundle_runtime.sh` prepares `work/Runtime/` from the exact downloads and hashes in `runtime.lock`. It includes Python, capstone, lz4, fontTools, zbic (Nintendo's zstd variant, read by the engine for system 22.0.0+ code), nsz with its dependencies (NSZ / XCZ inputs), `zstd` and `glslangValidator`, their required non-system libraries and licence notices. zbic is GPLv2, so its source archive ships in `Runtime/sources/`. `EngineRuntimeRequirementsTests` fails when the pinned engine's README or `.github/requirements/tools.txt` asks for a Python package that `runtime.lock` lacks. It relinks the native libraries for the bundle, signs them and checks that the tools run without Homebrew on `PATH`.

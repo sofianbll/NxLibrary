@@ -1,5 +1,20 @@
 import Foundation
 
+public struct CloudGoogleClient {
+    public let id: String
+    public let secret: String
+
+    public static let bundled = configured(in: Bundle.main.infoDictionary ?? [:])
+
+    static func configured(in info: [String: Any]) -> Self? {
+        guard let id = info["ArcaneGoogleClientID"] as? String,
+              let secret = info["ArcaneGoogleClientSecret"] as? String,
+              CloudSetupAssistantDraft.validGoogleClientID(id), RcloneConfiguration.validCredential(secret)
+        else { return nil }
+        return Self(id: id, secret: secret)
+    }
+}
+
 public struct CloudSetupAssistantDraft {
     public enum Step: Int, CaseIterable { case account, folder, verify }
 

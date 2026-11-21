@@ -78,10 +78,12 @@ public struct RcloneConfiguration: Sendable {
     private static let account = "rclone"
 
     package typealias Run = @Sendable (URL, [String], [String: String]) async throws -> CommandResult
+    typealias Authorize = @Sendable (URL, URL?, [String: String], String, String, String, Bool) async throws -> Void
     private let executable: URL
     private let config: URL?
     private let run: Run
     private let ensurePassword: @Sendable () async throws -> Void
+    private let authorize: Authorize
     private let environment: [String: String]
 
     public init(executable: URL) {
@@ -93,17 +95,20 @@ public struct RcloneConfiguration: Sendable {
     }
 
     init(executable: URL, config: URL?, run: @escaping Run,
-         ensurePassword: @escaping @Sendable () async throws -> Void, environment: [String: String] = [:]) {
+         ensurePassword: @escaping @Sendable () async throws -> Void, environment: [String: String] = [:],
+         authorize: @escaping Authorize = RcloneConfiguration.authorizeDrive) {
         self.executable = executable
         self.config = config
         self.run = run
         self.ensurePassword = ensurePassword
         self.environment = environment
+        self.authorize = authorize
     }
 
     package static func environment() -> [String: String] {
         ProcessInfo.processInfo.environment.filter {
-            !$0.key.hasPrefix("RCLONE_") || ["RCLONE_CONFIG", "RCLONE_CONFIG_PASS", "RCLONE_PASSWORD_COMMAND"].contains($0.key)
+            !["ARCANE_GOOGLE_CLIENT_ID", "ARCANE_GOOGLE_CLIENT_SECRET"].contains($0.key)
+                && (!$0.key.hasPrefix("RCLONE_") || ["RCLONE_CONFIG", "RCLONE_CONFIG_PASS", "RCLONE_PASSWORD_COMMAND"].contains($0.key))
         }
     }
 
@@ -178,12 +183,33 @@ public struct RcloneConfiguration: Sendable {
             _ = try await checked(check, or: .encryption)
         }
 
-        _ = try await checked(["config", "create", name, "drive", "client_id=\(clientID)", "client_secret=\(secret)",
-                               "scope=drive", "config_is_local=true", "--no-output"], or: .connect)
+        try await authorize(executable, config, environment, name, clientID, secret, false)
         guard let remote = try await remotes().first(where: { $0.name == name && $0.type == "drive" }) else {
             throw Failure.connect
         }
         return remote
+    }
+
+    package static func authorizeDrive(executable: URL, config: URL?, environment: [String: String],
+                                       name: String, clientID: String, secret: String, replacing: Bool) async throws {
+        // Drive's client_secret is not an rclone password field; `obscure` here would change the credential.
+        // Send config options via stdin to the private Unix-socket RC session, not via process arguments.
+        let control = RcloneRemoteControl()
+        defer { control.stop() }
+        var parameters = ["client_id": clientID, "client_secret": secret, "config_is_local": "true"]
+        if replacing { parameters["config_refresh_token"] = "true" }
+        else { parameters["scope"] = "drive" }
+        let body: [String: Any] = [
+            "name": name, "type": "drive", "parameters": parameters, "opt": ["noOutput": true],
+        ]
+        do {
+            guard try await control.call(replacing ? "config/update" : "config/create", body,
+                executable: executable, environment: environment,
+                flags: flags(config: config, environment: environment), sensitive: true) != nil else {
+                throw Failure.connect
+            }
+        } catch is CancellationError { throw CancellationError() }
+        catch { throw Failure.connect }
     }
 
     public func test(_ preference: CloudLibraryPreference) async throws {
@@ -222,7 +248,7 @@ public struct RcloneConfiguration: Sendable {
 
     public static func validCredential(_ text: String) -> Bool {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        return !text.isEmpty && text.rangeOfCharacter(from: .controlCharacters) == nil
+        return !text.isEmpty && text.utf8.count <= 1024 && text.rangeOfCharacter(from: .controlCharacters) == nil
     }
 
     private func checked(_ arguments: [String], or failure: Failure) async throws -> String {

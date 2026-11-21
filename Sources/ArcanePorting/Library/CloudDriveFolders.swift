@@ -8,6 +8,16 @@ public struct CloudDriveFolders: Sendable {
         public let names: [String]
     }
 
+    public struct Library: Sendable, Equatable {
+        public let path: String
+        public let games: Int
+    }
+
+    public struct Sources: Sendable, Equatable {
+        public let path: String
+        public let games: Int?
+    }
+
     public struct MovePlan: Sendable {
         public let source: String
         public let games: Int
@@ -89,14 +99,86 @@ public struct CloudDriveFolders: Sendable {
     public func libraryCount(in folder: String, folders: [String]) async throws -> Int {
         let backend = try backend(in: folder)
         defer { backend.stopRemoteControl() }
-        let archive = CloudGameArchive(backend: backend)
-        let ids = Set(folders.filter(SaveLocation.validID).map { $0.uppercased() })
-        var count = 0
-        for id in ids.sorted() {
+        return try await Self.libraryCount(backend, folders: folders)
+    }
+
+    public func discoverLibrary() async throws -> Library? {
+        try await Self.discoverLibrary(directories: {
+            try await list($0, ticket: UUID()).names
+        }, count: { folder, names in
+            try await libraryCount(in: folder, folders: names)
+        })
+    }
+
+    static func discoverLibrary(directories: (String) async throws -> [String],
+                                count: (String, [String]) async throws -> Int) async throws -> Library? {
+        let root = CloudLibraryPreference.defaultRoot
+        guard let names = try await listingIfPresent(root, list: directories) else { return nil }
+        let games = try await count(root, names)
+        try Task.checkCancellation()
+        if games > 0 { return Library(path: root, games: games) }
+        let children = names.filter { validName($0) && !SaveLocation.validID($0) }
+        guard children.count <= 64 else { throw StorageBackendError.invalidResponse }
+        for child in children {
+            let path = joining(root, child)
+            guard let names = try await listingIfPresent(path, list: directories) else {
+                // The folder was listed, but disappeared before we could inspect it.
+                throw StorageBackendError.invalidResponse
+            }
+            let games = try await count(path, names)
             try Task.checkCancellation()
-            if try await archive.latest(titleID: id) != nil { count += 1 }
+            if games > 0 { return Library(path: path, games: games) }
         }
-        return count
+        return nil
+    }
+
+    public func discoverSources(library: String) async throws -> Sources? {
+        try await Self.discoverSources(library: library) { folder in
+            let output = try await checked(["lsjson", try target(folder), "--recursive", "--max-depth", "2",
+                                            "--files-only", "--no-modtime", "--no-mimetype"])
+            guard let items = try? JSONDecoder().decode([Item].self, from: Data(output.utf8)) else {
+                throw StorageBackendError.invalidResponse
+            }
+            return items.filter { !$0.IsDir }.map(\.Path)
+        }
+    }
+
+    static func discoverSources(library: String, files: (String) async throws -> [String]) async throws -> Sources? {
+        let candidates = [joining(library, "GameFiles"), joining(library, "Switch/Jeux"), "Games/Switch/Jeux", "Switch/Jeux"]
+        var visited = Set<String>()
+        for path in candidates where visited.insert(path).inserted {
+            guard let names = try await listingIfPresent(path, list: files) else { continue }
+            guard names.count <= 10_000 else { throw StorageBackendError.invalidResponse }
+            var groups = Set<String>()
+            var loose = false
+            for name in names {
+                try Task.checkCancellation()
+                let parts = name.components(separatedBy: "/")
+                guard parts.count <= 2, parts.allSatisfy(validName),
+                    CloudGameSources.fileExtensions.contains((name as NSString).pathExtension.lowercased())
+                else { continue }
+                if parts.count == 1 { loose = true }
+                else { groups.insert(CloudGameSources.title(in: parts[0])) }
+            }
+            try Task.checkCancellation()
+            // Loose packages may be updates or DLC for the same title; don't guess a count.
+            if loose || !groups.isEmpty { return Sources(path: path, games: loose ? nil : groups.count) }
+        }
+        return nil
+    }
+
+    private static func listingIfPresent(_ folder: String,
+                                         list: (String) async throws -> [String]) async throws -> [String]? {
+        try Task.checkCancellation()
+        let result: [String]?
+        do { result = try await list(folder) }
+        catch StorageBackendError.notFound { result = nil }
+        try Task.checkCancellation()
+        return result
+    }
+
+    static func libraryCount(_ backend: any StorageBackend, folders: [String]) async throws -> Int {
+        try await CloudGameArchive(backend: backend).latestManifests(in: folders).count
     }
 
     public static func canMove(from source: String, to destination: String) -> Bool {
@@ -375,8 +457,8 @@ public final class CloudDriveCredentialChange: Sendable {
         let staged = try await Task.detached(priority: .utility) { try stage(original) }.value
         _ = try await run(["config", "encryption", "check"], config: staged.config)
         try Task.checkCancellation()
-        _ = try await run(["config", "update", remote, "client_id=\(id)", "client_secret=\(password)",
-                           "config_refresh_token=true", "config_is_local=true", "--no-output"], config: staged.config)
+        try await RcloneConfiguration.authorizeDrive(executable: executable, config: staged.config,
+            environment: environment, name: remote, clientID: id, secret: password, replacing: true)
         return staged
     }
 

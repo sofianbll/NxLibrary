@@ -22,10 +22,17 @@ struct CloudSetupAssistant: View {
     @State private var tool: URL?
     @State private var version: String?
     @State private var remotes: [RcloneRemote]?
+    @State private var advanced = false
     @State private var editingCredentials = false
     @State private var client = ""
     @State private var secret = ""
     @State private var replacement: CloudDriveCredentialChange?
+    @State private var onboarding = false
+    @State private var librarySuggestion: CloudDriveFolders.Library?
+    @State private var selectingSources = false
+    @State private var sourcesSuggestion: CloudDriveFolders.Sources?
+    @State private var sourcesPath = ""
+    @State private var discoveryUnknown = false
     @State private var listing: CloudDriveFolders.Listing?
     @State private var folderMissing = false
     @State private var count: Int?
@@ -45,17 +52,19 @@ struct CloudSetupAssistant: View {
     @FocusState private var field: CloudSetupAssistantFocus.Target?
 
     typealias Target = CloudSetupAssistantFocus.Target
-    private enum Work { case inspect, connect, browse, create, verify, move }
+    private enum Work { case inspect, connect, discover, browse, create, verify, move }
     private var existing: RcloneRemote? {
         remotes?.first { $0.type == "drive" && $0.name == model.preference.remote }
             ?? remotes?.first { $0.type == "drive" }
     }
     private var canEdit: Bool { viewModel.canConfigureCloudLibrary }
-    private var showCredentials: Bool { remotes != nil && (existing == nil || editingCredentials) }
+    private let bundledClient = CloudGoogleClient.bundled
+    private var showCredentials: Bool { remotes != nil && (editingCredentials || (existing == nil && bundledClient == nil)) }
     private var validID: Bool { CloudSetupAssistantDraft.validGoogleClientID(client) }
     private var folderReady: Bool { listing != nil && draft.candidate != nil }
     private var folderControlsReady: Bool { work?.kind != .create && canEdit }
     private var folderNames: [String] { listing?.names ?? [] }
+    private var manualSourcesPath: String { sourcesPath.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var moveOffered: Bool {
         guard let movePlan, movePlan.games > 0 else { return false }
         return folderReady && folderControlsReady && CloudDriveFolders.canMove(from: movePlan.source, to: draft.path)
@@ -73,8 +82,8 @@ struct CloudSetupAssistant: View {
     }
     private var primaryTitle: String {
         switch draft.step {
-        case .account: return showCredentials ? "Sign in" : "Keep this account"
-        case .folder: return "Use this folder"
+        case .account: return showCredentials || existing == nil ? "Sign in" : "Keep this account"
+        case .folder: return selectingSources ? "Continue" : "Use this folder"
         case .verify: return "Activate"
         }
     }
@@ -83,8 +92,11 @@ struct CloudSetupAssistant: View {
         switch draft.step {
         case .account:
             return work == nil && remotes != nil && (showCredentials
-                ? validID && RcloneConfiguration.validCredential(secret) : existing != nil)
-        case .folder: return folderReady && folderControlsReady && !checkingMove
+                ? validID && RcloneConfiguration.validCredential(secret) : existing != nil || bundledClient != nil)
+        case .folder:
+            guard work?.kind != .discover, librarySuggestion == nil, sourcesSuggestion == nil else { return false }
+            if selectingSources { return manualSourcesPath.isEmpty || CloudLibraryPreference.validSourcesRoot(manualSourcesPath) }
+            return folderReady && folderControlsReady && !checkingMove
         case .verify: return work == nil && draft.verified
         }
     }
@@ -127,12 +139,14 @@ struct CloudSetupAssistant: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     HStack(spacing: canvas.u(14)) {
-                        pill(.cancel, work?.kind == .move ? "Cancel" : draft.step == .verify || folderName != nil ? "Back" : "Cancel",
+                        pill(.cancel, work?.kind == .move ? "Cancel" : draft.step == .verify || folderName != nil
+                             || selectingSources ? "Back" : "Cancel",
                              enabled: !stopMove, action: cancel)
                         if folderName != nil {
                             pill(.create, "Continue", enabled: folderName.map(CloudDriveFolders.validName) == true,
                                  action: proposeCreation)
-                        } else if draft.step != .account || remotes != nil {
+                        } else if (draft.step != .account || remotes != nil)
+                            && work?.kind != .discover && librarySuggestion == nil && sourcesSuggestion == nil {
                             pill(.primary, primaryTitle, enabled: primaryEnabled, action: primary)
                         }
                     }
@@ -185,9 +199,19 @@ struct CloudSetupAssistant: View {
                 pill(.retry, "Try again", action: inspect)
             } else if remotes == nil {
                 pill(.retry, "Try again", action: inspect)
-            } else if !showCredentials, let existing {
-                Text(verbatim: "\(text("Google Drive")) · \(existing.name)").seleneFont(19, .semibold)
-                option(.changeCredentials, text("Change credentials")) { editingCredentials = true }
+            } else if !showCredentials {
+                if let existing {
+                    Text(verbatim: "\(text("Google Drive")) · \(existing.name)").seleneFont(19, .semibold)
+                }
+                if bundledClient != nil {
+                    option(.advanced, text("Advanced")) { advanced.toggle() }
+                        .accessibilityValue(text(advanced ? "Expanded" : "Collapsed"))
+                    if advanced {
+                        option(.changeCredentials, text("Use another Google client")) { editingCredentials = true }
+                    }
+                } else {
+                    option(.changeCredentials, text("Change credentials")) { editingCredentials = true }
+                }
             } else {
                 Text(text("Use a Google OAuth client for a desktop app. rclone asks for full Google Drive access."))
                     .fixedSize(horizontal: false, vertical: true)
@@ -217,7 +241,34 @@ struct CloudSetupAssistant: View {
 
     private var folders: some View {
         VStack(alignment: .leading, spacing: canvas.u(10)) {
-            if folderName != nil {
+            if work?.kind == .discover {
+                progress("Checking…")
+            } else if let librarySuggestion {
+                option(.resumeFolder, format(librarySuggestion.games == 1 ? "Resume %@ (%d game)" : "Resume %@ (%d games)",
+                       [folderLabel(librarySuggestion.path), librarySuggestion.games]), icon: .folder, enabled: canEdit,
+                       wide: true, action: resumeFolder)
+                Text(verbatim: librarySuggestion.path).seleneFont(15).foregroundColor(SeleneTheme.ink75)
+                option(.otherFolder, text("Choose another folder"), action: chooseOtherFolder)
+            } else if selectingSources {
+                Text(text("Game files folder")).seleneFont(17, .semibold)
+                if let sourcesSuggestion {
+                    option(.resumeFolder, sourcesSuggestion.games.map { games in
+                        format(games == 1 ? "Resume %@ (%d game)" : "Resume %@ (%d games)",
+                               [folderLabel(sourcesSuggestion.path), games])
+                    } ?? format("Reuse game files in %@", [folderLabel(sourcesSuggestion.path)]), icon: .folder,
+                           enabled: canEdit, wide: true, action: resumeFolder)
+                    Text(verbatim: sourcesSuggestion.path).seleneFont(15).foregroundColor(SeleneTheme.ink75)
+                    option(.otherFolder, text("Choose another folder"), action: chooseOtherFolder)
+                } else {
+                    input(.sourcesPath) {
+                        TextField(text("Game files folder"), text: $sourcesPath,
+                                  prompt: Text(verbatim: "\(draft.path)/GameFiles"))
+                            .focused($field, equals: .sourcesPath).onSubmit(primary)
+                    }
+                    Text(text("Leave blank to use the default GameFiles folder. No files are moved."))
+                        .seleneFont(15).foregroundColor(SeleneTheme.ink75)
+                }
+            } else if folderName != nil {
                 Text(text("Folder name")).seleneFont(17)
                 input(.folderName) {
                     TextField(text("Folder name"), text: Binding(get: { folderName ?? "" }, set: { folderName = $0 }))
@@ -273,6 +324,9 @@ struct CloudSetupAssistant: View {
                     }
                 }
             }
+            if discoveryUnknown {
+                SeleneStatusDot(text: text("Existing cloud folders could not be checked"), color: SeleneTheme.ink60)
+            }
         }
         .foregroundColor(SeleneTheme.ink)
     }
@@ -280,6 +334,10 @@ struct CloudSetupAssistant: View {
     private var verification: some View {
         VStack(spacing: canvas.u(10)) {
             Text(verbatim: "\(draft.remote ?? ""):/\(draft.path)").seleneFont(18).foregroundColor(SeleneTheme.ink)
+            if onboarding {
+                Text(verbatim: "\(draft.remote ?? ""):/\(manualSourcesPath.isEmpty ? "\(draft.path)/GameFiles" : manualSourcesPath)")
+                    .seleneFont(16).foregroundColor(SeleneTheme.ink75)
+            }
             if work?.kind == .move {
                 SeleneStatusDot(text: text(stopMove ? "Cancelling…" : "Moving games…"), color: SeleneTheme.focus)
                 ProgressView(value: moveProgress).tint(SeleneTheme.focus).accessibilityLabel(text("Moving games…"))
@@ -353,7 +411,7 @@ struct CloudSetupAssistant: View {
         let chosen = model.chosenExecutable
         tool = nil; version = nil; remotes = nil
         start(.inspect) {
-            let found = await Task.detached(priority: .utility) { chosen ?? RcloneStorageBackend.findExecutable() }.value
+            let found = await Task.detached(priority: .utility) { RcloneStorageBackend.findExecutable(preferred: chosen) }.value
             try Task.checkCancellation()
             guard let found, RcloneStorageBackend.isExecutable(found) else { return }
             tool = found
@@ -369,13 +427,76 @@ struct CloudSetupAssistant: View {
 
     private func selectAccount(_ name: String) {
         draft.chooseAccount(name)
-        let root = model.preference.remote == name ? model.preference.root : ""
-        browse(root.split(separator: "/").joined(separator: "/"))
+        onboarding = model.preference.remote != name
+        guard onboarding, let service else {
+            browse(model.preference.root.split(separator: "/").joined(separator: "/"))
+            return
+        }
+        focus.reset()
+        start(.discover) {
+            let ticket = draft.ticket
+            do {
+                let suggestion = try await service.discoverLibrary()
+                if !Task.isCancelled && draft.matches(ticket) { librarySuggestion = suggestion }
+            }
+            catch is CancellationError { return }
+            catch { if !Task.isCancelled && draft.matches(ticket) { discoveryUnknown = true } }
+            try Task.checkCancellation()
+            if librarySuggestion == nil { browse("") }
+        }
+    }
+
+    private func selectLibrary() {
+        guard onboarding, let service else { finishFolder(); return }
+        let path = draft.path, ticket = draft.ticket
+        selectingSources = true
+        sourcesPath = ""
+        discoveryUnknown = false
+        focus.reset()
+        start(.discover) {
+            do {
+                let suggestion = try await service.discoverSources(library: path)
+                if !Task.isCancelled && draft.matches(ticket) { sourcesSuggestion = suggestion }
+            }
+            catch is CancellationError { return }
+            catch { if !Task.isCancelled && draft.matches(ticket) { discoveryUnknown = true } }
+        }
+    }
+
+    private func resumeFolder() {
+        guard canEdit else { return }
+        if let librarySuggestion {
+            self.librarySuggestion = nil
+            draft.browse(librarySuggestion.path)
+            selectLibrary()
+        } else if let sourcesSuggestion {
+            self.sourcesSuggestion = nil
+            sourcesPath = sourcesSuggestion.path
+            finishFolder()
+        }
+    }
+
+    private func chooseOtherFolder() {
+        focus.reset()
+        if librarySuggestion != nil {
+            librarySuggestion = nil
+            browse("")
+        } else {
+            sourcesSuggestion = nil
+        }
+    }
+
+    private func finishFolder() {
+        field = nil
+        discoveryUnknown = false
+        if draft.useFolder() { focus.reset(); verify() }
     }
 
     private func connect() {
         guard let tool else { return }
-        let id = client, password = secret, target = existing?.name
+        let id = showCredentials ? client : bundledClient?.id ?? ""
+        let password = showCredentials ? secret : bundledClient?.secret ?? ""
+        let target = existing?.name
         field = nil; secret = ""; focus.reset()
         model.isChangingConnection = true
         start(.connect) {
@@ -466,8 +587,10 @@ struct CloudSetupAssistant: View {
     private func verify() {
         guard let service, draft.step == .verify else { return }
         let path = draft.path, ticket = draft.renewTicket()
+        let sources = onboarding ? manualSourcesPath : ""
         start(.verify) {
             try await service.verifyAccess(to: path)
+            if !sources.isEmpty, sources != path { try await service.verifyAccess(to: sources) }
             if !Task.isCancelled { draft.acceptAccessCheck(ticket) }
         }
     }
@@ -478,7 +601,8 @@ struct CloudSetupAssistant: View {
             let replaced = replacement != nil
             try replacement?.apply()
             activated = true
-            model.configure(remote: preference.remote, root: preference.root, enabled: true, reload: replaced)
+            let sources = onboarding ? (manualSourcesPath.isEmpty ? nil : manualSourcesPath) : model.preference.sourcesRootOverride
+            model.configure(remote: preference.remote, root: preference.root, enabled: true, sourcesRoot: sources, reload: replaced)
             onClose()
         } catch {
             issue = RcloneConfiguration.Failure.configuration.key
@@ -522,6 +646,12 @@ struct CloudSetupAssistant: View {
         if work?.kind == .create { return }
         if draft.step == .verify {
             draft.backToFolders()
+            work?.task.cancel(); work = nil; issue = nil
+            if !selectingSources { browse(draft.path) }
+            return
+        }
+        if selectingSources {
+            selectingSources = false; sourcesSuggestion = nil; discoveryUnknown = false
             browse(draft.path)
             return
         }
@@ -537,10 +667,11 @@ struct CloudSetupAssistant: View {
         guard primaryEnabled else { return }
         switch draft.step {
         case .account:
-            if showCredentials { connect() }
-            else if let existing { selectAccount(existing.name) }
+            if !showCredentials, let existing { selectAccount(existing.name) }
+            else { connect() }
         case .folder:
-            if draft.useFolder() { focus.reset(); verify() }
+            if selectingSources { finishFolder() }
+            else { selectLibrary() }
         case .verify:
             if draft.activation != nil { activate() }
             else if draft.wantsMove { focus.reset(); confirmingMove = true }
@@ -557,10 +688,16 @@ struct CloudSetupAssistant: View {
             if work == nil {
                 if remotes == nil { rows = [[.retry]] }
                 else if showCredentials { rows = [[.console, .guide], [.client], [.secret]] }
+                else if bundledClient != nil { rows = [[.advanced]] + (advanced ? [[.changeCredentials]] : []) }
                 else { rows = [[.changeCredentials]] }
             }
         case .folder:
-            if folderControlsReady {
+            if work?.kind == .discover { break }
+            if librarySuggestion != nil || sourcesSuggestion != nil {
+                rows = canEdit ? [[.resumeFolder], [.otherFolder]] : [[.otherFolder]]
+            } else if selectingSources {
+                rows = [[.sourcesPath]]
+            } else if folderControlsReady {
                 rows = [breadcrumbs.dropLast().map(Target.breadcrumb)]
                 rows += folderNames.map { [.folder($0)] }
                 if listing != nil && !checkingMove { rows.append([.newFolder]) }
@@ -579,8 +716,9 @@ struct CloudSetupAssistant: View {
         switch target {
         case .cancel: cancel()
         case .primary: primary()
+        case .advanced: advanced.toggle()
         case .changeCredentials: editingCredentials = true
-        case .client, .secret, .folderName: field = target
+        case .client, .secret, .folderName, .sourcesPath: field = target
         case .console: openConsole()
         case .guide: openGuide()
         case .retry:
@@ -591,6 +729,8 @@ struct CloudSetupAssistant: View {
             }
         case .breadcrumb(let path): browse(path)
         case .folder(let name): browse(CloudDriveFolders.joining(draft.path, name))
+        case .resumeFolder: resumeFolder()
+        case .otherFolder: chooseOtherFolder()
         case .newFolder: nameFolder()
         case .moveGames: draft.toggleMove()
         case .confirmMove: moveGames()
@@ -603,7 +743,7 @@ struct CloudSetupAssistant: View {
     func moveAssistantFocus(_ direction: CloudSetupAssistantFocus.Direction) {
         focus.move(direction, in: focusRows)
         switch focus.target {
-        case .client, .secret, .folderName: field = focus.target
+        case .client, .secret, .folderName, .sourcesPath: field = focus.target
         default: field = nil
         }
     }

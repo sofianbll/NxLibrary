@@ -42,7 +42,7 @@ final class RcloneRemoteControl: @unchecked Sendable {
     }
 
     func call(_ operation: String, _ parameters: [String: Any], executable: URL,
-              environment: [String: String], flags: [String]) async throws -> String? {
+              environment: [String: String], flags: [String], sensitive: Bool = false) async throws -> String? {
         try Task.checkCancellation()
         let body = String(decoding: try JSONSerialization.data(withJSONObject: parameters), as: UTF8.self)
         // Sweep happens once off the UI executor, even if multiple reads arrive together.
@@ -69,8 +69,8 @@ final class RcloneRemoteControl: @unchecked Sendable {
         let result: CommandResult?
         do {
             result = ready ? try await SystemCommandRunner().runCancellable(Self.curl,
-                Self.request(socket: socket, operation: operation, body: body, timeout: "300"),
-                environment: [:]) : nil
+                Self.request(socket: socket, operation: operation, body: sensitive ? "@-" : body, timeout: "300"),
+                environment: [:], input: sensitive ? Data(body.utf8) : nil) : nil
         } catch is CancellationError { throw CancellationError() }
         catch { return nil }
         try lock.withLock {
