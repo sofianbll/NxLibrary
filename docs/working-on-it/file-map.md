@@ -1125,6 +1125,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 
 [Misure delle letture rclone](../history/reviews/2026-11-21-rclone-rc.md): comandi singoli e sessione persistente.
 [Divergenza dell’inventario cloud](../history/reviews/2026-11-21-cloud-upload-inventory.md): diagnosi del controllo prima dell’invio.
+[Uscita cloud e AppKit](../history/reviews/2026-11-21-cloud-quit-appkit.md): prova del ciclo di eventi.
 
 | File | Responsabilità |
 |---|---|

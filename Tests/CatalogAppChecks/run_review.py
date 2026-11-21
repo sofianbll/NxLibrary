@@ -498,8 +498,16 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
         }
         input.viewModel.cloudQuitRequested = true
         input.dialogActions = []
-        GameControllerService.shared.onAction?(.cancel)
-        require(input.dialogActions == [.cancel] && cloud.actions.isEmpty && received.actions.isEmpty,
+        for (name, block) in blockers {
+            block(true)
+            GameControllerService.shared.onAction?(.confirm)
+            require(input.dialogActions.isEmpty, "Quit confirmation must yield to \(name)")
+            block(false)
+        }
+        for action: GamepadAction in [.navigateRight, .confirm, .cancel] {
+            GameControllerService.shared.onAction?(action)
+        }
+        require(input.dialogActions == [.navigateRight, .confirm, .cancel] && cloud.actions.isEmpty && received.actions.isEmpty,
                 "Quit confirmation must take controller input before the cloud panel")
         input.viewModel.cloudQuitRequested = false
         for action: GamepadAction in [.navigateDown, .confirm, .menuHold] {

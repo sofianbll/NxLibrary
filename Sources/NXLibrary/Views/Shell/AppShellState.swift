@@ -23,10 +23,9 @@ final class AppShellState {
         viewModel = model
         AppDelegate.cloudLibrary = model.cloudLibrary
         AppDelegate.showCloudQuit = { [weak model] in
-            guard let model else { return false }
+            guard let model, !model.cloudQuitRequested else { return }
             model.dismissLaunchOverlay()
             model.cloudQuitRequested = true
-            return true
         }
         AppDelegate.isBusy = { [weak model] in
             guard let model else { return false }

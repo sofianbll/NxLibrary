@@ -3,6 +3,17 @@ import XCTest
 @testable import ArcanePorting
 
 final class CloudTransferQueueTests: XCTestCase {
+    func testQuitDecisionWaitsForConfirmationAndQueueCleanup() {
+        XCTAssertEqual(CloudQuitDecision.resolve(isWorking: true, hasQueueWrites: true), .confirm)
+        XCTAssertEqual(CloudQuitDecision.resolve(isWorking: true, relaunchScheduled: true), .cancel)
+        XCTAssertEqual(CloudQuitDecision.resolve(hasQueueWrites: true), .flush)
+        XCTAssertEqual(CloudQuitDecision.resolve(isWorking: true, isQuitting: true), .cancel)
+        XCTAssertEqual(CloudQuitDecision.resolve(hasQueueWrites: true, isQuitting: true), .cancel)
+        XCTAssertEqual(CloudQuitDecision.resolve(isWorking: true, hasQueueWrites: true,
+                                                 isQuitting: true, cleanupComplete: true), .quit)
+        XCTAssertEqual(CloudQuitDecision.resolve(), .quit)
+    }
+
     func testRoundTripKeepsInterruptedTransferFirstAndFiltersMissingGames() async throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: folder) }

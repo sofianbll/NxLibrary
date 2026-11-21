@@ -30,6 +30,19 @@ public enum CloudLibraryAction: Codable, Equatable, Sendable {
     }
 }
 
+public enum CloudQuitDecision: Equatable {
+    case quit, cancel, confirm, flush
+
+    public static func resolve(isWorking: Bool = false, hasQueueWrites: Bool = false,
+                               isQuitting: Bool = false, cleanupComplete: Bool = false,
+                               relaunchScheduled: Bool = false) -> Self {
+        if cleanupComplete { return .quit }
+        if isQuitting { return .cancel }
+        if isWorking { return relaunchScheduled ? .cancel : .confirm }
+        return hasQueueWrites ? .flush : .quit
+    }
+}
+
 /// Profile-local snapshot, with the interrupted operation at the head of the FIFO.
 public final class CloudTransferQueue: Sendable {
     public struct Entry: Codable, Equatable, Sendable {

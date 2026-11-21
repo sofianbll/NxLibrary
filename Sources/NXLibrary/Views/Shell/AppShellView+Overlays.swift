@@ -24,7 +24,6 @@ extension AppShellView {
         } else {
             cloudQuitFocus = .cancel
             viewModel.cloudQuitRequested = false
-            NSApp.reply(toApplicationShouldTerminate: false)
         }
     }
 
