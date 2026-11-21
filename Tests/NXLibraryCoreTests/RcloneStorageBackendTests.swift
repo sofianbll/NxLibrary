@@ -40,6 +40,90 @@ final class RcloneStorageBackendTests: XCTestCase {
         XCTAssertEqual(after, [])
     }
 
+    func testRemoteControlReusesDaemonForMetadataAndManifestAndRestartsAfterKill() async throws {
+        let fixture = try Fixture(recordCommands: true)
+        let backend = fixture.backend
+        XCTAssertNil(backend.control.processID)
+        let key = StorageObjectKey("title/manifests/fixture.json")
+        let manifest = fixture.remote.appendingPathComponent(key.value)
+        try FileManager.default.createDirectory(at: manifest.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("abc\n".utf8).write(to: manifest)
+        async let all = backend.list()
+        async let manifests = backend.list(in: StorageObjectKey("title/manifests"))
+        let (objects, children) = try await (all, manifests)
+        XCTAssertEqual(objects.map(\.key), [key])
+        XCTAssertEqual(children.map(\.key), [key])
+        let pid = try XCTUnwrap(backend.control.processID)
+        try await backend.verify(try XCTUnwrap(objects.first))
+        let absent = try await backend.list(in: StorageObjectKey("unknown"))
+        XCTAssertEqual(absent, [])
+        try await backend.get(key, to: fixture.download)
+        XCTAssertEqual(try Data(contentsOf: fixture.download), Data("abc\n".utf8))
+        XCTAssertEqual(backend.control.processID, pid)
+        XCTAssertEqual(try fixture.commands(), ["rcd"])
+
+        XCTAssertEqual(kill(pid, SIGKILL), 0)
+        try await waitForExit { backend.control.processID == nil }
+        let afterKill = try await backend.list()
+        XCTAssertEqual(afterKill, objects)
+        let replacement = try XCTUnwrap(backend.control.processID)
+        XCTAssertNotEqual(replacement, pid)
+        XCTAssertEqual(try fixture.commands(), ["rcd", "rcd"])
+        backend.stopRemoteControl()
+        try await waitForExit { kill(replacement, 0) == -1 && errno == ESRCH }
+    }
+
+    func testRemoteControlFallsBackWhenDaemonCannotStart() async throws {
+        let fixture = try Fixture(recordCommands: true, failDaemon: true)
+        let before = try await fixture.backend.list()
+        XCTAssertEqual(before, [])
+        let missing = try await fixture.backend.list(in: StorageObjectKey("unknown"))
+        XCTAssertEqual(missing, [])
+        XCTAssertEqual(try fixture.commands(), ["rcd", "lsjson", "lsjson"])
+    }
+
+    func testCancellingRemoteControlReadKeepsDaemonReusable() async throws {
+        let fixture = try Fixture(recordCommands: true)
+        let backend = fixture.backend
+        _ = try await backend.list()
+        let pid = try XCTUnwrap(backend.control.processID)
+        XCTAssertEqual(kill(pid, SIGSTOP), 0)
+        defer { _ = kill(pid, SIGCONT) }
+        let request = Task { try await backend.list() }
+        try await Task.sleep(nanoseconds: 150_000_000)
+        request.cancel()
+        do {
+            _ = try await request.value
+            XCTFail("Expected cancellation")
+        } catch is CancellationError {}
+        XCTAssertEqual(kill(pid, SIGCONT), 0)
+        _ = try await backend.list()
+        XCTAssertEqual(backend.control.processID, pid)
+        XCTAssertEqual(try fixture.commands(), ["rcd"])
+    }
+
+    func testRemovesOrphanByItsPrivateSocket() async throws {
+        let fixture = try Fixture()
+        let orphan = fixture.directory.appendingPathComponent("arcane-rc-Orphan")
+        try FileManager.default.createDirectory(at: orphan, withIntermediateDirectories: false,
+                                                attributes: [.posixPermissions: 0o700])
+        let socket = orphan.appendingPathComponent("s").path
+        // Keep this fixture's Unix path short enough on macOS.
+        guard socket.utf8.count < 104 else { throw XCTSkip("fixture Unix socket path too long") }
+        let daemon = Process()
+        daemon.executableURL = try XCTUnwrap(RcloneStorageBackend.findExecutable())
+        daemon.arguments = ["rcd", "--rc-addr", "unix://\(socket)", "--rc-no-auth", "--config", fixture.config.path]
+        daemon.environment = [:]
+        daemon.standardOutput = FileHandle.nullDevice
+        daemon.standardError = FileHandle.nullDevice
+        try daemon.run()
+        defer { if daemon.isRunning { daemon.terminate() } }
+        try await waitForExit { FileManager.default.fileExists(atPath: socket) }
+        RcloneRemoteControl.reapOrphans(in: fixture.directory)
+        try await waitForExit { !daemon.isRunning }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: orphan.path))
+    }
+
     func testMissingObjectAndUnavailableBackendAreDistinct() async throws {
         let fixture = try Fixture()
         await assertError(.notFound) { try await fixture.backend.get(fixture.object.key, to: fixture.download) }
@@ -109,7 +193,7 @@ final class RcloneStorageBackendTests: XCTestCase {
             try Data(script.utf8).write(to: shim)
             try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: shim.path)
             let backend = RcloneStorageBackend(remote: ":local:", root: fixture.remote.path,
-                                               executable: shim, config: URL(fileURLWithPath: "/dev/null"))
+                                               executable: shim, config: fixture.config)
             await assertError(concurrentWriter ? .alreadyExists : .hashMismatch) {
                 try await backend.put(fixture.source, as: fixture.object)
             }
@@ -179,31 +263,60 @@ final class RcloneStorageBackendTests: XCTestCase {
         "'" + path.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 
+    private func waitForExit(_ ready: () -> Bool) async throws {
+        for _ in 0..<150 {
+            if ready() { return }
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
+        XCTAssertTrue(ready(), "Condition did not become true")
+    }
+
     private final class Fixture {
         let directory: URL
         let remote: URL
         let source: URL
         let download: URL
         let backend: RcloneStorageBackend
+        let config: URL
+        let commandLog: URL
         let object = StorageObject(key: StorageObjectKey("title/artifact with spaces.aar"), size: 4,
                                    hashes: ["sha256": "edeaaff3f1774ad2888673770c6d64097e391bc362d7d6fb34982ddf0efd18cb"])
 
-        init() throws {
-            let config = URL(fileURLWithPath: "/dev/null")
-            guard RcloneStorageBackend.findExecutable() != nil else {
+        init(recordCommands: Bool = false, failDaemon: Bool = false) throws {
+            guard let binary = RcloneStorageBackend.findExecutable() else {
                 throw XCTSkip("rclone absent from /opt/homebrew/bin and PATH; local integration test skipped")
             }
             let fm = FileManager.default
-            directory = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+            directory = fm.temporaryDirectory.appendingPathComponent("rclone-\(UUID().uuidString.prefix(8))", isDirectory: true)
             remote = directory.appendingPathComponent("remote root", isDirectory: true)
             source = directory.appendingPathComponent("fixture file")
             download = directory.appendingPathComponent("download file")
-            backend = RcloneStorageBackend(remote: ":local:", root: remote.path, config: config)
+            config = directory.appendingPathComponent("rclone.conf")
+            commandLog = directory.appendingPathComponent("commands")
             try fm.createDirectory(at: remote, withIntermediateDirectories: true)
+            try Data().write(to: config)
             try Data("abc\n".utf8).write(to: source)
+            let executable: URL
+            if recordCommands {
+                let quote = { (path: String) in "'" + path.replacingOccurrences(of: "'", with: "'\\''") + "'" }
+                executable = directory.appendingPathComponent("rclone-shim")
+                let script = """
+                    #!/bin/sh
+                    printf '%s\\n' "$1" >> \(quote(commandLog.path))
+                    \(failDaemon ? "if [ \"$1\" = rcd ]; then exit 1; fi" : "")
+                    exec \(quote(binary.path)) "$@"
+                    """
+                try Data(script.utf8).write(to: executable)
+                try fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+            } else { executable = binary }
+            backend = RcloneStorageBackend(remote: ":local:", root: remote.path, executable: executable, config: config)
         }
 
         deinit { try? FileManager.default.removeItem(at: directory) }
+
+        func commands() throws -> [String] {
+            try String(contentsOf: commandLog, encoding: .utf8).split(separator: "\n").map(String.init)
+        }
 
         func assertStagingEmpty() throws {
             let staging = remote.appendingPathComponent(".arcane-upload", isDirectory: true)

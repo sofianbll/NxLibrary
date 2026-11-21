@@ -2,10 +2,13 @@ import Foundation
 
 public struct RcloneStorageBackend: StorageBackend {
     private static let staging = ".arcane-upload"
+    private static let smallDownloadLimit: Int64 = 64 * 1024
+    private static let flags = ["--drive-skip-shortcuts", "--local-links=false", "--copy-links=false"]
     private let remote: String
     private let root: String
     private let executable: URL?
     private let config: URL?
+    let control = RcloneRemoteControl()
 
     /// `remote` is a configured rclone name (e.g. `gdrive`) or `:local:` with an absolute `root`.
     /// Credentials and unlocking stay in rclone's configuration, not the arguments or Arcane preferences.
@@ -15,6 +18,9 @@ public struct RcloneStorageBackend: StorageBackend {
         self.executable = executable
         self.config = config
     }
+
+    /// Ends the RC session when the cloud configuration is replaced or the app quits.
+    public func stopRemoteControl() { control.stop() }
 
     public static func findExecutable() -> URL? {
         let path = ProcessInfo.processInfo.environment["PATH"] ?? ""
@@ -30,21 +36,37 @@ public struct RcloneStorageBackend: StorageBackend {
     }
 
     public func list() async throws -> [StorageObject] {
-        let output = try await run(["lsjson", basePath(), "--recursive", "--files-only", "--hash",
-                                    "--exclude", "/\(Self.staging)/**"])
-        return try decode([Item].self, from: output).map {
+        let base = try basePath()
+        let exclude = "/\(Self.staging)/**"
+        let items: [Item]
+        if let output = try await rc("operations/list", [
+            "fs": base, "remote": "", "opt": ["recurse": true, "filesOnly": true, "showHash": true],
+            "_filter": ["ExcludeRule": [exclude]],
+        ]) {
+            items = try decode(ListResult.self, from: output).list
+        } else {
+            let output = try await run(["lsjson", base, "--recursive", "--files-only", "--hash", "--exclude", exclude])
+            items = try decode([Item].self, from: output)
+        }
+        return items.map {
             StorageObject(key: StorageObjectKey($0.path), size: $0.size, hashes: $0.hashes ?? [:])
         }
     }
 
     public func list(in prefix: StorageObjectKey) async throws -> [StorageObject] {
         let directory = try path(for: prefix)
-        let output: String
-        do { output = try await run(["lsjson", directory, "--files-only"]) }
-        catch StorageBackendError.notFound { return [] }
-        return try decode([Item].self, from: output).map {
-            StorageObject(key: StorageObjectKey(prefix.value + "/" + $0.path), size: $0.size, hashes: [:])
-        }
+        let items: [Item]
+        do {
+            if let output = try await rc("operations/list", [
+                "fs": basePath(), "remote": prefix.value, "opt": ["filesOnly": true],
+            ]) {
+                items = try decode(ListResult.self, from: output).list
+            } else {
+                let output = try await run(["lsjson", directory, "--files-only"])
+                items = try decode([Item].self, from: output)
+            }
+        } catch StorageBackendError.notFound { return [] }
+        return items.map { StorageObject(key: StorageObjectKey(prefix.value + "/" + $0.name), size: $0.size, hashes: [:]) }
     }
 
     public func put(_ source: URL, as object: StorageObject,
@@ -87,7 +109,7 @@ public struct RcloneStorageBackend: StorageBackend {
         guard destination.isFileURL else { throw StorageBackendError.invalidLocalFile }
         let fm = FileManager.default
         guard !fm.fileExists(atPath: destination.path) else { throw StorageBackendError.alreadyExists }
-        guard try await item(at: source) != nil else { throw StorageBackendError.notFound }
+        guard let item = try await item(at: source) else { throw StorageBackendError.notFound }
         let staging = destination.deletingLastPathComponent()
             .appendingPathComponent(".arcane-download-\(UUID().uuidString)", isDirectory: true)
         do {
@@ -95,8 +117,17 @@ public struct RcloneStorageBackend: StorageBackend {
                                    attributes: [.posixPermissions: 0o700])
         } catch { throw StorageBackendError.invalidLocalFile }
         defer { try? fm.removeItem(at: staging) }
-        let temporary = staging.appendingPathComponent("file")
-        _ = try await run(["copyto", source, temporary.path], progress: progress)
+        let temporary: URL
+        if progress == nil, (1...Self.smallDownloadLimit).contains(item.size),
+           try await rc("operations/copyfile", [
+               "srcFs": basePath(), "srcRemote": key.value, "dstFs": ":local:" + staging.path, "dstRemote": "rc",
+           ]) != nil {
+            temporary = staging.appendingPathComponent("rc")
+        } else {
+            // A lost RC response can leave a partial download; the CLI uses a separate staging file.
+            temporary = staging.appendingPathComponent("file")
+            _ = try await run(["copyto", source, temporary.path], progress: progress)
+        }
         try Task.checkCancellation()
         guard isRegularFile(temporary) else { throw StorageBackendError.invalidResponse }
         do { try fm.moveItem(at: temporary, to: destination) }
@@ -131,8 +162,20 @@ public struct RcloneStorageBackend: StorageBackend {
     }
 
     private func item(at path: String, withHashes: Bool = false) async throws -> Item? {
+        let base = try basePath()
+        let relative = String(path.dropFirst(base.count + (base.hasSuffix("/") ? 0 : 1)))
+        if let output = try await rc("operations/stat", [
+            "fs": base, "remote": relative, "opt": ["filesOnly": true, "showHash": withHashes],
+        ]) { return try decode(StatResult.self, from: output).item }
         let output = try await run(["lsjson", path, "--stat", "--files-only"] + (withHashes ? ["--hash"] : []))
         return try decode(Item?.self, from: output)
+    }
+
+    private func rc(_ operation: String, _ parameters: [String: Any]) async throws -> String? {
+        guard let binary = executable ?? Self.findExecutable(), Self.isExecutable(binary) else { return nil }
+        let environment = RcloneConfiguration.environment()
+        return try await control.call(operation, parameters, executable: binary, environment: environment,
+            flags: Self.flags + RcloneConfiguration.flags(config: config, environment: environment))
     }
 
     private func isRegularFile(_ url: URL) -> Bool {
@@ -189,8 +232,7 @@ public struct RcloneStorageBackend: StorageBackend {
             throw StorageBackendError.backendUnavailable
         }
 
-        let flags = ["--use-json-log", "--stats", "1s", "--stats-log-level", "NOTICE",
-                     "--drive-skip-shortcuts", "--local-links=false", "--copy-links=false"]
+        let flags = ["--use-json-log", "--stats", "1s", "--stats-log-level", "NOTICE"] + Self.flags
         let environment = RcloneConfiguration.environment()
         let command = arguments + flags + RcloneConfiguration.flags(config: config, environment: environment)
         let result: CommandResult
@@ -236,10 +278,20 @@ public struct RcloneStorageBackend: StorageBackend {
 
     private struct Item: Decodable {
         let path: String
+        let name: String
         let size: Int64
         let hashes: [String: String]?
 
-        enum CodingKeys: String, CodingKey { case path = "Path", size = "Size", hashes = "Hashes" }
+        enum CodingKeys: String, CodingKey { case path = "Path", name = "Name", size = "Size", hashes = "Hashes" }
+    }
+
+    private struct ListResult: Decodable { let list: [Item] }
+    private struct StatResult: Decodable {
+        let item: Item?
+        private enum CodingKeys: CodingKey { case item }
+        init(from decoder: Decoder) throws {
+            item = try decoder.container(keyedBy: CodingKeys.self).decode(Item?.self, forKey: .item)
+        }
     }
 
     private struct Log: Decodable {

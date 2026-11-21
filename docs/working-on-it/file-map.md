@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 21 novembre 2026. Copertura di **828 file** del progetto, compresi i controlli di pubblicazione, la CI con regressioni app senza UI, il master dell’icona, le guide per sviluppo e media, gli screenshot del README, l'integrazione di nxnative, il canale di aggiornamento e il primo avvio che parte da ciò che è già sul Mac, il setup del porting con cartella unica per scoperta e installazione dei giochi. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 21 novembre 2026. Copertura di **830 file** del progetto, compresi i controlli di pubblicazione, la CI con regressioni app senza UI, il master dell’icona, le guide per sviluppo e media, gli screenshot del README, l'integrazione di nxnative, il canale di aggiornamento e il primo avvio che parte da ciò che è già sul Mac, il setup del porting con cartella unica per scoperta e installazione dei giochi. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -227,6 +227,7 @@ Cartella `Sources/NXLibraryCore/Library/`.
 | [Sources/NXLibraryCore/Library/StorageBackend.swift](../../Sources/NXLibraryCore/Library/StorageBackend.swift) | Contratto oggetti remoti: chiavi, impronte, trasferimenti e avanzamento. |
 | [Sources/NXLibraryCore/Library/RcloneStorageBackend.swift](../../Sources/NXLibraryCore/Library/RcloneStorageBackend.swift) | Staging, verifica SHA-256, movimento nativo e pulizia della copia appena pubblicata se non verificabile. |
 | [Sources/NXLibraryCore/Library/RcloneConfiguration.swift](../../Sources/NXLibraryCore/Library/RcloneConfiguration.swift) | Preferenza compatibile, remoti e tool locali, prova di lettura, OAuth Drive annullabile e cifratura con portachiavi. |
+| [Sources/NXLibraryCore/Library/RcloneRemoteControl.swift](../../Sources/NXLibraryCore/Library/RcloneRemoteControl.swift) | Riusa un daemon locale per le letture; chiude la sessione al cambio di configurazione o all’uscita. |
 | [Sources/NXLibraryCore/Library/CollectionRow.swift](../../Sources/NXLibraryCore/Library/CollectionRow.swift) | Definisce proporzioni delle copertine e geometria della riga Collection. |
 
 ## Core · Selene: Spotlight, focus, temi e sfondi
@@ -1108,6 +1109,8 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [docs/media/live-wallpapers.webp](../media/live-wallpapers.webp) | Mostra il selettore degli sfondi animati e l'importazione di video personali. |
 
 ## Documentazione tecnica e registri datati
+
+[Misure delle letture rclone](../history/reviews/2026-11-21-rclone-rc.md): comandi singoli e sessione persistente.
 
 | File | Responsabilità |
 |---|---|

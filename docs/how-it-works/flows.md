@@ -143,6 +143,8 @@ flowchart TD
 
 **Details → Cloud.** Il pulsante accanto a Options apre la libreria cloud; il link in fondo resta disponibile. Con rclone configurato, Send controlla spazio e inventario di app e cache, verifica le copie Apple Archive in staging, pubblica entrambi gli oggetti verificati e infine il manifest. Con solo una copia cloud dell'app, Download sostituisce il pulsante principale e usa lo stesso ripristino del pannello: verifica hash, inventario e firma prima di pubblicare la copia mancante e riattivare Play. La fase e l'avanzamento restano sotto i pulsanti anche quando il pannello è chiuso. Per liberare spazio, la conferma Selene precede una nuova verifica remota e il confronto locale; una divergenza lascia il file dov'è. La voce in libreria resta.
 
+L'aggiornamento dello stato legge il manifest remoto mentre individua e controlla i percorsi locali. Se il demone rclone è indisponibile, i comandi singoli mantengono la distinzione tra copia assente e stato ignoto.
+
 **Settings → Porting → Cloud library.** Da Details, Open settings apre direttamente la sezione se la libreria è spenta o non configurata. Scegli un remote rclone esistente o collega Google Drive: Arcane controlla la cifratura prima di avviare l'accesso nel browser, e Cancel termina il processo rclone. La cartella e l'interruttore si applicano senza riavvio. Test connection legge soltanto l'elenco della cartella. Dopo conferma, Disconnect elimina solo il remote dal file rclone locale.
 
 ## 6. Importare o ripristinare un salvataggio

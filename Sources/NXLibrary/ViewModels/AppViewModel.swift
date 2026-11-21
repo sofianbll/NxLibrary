@@ -310,6 +310,7 @@ final class AppViewModel: ObservableObject {
             queue: .main
         ) { [weak self] _ in
             self?.porting.buildService?.terminateNow()
+            self?.cloudLibrary.stopRemoteControl()
             if let temp = self?.porting.buildTempDirectory {
                 try? FileManager.default.removeItem(at: temp)
             }

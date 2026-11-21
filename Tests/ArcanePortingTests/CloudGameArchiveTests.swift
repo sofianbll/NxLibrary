@@ -272,8 +272,9 @@ final class CloudGameArchiveTests: XCTestCase {
             var value = UInt8(42)
             XCTAssertEqual(setxattr(cached.path, "org.arcane.test", &value, 1, 0, 0), 0)
             try fm.createSymbolicLink(atPath: cache.appendingPathComponent("nested/link").path, withDestinationPath: "../run.key")
-            let backend = RcloneStorageBackend(remote: ":local:", root: remote.path, executable: binary,
-                                               config: URL(fileURLWithPath: "/dev/null"))
+            let config = root.appendingPathComponent("rclone.conf")
+            try Data().write(to: config)
+            let backend = RcloneStorageBackend(remote: ":local:", root: remote.path, executable: binary, config: config)
             let game = CloudArchiveGame(titleID: title, locations: [.app: app, .cache: cache])
             return Fixture(root: root, remote: remote, trash: trash, app: app, cache: cache, backend: backend, game: game)
         } catch {

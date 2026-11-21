@@ -37,6 +37,7 @@ final class CloudLibraryModel: ObservableObject {
     @Published private(set) var archive: CloudGameArchive?
     @Published var isChangingConnection = false
     @Published var states: [UUID: CloudLibraryState] = [:]
+    private var backend: RcloneStorageBackend?
     var jobs: [UUID: Task<Void, Never>] = [:]
     var jobTokens: [UUID: UUID] = [:]
     var isWorking: Bool { !jobs.isEmpty }
@@ -66,11 +67,15 @@ final class CloudLibraryModel: ObservableObject {
     }
 
     private func rebuildArchive() {
+        stopRemoteControl()
         states = [:]
-        archive = preference.enabled ? preference.remote.map {
-            CloudGameArchive(backend: RcloneStorageBackend(remote: $0, root: preference.root, executable: chosenExecutable))
+        backend = preference.enabled ? preference.remote.map {
+            RcloneStorageBackend(remote: $0, root: preference.root, executable: chosenExecutable)
         } : nil
+        archive = backend.map { CloudGameArchive(backend: $0) }
     }
+
+    func stopRemoteControl() { backend?.stopRemoteControl() }
 
     @MainActor func update(_ id: UUID, _ change: (inout CloudLibraryState) -> Void) {
         var state = states[id] ?? CloudLibraryState()
@@ -200,17 +205,18 @@ extension AppViewModel {
 
     @MainActor func refreshCloudLibrary(_ game: PortedGame) async {
         guard let archive = cloudLibrary.archive, let game = libraryGames.first(where: { $0.id == game.id }),
-              game.titleId.map(SaveLocation.validID) == true,
+              let titleID = game.titleId, SaveLocation.validID(titleID),
               cloudLibrary.states[game.id]?.refreshing != true, cloudLibrary.jobs[game.id] == nil else { return }
         let id = game.id
         cloudLibrary.update(id) { $0.refreshing = true; $0.message = nil }
         defer { if cloudLibrary.archive === archive { cloudLibrary.update(id) { $0.refreshing = false } } }
+        async let latest = archive.latest(titleID: titleID)
         let target = await cloudLocations(for: game)
         let local = await archive.localStatus(target)
         guard cloudLibrary.archive === archive, !Task.isCancelled else { return }
         cloudLibrary.update(id) { $0.local = local }
         do {
-            let manifest = try await archive.latest(titleID: target.titleID)
+            let manifest = try await latest
             try Task.checkCancellation()
             guard cloudLibrary.archive === archive else { return }
             cloudLibrary.update(id) { $0.remote = Set(manifest?.artifacts.map(\.kind) ?? []) }
