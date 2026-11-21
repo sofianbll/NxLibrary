@@ -43,6 +43,7 @@ public struct CatalogDocument: Codable, Equatable {
     /// screen sees them, and nothing edits them.
     public internal(set) var preservedGames: [CatalogJSON]
     public internal(set) var preservedSources: [CatalogJSON]
+    package var cloudImportExclusions: Set<String>?
 
     public init(schemaVersion: Int = 1, revision: UUID = UUID(), legacyOrigin: CatalogLegacyOrigin = .absent,
                 sources: [CatalogSourceConfiguration] = [],
@@ -52,7 +53,7 @@ public struct CatalogDocument: Codable, Equatable {
         self.preservedGames = preservedGames; self.preservedSources = preservedSources
     }
 
-    private enum CodingKeys: String, CodingKey { case schemaVersion, revision, legacyOrigin, sources, games }
+    private enum CodingKeys: String, CodingKey { case schemaVersion, revision, legacyOrigin, sources, games, cloudImportExclusions }
     private enum IntegrationKey: String, CodingKey { case integration }
 
     /// Reads each game and source as known only when its `integration` is one of the decoder's `CatalogRecordKinds`;
@@ -62,6 +63,7 @@ public struct CatalogDocument: Codable, Equatable {
         schemaVersion = try c.decode(Int.self, forKey: .schemaVersion)
         revision = try c.decode(UUID.self, forKey: .revision)
         legacyOrigin = try c.decode(CatalogLegacyOrigin.self, forKey: .legacyOrigin)
+        cloudImportExclusions = try c.decodeIfPresent(Set<String>.self, forKey: .cloudImportExclusions)
         let known = Set(CatalogRecordKinds.of(decoder).integrations)
         (sources, preservedSources) = try Self.split(c, .sources, known, CatalogSourceConfiguration.init(from:))
         (games, preservedGames) = try Self.split(c, .games, known, CatalogGame.init(from:))
@@ -85,6 +87,7 @@ public struct CatalogDocument: Codable, Equatable {
         try c.encode(schemaVersion, forKey: .schemaVersion)
         try c.encode(revision, forKey: .revision)
         try c.encode(legacyOrigin, forKey: .legacyOrigin)
+        try c.encodeIfPresent(cloudImportExclusions, forKey: .cloudImportExclusions)
         var sourceList = c.nestedUnkeyedContainer(forKey: .sources)
         for source in sources { try sourceList.encode(source) }
         for source in preservedSources { try sourceList.encode(source) }

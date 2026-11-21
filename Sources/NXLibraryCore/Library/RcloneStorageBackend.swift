@@ -71,6 +71,21 @@ public struct RcloneStorageBackend: StorageBackend {
         try await list(in: prefix, withHashes: false)
     }
 
+    public func rootDirectories() async throws -> [String] {
+        let base = try basePath()
+        let items: [Item]
+        if let output = try await rc("operations/list", [
+            "fs": base, "remote": "", "opt": ["dirsOnly": true, "noModTime": true, "noMimeType": true],
+        ]) {
+            items = try decode(ListResult.self, from: output).list
+        } else {
+            let output = try await run(["lsjson", base, "--dirs-only", "--no-modtime", "--no-mimetype",
+                                        "--retries", "1", "--low-level-retries", "1", "--contimeout", "5s", "--timeout", "10s"])
+            items = try decode([Item].self, from: output)
+        }
+        return items.map(\.name)
+    }
+
     package func list(in prefix: StorageObjectKey, withHashes: Bool) async throws -> [StorageObject] {
         let directory = try path(for: prefix)
         let items: [Item]

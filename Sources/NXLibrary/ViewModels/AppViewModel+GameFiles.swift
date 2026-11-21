@@ -189,9 +189,7 @@ extension AppViewModel {
                 }
             }
 
-            applyCatalog(try catalogRepository.updateNXNativeGames { games in
-                games.removeAll { $0.id == game.id }
-            })
+            applyCatalog(try catalogRepository.removeNXNative(id: game.id))
             if deleteBundle {
                 logs.append(LogEntry(level: .warning,
                     message: L10n.format("Game app deleted: %@%@", [String(describing: game.name), String(describing: removedWorkspace ? "; staged workspace removed" : "")])))

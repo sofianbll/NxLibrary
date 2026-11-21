@@ -32,6 +32,7 @@ extension PortedGame {
         bundleId = outcome.bundleId
         versionString = outcome.versionString
         status = outcome.status
+        if [.built, .builtSourcesMissing].contains(status) { cloudImportPending = nil }
         toolchain = outcome.toolchain
         lastBuild = outcome.lastBuild
         portingFailure = outcome.portingFailure

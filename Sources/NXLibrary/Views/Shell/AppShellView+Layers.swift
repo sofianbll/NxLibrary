@@ -230,10 +230,16 @@ extension AppShellView {
         .frame(minWidth: 1100, minHeight: 700)
         .onAppear(perform: startRuntime)
         .onReceive(viewModel.cloudLibrary.$archive) { _ in
-            Task { @MainActor in viewModel.restoreCloudQueue() }
+            Task { @MainActor in
+                viewModel.restoreCloudQueue()
+                viewModel.importCloudGames()
+            }
         }
         .onChange(of: viewModel.isScanningLibrary) { _, scanning in
-            if !scanning { viewModel.restoreCloudQueue() }
+            if !scanning {
+                viewModel.restoreCloudQueue()
+                viewModel.importCloudGames()
+            }
         }
         .onReceive(settings.$loadError) { error in
             guard error != nil else { return }

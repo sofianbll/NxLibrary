@@ -96,6 +96,7 @@ extension SettingsCatalog {
         action("cloudLibraryService", .cloudLibrary, "Cloud service", "Google Drive"),
         action("cloudLibraryFolder", .cloudLibrary, "Folder", "Folder for game apps and build caches."),
         action("cloudLibraryConnect", .cloudLibrary, "Change Google credentials", "Sign in with your own Google OAuth client in your browser."),
+        action("cloudLibraryImport", .cloudLibrary, "Import games from the cloud", "Add missing games without downloading their apps."),
         row("showsCloudPlayIcon", .cloudLibrary, "Icon next to Play", "Show the cloud icon by the play button.") { $0.showsCloudPlayIcon },
         row("showsCloudDetailsLink", .cloudLibrary, "Link in Details", "Show the cloud library link in Details.") { $0.showsCloudDetailsLink },
         row("cloudTileBadges", .cloudLibrary, "Tile badges", "Show cloud status on game covers.") { $0.cloudTileBadges },

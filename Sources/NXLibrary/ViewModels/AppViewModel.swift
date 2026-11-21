@@ -401,6 +401,7 @@ final class AppViewModel: ObservableObject {
     }
 
     func completeSetup() {
+        prepareInitialGameAppsFolder()
         AppData.preferences.set(gameAppsFolder.path, forKey: StorageKeys.savedLibraryFolder)
         firstRunSetup.finish()
         showSetupCheck = false

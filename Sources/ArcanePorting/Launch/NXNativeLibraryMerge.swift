@@ -25,6 +25,7 @@ enum NXNativeLibraryMerge {
                 merged.titleId = game.titleId
                 merged.versionString = game.versionString
                 merged.status = game.status
+                if game.isPlayableLocally { merged.cloudImportPending = nil }
                 merged.toolchain = game.toolchain
                 merged.lastBuild = game.lastBuild
                 let explicitSources = replacingSources && !game.sources.isEmpty

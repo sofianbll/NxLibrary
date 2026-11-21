@@ -124,7 +124,7 @@ public final class ImportService {
     public func appsForLibrary(scanned: [ImportedApp], existing: [PortedGame]) -> [ImportedApp] {
         var preferred: [String: String] = [:]
         for game in existing {
-            if let title = game.titleId, game.url.pathExtension.lowercased() == "app",
+            if game.cloudImportPending != true, let title = game.titleId, game.url.pathExtension.lowercased() == "app",
                fm.fileExists(atPath: game.url.path) {
                 preferred[title.uppercased()] = game.url.resolvingSymlinksInPath().standardizedFileURL.path
             }

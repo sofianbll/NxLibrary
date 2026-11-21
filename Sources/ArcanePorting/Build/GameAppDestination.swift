@@ -20,19 +20,24 @@ public enum GameAppDestination {
         return url(name: game.name, titleId: game.titleId, in: folder)
     }
 
-    public static func url(name: String, titleId: String?, in folder: URL) -> URL {
+    public static func url(name: String, titleId: String?, in folder: URL, reusingExisting: Bool = true,
+                           reservedNames: Set<String> = []) -> URL {
         let fm = FileManager.default
         let base = appName(name)
         let title = titleId.flatMap(ImportService.normalizedTitleId)
-        let preferred = folder.appendingPathComponent(base + ".app")
-        if !fm.fileExists(atPath: preferred.path) || (title != nil && titleID(at: preferred) == title) {
-            return preferred
+        func usable(_ url: URL) -> Bool {
+            guard !reservedNames.contains(url.lastPathComponent.precomposedStringWithCanonicalMapping.lowercased()) else { return false }
+            if reusingExisting {
+                return !fm.fileExists(atPath: url.path) || (title != nil && titleID(at: url) == title)
+            }
+            return !fm.fileExists(atPath: url.path) && (try? fm.destinationOfSymbolicLink(atPath: url.path)) == nil
         }
+        let preferred = folder.appendingPathComponent(base + ".app")
+        if usable(preferred) { return preferred }
         let stem = title.map { "\(base) (\($0))" } ?? base
         var candidate = folder.appendingPathComponent(stem + ".app")
         var number = 2
-        while fm.fileExists(atPath: candidate.path) {
-            if let title, titleID(at: candidate) == title { break }
+        while !usable(candidate) {
             candidate = folder.appendingPathComponent("\(stem) \(number).app")
             number += 1
         }

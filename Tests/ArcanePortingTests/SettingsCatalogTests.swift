@@ -34,7 +34,7 @@ final class SettingsCatalogTests: XCTestCase {
         "wallpaperBrightness", "animatedBackground", "keepWallpaperOnGames", "backgroundShade", "readableText",
         "showClock", "reduceMotion", "iconAppearance", "boxCovers", "igdb", "steamGridDB", "launchStyle",
         "launchMotion", "launchShade", "surprisePool", "cloudSaves", "cloudSavesPickedFolder", "showsSessionCard",
-        "cloudLibraryEnabled", "cloudLibraryService", "cloudLibraryConnect", "cloudLibraryFolder",
+        "cloudLibraryEnabled", "cloudLibraryService", "cloudLibraryConnect", "cloudLibraryFolder", "cloudLibraryImport",
         "showsCloudPlayIcon", "showsCloudDetailsLink", "cloudTileBadges",
         "cloudLibrarySetup", "cloudLibraryAdvanced", "cloudLibraryTest", "cloudLibraryTool", "cloudLibraryDisconnect",
         "hiddenGames", "gameDefaults.fullscreen", "gameDefaults.enable60FPS", "gameDefaults.isDockedMode",
@@ -162,7 +162,7 @@ final class SettingsCatalogTests: XCTestCase {
         "gameDefaults.enable60FPS", "gameDefaults.isDockedMode", "gameDefaults.enableMetalFXUpscale",
         "gameDefaults.enableMetalHUD", "gameDefaults.language", "gameDefaults.renderScale", "gameDefaults.rumble",
         "gameDefaults.rumbleGain", "cloudSaves", "cloudSavesPickedFolder", "cloudLibrarySetup", "cloudLibraryEnabled",
-        "cloudLibraryService", "cloudLibraryFolder", "cloudLibraryConnect",
+        "cloudLibraryService", "cloudLibraryFolder", "cloudLibraryConnect", "cloudLibraryImport",
         "showsCloudPlayIcon", "showsCloudDetailsLink", "cloudTileBadges", "cloudLibraryAdvanced",
         "cloudLibraryTool", "cloudLibraryTest", "cloudLibraryDisconnect", "buildCaches", "diagnostics",
         "appUpdates", "projectDocs", "console"
@@ -253,6 +253,8 @@ final class SettingsCatalogTests: XCTestCase {
         XCTAssertTrue(SettingsCatalog.search("Configure cloud library", cloudConfigured: true).isEmpty)
         XCTAssertTrue(SettingsCatalog.search("Change Google credentials").isEmpty)
         XCTAssertEqual(SettingsCatalog.search("Change Google credentials", cloudConfigured: true).map(\.id), ["cloudLibraryConnect"])
+        XCTAssertTrue(SettingsCatalog.search("Import games from the cloud").isEmpty)
+        XCTAssertEqual(SettingsCatalog.search("Import games from the cloud", cloudConfigured: true).map(\.id), ["cloudLibraryImport"])
         XCTAssertTrue(SettingsCatalog.search("Test connection").isEmpty)
         XCTAssertEqual(SettingsCatalog.search("Test connection", cloudConfigured: true).map(\.id), ["cloudLibraryTest"])
         XCTAssertTrue(SettingsCatalog.opensCloudAdvanced("cloudLibraryTest"))

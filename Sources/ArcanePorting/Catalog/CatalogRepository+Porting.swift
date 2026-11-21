@@ -81,6 +81,67 @@ extension CatalogRepository {
             && earlier.workspacePath == current.workspacePath && earlier.buildCachePath == current.buildCachePath
             && earlier.appIconPending == current.appIconPending
     }
+
+    /// Cloud discovery only adds missing titles; no local observation or personal choice is replaced.
+    public func importCloudGames(_ manifests: [CloudGameManifest], in folder: URL,
+                                 legacyNames: [String: String] = [:]) throws -> CatalogDocument {
+        let current = try load()
+        var draft = current
+        var known = Set(current.nxnativeGames.compactMap { $0.titleId?.uppercased() })
+        known.formUnion(current.cloudImportExclusions ?? [])
+        for manifest in manifests {
+            let title = manifest.titleID.uppercased()
+            guard SaveLocation.validID(title), let app = manifest.artifacts.first(where: { $0.kind == .app }),
+                  known.insert(title).inserted else { continue }
+            let name = [manifest.gameName, legacyNames[title]].compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .first { !$0.isEmpty } ?? title
+            let bundle = manifest.bundleName.flatMap { value -> String? in
+                guard (5...200).contains(value.utf8.count), !value.hasPrefix("."),
+                      value.rangeOfCharacter(from: CharacterSet(charactersIn: "/:\\").union(.controlCharacters)) == nil,
+                      value.lowercased().hasSuffix(".app") else { return nil }
+                return value
+            } ?? "\(title).app"
+            var game = PortedGame(name: name,
+                url: folder.appendingPathComponent(bundle, isDirectory: true), platform: .macApp,
+                sizeBytes: app.unpackedSize, modificationDate: manifest.createdAt,
+                titleId: title, versionString: manifest.gameVersion)
+            game.status = .appMissing
+            game.cloudImportPending = true
+            draft.games.append(.init(nxnative: game))
+        }
+        guard draft.games.count != current.games.count else { return current }
+        var source = current.source(.nxnative) ?? .init(integration: .nxnative)
+        if !source.isEnabled {
+            source.isEnabled = true
+            source.generation = UUID()
+            if let index = draft.sources.firstIndex(where: { $0.integration == .nxnative }) { draft.sources[index] = source }
+            else { draft.sources.append(source) }
+        }
+        return try store.save(draft, expectedRevision: current.revision)
+    }
+
+    public func removeNXNative(id: UUID) throws -> CatalogDocument {
+        try transaction { document in
+            guard let index = document.games.firstIndex(where: { $0.id == id }) else { throw CatalogRepositoryError.gameNotFound }
+            guard let game = document.games[index].nxnativeGame else { throw CatalogModelError.wrongIntegration }
+            if let title = game.titleId, SaveLocation.validID(title) {
+                document.cloudImportExclusions = (document.cloudImportExclusions ?? []).union([title.uppercased()])
+            }
+            document.games.remove(at: index)
+        }
+    }
+
+    /// Records an app after the archive service has verified and published it.
+    public func recordCloudAppRestore(id: UUID, at url: URL) throws -> CatalogDocument {
+        try updateNXNative(id: id) { game in
+            game.url = url
+            game.cloudImportPending = nil
+            game.status = GameResourceState.sourcesAvailable(for: game) ? .built : .builtSourcesMissing
+            game.versionString = BuildOutputInstaller.version(of: url)
+            game.bundleId = Bundle(url: url)?.bundleIdentifier
+            game.modificationDate = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? Date()
+        }
+    }
 }
 
 extension CatalogRepository {

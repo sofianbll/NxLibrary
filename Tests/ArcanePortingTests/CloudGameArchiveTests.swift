@@ -94,6 +94,8 @@ final class CloudGameArchiveTests: XCTestCase {
         XCTAssertFalse(progress.snapshot().contains { $0.kind == .app && $0.phase != .verifying })
         XCTAssertEqual(updated.artifacts.map(\.kind), [.app, .cache])
         XCTAssertEqual(updated.artifacts[0], original.artifacts[0])
+        XCTAssertEqual(updated.gameName, original.gameName)
+        XCTAssertEqual(updated.bundleName, original.bundleName)
         XCTAssertNotEqual(updated.artifacts[1], original.artifacts[1])
         let latest = try await service.latest(titleID: title)
         XCTAssertEqual(latest, updated)
@@ -106,6 +108,84 @@ final class CloudGameArchiveTests: XCTestCase {
         } catch { XCTAssertEqual(error as? CloudArchiveError, .needsFullUpload) }
         let after = try await f.backend.list().map(\.key.value).sorted()
         XCTAssertEqual(after, objects)
+    }
+
+    func testDiscoversAndRestoresAnArchivedAppWithoutSources() async throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let service = f.service
+        let missingRoot = CloudGameArchive(backend: f.backend.atRoot(f.remote.appendingPathComponent("missing").path))
+        do {
+            _ = try await missingRoot.latestManifests()
+            XCTFail("An unavailable root must not be reported as an empty library")
+        } catch { XCTAssertEqual(error as? StorageBackendError, .notFound) }
+        let other = f.remote.appendingPathComponent("0100000000000001")
+        try FileManager.default.createDirectory(at: other, withIntermediateDirectories: false)
+        let empty = try await service.latestManifests()
+        XCTAssertTrue(empty.isEmpty, "A title folder alone is not an archived game")
+
+        let published = try await service.upload(f.game)
+        XCTAssertEqual(published.gameName, "Fixture")
+        XCTAssertEqual(published.bundleName, "Fixture.app")
+        XCTAssertEqual(published.gameVersion, "1.2")
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoder.encode(published)) as? [String: Any])
+        json.removeValue(forKey: "game_name")
+        json.removeValue(forKey: "bundle_name")
+        let oldFile = f.root.appendingPathComponent("legacy.json")
+        try JSONSerialization.data(withJSONObject: json).write(to: oldFile)
+        let digest = try XCTUnwrap(CloudArchiveInventory.hashes(at: oldFile)["sha256"])
+        let manifests = f.remote.appendingPathComponent("\(title)/manifests")
+        try FileManager.default.moveItem(at: oldFile, to: manifests.appendingPathComponent("9999999999999999-\(digest).json"))
+        let found = try await service.latestManifests()
+        let legacy = try XCTUnwrap(found.first)
+        XCTAssertEqual(found.map(\.titleID), [title])
+        XCTAssertNil(legacy.gameName)
+        XCTAssertNil(legacy.bundleName)
+        XCTAssertEqual(legacy.gameVersion, "1.2")
+
+        let apps = f.root.appendingPathComponent("Game apps")
+        try FileManager.default.createDirectory(at: apps, withIntermediateDirectories: false)
+        let repository = CatalogRepository(store: CatalogStore(directory: f.root))
+        let catalog = try repository.importCloudGames(found, in: apps)
+        let game = try XCTUnwrap(catalog.nxnativeGames.first)
+        XCTAssertEqual(game.name, title)
+        XCTAssertEqual(game.url.deletingLastPathComponent().path, apps.path)
+        XCTAssertEqual(game.status, .appMissing)
+        XCTAssertFalse(game.isPlayableLocally)
+        XCTAssertFalse(GameResourceState.sourcesAvailable(for: game))
+        XCTAssertEqual(GameResourceState.unavailableReason(for: game), .sourcesMissing)
+        XCTAssertNil(game.workspacePath)
+        XCTAssertTrue(CatalogGamePresentation(game: catalog.games[0], sourceEnabled: catalog.source(.nxnative)?.isEnabled == true).isListedNormally)
+        let chosen = f.root.appendingPathComponent("Different Game apps")
+        try FileManager.default.createDirectory(at: chosen, withIntermediateDirectories: false)
+        let occupied = chosen.appendingPathComponent("\(title).app")
+        try Data("Existing content".utf8).write(to: occupied)
+        let destination = GameAppDestination.url(name: game.url.deletingPathExtension().lastPathComponent,
+                                                 titleId: title, in: chosen, reusingExisting: false)
+        XCTAssertEqual(destination.deletingLastPathComponent().path, chosen.path)
+        XCTAssertNotEqual(destination.path, occupied.path)
+        let target = CloudArchiveGame(titleID: title, locations: [.app: destination])
+        let copies = try await service.copyStatuses(target, manifest: .success(legacy))
+        XCTAssertEqual(copies[.app]?.state, .cloudOnly)
+        try await service.restore(.app, for: target, onlyIfMissing: true)
+        try command("/usr/bin/codesign", ["--verify", "--deep", "--strict", destination.path])
+        let restored = try repository.recordCloudAppRestore(id: game.id, at: destination)
+        let playable = try XCTUnwrap(restored.nxnativeGames.first)
+        XCTAssertEqual(playable.id, game.id)
+        XCTAssertEqual(playable.status, .builtSourcesMissing)
+        XCTAssertEqual(playable.versionString, "1.2")
+        XCTAssertTrue(playable.isPlayableLocally)
+        XCTAssertEqual(CatalogGamePresentation(game: restored.games[0], sourceEnabled: true).launchTarget,
+                       .nxnative(appURL: destination))
+        XCTAssertEqual(try String(contentsOf: occupied, encoding: .utf8), "Existing content")
+
+        try Data().write(to: manifests.appendingPathComponent("zz-invalid.json"))
+        do {
+            _ = try await service.latestManifests()
+            XCTFail("Unreadable manifests must not be reported as an empty library")
+        } catch { XCTAssertEqual(error as? CloudArchiveError, .invalidManifest) }
     }
 
     func testRebuildDecisionRequiresSourcesAndVerifiedRemoteCacheUnlessExplicitlyOverridden() {
@@ -434,7 +514,8 @@ final class CloudGameArchiveTests: XCTestCase {
             }
             let info = try PropertyListSerialization.data(fromPropertyList: [
                 "CFBundleIdentifier": "org.arcane.tests.fake", "CFBundleExecutable": "Fixture",
-                "CFBundlePackageType": "APPL", "DMTitleID": title, "DMCommit": "72d43ff6",
+                "CFBundlePackageType": "APPL", "CFBundleShortVersionString": "1.2",
+                "DMTitleID": title, "DMCommit": "72d43ff6",
             ], format: .xml, options: 0)
             try info.write(to: app.appendingPathComponent("Contents/Info.plist"))
             try fm.copyItem(at: URL(fileURLWithPath: "/usr/bin/true"), to: app.appendingPathComponent("Contents/MacOS/Fixture"))

@@ -27,6 +27,30 @@ final class CatalogRepositoryTests: XCTestCase {
         XCTAssertEqual(try repository.load(), updated)
     }
 
+    func testCloudImportIsIdempotentAndExplicitRemovalSurvivesReload() throws {
+        let (fixture, store, original) = try mixed()
+        let repository = CatalogRepository(store: store)
+        let existing = try XCTUnwrap(original.nxnativeGames.first?.titleId)
+        let title = "0100000000000042"
+        let app = CloudGameManifest.Artifact(kind: .app, size: 10, sha256: "", md5: "",
+            unpackedSize: 20, entryCount: 1, inventorySHA256: "", engineCommit: nil, shaderChain: nil, options: [:])
+        let manifests = [existing.lowercased(), title, title].map {
+            CloudGameManifest(version: 1, titleID: $0, createdAt: .distantPast, artifacts: [app],
+                              gameName: "Synthetic", bundleName: "../Escape.app")
+        }
+        let imported = try repository.importCloudGames(manifests, in: fixture.root)
+        XCTAssertEqual(imported.games.count, original.games.count + 1)
+        XCTAssertEqual(Array(imported.games.prefix(original.games.count)), original.games)
+        XCTAssertEqual(try repository.importCloudGames(manifests, in: fixture.root), imported)
+        let pending = try XCTUnwrap(imported.nxnativeGames.first { $0.titleId == title })
+        XCTAssertEqual(pending.url, fixture.root.appendingPathComponent("\(title).app", isDirectory: true))
+        XCTAssertEqual(pending.cloudImportPending, true)
+        let removed = try repository.removeNXNative(id: pending.id)
+        let reopened = CatalogRepository(store: CatalogStore(directory: fixture.root))
+        XCTAssertEqual(try reopened.importCloudGames(manifests, in: fixture.root), removed)
+        XCTAssertEqual(removed.games, original.games)
+    }
+
     func testScanUsesLatestFlagsAndDoesNotReplaceSteamOrLegacyBytes() throws {
         let (fixture, store, original) = try mixed()
         let bytes = try Data(contentsOf: fixture.root.appendingPathComponent("library.json"))

@@ -28,6 +28,7 @@ public enum GameResourceState {
 
     public static func unavailableReason(for game: PortedGame) -> GameUnavailableReason? {
         if game.isPlayableLocally { return nil }
+        if game.cloudImportPending == true && game.sources.isEmpty { return .sourcesMissing }
         if game.status == .appMissing { return .appMissing }
         if !game.sources.isEmpty, !sourcesAvailable(for: game) { return .sourcesMissing }
         return nil
@@ -37,6 +38,7 @@ public enum GameResourceState {
     public static func reconciledStatus(for game: PortedGame, appExists: Bool,
                                         sourcesAvailable: Bool) -> GameStatus {
         guard game.status != .building else { return game.status }
+        if game.cloudImportPending == true { return .appMissing }
         guard game.url.pathExtension.lowercased() == "app" else {
             // Older scans could label an unbuilt workspace as a missing app.
             guard game.status == .appMissing else { return game.status }

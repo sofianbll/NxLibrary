@@ -8,7 +8,8 @@ extension AppViewModel {
     var portingGameID: UUID? { isBuilding ? currentBuildGameID : nil }
 
     func portingTileLook(_ game: PortedGame) -> PortingTileLook {
-        PortingTileLook.make(game: game, portingGameID: portingGameID, progress: portingProgress)
+        if game.id != portingGameID, cloudLibrary.states[game.id]?.appIsCloudOnly == true { return .normal }
+        return PortingTileLook.make(game: game, portingGameID: portingGameID, progress: portingProgress)
     }
 
     func portingPills(_ game: PortedGame) -> PortingPills {

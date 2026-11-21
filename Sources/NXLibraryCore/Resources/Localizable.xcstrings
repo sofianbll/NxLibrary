@@ -1371,6 +1371,46 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Transferência cancelada."}}
       }
     },
+    "Import games from the cloud": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Spiele aus der Cloud importieren"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Import games from the cloud"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Importar juegos de la nube"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Importer les jeux du cloud"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Importa i giochi dal cloud"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Importar jogos da nuvem"}}
+      }
+    },
+    "Add missing games without downloading their apps.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Fehlende Spiele hinzufügen, ohne ihre Apps herunterzuladen."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Add missing games without downloading their apps."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Añade los juegos que faltan sin descargar sus apps."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ajoute les jeux manquants sans télécharger leurs apps."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Aggiungi i giochi mancanti senza scaricare le app."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Adicione os jogos ausentes sem baixar seus apps."}}
+      }
+    },
+    "New cloud games are in your library.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Neue Spiele aus der Cloud sind in deiner Bibliothek."}},
+        "en": {"stringUnit": {"state": "translated", "value": "New cloud games are in your library."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ya tienes nuevos juegos de la nube en tu biblioteca."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Les nouveaux jeux du cloud sont dans ta bibliothèque."}},
+        "it": {"stringUnit": {"state": "translated", "value": "I nuovi giochi dal cloud sono nella libreria."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Os novos jogos da nuvem estão na sua biblioteca."}}
+      }
+    },
+    "No new cloud games.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Keine neuen Spiele in der Cloud."}},
+        "en": {"stringUnit": {"state": "translated", "value": "No new cloud games."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No hay nuevos juegos en la nube."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Aucun nouveau jeu dans le cloud."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nessun nuovo gioco nel cloud."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nenhum jogo novo na nuvem."}}
+      }
+    },
     "Cloud storage is unavailable. Check rclone and try again.": {
       "localizations": {
         "de": {"stringUnit": {"state": "translated", "value": "Der Cloud-Speicher ist nicht verfügbar. Prüfe rclone und versuche es erneut."}},

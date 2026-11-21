@@ -74,6 +74,8 @@ public enum StorageBackendError: Error, Equatable, Sendable {
 /// Operations throw `CancellationError` when cancelled. Transfer callbacks run off the caller's executor.
 public protocol StorageBackend: Sendable {
     func list() async throws -> [StorageObject]
+    /// Lists the immediate directory names at the root, without reading descendants.
+    func rootDirectories() async throws -> [String]
     /// Lists immediate objects under a directory prefix, with keys relative to the same root.
     func list(in prefix: StorageObjectKey) async throws -> [StorageObject]
     /// Publishes a new object only after verification. Serialise writers for a key; this is not compare-and-swap.

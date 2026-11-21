@@ -38,6 +38,7 @@ struct SettingsCloudLibrarySection: View {
     }
     private var editable: Bool { viewModel.canConfigureCloudLibrary && testTask == nil }
     private var canTest: Bool { editable && !inspecting && connected != nil }
+    private var canImport: Bool { editable && model.archive != nil && model.importTask == nil && !viewModel.isScanningLibrary }
     private var focusedToolButton: Int? { focusedRowID == "rclone" ? focusedButton : nil }
 
     private var serviceStatus: String {
@@ -74,6 +75,9 @@ struct SettingsCloudLibrarySection: View {
                     .disabled(!editable)
                 SeleneButtonRow("Change Google credentials", buttonTitle: "Edit", action: onEdit)
                     .disabled(!editable)
+                SeleneButtonRow("Import games from the cloud", id: "cloudLibraryImport",
+                                subtitle: model.importTask == nil ? nil : "Checking…", buttonTitle: "Import", action: importGames)
+                    .disabled(!canImport)
             } else {
                 SeleneButtonRow("Configure cloud library", buttonTitle: "Open", action: onEdit)
                     .disabled(!editable)
@@ -93,7 +97,7 @@ struct SettingsCloudLibrarySection: View {
             if !model.isChangingConnection { await inspect() }
         }
         .onAppear(perform: publishActions)
-        .onChange(of: [editable, canTest, model.chosenExecutable != nil, inspecting, selection.remote != nil, advanced]) {
+        .onChange(of: [editable, canTest, canImport, model.chosenExecutable != nil, inspecting, selection.remote != nil, advanced]) {
             publishActions()
         }
         .onChange(of: selection) { testPassed = nil }
@@ -150,6 +154,7 @@ struct SettingsCloudLibrarySection: View {
                 .init(id: "cloudLibraryEnabled", title: "Enable cloud library", isEnabled: editable) { setEnabled(!selection.enabled) },
                 .init(id: "cloudLibraryFolder", title: "Folder", isEnabled: editable, activate: onEdit),
                 .init(id: "cloudLibraryConnect", title: "Change Google credentials", isEnabled: editable, activate: onEdit),
+                .init(id: "cloudLibraryImport", title: "Import games from the cloud", isEnabled: canImport, activate: importGames),
             ]
         } else {
             actions = [.init(id: "cloudLibrarySetup", title: "Configure cloud library", isEnabled: editable, activate: onEdit)]
@@ -176,6 +181,11 @@ struct SettingsCloudLibrarySection: View {
     private func setEnabled(_ enabled: Bool) {
         guard editable else { return }
         model.configure(remote: selection.remote, root: selection.root, enabled: enabled)
+    }
+
+    private func importGames() {
+        guard canImport else { return }
+        viewModel.importCloudGames(manually: true)
     }
 
     private func chooseTool() {

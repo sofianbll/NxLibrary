@@ -87,10 +87,29 @@ public struct CloudGameManifest: Codable, Equatable, Sendable {
     public let titleID: String
     public let createdAt: Date
     public let artifacts: [Artifact]
+    public let gameName: String?
+    public let bundleName: String?
+    public var gameVersion: String? { artifacts.first { $0.kind == .app }?.options["CFBundleShortVersionString"] }
+    public var cloudOnlyApp: CloudArtifactStatus? {
+        artifacts.first { $0.kind == .app }.map {
+            .init(state: .cloudOnly, hasLocalCopy: false, bytes: $0.unpackedSize, uploadedAt: createdAt, skippedRoots: [])
+        }
+    }
+
+    init(version: Int, titleID: String, createdAt: Date, artifacts: [Artifact],
+         gameName: String? = nil, bundleName: String? = nil) {
+        self.version = version
+        self.titleID = titleID
+        self.createdAt = createdAt
+        self.artifacts = artifacts
+        self.gameName = gameName
+        self.bundleName = bundleName
+    }
 
     enum CodingKeys: String, CodingKey {
         case version, artifacts
         case titleID = "title_id", createdAt = "created_at"
+        case gameName = "game_name", bundleName = "bundle_name"
     }
 }
 
@@ -293,6 +312,20 @@ public actor CloudGameArchive {
                         localVerified: verified != nil, withoutCache: withoutCache), verified)
     }
 
+    public func latestManifests() async throws -> [CloudGameManifest] {
+        let folders = try await backend.rootDirectories()
+        // Uploads use uppercase IDs as case-sensitive storage keys.
+        let titles = Set(folders.filter { SaveLocation.validID($0) && $0 == $0.uppercased() })
+        guard titles.count <= 2_000 else { throw StorageBackendError.invalidResponse }
+        var manifests: [CloudGameManifest] = []
+        for title in titles.sorted() {
+            try Task.checkCancellation()
+            if let manifest = try await latest(titleID: title) { manifests.append(manifest) }
+        }
+        try Task.checkCancellation()
+        return manifests
+    }
+
     public func latest(titleID: String) async throws -> CloudGameManifest? {
         let title = titleID.uppercased()
         guard SaveLocation.validID(title) else { throw CloudArchiveError.unsafePath }
@@ -342,13 +375,17 @@ public actor CloudGameArchive {
         let selected = CloudArtifactKind.allCases.filter { kinds.contains($0) }
         guard !selected.isEmpty else { throw CloudArchiveError.needsFullUpload }
         var artifacts: [Artifact] = []
+        var gameName: String?, bundleName: String?
         if selected.count == 1 {
             do {
-                guard let retained = try await latest(titleID: game.titleID)?.artifacts.first(where: { !kinds.contains($0.kind) })
+                guard let previous = try await latest(titleID: game.titleID),
+                      let retained = previous.artifacts.first(where: { !kinds.contains($0.kind) })
                 else { throw CloudArchiveError.needsFullUpload }
                 progress?(.init(.verifying))
                 try await backend.verify(retained.object(titleID: game.titleID))
                 artifacts.append(retained)
+                gameName = previous.gameName
+                bundleName = previous.bundleName
             } catch CloudArchiveError.invalidManifest, StorageBackendError.notFound, StorageBackendError.hashMismatch {
                 throw CloudArchiveError.needsFullUpload
             }
@@ -386,6 +423,11 @@ public actor CloudGameArchive {
             let check = stage.appendingPathComponent(source.lastPathComponent, isDirectory: true)
             let info = try await unpack(archive, to: check, kind: kind, titleID: game.titleID,
                                         listed: listed, fingerprint: initial.sha256)
+            if kind == .app {
+                gameName = info["CFBundleDisplayName"] ?? info["CFBundleName"]
+                    ?? source.deletingPathExtension().lastPathComponent
+                bundleName = source.lastPathComponent
+            }
             let hashes = try CloudArchiveInventory.hashes(at: archive)
             var options = info.filter { ["DMLanguage", "CFBundleShortVersionString"].contains($0.key) }
             // A skipped directory can change the cache root mtime without changing the archived files.
@@ -406,7 +448,9 @@ public actor CloudGameArchive {
         if artifacts[0].kind != .app { artifacts.swapAt(0, 1) }
         progress?(.init(.verifying))
         let now = Date()
-        let manifest = CloudGameManifest(version: 1, titleID: game.titleID, createdAt: now, artifacts: artifacts)
+        let manifest = CloudGameManifest(version: 1, titleID: game.titleID,
+                                         createdAt: Date(timeIntervalSince1970: now.timeIntervalSince1970.rounded(.down)),
+                                         artifacts: artifacts, gameName: gameName, bundleName: bundleName)
         let stage = try staging(in: FileManager.default.temporaryDirectory)
         defer { try? FileManager.default.removeItem(at: stage) }
         let file = stage.appendingPathComponent("manifest.json")
@@ -420,9 +464,7 @@ public actor CloudGameArchive {
         let timestamp = String(format: "%016lld", Int64(now.timeIntervalSince1970 * 1000))
         let key = StorageObjectKey("\(game.titleID)/manifests/\(timestamp)-\(hashes["sha256"]!).json")
         try await put(file, object: StorageObject(key: key, size: Int64(data.count), hashes: hashes), progress: nil)
-        // The wire timestamp has second resolution.
-        return CloudGameManifest(version: manifest.version, titleID: manifest.titleID,
-                                 createdAt: Date(timeIntervalSince1970: now.timeIntervalSince1970.rounded(.down)), artifacts: artifacts)
+        return manifest
     }
 
     public func free(_ kind: CloudArtifactKind, for game: CloudArchiveGame, confirmed: Bool,

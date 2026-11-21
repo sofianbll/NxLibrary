@@ -34,6 +34,8 @@ public struct PortedGame: Identifiable, Codable, Equatable {
     public var appIconOnMac: Bool? = nil
     /// The app's icon still has to be written or put back: the game was running. Done when it quits.
     public var appIconPending = false
+    /// Only the remote app is registered. Resolve the download destination using the current Game apps folder.
+    public var cloudImportPending: Bool? = nil
 
     public init(id: UUID = UUID(), name: String, url: URL,
                 platform: TargetPlatform, sizeBytes: Int64,
@@ -83,6 +85,7 @@ public struct PortedGame: Identifiable, Codable, Equatable {
         usesPickedAppIcon = try c.decodeIfPresent(Bool.self, forKey: .usesPickedAppIcon) ?? false
         appIconOnMac = try c.decodeIfPresent(Bool.self, forKey: .appIconOnMac)
         appIconPending = try c.decodeIfPresent(Bool.self, forKey: .appIconPending) ?? false
+        cloudImportPending = try c.decodeIfPresent(Bool.self, forKey: .cloudImportPending)
     }
 
     /// Shared by reconciliation and the icon writer, so an explicit launcher-only choice survives scans and builds.
@@ -125,7 +128,7 @@ public struct PortedGame: Identifiable, Codable, Equatable {
     /// files live inside it. This prevents "delete game" from removing a source
     /// folder that happens to be used as the workspace before a build.
     public func canDeleteAppBundle() -> Bool {
-        guard url.pathExtension.lowercased() == "app",
+        guard cloudImportPending != true, url.pathExtension.lowercased() == "app",
               FileManager.default.fileExists(
                 atPath: url.appendingPathComponent("Contents/Info.plist").path) else {
             return false
@@ -145,7 +148,7 @@ public struct PortedGame: Identifiable, Codable, Equatable {
     }
 
     public var isPlayableLocally: Bool {
-        guard platform == .macApp,
+        guard cloudImportPending != true, platform == .macApp,
               url.pathExtension.lowercased() == "app" else { return false }
         switch status {
         case .notBuilt, .building, .appMissing:

@@ -49,7 +49,7 @@ final class AppIconModel: ObservableObject {
 
     private func installedApp(_ game: PortedGame) -> URL? {
         let app = game.url
-        guard app.pathExtension.lowercased() == "app",
+        guard game.cloudImportPending != true, app.pathExtension.lowercased() == "app",
               FileManager.default.fileExists(atPath: app.appendingPathComponent("Contents/Info.plist").path) else { return nil }
         return app
     }
