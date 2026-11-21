@@ -140,17 +140,17 @@ Publishing requires an explicit maintainer decision and the script's `--publish 
 2. Depuis le dépôt Arcane, inscrire `0.2.1.20261121` dans `VERSION`, préparer les notes à partir du [modèle FR](perso-release-notes.md), valider et commiter sur un arbre propre. Le schéma `base.AAAAMMJJ` réserve le quatrième champ à la date côté perso : `0.2.1 < 0.2.1.20261121 < 0.2.2`, sans réutiliser les petits indices de correctif de Bium23. Une publication perso par date et par base. Préparer `work/Runtime` avec `scripts/bundle_runtime.sh`, puis vérifier ZIP, DMG et plist sans publier :
 
    ~~~sh
-   bash scripts/release.sh 0.2.1.20261121 \
+   DM_NEXTENDO_CLIENT_ID=nxc_G33XSxgJwhk9 bash scripts/release.sh 0.2.1.20261121 \
      --engine-repo https://github.com/sofianbll/nxnative \
      --engine-commit a35babeade0c34b3f928e0b32310ba66eb98bc86
    ~~~
 
-   Le script refuse un SHA qui n'est pas accessible depuis une branche du dépôt. Sans les deux options, la build conserve le dépôt et le pin amont.
+   Pour la publication perso, passer `DM_NEXTENDO_CLIENT_ID=nxc_G33XSxgJwhk9` aux deux commandes : le build inscrit cet identifiant public dans `DMNextendoClientID` dans le plist de l’app. Ne pas fournir de secret Nextendo. Le script refuse un SHA qui n'est pas accessible depuis une branche du dépôt. Sans les deux options moteur, la build conserve le dépôt et le pin amont.
 
 3. Après validation, placer le commit de release sur `origin/main` du fork Arcane et refaire la même build avec les notes approuvées. Vérifier que `origin` pointe bien vers `sofianbll/NxLibrary`. Les notes peuvent être hors du dépôt pour garder l'arbre propre ; le script y ajoute le dépôt et le SHA réellement embarqués, ainsi que les métadonnées Xcode/moteur.
 
    ~~~sh
-   bash scripts/release.sh 0.2.1.20261121 \
+   DM_NEXTENDO_CLIENT_ID=nxc_G33XSxgJwhk9 bash scripts/release.sh 0.2.1.20261121 \
      --engine-repo https://github.com/sofianbll/nxnative \
      --engine-commit a35babeade0c34b3f928e0b32310ba66eb98bc86 \
      --publish --notes "$HOME/arcane-perso-0.2.1.20261121.md"
