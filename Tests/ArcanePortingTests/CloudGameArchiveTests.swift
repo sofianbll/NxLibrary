@@ -40,6 +40,7 @@ final class CloudGameArchiveTests: XCTestCase {
         let changed = try await service.copyStatuses(game, manifest: .success(manifest))
         XCTAssertEqual(changed[.cache]?.state, .newerOnThisMac)
         XCTAssertEqual(changed[.cache]?.bytes, 8)
+        XCTAssertFalse(CloudArtifactStatus.canUploadAlone(.cache, statuses: changed))
 
         try FileManager.default.removeItem(at: cache)
         let missing = try await service.copyStatuses(game, manifest: .success(manifest))
@@ -68,6 +69,43 @@ final class CloudGameArchiveTests: XCTestCase {
             _ = try await cancelled.value
             XCTFail("A cancelled comparison must not publish a result")
         } catch is CancellationError {}
+    }
+
+    func testPartialUploadPreservesRemoteAppWithoutReadingLocalApp() async throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let service = f.service
+        let cacheOnly = CloudArchiveGame(titleID: title, locations: [.cache: f.cache])
+        do {
+            _ = try await service.upload(cacheOnly, kinds: [.cache])
+            XCTFail("The first upload must include both artifacts")
+        } catch { XCTAssertEqual(error as? CloudArchiveError, .needsFullUpload) }
+
+        let original = try await service.upload(f.game)
+        try FileManager.default.removeItem(at: f.app)
+        let cacheFile = f.cache.appendingPathComponent("run.key")
+        try Data("updated cache".utf8).write(to: cacheFile)
+        let statuses = try await service.copyStatuses(f.game, manifest: .success(original))
+        XCTAssertEqual(statuses[.app]?.state, .cloudOnly)
+        XCTAssertTrue(CloudArtifactStatus.canUploadAlone(.cache, statuses: statuses))
+        XCTAssertFalse(CloudArtifactStatus.canUploadAlone(.app, statuses: statuses))
+        let progress = ProgressRecorder()
+        let updated = try await service.upload(cacheOnly, kinds: [.cache]) { progress.record($0) }
+        XCTAssertFalse(progress.snapshot().contains { $0.kind == .app && $0.phase != .verifying })
+        XCTAssertEqual(updated.artifacts.map(\.kind), [.app, .cache])
+        XCTAssertEqual(updated.artifacts[0], original.artifacts[0])
+        XCTAssertNotEqual(updated.artifacts[1], original.artifacts[1])
+        let latest = try await service.latest(titleID: title)
+        XCTAssertEqual(latest, updated)
+
+        try await f.backend.delete(updated.artifacts[0].object(titleID: title).key)
+        let objects = try await f.backend.list().map(\.key.value).sorted()
+        do {
+            _ = try await service.upload(cacheOnly, kinds: [.cache])
+            XCTFail("A missing retained object must prevent publication")
+        } catch { XCTAssertEqual(error as? CloudArchiveError, .needsFullUpload) }
+        let after = try await f.backend.list().map(\.key.value).sorted()
+        XCTAssertEqual(after, objects)
     }
 
     func testRebuildDecisionRequiresSourcesAndVerifiedRemoteCacheUnlessExplicitlyOverridden() {
@@ -299,24 +337,56 @@ final class CloudGameArchiveTests: XCTestCase {
             try await service.free(.cache, for: f.game, confirmed: true)
             XCTFail("No eviction if the cache has excluded files")
         } catch { XCTAssertEqual(error as? CloudArchiveError, .excludedFiles) }
+        do {
+            try await service.restore(.cache, for: f.game)
+            XCTFail("No replacement if the cache has excluded files")
+        } catch { XCTAssertEqual(error as? CloudArchiveError, .excludedFiles) }
         XCTAssertEqual(try Data(contentsOf: save), Data([42]))
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: f.trash.path), [])
     }
 
-    func testCacheWithObsoleteOrConvertedPackagesCannotBeUploaded() async throws {
+    func testCacheSkipsRootObsoleteAndNSPInUploadFreeAndRestore() async throws {
         let f = try fixture()
         defer { try? FileManager.default.removeItem(at: f.root) }
-        for name in ["obsolete", "nsp"] {
+        let service = f.service
+        for name in ["obsolete", "NSP", "nested/obsolete"] {
             let folder = f.cache.appendingPathComponent(name)
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
-            do {
-                _ = try await f.service.upload(f.game)
-                XCTFail("An excluded \(name) folder must stay on disk")
-            } catch { XCTAssertEqual(error as? CloudArchiveError, .excludedFiles) }
-            try FileManager.default.removeItem(at: folder)
+            try Data([42]).write(to: folder.appendingPathComponent(".keep"))
         }
-        let remote = try await f.backend.list()
-        XCTAssertEqual(remote, [])
+        let manifest = try await service.upload(f.game)
+        // Removing/recreating an ignored directory changes the root mtime, but not the archive's contents.
+        let nsp = f.cache.appendingPathComponent("NSP")
+        try FileManager.default.removeItem(at: nsp)
+        try FileManager.default.createDirectory(at: nsp, withIntermediateDirectories: false)
+        try Data([1, 2]).write(to: nsp.appendingPathComponent(".keep"))
+        let synced = try await service.copyStatuses(f.game, manifest: .success(manifest))
+        XCTAssertEqual(synced[.cache]?.state, .synchronized)
+        XCTAssertEqual(synced[.cache]?.bytes, 11)
+        XCTAssertEqual(synced[.cache]?.skippedRoots, [.init(path: "NSP", bytes: 2), .init(path: "obsolete", bytes: 1)])
+
+        let failedTrash = CloudGameArchive(backend: f.backend, trash: { _ in throw CocoaError(.fileWriteUnknown) })
+        do {
+            try await failedTrash.free(.cache, for: f.game, confirmed: true)
+            XCTFail("A failed Trash move must be reported")
+        } catch { XCTAssertEqual(error as? CocoaError, CocoaError(.fileWriteUnknown)) }
+        XCTAssertEqual(try cacheContents(f.cache), "cache-data")
+
+        try await service.free(.cache, for: f.game, confirmed: true)
+        for folder in [f.cache, f.trash.appendingPathComponent("cache")] {
+            let names = try FileManager.default.contentsOfDirectory(atPath: folder.path).sorted()
+            XCTAssertEqual(names, folder == f.cache ? ["NSP", "obsolete"] : ["nested", "run.key"])
+        }
+        let freed = try await service.copyStatuses(f.game, manifest: .success(manifest))
+        XCTAssertEqual(freed[.cache]?.state, .cloudOnly)
+        XCTAssertFalse(freed[.cache]?.hasLocalCopy ?? true)
+        try await service.restore(.cache, for: f.game, onlyIfMissing: true)
+        XCTAssertEqual(try cacheContents(f.cache), "cache-data")
+        XCTAssertEqual(try Data(contentsOf: nsp.appendingPathComponent(".keep")), Data([1, 2]))
+        XCTAssertEqual(try Data(contentsOf: f.cache.appendingPathComponent("obsolete/.keep")), Data([42]))
+        XCTAssertEqual(try Data(contentsOf: f.cache.appendingPathComponent("nested/obsolete/.keep")), Data([42]))
+        let restored = try await service.copyStatuses(f.game, manifest: .success(manifest))
+        XCTAssertEqual(restored[.cache]?.state, .synchronized)
     }
 
     func testExternalSymlinksStopPublication() async throws {

@@ -19,20 +19,25 @@ enum CloudArchiveInventory {
         let entries: [Entry]
         let bytes: Int64
         let sha256: String
+        let withoutRootMtime: String?
         let hasExcludedFiles: Bool
+        let skippedRoots: [String]
+
+        var isSkippedOnly: Bool { entries.count == 1 && !skippedRoots.isEmpty && !hasExcludedFiles }
     }
 
     static let maximumEntries = 100_000
+    static let cacheFingerprintOption = "cache_inventory_without_root_mtime"
     static let excludedNames = ["prod.keys", "title.keys", "dev.keys", "keys.txt"]
 
-    static func excludedPaths(_ kind: CloudArtifactKind) -> [String] {
-        ["run/save", "Contents/Resources/run/save"] + (kind == .cache ? ["obsolete", "nsp"] : [])
-    }
+    static let excludedPaths = ["run/save", "Contents/Resources/run/save"]
+    private static let skippedCacheRoots = ["obsolete", "nsp"]
 
     static func isExcluded(_ path: String, _ kind: CloudArtifactKind) -> Bool {
         let lower = path.lowercased()
         return excludedNames.contains(where: { lower.split(separator: "/").contains(Substring($0)) })
-            || excludedPaths(kind).contains { lower == $0.lowercased() || lower.hasPrefix($0.lowercased() + "/") }
+            || excludedPaths.contains { lower == $0.lowercased() || lower.hasPrefix($0.lowercased() + "/") }
+            || (kind == .cache && skippedCacheRoots.contains { lower == $0 || lower.hasPrefix($0 + "/") })
     }
 
     static func validate(_ entries: [Entry], kind: CloudArtifactKind) throws -> Int64 {
@@ -97,15 +102,31 @@ enum CloudArchiveInventory {
     private static func scan(_ root: URL, kind: CloudArtifactKind, includeContents: Bool) throws -> Snapshot {
         var entries: [Entry] = []
         var hash = SHA256()
+        var withoutRootMtime = includeContents && kind == .cache ? SHA256() : nil
         var hasExcludedFiles = false
+        var skippedRoots: [String] = []
         let device = try node(at: root).st_dev
-        func field(_ value: String) {
-            hash.update(data: Data("\(value.utf8.count):".utf8))
-            hash.update(data: Data(value.utf8))
+        func field(_ value: String, rootMtime: Bool = false) {
+            let prefix = Data("\(value.utf8.count):".utf8)
+            let data = Data(value.utf8)
+            hash.update(data: prefix)
+            hash.update(data: data)
+            if !rootMtime {
+                withoutRootMtime?.update(data: prefix)
+                withoutRootMtime?.update(data: data)
+            }
         }
         func visit(_ url: URL, path: String) throws {
             try Task.checkCancellation()
-            if isExcluded(path, kind) { hasExcludedFiles = true; return }
+            if isExcluded(path, kind) {
+                if kind == .cache, skippedCacheRoots.contains(path.lowercased()),
+                   try node(at: url).st_mode & S_IFMT == S_IFDIR {
+                    skippedRoots.append(path)
+                } else {
+                    hasExcludedFiles = true
+                }
+                return
+            }
             let st = try node(at: url)
             guard st.st_dev == device, st.st_mode & 0o7000 == 0,
                   entries.count < maximumEntries else { throw CloudArchiveError.unsafePath }
@@ -120,8 +141,10 @@ enum CloudArchiveInventory {
             let link = type == "L" ? try FileManager.default.destinationOfSymbolicLink(atPath: url.path) : nil
             entries.append(Entry(path: path, type: type, size: type == "F" ? st.st_size : nil,
                                  link: link, mode: Int(st.st_mode & 0o777)))
-            for value in [path, type, String(st.st_mode & 0o777), String(st.st_mtimespec.tv_sec),
-                          String(st.st_mtimespec.tv_nsec), link ?? ""] { field(value) }
+            for value in [path, type, String(st.st_mode & 0o777)] { field(value) }
+            field(String(st.st_mtimespec.tv_sec), rootMtime: path.isEmpty)
+            field(String(st.st_mtimespec.tv_nsec), rootMtime: path.isEmpty)
+            field(link ?? "")
             if includeContents {
                 let attrs = try SaveFiles.attributes(url)
                 field(String(attrs.count))
@@ -144,7 +167,8 @@ enum CloudArchiveInventory {
         }
         try visit(root, path: "")
         return try Snapshot(entries: entries, bytes: validate(entries, kind: kind),
-                            sha256: hex(hash.finalize()), hasExcludedFiles: hasExcludedFiles)
+                            sha256: hex(hash.finalize()), withoutRootMtime: withoutRootMtime.map { hex($0.finalize()) },
+                            hasExcludedFiles: hasExcludedFiles, skippedRoots: skippedRoots)
     }
 
     static func node(at url: URL) throws -> stat {

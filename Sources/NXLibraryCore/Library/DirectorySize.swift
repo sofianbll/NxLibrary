@@ -5,6 +5,10 @@ import Foundation
 /// resource values took minutes there (issue #2).
 public enum DirectorySize {
     public static func bytes(at url: URL) -> Int64 {
+        bytes(at: url, includingHidden: false)
+    }
+
+    static func bytes(at url: URL, includingHidden: Bool) -> Int64 {
         var total: Int64 = 0
         url.withUnsafeFileSystemRepresentation { path in
             guard let path, let root = strdup(path) else { return }
@@ -14,7 +18,7 @@ public enum DirectorySize {
             defer { fts_close(fts) }
             while let entry = fts_read(fts) {
                 let info = Int32(entry.pointee.fts_info)
-                if entry.pointee.fts_level > 0, entry.pointee.fts_name == CChar(UInt8(ascii: ".")) {
+                if !includingHidden, entry.pointee.fts_level > 0, entry.pointee.fts_name == CChar(UInt8(ascii: ".")) {
                     if info == FTS_D { fts_set(fts, entry, FTS_SKIP) }
                     continue
                 }
