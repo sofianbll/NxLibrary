@@ -3,6 +3,97 @@ import XCTest
 @testable import ArcanePorting
 
 final class ImportServiceTests: XCTestCase {
+    func testAdoptionValidatesLocalIdentityAndSignature() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let folder = root.appendingPathComponent("Game apps")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let source = root.appendingPathComponent("Source.app")
+        let service = ImportService()
+        try signedApp(at: source, bundleID: "org.nxnative.01007ef00011e000")
+        XCTAssertEqual(try service.prepareAdoption(from: source, into: folder, existing: []).app.titleId, "01007EF00011E000")
+        XCTAssertThrowsError(try service.prepareAdoption(from: URL(string: "https://example.test/Source.app")!,
+                                                         into: folder, existing: []))
+        let unrelated = root.appendingPathComponent("Unrelated.app")
+        try signedApp(at: unrelated, bundleID: "org.example.other")
+        XCTAssertThrowsError(try service.prepareAdoption(from: unrelated, into: folder, existing: [])) {
+            XCTAssertEqual($0 as? CloudArchiveError, .invalidApp)
+        }
+        try Data("tampered".utf8).write(to: source.appendingPathComponent("Contents/MacOS/Fixture"))
+        XCTAssertThrowsError(try service.prepareAdoption(from: source, into: folder, existing: [])) {
+            XCTAssertEqual($0 as? CloudArchiveError, .invalidApp)
+        }
+    }
+
+    func testAdoptionCopiesRegistersAndReplacesOnlyAfterConfirmationAndSpaceCheck() throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? fm.removeItem(at: root) }
+        let folder = root.appendingPathComponent("Game apps")
+        try fm.createDirectory(at: folder, withIntermediateDirectories: true)
+        let source = root.appendingPathComponent("Source.app")
+        try signedApp(at: source, bundleID: "org.example.port", dmTitle: "01007EF00011E000")
+        let service = ImportService()
+        let repository = CatalogRepository(store: CatalogStore(directory: root.appendingPathComponent("Catalog")))
+        let plan = try service.prepareAdoption(from: source, into: folder, existing: [])
+        XCTAssertFalse(plan.conflicts)
+        XCTAssertThrowsError(try service.stageAdoption(plan, replacing: false, capacity: { _ in 0 })) {
+            XCTAssertEqual($0 as? CloudArchiveError, .insufficientSpace)
+        }
+        XCTAssertTrue(try fm.contentsOfDirectory(atPath: folder.path).isEmpty)
+        let staged = try service.stageAdoption(plan, replacing: false)
+        try service.publishAdoption(staged) {
+            _ = try repository.recordLocalAppAdoption(service.makeGame(from: $0), replacing: nil)
+        }
+        service.cleanupAdoption(staged, published: true)
+        XCTAssertTrue(fm.fileExists(atPath: source.path))
+        let old = try XCTUnwrap(repository.load().nxnativeGames.first)
+        XCTAssertEqual(old.status, .builtSourcesMissing)
+        XCTAssertEqual(old.url, plan.destination)
+        XCTAssertNil(old.lastBuild)
+        try repository.toggleFavorite(for: old.id)
+        let replacement = root.appendingPathComponent("Replacement.app")
+        try signedApp(at: replacement, bundleID: "org.nxnative.01007ef00011e000", version: "2")
+        let existing = try repository.load().nxnativeGames
+        let conflict = try service.prepareAdoption(from: replacement, into: folder, existing: existing)
+        XCTAssertTrue(conflict.conflicts)
+        XCTAssertEqual(conflict.destination, old.url)
+        XCTAssertThrowsError(try service.stageAdoption(conflict, replacing: false)) {
+            XCTAssertEqual($0 as? CloudArchiveError, .confirmationRequired)
+        }
+        let incoming = try service.stageAdoption(conflict, replacing: true)
+        XCTAssertThrowsError(try service.publishAdoption(incoming) { _ in throw CocoaError(.fileWriteOutOfSpace) })
+        XCTAssertEqual(BuildOutputInstaller.version(of: old.url), "1")
+        service.cleanupAdoption(incoming, published: false)
+        let retry = try service.prepareAdoption(from: replacement, into: folder, existing: existing)
+        let confirmed = try service.stageAdoption(retry, replacing: true)
+        try service.publishAdoption(confirmed) {
+            _ = try repository.recordLocalAppAdoption(service.makeGame(from: $0), replacing: retry.existing)
+        }
+        let updated = try XCTUnwrap(repository.load().nxnativeGames.first)
+        XCTAssertEqual(updated.id, old.id)
+        XCTAssertEqual(updated.versionString, "2")
+        XCTAssertTrue(updated.isFavorite)
+        XCTAssertTrue(fm.fileExists(atPath: replacement.path))
+    }
+
+    private func signedApp(at url: URL, bundleID: String, dmTitle: String? = nil, version: String = "1") throws {
+        let fm = FileManager.default
+        let contents = url.appendingPathComponent("Contents")
+        let executable = contents.appendingPathComponent("MacOS/Fixture")
+        try fm.createDirectory(at: executable.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try fm.copyItem(at: URL(fileURLWithPath: "/usr/bin/true"), to: executable)
+        var info = ["CFBundleIdentifier": bundleID, "CFBundleName": "Fixture",
+                    "CFBundleExecutable": "Fixture", "CFBundlePackageType": "APPL",
+                    "CFBundleShortVersionString": version]
+        info["DMTitleID"] = dmTitle
+        try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0)
+            .write(to: contents.appendingPathComponent("Info.plist"))
+        let signature = try SystemCommandRunner().run(URL(fileURLWithPath: "/usr/bin/codesign"),
+            ["--force", "--sign", "-", url.path], environment: nil, currentDirectory: nil)
+        XCTAssertEqual(signature.status, 0, signature.stderr)
+    }
+
     func testDuplicateTitleKeepsTheInstalledPathAndItsOwnMetadata() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

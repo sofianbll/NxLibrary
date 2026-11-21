@@ -120,6 +120,10 @@ Nella pagina Spotlight di un titolo Steam, Giù porta anche a **More like this**
 
 ## 5. Costruire un gioco Switch (Add Game)
 
+**Add Game → Add ported app.** Scegli un bundle locale nel selettore oppure trascina un solo `.app` sulla schermata Add Game. Arcane verifica l'identità e la firma; se il titolo esiste, Replace o Cancel decide se procedere. Arcane controlla lo spazio e pubblica una copia verificata in Game apps. La sorgente resta dov'è e il titolo compare in libreria.
+
+**Details → Options → Edit details → Attach sources.** Scegli i file originali o una cartella. La scansione usa le regole di Add Game e rifiuta le sorgenti che non producono un gioco compilabile con lo stesso title ID. Torna a Options → Rebuild: l'installazione riuscita sostituisce il bundle esistente, senza inviare nulla al cloud.
+
 ```mermaid
 flowchart TD
     A["AddGameView: scelta esplicita di file o cartelle<br/>il selettore ricorda Game files"] --> B["SourceCatalog · ExtractedSourceCatalog · NUPSourceCatalog<br/>base, update, DLC"]
@@ -155,11 +159,13 @@ Durante un porting, B o Esc nasconde il pannello senza annullare il lavoro. Dopo
 
 Con un porting in corso, Build o Rebuild per un altro gioco accoda la richiesta; ripetere il comando per lo stesso gioco non crea duplicati. In Spotlight e Details la pillola primaria mostra lo stato in coda e diventa Annulla al focus o al passaggio del puntatore; A, Invio o clic rimuove la richiesta senza avviarla. Dalla riga delle copertine in Spotlight, A avvia ancora l'app già installata o porta alle azioni del gioco se manca. Al successo, errore o annullamento del porting attivo parte il primo in attesa e la sua pillola diventa Porting. Un titolo occupato da un trasferimento o da un lease aspetta il rilascio; un gioco rimosso o senza sorgenti recuperabili viene saltato con una nota nella Console. La coda del porting non sopravvive alla chiusura di Arcane.
 
-**Details → Cloud.** Il badge accanto alle azioni principali e il link in fondo aprono lo stesso pannello; entrambi si possono nascondere in Settings. Al primo invio si scelgono app e cache insieme. Durante un invio completo la riga dell'app già inviata mostra «Sent · published when the upload ends» finché il manifest non è pubblicato. Una riga con copia locale disponibile, ambra o grigia, offre Send quando l'altro elemento ha già una copia cloud; Send update rimane disponibile quando entrambe le copie locali differiscono. Se il servizio richiede un nuovo invio congiunto, il pannello lo propone solo quando entrambe le copie locali sono disponibili.
+**Details → Cloud.** Il badge accanto alle azioni principali e il link in fondo aprono lo stesso pannello; entrambi si possono nascondere in Settings. Al primo invio si scelgono app e cache insieme se la cache esiste; altrimenti Send sulla riga dell'app pubblica l'app sola. Durante un invio completo la riga dell'app già inviata mostra «Sent · published when the upload ends» finché il manifest non è pubblicato. Le regole di invio singolo e Send update restano valide quando il manifest contiene entrambe le copie.
 
 Send trasmette Apple Archive in streaming a una chiave temporanea remota, senza occupare spazio locale pari alla copia. Confronta inventario e contenuti e controlla dimensione e MD5 remoti prima di pubblicare gli oggetti con nome SHA-256; pubblica il manifest per ultimo. Se l'elenco diverge, il pannello indica il percorso relativo e la Console il motivo. Cancel ferma l'archiviazione e il trasferimento e tenta di pulire lo staging remoto. Un controllo fallito o l'annullamento del flusso non pubblica un nuovo manifest.
 
-Con solo una copia cloud dell'app, Download sostituisce il pulsante principale e usa lo stesso ripristino del pannello: verifica hash, inventario e firma prima di pubblicare la copia mancante e riattivare Play. Per un titolo importato da cloud, il download usa la cartella Game apps scelta senza richiedere sorgenti o una build. La terza riga propone Send o Download per i file del gioco mancanti da un lato; con una divergenza non offre alcuna azione.
+Con solo una copia cloud dell'app, Download sostituisce il pulsante principale e usa lo stesso ripristino del pannello: verifica hash, inventario e firma prima di pubblicare la copia mancante e riattivare Play. Il download usa Game apps per un titolo importato e non richiede sorgenti, cache o una build. La terza riga propone Send o Download per i file del gioco mancanti da un lato; con una divergenza non offre azioni.
+
+Con un manifest senza cache, Rebuild usa i file originali e una cache temporanea. Dopo l'installazione, un'app diversa dal manifest risulta «Newer on this Mac» e resta da inviare manualmente.
 
 Free up space apre una conferma con le dimensioni e una selezione per app, cache e file del gioco. Solo le copie sincronizzate sono selezionabili; app e cache partono selezionate quando disponibili, i file del gioco no. La conferma precede una nuova verifica prima del Cestino. La voce di libreria resta e lo spazio ritorna quando si svuota il Cestino. Invio, download e liberazione passano per la stessa coda. Cancel rimuove la richiesta in coda o annulla quella attiva; B chiude solo il pannello.
 

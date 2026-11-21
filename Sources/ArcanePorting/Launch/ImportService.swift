@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import NXLibraryCore
 
@@ -41,6 +42,10 @@ public final class ImportService {
     }
 
     public func scan(directories: [URL]) -> [ImportedApp] {
+        scan(directories: directories, matchingTitle: nil)
+    }
+
+    private func scan(directories: [URL], matchingTitle: String?) -> [ImportedApp] {
         var apps: [ImportedApp] = []
         scanWarnings = []
         var queue: [(url: URL, depth: Int)] = []
@@ -91,27 +96,11 @@ public final class ImportService {
                 // An app is a boundary, including an unrecognised app. Never discover its nested helpers.
                 let canonical = item.resolvingSymlinksInPath().standardizedFileURL.path
                 guard appPaths.insert(canonical).inserted else { continue }
-                guard let info = info(at: item) else { continue }
-                let bundleId = info["CFBundleIdentifier"] as? String
-                let dmTitle = info["DMTitleID"] as? String
-                let suffix = bundleId?.hasPrefix("org.nxnative.") == true
-                    ? bundleId?.split(separator: ".").last.map(String.init) : nil
-                let titleId = [dmTitle, suffix]
-                    .compactMap { $0 }
-                    .compactMap(Self.normalizedTitleId)
-                    .first
-                guard bundleId != "local.nxlibrary", let titleId else { continue }
-                let name = (info["CFBundleDisplayName"] as? String)
-                    ?? (info["CFBundleName"] as? String)
-                    ?? item.deletingPathExtension().lastPathComponent
-                let version = info["CFBundleShortVersionString"] as? String
-                let date = (try? item.resourceValues(forKeys: [.contentModificationDateKey])
-                    .contentModificationDate) ?? Date.distantPast
-                apps.append(ImportedApp(
-                    name: name, version: version, titleId: titleId,
-                    bundleId: bundleId, appURL: item,
-                    sizeBytes: size(of: item, date: date), modificationDate: date
-                ))
+                if let info = Self.info(at: item), var app = Self.observation(at: item, info: info, bytes: 0),
+                   matchingTitle == nil || matchingTitle == app.titleId {
+                    if matchingTitle == nil { app.sizeBytes = size(of: item, date: app.modificationDate) }
+                    apps.append(app)
+                }
             }
         }
         return apps.sorted {
@@ -169,12 +158,177 @@ public final class ImportService {
         return text.uppercased()
     }
 
-    private func info(at app: URL) -> [String: Any]? {
+    static func titleID(in info: [String: Any]) -> String? {
+        let bundleID = info["CFBundleIdentifier"] as? String
+        guard bundleID != "local.nxlibrary" else { return nil }
+        let suffix = bundleID?.hasPrefix("org.nxnative.") == true
+            ? bundleID?.split(separator: ".").last.map(String.init) : nil
+        return [info["DMTitleID"] as? String, suffix].compactMap { $0 }.compactMap(normalizedTitleId).first
+    }
+
+    static func info(at app: URL) -> [String: Any]? {
         let plist = app.appendingPathComponent("Contents/Info.plist")
-        guard let data = try? Data(contentsOf: plist),
+        guard let data = try? SaveFiles.readRegular(plist, limit: 1_048_576),
               let object = try? PropertyListSerialization.propertyList(
                 from: data, options: [], format: nil) as? [String: Any] else { return nil }
         return object
+    }
+
+    static func verifiedIdentity(of app: URL, titleID: String? = nil) throws -> [String: Any] {
+        guard app.isFileURL, app.pathExtension.lowercased() == "app",
+              let info = info(at: app), let found = self.titleID(in: info), SaveLocation.validID(found),
+              titleID == nil || found == titleID else { throw CloudArchiveError.invalidApp }
+        return info
+    }
+
+    static func signatureArguments(for app: URL) -> [String] { ["--verify", "--deep", "--strict", app.path] }
+
+    private static func observation(at url: URL, info: [String: Any], bytes: Int64) -> ImportedApp? {
+        guard let titleID = titleID(in: info) else { return nil }
+        return .init(name: (info["CFBundleDisplayName"] as? String) ?? (info["CFBundleName"] as? String)
+                        ?? url.deletingPathExtension().lastPathComponent,
+                     version: info["CFBundleShortVersionString"] as? String, titleId: titleID,
+                     bundleId: info["CFBundleIdentifier"] as? String, appURL: url, sizeBytes: bytes,
+                     modificationDate: (try? url.resourceValues(forKeys: [.contentModificationDateKey])
+                         .contentModificationDate) ?? .distantPast)
+    }
+
+    public struct Adoption {
+        public let app: ImportedApp
+        public let existing: PortedGame?
+        public let destination: URL
+        public var conflicts: Bool { existing != nil || discovered }
+        fileprivate let discovered: Bool
+        fileprivate let previous: stat?
+        fileprivate let volume: stat
+    }
+
+    /// A hidden copy on the destination volume, ready for a single atomic publish.
+    public struct StagedAdoption {
+        public let plan: Adoption
+        public let app: ImportedApp
+        fileprivate let incoming: URL
+    }
+
+    public func prepareAdoption(from url: URL, into folder: URL, existing: [PortedGame]) throws -> Adoption {
+        guard url.isFileURL, folder.isFileURL else { throw CloudArchiveError.invalidApp }
+        let source = url.deletingLastPathComponent().resolvingSymlinksInPath()
+            .appendingPathComponent(url.lastPathComponent, isDirectory: true)
+        let folder = folder.resolvingSymlinksInPath().standardizedFileURL
+        if let problem = GameAppDestination.folderProblem(at: folder) {
+            throw BuildInstallError.replaceFailed(problem)
+        }
+        let info = try Self.verifiedIdentity(of: source)
+        guard let app = Self.observation(at: source, info: info, bytes: 0), let title = app.titleId,
+              try CloudArchiveInventory.node(at: source).st_mode & S_IFMT == S_IFDIR else {
+            throw CloudArchiveError.invalidApp
+        }
+        try verifySignature(source)
+        let known = existing.first { $0.titleId?.caseInsensitiveCompare(title) == .orderedSame }
+        let discovered = scan(directories: [folder], matchingTitle: title)
+        let registered = known?.canDeleteAppBundle() == true ? known?.url : nil
+        let protected = existing.flatMap { game in
+            game.sources.map(\.url) + [game.workspacePath.map { URL(fileURLWithPath: $0) }].compactMap { $0 }
+        }.map { $0.resolvingSymlinksInPath().path }
+        let previousURL = ([registered].compactMap { $0 } + discovered.map(\.appURL)).first { candidate in
+            let path = candidate.resolvingSymlinksInPath().path
+            return path.hasPrefix(folder.path + "/") && path.caseInsensitiveCompare(source.path) != .orderedSame &&
+                !source.path.hasPrefix(path + "/") && !protected.contains { $0 == path || $0.hasPrefix(path + "/") } &&
+                Self.info(at: candidate).flatMap(Self.titleID(in:)) == title
+        }.map {
+            $0.deletingLastPathComponent().resolvingSymlinksInPath().appendingPathComponent($0.lastPathComponent)
+        }
+        let target = previousURL ?? GameAppDestination.url(name: app.name, titleId: title, in: folder, reusingExisting: false)
+        let destination = URL(fileURLWithPath: target.path, isDirectory: true)
+        guard !destination.path.hasPrefix(source.path + "/") else { throw CloudArchiveError.unsafePath }
+        let previous = try previousURL.map(CloudArchiveInventory.node)
+        guard previous.map({ $0.st_mode & S_IFMT == S_IFDIR }) ?? true else { throw CloudArchiveError.unsafePath }
+        let volume = try CloudArchiveInventory.node(at: destination.deletingLastPathComponent())
+        return .init(app: app, existing: known, destination: destination, discovered: !discovered.isEmpty,
+                     previous: previous, volume: volume)
+    }
+
+    public func stageAdoption(_ plan: Adoption, replacing: Bool,
+                              capacity: (URL) -> Int64? = {
+                                  (try? FileManager.default.attributesOfFileSystem(forPath: $0.path)[.systemFreeSize] as? NSNumber)?.int64Value
+                              }) throws -> StagedAdoption {
+        guard !plan.conflicts || replacing else { throw CloudArchiveError.confirmationRequired }
+        let source = plan.app.appURL
+        let initial = try CloudArchiveInventory.signature(source, kind: .app)
+        guard !initial.hasExcludedFiles else { throw CloudArchiveError.excludedFiles }
+        let parent = plan.destination.deletingLastPathComponent()
+        try Self.checkAdoptionVolume(plan)
+        let overhead = Int64(initial.entries.count) * 16_384 + 1_048_576
+        guard let free = capacity(parent), free >= overhead, initial.bytes <= free - overhead else {
+            throw CloudArchiveError.insufficientSpace
+        }
+        let stage = parent.appendingPathComponent(".arcane-adopt-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: stage, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+        let incoming = stage.appendingPathComponent(plan.destination.lastPathComponent)
+        do {
+            try fm.copyItem(at: source, to: incoming)
+            let copied = try CloudArchiveInventory.signature(incoming, kind: .app)
+            guard copied.entries == initial.entries, !copied.hasExcludedFiles,
+                  try CloudArchiveInventory.signature(source, kind: .app).sha256 == initial.sha256 else {
+                throw CloudArchiveError.localChanged
+            }
+            let info = try Self.verifiedIdentity(of: incoming, titleID: plan.app.titleId)
+            try verifySignature(incoming)
+            guard var app = Self.observation(at: incoming, info: info, bytes: copied.bytes) else { throw CloudArchiveError.invalidApp }
+            app.name = plan.app.name
+            app.appURL = plan.destination
+            return .init(plan: plan, app: app, incoming: incoming)
+        } catch {
+            try? fm.removeItem(at: stage)
+            throw error
+        }
+    }
+
+    /// Roll back the rename if the catalog cannot record the verified copy.
+    public func publishAdoption(_ staged: StagedAdoption, record: (ImportedApp) throws -> Void) throws {
+        let plan = staged.plan
+        try Self.checkAdoptionVolume(plan)
+        let current: stat?
+        do { current = try CloudArchiveInventory.node(at: plan.destination) }
+        catch CloudArchiveError.localMissing { current = nil }
+        guard current?.st_dev == plan.previous?.st_dev, current?.st_ino == plan.previous?.st_ino,
+              current?.st_ctimespec.tv_sec == plan.previous?.st_ctimespec.tv_sec,
+              current?.st_ctimespec.tv_nsec == plan.previous?.st_ctimespec.tv_nsec else {
+            throw CloudArchiveError.localChanged
+        }
+        let replace = current != nil
+        try BuildInstallIO().publish(staged.incoming, plan.destination, replace)
+        do { try record(staged.app) }
+        catch {
+            // Do not remove the staging bundle if the rollback itself fails.
+            guard (try? BuildInstallIO().publish(plan.destination, staged.incoming, replace)) != nil else {
+                throw CloudArchiveError.installFailed
+            }
+            throw error
+        }
+    }
+
+    private static func checkAdoptionVolume(_ plan: Adoption) throws {
+        let parent = plan.destination.deletingLastPathComponent()
+        try SaveFiles.safePath(parent)
+        let volume = try CloudArchiveInventory.node(at: parent)
+        guard volume.st_dev == plan.volume.st_dev, volume.st_ino == plan.volume.st_ino else {
+            throw CloudArchiveError.localChanged
+        }
+    }
+
+    public func cleanupAdoption(_ staged: StagedAdoption, published: Bool) {
+        if published && staged.plan.previous != nil {
+            // Keep the original in staging if the destination volume has no Trash.
+            guard (try? fm.trashItem(at: staged.incoming, resultingItemURL: nil)) != nil else { return }
+        }
+        try? fm.removeItem(at: staged.incoming.deletingLastPathComponent())
+    }
+
+    private func verifySignature(_ app: URL) throws {
+        let result = try SystemCommandRunner().run(URL(fileURLWithPath: "/usr/bin/codesign"),
+            Self.signatureArguments(for: app), environment: nil, currentDirectory: nil)
+        guard result.status == 0 else { throw CloudArchiveError.invalidApp }
     }
 
     /// The remembered size while the app's date is unchanged, else measured. Each new size is saved at once,

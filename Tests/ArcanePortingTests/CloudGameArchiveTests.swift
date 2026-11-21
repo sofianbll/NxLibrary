@@ -130,6 +130,58 @@ final class CloudGameArchiveTests: XCTestCase {
         XCTAssertNil(entries["old"])
     }
 
+    func testAppOnlyFirstUploadRestoresAndRequiresAFullRebuild() async throws {
+        let f = try fixture(useSyntheticBackend: true)
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let service = f.service
+        do {
+            _ = try await service.upload(f.game, kinds: [.app])
+            XCTFail("A first send must include the local cache when one exists")
+        } catch { XCTAssertEqual(error as? CloudArchiveError, .needsFullUpload) }
+        try FileManager.default.removeItem(at: f.cache)
+        let appOnly = CloudArchiveGame(titleID: title, locations: [.app: f.app])
+        let before = try await service.copyStatuses(appOnly, manifest: .success(nil))
+        XCTAssertTrue(CloudArtifactStatus.canUploadAlone(.app, statuses: before))
+        XCTAssertFalse(CloudArtifactStatus.canUploadAlone(.cache, statuses: before))
+        let unavailableCache = CloudArchiveGame(titleID: title, locations: [.app: f.app], cacheIsRegistered: true)
+        let unavailable = try await service.copyStatuses(unavailableCache, manifest: .success(nil))
+        XCTAssertFalse(CloudArtifactStatus.canUploadAlone(.app, statuses: unavailable))
+
+        let uploaded = try await service.upload(appOnly, kinds: [.app])
+        XCTAssertEqual(uploaded.artifacts.map(\.kind), [.app])
+        let manifests = try await service.latestManifests()
+        XCTAssertEqual(manifests, [uploaded])
+        let check = try await service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false)
+        XCTAssertEqual(check.decision, .fullRebuild)
+        XCTAssertNil(check.verifiedCache)
+
+        try FileManager.default.removeItem(at: f.app)
+        _ = try await service.restore(.app, for: appOnly, onlyIfMissing: true)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: f.app.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: f.cache.path))
+        let restored = try await service.copyStatuses(appOnly, manifest: .success(uploaded))
+        XCTAssertEqual(restored[.app]?.state, .synchronized)
+        try Data("new".utf8).write(to: f.app.appendingPathComponent("Contents/Resources/new"))
+        try command("/usr/bin/codesign", ["--force", "--sign", "-", f.app.path])
+        try FileManager.default.createDirectory(at: f.cache, withIntermediateDirectories: false)
+        try Data("cache".utf8).write(to: f.cache.appendingPathComponent("cache"))
+        let diverged = try await service.copyStatuses(f.game, manifest: .success(uploaded))
+        XCTAssertEqual(diverged[.app]?.state, .newerOnThisMac)
+        XCTAssertTrue(CloudArtifactStatus.canUploadAlone(.app, statuses: diverged))
+        XCTAssertFalse(CloudArtifactStatus.canUploadAlone(.cache, statuses: diverged))
+        let update = try await service.upload(f.game, kinds: [.app])
+        XCTAssertEqual(update.artifacts.map(\.kind), [.app])
+        XCTAssertNotEqual(update.artifacts, uploaded.artifacts)
+        let updatedCopies = try await service.copyStatuses(f.game, manifest: .success(update))
+        XCTAssertTrue(CloudArtifactStatus.canUploadAlone(.cache, statuses: updatedCopies))
+        let withCache = try await service.upload(f.game, kinds: [.cache])
+        XCTAssertEqual(withCache.artifacts.map(\.kind), [.app, .cache])
+        XCTAssertEqual(withCache.artifacts.first, update.artifacts.first)
+        let verified = try await service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false)
+        XCTAssertEqual(verified.decision, .allowed)
+        XCTAssertEqual(verified.verifiedCache?.path, f.cache.resolvingSymlinksInPath().path)
+    }
+
     func testPartialUploadPreservesRemoteAppWithoutReadingLocalApp() async throws {
         let f = try fixture()
         defer { try? FileManager.default.removeItem(at: f.root) }
@@ -639,8 +691,9 @@ final class CloudGameArchiveTests: XCTestCase {
         }
     }
 
-    private func fixture() throws -> Fixture {
-        guard let binary = RcloneStorageBackend.findExecutable() else { throw XCTSkip("rclone is not installed") }
+    private func fixture(useSyntheticBackend: Bool = false) throws -> Fixture {
+        let binary = useSyntheticBackend ? nil : RcloneStorageBackend.findExecutable()
+        if binary == nil && !useSyntheticBackend { throw XCTSkip("rclone is not installed") }
         let fm = FileManager.default
         let root = fm.temporaryDirectory.appendingPathComponent("ArcaneCloudTests-\(UUID().uuidString)", isDirectory: true)
         do {
@@ -672,13 +725,61 @@ final class CloudGameArchiveTests: XCTestCase {
             try fm.createSymbolicLink(atPath: cache.appendingPathComponent("nested/link").path, withDestinationPath: "../run.key")
             let config = root.appendingPathComponent("rclone.conf")
             try Data().write(to: config)
-            let backend = RcloneStorageBackend(remote: ":local:", root: remote.path, executable: binary, config: config)
+            let executable = try binary ?? syntheticBackend(in: root)
+            let backend = RcloneStorageBackend(remote: ":local:", root: remote.path, executable: executable, config: config)
             let game = CloudArchiveGame(titleID: title, locations: [.app: app, .cache: cache])
             return Fixture(root: root, remote: remote, trash: trash, app: app, cache: cache, backend: backend, game: game)
         } catch {
             try? fm.removeItem(at: root)
             throw error
         }
+    }
+
+    /// A CLI fixture for the real streaming and archive protocol; it never opens a network connection.
+    private func syntheticBackend(in root: URL) throws -> URL {
+        let url = root.appendingPathComponent("fake-rclone")
+        try """
+        #!/usr/bin/python3
+        import hashlib, json, os, shutil, sys
+        from pathlib import Path
+        cmd, *args = sys.argv[1:]
+        if cmd == "rcd":
+            sys.exit(1)
+        root = Path(__file__).resolve().parent
+        def path(arg):
+            result = Path(arg.removeprefix(":local:")).resolve()
+            assert result.is_relative_to(root) or (
+                not arg.startswith(":local:") and result.parent.name.startswith((".arcane-cloud-", ".arcane-download-")))
+            return result
+        def item(p):
+            data = p.read_bytes() if p.is_file() else b""
+            return dict(Path=p.name, Name=p.name, Size=len(data),
+                        Hashes={"md5": hashlib.md5(data).hexdigest(), "sha256": hashlib.sha256(data).hexdigest()})
+        if cmd == "lsjson":
+            p = path(args[0])
+            if "--stat" in args:
+                print(json.dumps(item(p) if p.is_file() else None))
+            elif p.is_dir():
+                print(json.dumps([item(c) for c in p.iterdir() if c.is_dir() == ("--dirs-only" in args)]))
+            else:
+                sys.exit(3)
+        elif cmd in ("rcat", "copyto", "moveto"):
+            dest = path(args[0 if cmd == "rcat" else 1])
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            if cmd == "rcat":
+                with dest.open("xb") as out:
+                    shutil.copyfileobj(sys.stdin.buffer, out)
+            elif cmd == "copyto":
+                shutil.copyfile(path(args[0]), dest)
+            else:
+                os.rename(path(args[0]), dest)
+        elif cmd == "deletefile":
+            path(args[0]).unlink(missing_ok=True)
+        else:
+            raise ValueError(cmd)
+        """.write(to: url, atomically: true, encoding: .utf8)
+        XCTAssertEqual(chmod(url.path, 0o700), 0)
+        return url
     }
 
     private func command(_ executable: String, _ args: [String]) throws {

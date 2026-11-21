@@ -28,6 +28,9 @@ extension AppViewModel {
         do {
             applyCatalog(try catalogRepository.recordNXNativeBuild(game))
             catalogBuildRecoveries.acknowledge(id: game.id, matching: game)
+            if game.status == .built, game.pendingInstall == nil {
+                Task { await refreshCloudLibrary(game) }
+            }
             return true
         } catch {
             logs.append(LogEntry(level: .error, message: error.localizedDescription))

@@ -460,7 +460,8 @@ struct AddGameView: View {
     }
 
     private func drop(_ providers: [NSItemProvider]) -> Bool {
-        guard porting.buildWizardStep == 1, !viewModel.isBuilding else { return false }
+        guard porting.buildWizardStep == 1, !confirmDiscard, !viewModel.isBuilding,
+              viewModel.settingsNotice == nil else { return false }
         var urls: [URL] = []
         let group = DispatchGroup()
         for provider in providers {
@@ -470,6 +471,8 @@ struct AddGameView: View {
             }
         }
         group.notify(queue: .main) {
+            guard router.route == .addGame, porting.buildWizardStep == 1,
+                  !confirmDiscard, viewModel.settingsNotice == nil else { return }
             if !urls.isEmpty { viewModel.handleDroppedURLs(urls) }
         }
         return true

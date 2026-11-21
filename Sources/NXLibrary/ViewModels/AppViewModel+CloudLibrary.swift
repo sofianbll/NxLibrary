@@ -474,7 +474,7 @@ extension AppViewModel {
                     await release()
                     showCloudBuildNotice(for: target, archive: archive, extraArguments: extraArguments,
                                          onStarted: onStarted, canDownload: true)
-                case .allowed:
+                case .allowed, .fullRebuild:
                     guard let current = libraryGames.first(where: { $0.id == target.id }),
                           current.titleId == target.titleId, current.workspacePath == target.workspacePath,
                           current.buildCachePath == target.buildCachePath else { throw CloudArchiveError.busy }
@@ -483,7 +483,7 @@ extension AppViewModel {
                         return
                     }
                     try porting.beginBuild(for: target, extraArguments: extraArguments, verifiedCache: check.verifiedCache,
-                                   withoutCache: withoutCache,
+                                   withoutCache: withoutCache || check.decision == .fullRebuild,
                                    releaseCloudBuild: release)
                     onStarted?()
                 }
@@ -975,7 +975,8 @@ extension AppViewModel {
                 }
             }
             return CloudArchiveGame(titleID: game.titleId ?? "", locations: locations,
-                                    engineCommit: game.lastBuild?.exitCode == 0 ? game.lastBuild?.engineCommit : nil)
+                                    engineCommit: game.lastBuild?.exitCode == 0 ? game.lastBuild?.engineCommit : nil,
+                                    cacheIsRegistered: game.buildCachePath != nil)
         }.value
     }
 
