@@ -223,6 +223,9 @@ struct SettingsEngineSection: View {
         case .checking:
             return L10n.text("Asking GitHub for the latest commits...")
         case .loaded(let status):
+            if viewModel.engineOverride != nil, status.newCommitsCount == 0 {
+                return L10n.text("See how this version's engine compares with seedds/nxnative main.")
+            }
             return UpstreamCopy.subtitle(upToDate: status.isUpToDate, newCommits: status.newCommitsCount)
         case .failed(let message):
             return message

@@ -287,11 +287,11 @@ final class PortingFailureEngineTests: XCTestCase {
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("Sources/NXLibrary/ViewModels/AppViewModel.swift")
         let text = try String(contentsOf: source, encoding: .utf8)
-        guard let match = text.range(of: #"pinnedEngineCommit = "[0-9a-f]{40}""#, options: .regularExpression) else {
-            return XCTFail("no pinnedEngineCommit in AppViewModel.swift")
+        guard let match = text.range(of: #"defaultPinnedEngineCommit = "[0-9a-f]{40}""#, options: .regularExpression) else {
+            return XCTFail("no defaultPinnedEngineCommit in AppViewModel.swift")
         }
         let pin = ProcessInfo.processInfo.environment["NX_TEST_ENGINE_COMMIT"]
-            ?? String(text[match].dropFirst("pinnedEngineCommit = \"".count).dropLast())
+            ?? String(text[match].dropFirst("defaultPinnedEngineCommit = \"".count).dropLast())
         guard pin.range(of: #"^[0-9a-f]{40}$"#, options: .regularExpression) != nil else {
             return XCTFail("NX_TEST_ENGINE_COMMIT must be a full commit hash")
         }

@@ -44,6 +44,7 @@ public struct SetupFacts: Equatable {
     public var engine: EngineFacts
     public var engineFolder: URL
     public var pinnedCommit: String
+    public var engineRemote: String? = nil
     /// nil when the bundled Python, its modules and the tools all run.
     public var runtimeProblem: String?
     public var keys: KeySummary?
@@ -201,7 +202,7 @@ public enum SetupCheck {
                              detail: L10n.format("Version %@ came with this Xcode; the engine is tested with %@. New builds wait for an Arcane update tested with it. Games you built still play.", [String(describing: version), String(describing: f.certifiedMetal)]),
                              actionTitle: nil)
         case .engine:
-            let about = L10n.text("nxnative, used as it is upstream, at the commit this version of Arcane is tested with.")
+            let about = f.engineRemote ?? L10n.text("nxnative, used as it is upstream, at the commit this version of Arcane is tested with.")
             let short = String(f.pinnedCommit.prefix(7))
             switch f.engine {
             case .missing:

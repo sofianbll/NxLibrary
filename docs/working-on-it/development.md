@@ -108,7 +108,7 @@ Before a game/toolchain combination is described as working, the user checks **S
 
 ## Engine upgrades
 
-Never patch `~/nxnative` or follow its `main` branch automatically. The app's pin is in `AppViewModel.pinnedEngineCommit`; `ToolchainRequirements.current` describes the supported setup requirements and downloadable Metal assets.
+Never patch `~/nxnative` or follow its `main` branch automatically. The default pin is in `AppViewModel.defaultPinnedEngineCommit`; an explicit release pin supplies both the repository and commit. `ToolchainRequirements.current` describes the supported setup requirements and downloadable Metal assets.
 
 An upgrade requires reviewing the upstream delta and CLI, deciding which capabilities to adopt, wiring applicable flags, updating certification data and verifying tests, the gate, a real build and a visible launch. Follow the [upgrade checklist](../history/engine-upgrades/README.md), write a dated note and update the README, design spec and changelog. A newer engine commit alone is not sufficient evidence.
 
@@ -128,11 +128,41 @@ Valve's attribution for the Steam logo carries the year Valve's page gives ("©2
 
 Publishing requires an explicit maintainer decision and the script's `--publish --notes <file>` options. Prepare reviewed notes from [CHANGELOG.md](../../CHANGELOG.md), then date the version when it is actually published. The script adds engine/Xcode requirement metadata to release notes for the updater. Never publish automatically as part of an agent's verification.
 
+### Publication perso (Sofian)
+
+1. Choisir un commit **testé** du fork moteur et le laisser accessible sur une branche publique. Le tag moteur sert de repère stable ; Arcane utilise le SHA, pas le tag. Pour cette version :
+
+   ~~~sh
+   git -C ~/Games/Switch/Engine tag perso-2026.11.21 a35babea
+   git -C ~/Games/Switch/Engine push https://github.com/sofianbll/nxnative refs/tags/perso-2026.11.21
+   ~~~
+
+2. Depuis le dépôt Arcane, inscrire `0.2.1.20261121` dans `VERSION`, préparer les notes à partir du [modèle FR](perso-release-notes.md), valider et commiter sur un arbre propre. Le schéma `base.AAAAMMJJ` réserve le quatrième champ à la date côté perso : `0.2.1 < 0.2.1.20261121 < 0.2.2`, sans réutiliser les petits indices de correctif de Bium23. Une publication perso par date et par base. Préparer `work/Runtime` avec `scripts/bundle_runtime.sh`, puis vérifier ZIP, DMG et plist sans publier :
+
+   ~~~sh
+   bash scripts/release.sh 0.2.1.20261121 \
+     --engine-repo https://github.com/sofianbll/nxnative \
+     --engine-commit a35babeade0c34b3f928e0b32310ba66eb98bc86
+   ~~~
+
+   Le script refuse un SHA qui n'est pas accessible depuis une branche du dépôt. Sans les deux options, la build conserve le dépôt et le pin amont.
+
+3. Après validation, placer le commit de release sur `origin/main` du fork Arcane et refaire la même build avec les notes approuvées. Vérifier que `origin` pointe bien vers `sofianbll/NxLibrary`. Les notes peuvent être hors du dépôt pour garder l'arbre propre ; le script y ajoute le dépôt et le SHA réellement embarqués, ainsi que les métadonnées Xcode/moteur.
+
+   ~~~sh
+   bash scripts/release.sh 0.2.1.20261121 \
+     --engine-repo https://github.com/sofianbll/nxnative \
+     --engine-commit a35babeade0c34b3f928e0b32310ba66eb98bc86 \
+     --publish --notes "$HOME/arcane-perso-0.2.1.20261121.md"
+   ~~~
+
+4. Le pote qui utilise déjà une **release du fork** voit la version et ses notes dans **Settings → About → Check now** (ou à l'ouverture si le contrôle automatique est dû). Une copie Dev ou une release Bium23 ne bascule pas sur le fork : première installation depuis le DMG du fork. Après le redémarrage, **Setup** propose de cloner, mettre à jour ou basculer vers le moteur épinglé. Les jeux existants restent jouables ; recompiler les titres indiqués dans les notes pour appliquer les changements moteur. Le bouton **Upstream** compare toujours à `seedds/nxnative` `main`.
+
 ### Distribution work still open
 
 The first public alpha uses the existing `local.nxlibrary` bundle identity and ad-hoc signing, without notarisation. Developer ID distribution will need signing-identity verification and notarisation. Updates verify GitHub's SHA-256 digest and the sealed app signature; ad-hoc signatures do not independently identify the publisher.
 
-The updater uses `Bium23/NxLibrary` directly, with anonymous public access. No separate download repository or login is needed for users. Release copies update themselves; source builds remain excluded. `release.sh --publish` requires the configured repository to be public. ZIP downloads are limited to 512 MiB, restricted to GitHub's HTTPS download hosts and checked against the published size and digest. The bundled Python checks paths, symlinks, duplicates, special files and a 30,000-entry limit, then extracts using bounded raw decompression with a 2 GiB total limit. It verifies actual output size and CRC rather than trusting ZIP size fields. Release packaging uses this same extraction path and verifies the extracted bundle signature; ZIPs omit Finder metadata sidecars.
+The fork updater uses `sofianbll/NxLibrary` directly, with anonymous public access. No separate download repository or login is needed for users. Release copies update themselves; source builds remain excluded. `release.sh --publish` requires the configured repository to be public. ZIP downloads are limited to 512 MiB, restricted to GitHub's HTTPS download hosts and checked against the published size and digest. The bundled Python checks paths, symlinks, duplicates, special files and a 30,000-entry limit, then extracts using bounded raw decompression with a 2 GiB total limit. It verifies actual output size and CRC rather than trusting ZIP size fields. Release packaging uses this same extraction path and verifies the extracted bundle signature; ZIPs omit Finder metadata sidecars.
 
 ### First installation and A → B update test
 

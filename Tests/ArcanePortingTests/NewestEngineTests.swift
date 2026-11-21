@@ -216,6 +216,14 @@ final class NewestEngineTests: XCTestCase {
         XCTAssertEqual(missing.subcommands, ["status", "cat-file", "fetch", "checkout"])
     }
 
+    func testBackToPersonalTestedEngineFetchesFromTheFork() throws {
+        let git = FakeGit()
+        let fork = "https://github.com/sofianbll/nxnative"
+        git.answers["cat-file"] = CommandResult(status: 1, stdout: "", stderr: "")
+        try NewestEngineSwitcher(repo: repo, runner: git).useTested(pinned: pin, remote: fork)
+        XCTAssertEqual(git.calls[2], ["-C", repo.path, "fetch", "--quiet", fork, pin])
+    }
+
     func testIsIncludedReadsMergeBase() {
         let git = FakeGit()
         let switcher = NewestEngineSwitcher(repo: repo, runner: git)

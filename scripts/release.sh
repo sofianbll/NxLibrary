@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/release.sh <version> [--publish --notes <file>]
+# scripts/release.sh <version> [--engine-repo <url> --engine-commit <sha>] [--publish --notes <file>]
 #
 # Builds a release copy of NX Library (version in its plist, NXLibraryRelease marker, bundled
 # runtime), verifies its signature and zips it as work/release/NXLibrary-<version>.zip, the asset
@@ -12,17 +12,21 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-usage() { echo "usage: scripts/release.sh <version> [--publish --notes <file>]" >&2; exit 2; }
+usage() { echo "usage: scripts/release.sh <version> [--engine-repo <url> --engine-commit <sha>] [--publish --notes <file>]" >&2; exit 2; }
 
 VERSION="${1:-}"
 [ -n "$VERSION" ] || usage
 shift
 PUBLISH=0
 NOTES=""
+ENGINE_REPO=""
+ENGINE_COMMIT=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --publish) PUBLISH=1 ;;
     --notes) shift; NOTES="${1:-}" ;;
+    --engine-repo) [ $# -ge 2 ] && [ -n "$2" ] || usage; ENGINE_REPO="$2"; shift ;;
+    --engine-commit) [ $# -ge 2 ] && [ -n "$2" ] || usage; ENGINE_COMMIT="$2"; shift ;;
     *) usage ;;
   esac
   shift
@@ -62,6 +66,31 @@ if [ "$PUBLISH" = "1" ]; then
   [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] \
     || fail "HEAD is not origin/main; merge the release into main and push it first"
 fi
+
+# Optional tested-engine pin. Validate reachability from a public branch, not merely
+# existence as an object in GitHub's fork network. A tip needs no clone.
+if [[ -n "$ENGINE_REPO$ENGINE_COMMIT" ]]; then
+  [[ "$ENGINE_REPO" =~ ^https://github\.com/[A-Za-z0-9_-]+/[A-Za-z0-9_-][A-Za-z0-9_.-]*$ ]] \
+    || fail "--engine-repo must be an HTTPS GitHub repository URL"
+  [[ "$ENGINE_COMMIT" =~ ^[0-9a-f]{40}$ ]] \
+    || fail "--engine-commit must be the full 40-character lowercase SHA"
+  if ! (
+    export GIT_TERMINAL_PROMPT=0
+    export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=credential.helper GIT_CONFIG_VALUE_0=
+    heads="$(git ls-remote --exit-code --heads "$ENGINE_REPO")" || exit 1
+    if ! awk -v pin="$ENGINE_COMMIT" '$1 == pin { found = 1 } END { exit !found }' <<< "$heads"; then
+      probe="$(mktemp -d)" || exit 1
+      trap 'rm -rf "$probe"' EXIT
+      git clone --quiet --bare --filter=blob:none --no-tags "$ENGINE_REPO" "$probe" || exit 1
+      [ -n "$(git -C "$probe" for-each-ref --count=1 --contains="$ENGINE_COMMIT" refs/heads)" ]
+    fi
+  ); then
+    fail "engine commit $ENGINE_COMMIT must be reachable from a public branch of $ENGINE_REPO"
+  fi
+fi
+# Always pass the validated pair (or empty values), never ambient build options.
+export NX_ENGINE_REPO="$ENGINE_REPO" NX_ENGINE_COMMIT="$ENGINE_COMMIT"
+
 # Every release is tested from its own tree.
 DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}" swift test --package-path "$ROOT" \
   || fail "swift test failed"
@@ -77,8 +106,8 @@ python3 "$ROOT/scripts/check_publication.py" --runtime "$ROOT/work/Runtime"
 # What this release needs on a player's Mac, as a hidden line in its notes (AppUpdate.requirements(in:)): the
 # update dialog warns about an Xcode to update first and the engine Setup downloads after the restart.
 MIN_XCODE="$(sed -n 's/.*minimumXcode: "\([0-9.]*\)".*/\1/p' "$ROOT/Sources/ArcanePorting/Setup/ToolchainRequirements.swift" | head -1)"
-ENGINE="$(sed -n 's/.*let pinnedEngineCommit = "\([0-9a-f]\{40\}\)".*/\1/p' "$ROOT/Sources/NXLibrary/ViewModels/AppViewModel.swift" | head -1)"
-[ -n "$MIN_XCODE" ] && [ -n "$ENGINE" ] || fail "could not read minimumXcode or pinnedEngineCommit from the sources"
+ENGINE="${ENGINE_COMMIT:-$(sed -n 's/.*let defaultPinnedEngineCommit = "\([0-9a-f]\{40\}\)".*/\1/p' "$ROOT/Sources/NXLibrary/ViewModels/AppViewModel.swift" | head -1)}"
+[ -n "$MIN_XCODE" ] && [ -n "$ENGINE" ] || fail "could not read minimumXcode or defaultPinnedEngineCommit from the sources"
 REQUIRES="<!-- nxlibrary-requires xcode=$MIN_XCODE engine=$ENGINE -->"
 echo "Requires: Xcode $MIN_XCODE, nxnative ${ENGINE:0:7}"
 
@@ -112,6 +141,11 @@ fi
   || fail "the built app does not carry version $VERSION"
 [ "$(/usr/libexec/PlistBuddy -c 'Print :NXLibraryRelease' "$APP/Contents/Info.plist")" = "true" ] \
   || fail "the built app is not marked as a release"
+if [[ -n "$ENGINE_REPO" ]]; then
+  [ "$(/usr/bin/plutil -extract NXLibraryEngineRepository raw "$APP/Contents/Info.plist")" = "$ENGINE_REPO" ] \
+    && [ "$(/usr/bin/plutil -extract NXLibraryEngineCommit raw "$APP/Contents/Info.plist")" = "$ENGINE_COMMIT" ] \
+    || fail "the built app does not carry the requested engine pin"
+fi
 
 # Finder metadata becomes AppleDouble sidecars in a ZIP; release bundles need only
 # their sealed files and relative links, not those extra unsealed resources.
@@ -131,7 +165,13 @@ echo "DMG: $DMG"
 if [ "$PUBLISH" = "1" ]; then
   git tag "$TAG"
   git push origin "$TAG"
-  { cat "$NOTES"; printf '\n\n%s\n' "$REQUIRES"; } > "$OUT/notes.md"
+  {
+    cat "$NOTES"
+    if [[ -n "$ENGINE_REPO" ]]; then
+      printf '\n\n## Moteur épinglé\n\n- Dépôt : %s\n- Commit : `%s`.\n' "$ENGINE_REPO" "$ENGINE_COMMIT"
+    fi
+    printf '\n\n%s\n' "$REQUIRES"
+  } > "$OUT/notes.md"
   gh release create "$TAG" "$ZIP" "$DMG" --repo "$REPOSITORY" \
     --title "Arcane $VERSION" --notes-file "$OUT/notes.md"
   echo "Published $TAG"

@@ -30,4 +30,31 @@ final class SetupActionsTests: XCTestCase {
         ])
         XCTAssertEqual(SetupActions.gitCommands(for: .none, folder: folder, pinned: pin), [])
     }
+
+    func testReleasePlistSelectsBothEngineValuesOrNeither() throws {
+        let repo = "https://github.com/sofianbll/nxnative"
+        let data = try PropertyListSerialization.data(fromPropertyList: [
+            "NXLibraryEngineRepository": repo, "NXLibraryEngineCommit": pin,
+        ], format: .xml, options: 0)
+        let plist = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
+        let engine = try XCTUnwrap(SetupActions.engineOverride(in: plist))
+        XCTAssertEqual(engine.remote, repo)
+        XCTAssertEqual(engine.commit, pin)
+        XCTAssertNil(SetupActions.engineOverride(in: [:]))
+        XCTAssertNil(SetupActions.engineOverride(in: ["NXLibraryEngineCommit": pin]))
+        XCTAssertNil(SetupActions.engineOverride(in: ["NXLibraryEngineRepository": repo, "NXLibraryEngineCommit": "af616f5"]))
+        XCTAssertNil(SetupActions.engineOverride(in: ["NXLibraryEngineRepository": "\(repo)?bad", "NXLibraryEngineCommit": pin]))
+    }
+
+    func testPersonalEngineClonesAndUpdatesFromForkWithoutChangingOrigin() {
+        let repo = "https://github.com/sofianbll/nxnative"
+        let folder = URL(fileURLWithPath: "/tmp/nx native")
+        let checkout = ["-C", folder.path, "checkout", "--detach", pin]
+        let clone = SetupActions.engineAction(for: .missing, pinned: pin)
+        let update = SetupActions.engineAction(for: .checkout(head: "ee369f0", dirty: false), pinned: pin)
+        XCTAssertEqual(SetupActions.gitCommands(for: clone, folder: folder, pinned: pin, remote: repo),
+                       [["clone", "--progress", repo, folder.path], checkout])
+        XCTAssertEqual(SetupActions.gitCommands(for: update, folder: folder, pinned: pin, remote: repo),
+                       [["-C", folder.path, "fetch", "--progress", repo, pin], checkout])
+    }
 }

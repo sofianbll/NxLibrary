@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 21 novembre 2026. Copertura di **858 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 21 novembre 2026. Copertura di **859 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -95,7 +95,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 
 | File | Responsabilità |
 |---|---|
-| [Sources/NXLibrary/ViewModels/AppViewModel.swift](../../Sources/NXLibrary/ViewModels/AppViewModel.swift) | Coordina libreria e catalogo, sorgenti, lancio (con la sincronizzazione delle mod prima di Play), primo avvio, Game options, spazio su disco e icona di Arcane nel Dock. Crea i modelli Switch, conserva la scelta Steam del Setup, tiene lo stato del porting letto dalla home e non scansiona Game files all’avvio. Il file tiene stato, init, primo avvio, icona nel Dock e i due scrittori della libreria e dello spazio (`applyCatalog`, `cleanStorage`); il resto sta nelle estensioni qui sotto. |
+| [Sources/NXLibrary/ViewModels/AppViewModel.swift](../../Sources/NXLibrary/ViewModels/AppViewModel.swift) | Coordina libreria e catalogo, sorgenti, lancio (con la sincronizzazione delle mod prima di Play), primo avvio, Game options, spazio su disco e icona di Arcane nel Dock. Tiene il pin del motore, dal bundle o dal default, e crea i modelli Switch. Conserva la scelta Steam del Setup, tiene lo stato del porting letto dalla home e non scansiona Game files all’avvio. Il file tiene stato, init, primo avvio, icona nel Dock e i due scrittori della libreria e dello spazio (`applyCatalog`, `cleanStorage`); il resto sta nelle estensioni qui sotto. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+Storage.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Storage.swift) | Spazio su disco: misura, cancella cache e log. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+Library.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Library.swift) | Scansione e cartella Game apps, adozione locale con conferma, trascinamento e collegamento di sorgenti per title ID. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+CloudLibrary.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+CloudLibrary.swift) | Collega archivio, coda, esiti e recupero cloud, ripete le verifiche al retry, protegge percorsi e lease, aggiorna il catalogo e passa al Rebuild completo quando il manifest non ha cache. |
@@ -122,9 +122,9 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 | [Sources/NXLibrary/ViewModels/PortingModel+Folders.swift](../../Sources/NXLibrary/ViewModels/PortingModel+Folders.swift) | Cartelle della build, spazio libero, sorgenti supportate e durata delle fasi finali per la stima. |
 | [Sources/NXLibrary/ViewModels/RuntimeSettingsModel.swift](../../Sources/NXLibrary/ViewModels/RuntimeSettingsModel.swift) | Legge e scrive le scelte salvate di un gioco per il prossimo avvio (Game options, More settings, default dei nuovi giochi) e dice quali impostazioni il build supporta. |
 | [Sources/NXLibrary/ViewModels/SavePanelModel.swift](../../Sources/NXLibrary/ViewModels/SavePanelModel.swift) | Gestisce refresh, anteprime, backup, importazione, ripristino, errori e conferma temporanea di successo. |
-| [Sources/NXLibrary/ViewModels/SetupCheckModel.swift](../../Sources/NXLibrary/ViewModels/SetupCheckModel.swift) | Esegue probe e installazioni del Setup in background, con avanzamento e ricontrollo periodico. |
+| [Sources/NXLibrary/ViewModels/SetupCheckModel.swift](../../Sources/NXLibrary/ViewModels/SetupCheckModel.swift) | Esegue probe e installazioni del Setup in background, con il pin del bundle, avanzamento e ricontrollo periodico. |
 | [Sources/NXLibrary/ViewModels/SetupModel.swift](../../Sources/NXLibrary/ViewModels/SetupModel.swift) | Tiene il Setup Switch: cartella, validità e commit dell'engine, sorgenti che l'engine sa leggere, controllo Upstream e scelta della cartella; chiavi importate (percorso, validità, riepilogo, importazione e selettore); controllo dell'ambiente, compatibilità, override della toolchain non testata, gate e suo riepilogo, Python e Xcode dell'engine, versioni Metal. Ricarica override, scelta di Newest engine e ultimo controllo Upstream. Raggiunge il coordinatore solo da `app`. |
-| [Sources/NXLibrary/ViewModels/SetupModel+NewestEngine.swift](../../Sources/NXLibrary/ViewModels/SetupModel+NewestEngine.swift) | Usa l’engine più nuovo o torna a quello testato, accende l’override e controlla se main è utilizzabile. |
+| [Sources/NXLibrary/ViewModels/SetupModel+NewestEngine.swift](../../Sources/NXLibrary/ViewModels/SetupModel+NewestEngine.swift) | Usa l’engine upstream più nuovo o torna a quello testato dal suo repository, accende l’override e controlla se main è utilizzabile. |
 | [Sources/NXLibrary/ViewModels/StoreMetadataModel.swift](../../Sources/NXLibrary/ViewModels/StoreMetadataModel.swift) | Tiene i dati dello store Nintendo per gioco nella lingua dell'app: caricamento, coda delle lingue in background, screenshot di ripiego, scelte di Change metadata e cache; le schermate che li mostrano lo osservano. |
 
 ## Modelli dello stato applicativo
@@ -462,7 +462,7 @@ Cartella `Sources/ArcanePorting/Setup/`.
 | [Sources/ArcanePorting/Setup/ToolchainRequirements.swift](../../Sources/ArcanePorting/Setup/ToolchainRequirements.swift) | Centralizza requisiti Xcode e asset Metal. |
 | [Sources/ArcanePorting/Setup/ToolchainInfo.swift](../../Sources/ArcanePorting/Setup/ToolchainInfo.swift) | Registra provenienza e verifica della toolchain associata a un build. |
 | [Sources/ArcanePorting/Setup/ToolchainGateCopy.swift](../../Sources/ArcanePorting/Setup/ToolchainGateCopy.swift) | Traduce il gate in testi distinguendo Metal certificato, precedente e successivo. |
-| [Sources/ArcanePorting/Setup/SetupCheck.swift](../../Sources/ArcanePorting/Setup/SetupCheck.swift) | Converte fatti e override del Setup in schede, stati, azioni e condizioni di riapertura. |
+| [Sources/ArcanePorting/Setup/SetupCheck.swift](../../Sources/ArcanePorting/Setup/SetupCheck.swift) | Converte fatti e override del Setup in schede, stati, azioni e condizioni di riapertura; mostra il repository personalizzato se presente. |
 | [Sources/ArcanePorting/Setup/GameFoldersCopy.swift](../../Sources/ArcanePorting/Setup/GameFoldersCopy.swift) | Condivide nomi delle cartelle, formati e descrizioni tra Setup, Settings e selettori dei percorsi. |
 | [Sources/ArcanePorting/Setup/SetupGrid.swift](../../Sources/ArcanePorting/Setup/SetupGrid.swift) | Calcola disposizione, centratura e navigazione del focus nella griglia del Setup. |
 | [Sources/ArcanePorting/Setup/UpstreamCopy.swift](../../Sources/ArcanePorting/Setup/UpstreamCopy.swift) | Prepara i testi del changelog upstream e dell’adozione degli aggiornamenti tramite Arcane. |
@@ -470,10 +470,10 @@ Cartella `Sources/ArcanePorting/Setup/`.
 | [Sources/ArcanePorting/Setup/EngineLocation.swift](../../Sources/ArcanePorting/Setup/EngineLocation.swift) | Risolve checkout predefinito o scelto e produce i candidati per prod.keys. |
 | [Sources/ArcanePorting/Setup/EngineToolchain.swift](../../Sources/ArcanePorting/Setup/EngineToolchain.swift) | Individua runtime incluso o venv del checkout e prepara ambiente e PATH dei processi. |
 | [Sources/ArcanePorting/Setup/EnginePackageReader.swift](../../Sources/ArcanePorting/Setup/EnginePackageReader.swift) | Legge content meta e capacità del checkout, compresa selezione NUP multiprogramma, senza esporre chiavi. |
-| [Sources/ArcanePorting/Setup/NewestEngine.swift](../../Sources/ArcanePorting/Setup/NewestEngine.swift) | Scelta dell’engine più nuovo: testi condivisi, lettura del Metal dal lock di main, cambio di commit con git senza toccare file modificati. |
+| [Sources/ArcanePorting/Setup/NewestEngine.swift](../../Sources/ArcanePorting/Setup/NewestEngine.swift) | Scelta dell’engine più nuovo: testi condivisi, lettura del Metal dal lock di main, cambio di commit con Git senza toccare file modificati; usa il repository del pin per tornare all’engine testato. |
 | [Sources/ArcanePorting/Setup/CompatibilityChecker.swift](../../Sources/ArcanePorting/Setup/CompatibilityChecker.swift) | Controlla commit, modifiche del checkout, Metal e opzioni CLI richieste dal frontend. |
-| [Sources/ArcanePorting/Setup/SetupProbe.swift](../../Sources/ArcanePorting/Setup/SetupProbe.swift) | Raccoglie i fatti mostrati dal Setup usando comandi e controlli mirati. |
-| [Sources/ArcanePorting/Setup/SetupActions.swift](../../Sources/ArcanePorting/Setup/SetupActions.swift) | Costruisce le operazioni Git ammesse per installare o allineare il motore al pin. |
+| [Sources/ArcanePorting/Setup/SetupProbe.swift](../../Sources/ArcanePorting/Setup/SetupProbe.swift) | Raccoglie i fatti mostrati dal Setup, compresa la divergenza dal pin selezionato. |
+| [Sources/ArcanePorting/Setup/SetupActions.swift](../../Sources/ArcanePorting/Setup/SetupActions.swift) | Legge il pin facoltativo dal plist e costruisce i comandi Git per installare o allineare il motore al pin. |
 | [Sources/ArcanePorting/Setup/KeyStore.swift](../../Sources/ArcanePorting/Setup/KeyStore.swift) | Valida le chiavi, espone solo il riepilogo e pubblica atomicamente la copia gestita con permessi 0600. |
 | [Sources/ArcanePorting/Setup/KeyCheck.swift](../../Sources/ArcanePorting/Setup/KeyCheck.swift) | Legge intestazioni NCA e ticket e verifica se le chiavi possono aprire le sorgenti selezionate. |
 | [Sources/ArcanePorting/Setup/UpstreamChecker.swift](../../Sources/ArcanePorting/Setup/UpstreamChecker.swift) | Consulta i commit upstream tramite HTTP e produce stato e collegamento di confronto. |
@@ -852,7 +852,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/NXLibraryCoreTests/AppRouterTests.swift](../../Tests/NXLibraryCoreTests/AppRouterTests.swift) | Route, overlay, precedenza fullscreen e navigazione sicura del centro attività. |
 | [Tests/ArcanePortingTests/AppSettingsStoreTests.swift](../../Tests/ArcanePortingTests/AppSettingsStoreTests.swift) | Default, errori, recupero, compatibilità, chiavi del modulo tenute intatte e chiavi sconosciute scartate, ultima selezione persistita in background e alla chiusura, senza invalidare gli osservatori. |
 | [Tests/ArcanePortingTests/AppSizeCacheTests.swift](../../Tests/ArcanePortingTests/AppSizeCacheTests.swift) | Riuso delle dimensioni, invalidazione sui bundle modificati e scansione senza falso stato vuoto. |
-| [Tests/NXLibraryCoreTests/AppUpdateTests.swift](../../Tests/NXLibraryCoreTests/AppUpdateTests.swift) | Versioni, asset release, requisiti, digest, identità del bundle, collisioni con copie esistenti e guasti di copia, scambio e Cestino. |
+| [Tests/NXLibraryCoreTests/AppUpdateTests.swift](../../Tests/NXLibraryCoreTests/AppUpdateTests.swift) | Versioni (anche con data nel quarto campo), asset release, requisiti, digest, identità del bundle, collisioni con copie esistenti e guasti di copia, scambio e Cestino. |
 | [Tests/NXLibraryCoreTests/AppUpdatePresentationTests.swift](../../Tests/NXLibraryCoreTests/AppUpdatePresentationTests.swift) | Verifica che i controlli manuali non permettano sostituzioni di copie di sviluppo, in sola lettura o con una versione uguale/più recente. |
 | [Tests/NXLibraryCoreTests/ArcaneWelcomeTests.swift](../../Tests/NXLibraryCoreTests/ArcaneWelcomeTests.swift) | Una volta dopo l'aggiornamento, mai dopo un primo Setup né con un recupero in corso, decodifica di un file vecchio, offerta di Steam, focus e uscite. |
 | [Tests/NXLibraryCoreTests/ShellOverlayInputTests.swift](../../Tests/NXLibraryCoreTests/ShellOverlayInputTests.swift) | Ogni monitor della tastiera che cede all'offerta di aggiornamento cede anche al benvenuto, così Invio non arriva alla schermata sotto. |
@@ -969,7 +969,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/NXLibraryCoreTests/SeleneImporterTests.swift](../../Tests/NXLibraryCoreTests/SeleneImporterTests.swift) | Copia delle risorse Selene e risoluzione dei cue sonori. |
 | [Tests/NXLibraryCoreTests/SelenePaletteTests.swift](../../Tests/NXLibraryCoreTests/SelenePaletteTests.swift) | Lettura delle 25 palette, valori RGB e fallback storici del blu, alternative Crystal/Flow, persistenza ID, ordine e fallback. |
 | [Tests/ArcanePortingTests/SettingsCatalogTests.swift](../../Tests/ArcanePortingTests/SettingsCatalogTests.swift) | Catalogo delle righe, ricerca, valori modificati, identità invariate, ordine di schermata, righe Porting fuori dalla base, sezioni e gruppi in ordine, reset delle righe spostate. |
-| [Tests/ArcanePortingTests/SetupActionsTests.swift](../../Tests/ArcanePortingTests/SetupActionsTests.swift) | Comandi Git del Setup e rispetto delle modifiche locali nel checkout. |
+| [Tests/ArcanePortingTests/SetupActionsTests.swift](../../Tests/ArcanePortingTests/SetupActionsTests.swift) | Pin facoltativo nel plist, comandi Git del Setup upstream e del fork, rispetto delle modifiche locali. |
 | [Tests/ArcanePortingTests/SetupCheckTests.swift](../../Tests/ArcanePortingTests/SetupCheckTests.swift) | Stati delle schede, requisiti, override e condizioni di riapertura del Setup. |
 | [Tests/ArcanePortingTests/SetupGridTests.swift](../../Tests/ArcanePortingTests/SetupGridTests.swift) | Bilanciamento delle righe e spostamento del focus fra le schede. |
 | [Tests/ArcanePortingTests/FirstRunSetupTests.swift](../../Tests/ArcanePortingTests/FirstRunSetupTests.swift) | Pagina iniziale, Porting, scelta Steam acceso/spento dopo interruzione, completamento e pulizia della scelta salvata, focus, scansione e ripresa. |
@@ -1074,13 +1074,13 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 
 | File | Responsabilità |
 |---|---|
-| [scripts/build_app.sh](../../scripts/build_app.sh) | Compila in staging; prepara plist, runtime, risorse e, in release, rclone verificato; firma e pubblica il bundle con sostituzione atomica. |
+| [scripts/build_app.sh](../../scripts/build_app.sh) | Compila in staging; prepara plist (ID Nextendo e pin motore facoltativi), runtime, risorse e, in release, rclone verificato; firma e pubblica il bundle con sostituzione atomica. |
 | [scripts/inject_google_client.py](../../scripts/inject_google_client.py) | Scrive la coppia OAuth Google nel plist della build privata solo se completa, senza argomenti con credenziali. |
 | [scripts/install_built_app.swift](../../scripts/install_built_app.swift) | Piccolo ingresso CLI che riusa BuildOutputInstaller per installare Arcane dopo il packaging. |
 | [scripts/check_publication.py](../../scripts/check_publication.py) | Rifiuta contenuti personali o di gioco versionati e formati di segreto riconoscibili; verifica il runtime rispetto al lock prima del packaging. |
 | [scripts/build_dmg.sh](../../scripts/build_dmg.sh) | Confeziona un bundle già costruito in un’immagine DMG di sviluppo. |
 | [scripts/bundle_runtime.sh](../../scripts/bundle_runtime.sh) | Prepara Python e strumenti dalle versioni bloccate, verifica gli hash e firma il runtime incluso. |
-| [scripts/release.sh](../../scripts/release.sh) | Controlla prerequisiti, suite Swift e regressioni app; produce ZIP e DMG. In pubblicazione rifiuta variabili e chiavi plist del client Google privato. |
+| [scripts/release.sh](../../scripts/release.sh) | Controlla prerequisiti, pin remoto facoltativo, suite Swift e regressioni headless; produce ZIP e DMG. In pubblicazione aggiunge il pin alle note e rifiuta variabili e chiavi plist del client Google privato. |
 | [scripts/validate_update.py](../../scripts/validate_update.py) | Verifica struttura, percorsi e limiti degli archivi prima dell'estrazione, sia nel bundle sia durante il packaging delle release. |
 | [scripts/relink_macho.py](../../scripts/relink_macho.py) | Riscrive riferimenti Mach-O dei binari e delle librerie affinché il runtime incluso sia rilocabile. |
 | [scripts/make_icons.swift](../../scripts/make_icons.swift) | Genera le risorse dell’icona dell’app nelle varianti usate dal bundle. |
@@ -1148,6 +1148,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [docs/how-it-works/steam.md](../how-it-works/steam.md) | Riferimento unico dell’integrazione Steam: file letti, stati, osservazione, libreria, Play, ore, achievement, scelte e limiti. |
 | [docs/working-on-it/conventions.md](conventions.md) | Come si costruisce una cosa nuova: dove va il codice, ricette per fonte, schermata Selene, impostazione, file su disco, rete, testi, lavoro in background, test e documentazione. |
 | [docs/working-on-it/development.md](development.md) | Documenta prerequisiti, runtime, build, debug, verifiche, CI e preparazione delle release. |
+| [docs/working-on-it/perso-release-notes.md](perso-release-notes.md) | Modello francese delle note di release del fork: versione, pin, giochi da ricompilare e novità. |
 | [docs/working-on-it/file-map.md](file-map.md) | Catalogo corrente delle responsabilità di tutti i file versionati, suddiviso per area. |
 | [docs/working-on-it/validation.md](validation.md) | Elenco unico di ciò che il maintainer ha validato o deve ancora provare, compresi i pin dell’engine. |
 | [docs/history/engine-upgrades/README.md](../history/engine-upgrades/README.md) | Checklist obbligatoria e indice delle revisioni del pin upstream. |

@@ -249,7 +249,9 @@ final class AppViewModel: ObservableObject {
         ("ko", "Korean")
     ]
 
-    let pinnedEngineCommit = "99224562186a8fdb7e97afb872319a21941ec317"
+    static let defaultPinnedEngineCommit = "99224562186a8fdb7e97afb872319a21941ec317"
+    let engineOverride = SetupActions.engineOverride(in: Bundle.main.infoDictionary)
+    var pinnedEngineCommit: String { engineOverride?.commit ?? Self.defaultPinnedEngineCommit }
     let core = AppData.supportRoot
     let catalogRepository: CatalogRepository
     /// Sizes of built apps are remembered between launches, so a scan walks only new or rebuilt apps.

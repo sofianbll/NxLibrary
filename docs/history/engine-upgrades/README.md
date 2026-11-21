@@ -46,7 +46,7 @@ This directory records the review that must happen before the pin changes, plus 
    - compatibility gate green (or an explicit recorded override);
    - one real certified build, including the pipeline archive stage;
    - smoke launch to a visible screen.
-8. **Re-pin** `AppViewModel.pinnedEngineCommit`, invalidate the cached upstream status, update `README.md` and the design spec, and write the dated note.
+8. **Re-pin** `AppViewModel.defaultPinnedEngineCommit`, update `README.md` and the design spec, and write the dated note. The cached upstream status is reused only for the same pin.
 9. **Record** the old and new commit hashes, the reason for the upgrade, what was not adopted, and the verification evidence.
 
 ## Dated notes

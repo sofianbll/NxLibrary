@@ -2,7 +2,7 @@ import Foundation
 import NXLibraryCore
 
 /// What this Arcane is tested with, in one place. An upgrade edits this
-/// table (and `AppViewModel.pinnedEngineCommit`), never the Setup check's code.
+/// table (and `AppViewModel.defaultPinnedEngineCommit`), never the Setup check's code.
 public struct ToolchainRequirements: Equatable {
     /// The oldest Xcode the engine's Metal toolchain runs with.
     public var minimumXcode: String

@@ -7,6 +7,12 @@ Come si aggiorna:
 - Ogni lavoro nuovo aggiunge la sua riga **in attesa**, con le prove manuali da fare.
 - Le guide ([architecture.md](../how-it-works/architecture.md), [steam.md](../how-it-works/steam.md)) descrivono come funziona; lo stato sta solo qui.
 
+## Release del fork
+
+| Parte | Stato | Prove ancora da fare |
+|---|---|---|
+| Pin del motore nel bundle e aggiornamento perso | in attesa | Dal Mac del giocatore controllare l'offerta, le note e il riavvio; in Setup provare Clone su una cartella nuova e Update o Switch su un checkout pulito con `origin` upstream. Verificare SHA raggiunto, `origin` invariato, checkout sporco intatto e un gioco esistente ancora giocabile. |
+
 ## 0.2.1 (pubblicata il 20 nov 2026)
 
 | Parte | Stato | Prove ancora da fare |

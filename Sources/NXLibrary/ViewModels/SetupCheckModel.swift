@@ -41,7 +41,7 @@ final class SetupCheckModel: ObservableObject {
                    keyStore: viewModel.setup.keyStore, libraryFolder: viewModel.libraryFolder,
                    sourcesFolder: viewModel.porting.gameFilesFolder,
                    libraryNeedsConfirmation: viewModel.requiresGameAppsFolderChoice,
-                   newestEngine: viewModel.setup.newestEngineChoice)
+                   newestEngine: viewModel.setup.newestEngineChoice, engineRemote: viewModel.engineOverride?.remote)
     }
 
     func refresh() {
@@ -288,7 +288,8 @@ final class SetupCheckModel: ObservableObject {
         }
         let action = SetupActions.engineAction(for: facts.engine, pinned: facts.pinnedCommit,
                                                newest: facts.newestEngine?.commit)
-        let commands = SetupActions.gitCommands(for: action, folder: facts.engineFolder, pinned: facts.pinnedCommit)
+        let commands = SetupActions.gitCommands(for: action, folder: facts.engineFolder, pinned: facts.pinnedCommit,
+                                               remote: facts.engineRemote)
         guard !commands.isEmpty else { completion(false); return }
         let chip = action == .clone ? "CLONING…" : "UPDATING…"
         setOverride(.engine, .working(chip, progress: 0, detail: L10n.text("Connecting to GitHub…")))
