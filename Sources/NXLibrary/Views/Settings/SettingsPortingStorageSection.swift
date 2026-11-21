@@ -22,7 +22,7 @@ struct SettingsPortingStorageSection: View {
                                     buttonTitle: "Delete cache") {
                         confirmCacheCleanup(game)
                     }
-                    .disabled(!viewModel.canCleanStorage || !game.canDeleteCache)
+                    .disabled(!canDelete(game))
                 }
             }
 
@@ -58,6 +58,12 @@ struct SettingsPortingStorageSection: View {
         }
     }
 
+    /// A shared cache waits for every job to finish, as Delete all does; an own cache only for its game's jobs.
+    private func canDelete(_ game: GameStorageUsage) -> Bool {
+        game.canDeleteCache && viewModel.canDeleteCache(for: game.id)
+            && (game.sharedCacheWith.isEmpty || viewModel.canCleanStorage)
+    }
+
     private func gameSummary(_ game: GameStorageUsage) -> String {
         var text = L10n.format("App: %@ · Cache: %@ · Logs: %@", [String(describing: sizeText(game.app, missing: L10n.text("Not found"))), String(describing: sizeText(game.cache, missing: "None")), String(describing: sizeText(game.logs, missing: "None"))])
         if !game.sharedCacheWith.isEmpty {
@@ -67,7 +73,7 @@ struct SettingsPortingStorageSection: View {
     }
 
     private func confirmCacheCleanup(_ usage: GameStorageUsage) {
-        guard viewModel.canCleanStorage, usage.canDeleteCache,
+        guard canDelete(usage),
               let game = viewModel.libraryGames.first(where: { $0.id == usage.id }) else { return }
         var message = L10n.format("Delete %@ of build cache for %@? This permanently removes extracted and compiled build files. The next rebuild may take longer. The game app, original game files, saves and logs are kept.", [String(describing: seleneBytes(usage.cache.knownBytes ?? 0)), String(describing: game.name)])
         if !usage.sharedCacheWith.isEmpty {
@@ -91,7 +97,7 @@ struct SettingsPortingStorageSection: View {
     private func publishActions() {
         var actions: [SettingsRowAction] = (viewModel.storageSnapshot?.games ?? []).map { game in
             SettingsRowAction(id: game.rowID, title: game.name, rowID: game.rowID,
-                              isEnabled: viewModel.canCleanStorage && game.canDeleteCache) {
+                              isEnabled: canDelete(game)) {
                 confirmCacheCleanup(game)
             }
         }
