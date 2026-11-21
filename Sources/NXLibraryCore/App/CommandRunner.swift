@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 public struct CommandResult: Equatable, Sendable {
@@ -39,6 +40,7 @@ public final class SystemCommandRunner: CommandRunning, Sendable {
 
     /// Runs off the caller's executor and terminates the subprocess on cancellation.
     package func runCancellable(_ executable: URL, _ arguments: [String], environment: [String: String]?,
+                        input: Data? = nil,
                         onStderr: (@Sendable (String) -> Void)? = nil) async throws -> CommandResult {
         let cancellation = CommandCancellation()
         return try await withTaskCancellationHandler {
@@ -46,7 +48,7 @@ public final class SystemCommandRunner: CommandRunning, Sendable {
                 DispatchQueue.global(qos: .utility).async {
                     continuation.resume(returning: Result {
                         try self.execute(executable, arguments, environment: environment, currentDirectory: nil,
-                                         cancellation: cancellation, onStderr: onStderr)
+                                         cancellation: cancellation, input: input, onStderr: onStderr)
                     })
                 }
             }
@@ -60,6 +62,7 @@ public final class SystemCommandRunner: CommandRunning, Sendable {
     private func execute(_ executable: URL, _ arguments: [String],
                          environment: [String: String]?, currentDirectory: URL?,
                          cancellation: CommandCancellation? = nil,
+                         input: Data? = nil,
                          onStdout: ((String) -> Void)? = nil,
                          onStderr: ((String) -> Void)? = nil) throws -> CommandResult {
         let process = Process()
@@ -71,7 +74,13 @@ public final class SystemCommandRunner: CommandRunning, Sendable {
         let err = Pipe()
         process.standardOutput = out
         process.standardError = err
-        if cancellation != nil { process.standardInput = FileHandle.nullDevice }
+        let stdin = input.map { _ in Pipe() }
+        if let stdin {
+            guard fcntl(stdin.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1) != -1 else {
+                throw POSIXError(.EIO)
+            }
+            process.standardInput = stdin
+        } else if cancellation != nil { process.standardInput = FileHandle.nullDevice }
 
         let group = DispatchGroup()
         let waitForExit = try process.runWithExitWait {
@@ -101,6 +110,11 @@ public final class SystemCommandRunner: CommandRunning, Sendable {
                 lock.unlock()
                 if let onLine { buffer.append(chunk).forEach(onLine) }
             }
+        }
+        if let stdin, let input {
+            // Cancellation or failed launch inside the child may close its read end first.
+            try? stdin.fileHandleForWriting.write(contentsOf: input)
+            try? stdin.fileHandleForWriting.close()
         }
         waitForExit()
         group.wait()

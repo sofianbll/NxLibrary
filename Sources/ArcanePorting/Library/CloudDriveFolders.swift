@@ -370,8 +370,8 @@ public final class CloudDriveCredentialChange: Sendable {
         let staged = try await Task.detached(priority: .utility) { try stage(original) }.value
         _ = try await run(["config", "encryption", "check"], config: staged.config)
         try Task.checkCancellation()
-        _ = try await run(["config", "update", remote, "client_id=\(id)", "client_secret=\(password)",
-                           "config_refresh_token=true", "config_is_local=true", "--no-output"], config: staged.config)
+        try await RcloneConfiguration.authorizeDrive(executable: executable, config: staged.config,
+            environment: environment, name: remote, clientID: id, secret: password, replacing: true)
         return staged
     }
 

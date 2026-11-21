@@ -3,6 +3,32 @@ import XCTest
 @testable import NXLibraryCore
 
 final class RcloneStorageBackendTests: XCTestCase {
+    func testExecutableResolutionPrefersExplicitThenBundledThenSystemAndAbsolutePath() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let bundle = root.appendingPathComponent("Fixture.app")
+        let helper = bundle.appendingPathComponent("Contents/Helpers/rclone")
+        let custom = root.appendingPathComponent("custom")
+        let system = root.appendingPathComponent("system/rclone")
+        let path = root.appendingPathComponent("path/rclone")
+        for file in [helper, custom, system, path] {
+            try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try Data().write(to: file)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: file.path)
+        }
+        func find(_ preferred: URL? = nil) -> URL? {
+            RcloneStorageBackend.findExecutable(preferred: preferred, bundle: bundle,
+                path: ".:\(path.deletingLastPathComponent().path)", systemDirectories: [system.deletingLastPathComponent().path])
+        }
+        XCTAssertEqual(find(custom)?.path, custom.path)
+        XCTAssertEqual(find()?.path, helper.path)
+        XCTAssertNil(find(helper.deletingLastPathComponent()))
+        try FileManager.default.removeItem(at: helper)
+        XCTAssertEqual(find()?.path, system.path)
+        try FileManager.default.removeItem(at: system)
+        XCTAssertEqual(find()?.path, path.path)
+    }
+
     func testProgressParsesStderrStatsWithNullableETAAndFractionalSpeed() throws {
         let line = #"{"level":"notice","msg":"Transferred","stats":{"bytes":270000000,"totalBytes":645000000,"speed":3100000.25,"eta":121,"transferring":[{"name":"fixture"}]}}"#
         let progress = try XCTUnwrap(RcloneStorageBackend.transferProgress(from: line))

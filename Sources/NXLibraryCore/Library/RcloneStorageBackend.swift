@@ -36,9 +36,17 @@ public struct RcloneStorageBackend: StorageBackend {
     /// Ends the RC session when the cloud configuration is replaced or the app quits.
     public func stopRemoteControl() { control.stop() }
 
-    public static func findExecutable() -> URL? {
-        let path = ProcessInfo.processInfo.environment["PATH"] ?? ""
-        return (["/opt/homebrew/bin", "/usr/local/bin"] + path.split(separator: ":").map(String.init))
+    public static func findExecutable(preferred: URL? = nil) -> URL? {
+        findExecutable(preferred: preferred, bundle: Bundle.main.bundleURL,
+                       path: ProcessInfo.processInfo.environment["PATH"] ?? "",
+                       systemDirectories: ["/opt/homebrew/bin", "/usr/local/bin"])
+    }
+
+    static func findExecutable(preferred: URL?, bundle: URL, path: String, systemDirectories: [String]) -> URL? {
+        if let preferred { return isExecutable(preferred) ? preferred : nil }
+        let bundled = bundle.appendingPathComponent("Contents/Helpers/rclone")
+        if isExecutable(bundled) { return bundled }
+        return (systemDirectories + path.split(separator: ":").map(String.init))
             .filter { $0.hasPrefix("/") }
             .map { URL(fileURLWithPath: $0).appendingPathComponent("rclone") }
             .first(where: isExecutable)
@@ -302,7 +310,7 @@ public struct RcloneStorageBackend: StorageBackend {
     }
 
     private func rc(_ operation: String, _ parameters: [String: Any]) async throws -> String? {
-        guard let binary = executable ?? Self.findExecutable(), Self.isExecutable(binary) else { return nil }
+        guard let binary = Self.findExecutable(preferred: executable) else { return nil }
         let environment = RcloneConfiguration.environment()
         return try await control.call(operation, parameters, executable: binary, environment: environment,
             flags: Self.flags + RcloneConfiguration.flags(config: config, environment: environment))
@@ -357,7 +365,7 @@ public struct RcloneStorageBackend: StorageBackend {
     }
 
     private func binary() throws -> URL {
-        guard let binary = executable ?? Self.findExecutable(), Self.isExecutable(binary) else {
+        guard let binary = Self.findExecutable(preferred: executable) else {
             throw StorageBackendError.backendUnavailable
         }
         return binary
