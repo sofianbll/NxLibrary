@@ -1,6 +1,83 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Choose another folder": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Anderen Ordner wählen"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Choose another folder"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elegir otra carpeta"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisir un autre dossier"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli un’altra cartella"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolher outra pasta"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "选择其他文件夹"}}
+      }
+    },
+    "Existing cloud folders could not be checked": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Vorhandene Cloud-Ordner konnten nicht geprüft werden"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Existing cloud folders could not be checked"}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se pudieron comprobar las carpetas en la nube"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Impossible de vérifier les dossiers cloud existants"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Impossibile verificare le cartelle cloud esistenti"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível verificar as pastas na nuvem"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "无法检查现有云端文件夹"}}
+      }
+    },
+    "Leave blank to use the default GameFiles folder. No files are moved.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Leer lassen, um den Standardordner GameFiles zu verwenden. Es werden keine Dateien verschoben."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Leave blank to use the default GameFiles folder. No files are moved."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Déjalo en blanco para usar la carpeta predeterminada GameFiles. No se moverá ningún archivo."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Laisser vide pour utiliser le dossier GameFiles par défaut. Aucun fichier n’est déplacé."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Lascia vuoto per usare la cartella predefinita GameFiles. Nessun file viene spostato."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Deixe em branco para usar a pasta padrão GameFiles. Nenhum arquivo será movido."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "留空以使用默认的 GameFiles 文件夹。不会移动任何文件。"}}
+      }
+    },
+    "Resume %@ (%d game)": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "%@ übernehmen (%d Spiel)"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Resume %@ (%d game)"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Retomar %@ (%d juego)"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Reprendre %@ (%d jeu)"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Riprendi %@ (%d gioco)"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Retomar %@ (%d jogo)"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "继续使用 %@（%d 款游戏）"}}
+      }
+    },
+    "Resume %@ (%d games)": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "%@ übernehmen (%d Spiele)"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Resume %@ (%d games)"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Retomar %@ (%d juegos)"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Reprendre %@ (%d jeux)"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Riprendi %@ (%d giochi)"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Retomar %@ (%d jogos)"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "继续使用 %@（%d 款游戏）"}}
+      }
+    },
+    "Reuse game files in %@": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Spieldateien in %@ weiterverwenden"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Reuse game files in %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Reutilizar los archivos de juego de %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Réutiliser les fichiers de jeu dans %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Riusa i file di gioco in %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Reutilizar os arquivos de jogo em %@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "重复使用 %@ 中的游戏文件"}}
+      }
+    },
+    "Use another Google client": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Anderen Google-Client verwenden"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Use another Google client"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Usar otro cliente de Google"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Utiliser un autre client Google"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Usa un altro client Google"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Usar outro cliente do Google"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "使用其他 Google 客户端"}}
+      }
+    },
     "Sort games": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Sort games"}},

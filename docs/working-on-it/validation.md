@@ -54,6 +54,7 @@ Come si aggiorna:
 | Home → centro di controllo e Sleep | in attesa | Provare Home nella libreria e tornando dal gioco, Sleep e blocco durante un trasferimento. |
 | Aspetto della libreria cloud | in attesa | Verificare icona, link e badge con mouse, tastiera, controller e VoiceOver, e che Reset group non cambi la connessione. |
 | Bundle cloud su un altro Mac | in attesa | Con una build privata e un account di prova, verificare l'accesso senza rclone di sistema e la precedenza di un eseguibile scelto in Advanced. Non condividere ZIP o DMG con il client Google incorporato. |
+| Prima connessione e ripresa della libreria | in attesa | Su Drive di prova: Sign in, altro client in Advanced, proposta con conteggio in `Games` o in un figlio diretto, file in `Switch/Jeux`, scelta manuale, errore e annullamento, con tastiera e controller. Prima di Activate non si modificano preferenze o cartelle remote. |
 | Settings → spostare la libreria cloud | in attesa | Con due cartelle di prova, verificare conteggio, conferma, conflitto, annullamento e ripresa nella stessa destinazione. |
 | Importazione dalla libreria cloud | in attesa | Verificare import senza download, esclusioni dopo riavvio, cambio destinazione, ripristino e stato con remote irraggiungibile. |
 | Cloud library → cartelle separate e percorsi | in attesa | Verificare percorsi lunghi, modifiche senza spostamento, radice predefinita `GameFiles` e conservazione della radice esplicita. |

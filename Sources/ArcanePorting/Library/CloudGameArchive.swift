@@ -322,7 +322,10 @@ public actor CloudGameArchive {
     }
 
     public func latestManifests() async throws -> [CloudGameManifest] {
-        let folders = try await backend.rootDirectories()
+        try await latestManifests(in: backend.rootDirectories())
+    }
+
+    func latestManifests(in folders: [String]) async throws -> [CloudGameManifest] {
         // Uploads use uppercase IDs as case-sensitive storage keys.
         let titles = Set(folders.filter { SaveLocation.validID($0) && $0 == $0.uppercased() })
         guard titles.count <= 2_000 else { throw StorageBackendError.invalidResponse }

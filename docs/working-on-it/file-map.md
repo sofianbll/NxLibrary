@@ -65,7 +65,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 | [LICENSE](../../LICENSE) | Contiene la licenza MIT di Arcane. |
 | [NOTICE](../../NOTICE) | Conserva attribuzioni del motore al pin corrente, di rclone, dei componenti, dei loghi e delle altre risorse riutilizzate. |
 | [Package.swift](../../Package.swift) | Dichiara i target SwiftPM (`NXLibraryCore`, il modulo `ArcanePorting` che dipende dalla base, l'app che li importa entrambi, i test), le loro dipendenze e il deployment macOS minimo. |
-| [README.md](../../README.md) | Presenta Arcane come libreria e launcher Mac, con guide, requisiti, sostegno volontario, crediti e note legali. |
+| [README.md](../../README.md) | Presenta Arcane come libreria e launcher Mac, con guide d'uso (anche per la prima connessione cloud), requisiti e crediti. |
 | [runtime.lock](../../runtime.lock) | Fissa versioni, download e hash del runtime Python e degli strumenti inclusi nel bundle. |
 | [VERSION](../../VERSION) | Versione in sviluppo usata dal packaging e verificata dalla procedura di release. |
 
@@ -229,7 +229,7 @@ Cartella `Sources/NXLibraryCore/Library/`.
 | [Sources/NXLibraryCore/App/FileHandle+Chunks.swift](../../Sources/NXLibraryCore/App/FileHandle+Chunks.swift) | Legge a blocchi, rilasciandoli uno alla volta durante il calcolo delle impronte. |
 | [Sources/NXLibraryCore/Library/StorageBackend.swift](../../Sources/NXLibraryCore/Library/StorageBackend.swift) | Contratto oggetti remoti: chiavi, impronte, trasferimenti, avanzamento e lease condiviso. |
 | [Sources/NXLibraryCore/Library/RcloneStorageBackend.swift](../../Sources/NXLibraryCore/Library/RcloneStorageBackend.swift) | Risolve binario esplicito, incorporato o di sistema; staging, verifica SHA-256, movimento nativo e pulizia della copia non verificabile. |
-| [Sources/NXLibraryCore/Library/CloudSetupAssistant.swift](../../Sources/NXLibraryCore/Library/CloudSetupAssistant.swift) | Bozza dell'assistente: passi, selezione, verifica e formato dell'ID client. |
+| [Sources/NXLibraryCore/Library/CloudSetupAssistant.swift](../../Sources/NXLibraryCore/Library/CloudSetupAssistant.swift) | Bozza dell'assistente e validazione del client Google facoltativo nel plist. |
 | [Sources/NXLibraryCore/Selene/CloudSetupAssistantFocus.swift](../../Sources/NXLibraryCore/Selene/CloudSetupAssistantFocus.swift) | Focus dell'assistente per tastiera e controller. |
 | [Sources/NXLibraryCore/Library/RcloneConfiguration.swift](../../Sources/NXLibraryCore/Library/RcloneConfiguration.swift) | Remoti, prova di lettura, cifratura con portachiavi e OAuth Drive annullabile senza segreto negli argomenti. |
 | [Sources/NXLibraryCore/Library/RcloneRemoteControl.swift](../../Sources/NXLibraryCore/Library/RcloneRemoteControl.swift) | Gestisce daemon locali su socket Unix per letture e per l'OAuth, che passa l'input sensibile via stdin. |
@@ -414,12 +414,12 @@ Cartella `Sources/ArcanePorting/Library/`.
 | [Sources/ArcanePorting/Library/RunningGames.swift](../../Sources/ArcanePorting/Library/RunningGames.swift) | Quali giochi portati sono in esecuzione: confronta il bundle ID effettivo con quelli delle app aperte. |
 | [Sources/ArcanePorting/Library/StorageManager.swift](../../Sources/ArcanePorting/Library/StorageManager.swift) | Misura app, cache e log per gioco e totali senza duplicare percorsi condivisi; verifica cartelle e sorgenti prima della pulizia selettiva. I backup appartengono al flusso Saves. |
 | [Sources/ArcanePorting/Library/CloudArchiveInventory.swift](../../Sources/ArcanePorting/Library/CloudArchiveInventory.swift) | Controlla gerarchia, link, esclusioni, hash e metadati prima e dopo l’estrazione. |
-| [Sources/ArcanePorting/Library/CloudGameArchive.swift](../../Sources/ArcanePorting/Library/CloudGameArchive.swift) | Archivia app e cache con manifest, anche separatamente; verifica firma, contenuti e cache prima di Rebuild e conserva le cartelle ignorate. |
+| [Sources/ArcanePorting/Library/CloudGameArchive.swift](../../Sources/ArcanePorting/Library/CloudGameArchive.swift) | Archivia app e cache; valida i manifest recenti per importazione e scoperta; verifica firma, contenuti e cache prima di Rebuild. |
 | [Sources/ArcanePorting/Library/CloudArchiveFingerprintCache.swift](../../Sources/ArcanePorting/Library/CloudArchiveFingerprintCache.swift) | Cache persistente e limitata delle impronte di app e cache, indicizzata da digest. |
 | [Sources/ArcanePorting/Library/CloudArchiveStream.swift](../../Sources/ArcanePorting/Library/CloudArchiveStream.swift) | Inoltra Apple Archive a rclone e al decodificatore senza archivio locale. |
-| [Sources/ArcanePorting/Library/CloudGameSources.swift](../../Sources/ArcanePorting/Library/CloudGameSources.swift) | Confronta, invia e ripristina le sorgenti selezionate senza sostituire copie esistenti. |
+| [Sources/ArcanePorting/Library/CloudGameSources.swift](../../Sources/ArcanePorting/Library/CloudGameSources.swift) | Formati dei pacchetti e identità delle cartelle; confronta, invia e ripristina sorgenti senza sostituire copie esistenti. |
 | [Sources/ArcanePorting/Library/CloudTransferQueue.swift](../../Sources/ArcanePorting/Library/CloudTransferQueue.swift) | Salva le richieste cloud nel profilo e rimette il lavoro interrotto in testa. |
-| [Sources/ArcanePorting/Library/CloudDriveFolders.swift](../../Sources/ArcanePorting/Library/CloudDriveFolders.swift) | Elenca cartelle, conta gli archivi Porting e coordina il trasferimento fra radici. |
+| [Sources/ArcanePorting/Library/CloudDriveFolders.swift](../../Sources/ArcanePorting/Library/CloudDriveFolders.swift) | Elenca cartelle, cerca librerie e file del gioco in posizioni limitate e coordina spostamenti confermati fra radici. |
 | [Sources/ArcanePorting/GameSettings/RemotePlayAdapters.swift](../../Sources/ArcanePorting/GameSettings/RemotePlayAdapters.swift) | Rileva interfacce ZeroTier e altre VPN per il gioco locale a distanza. |
 | [Sources/ArcanePorting/Library/BuildQueue.swift](../../Sources/ArcanePorting/Library/BuildQueue.swift) | Coda FIFO di sessione con deduplica e nuova verifica prima dell'avvio. |
 | [Sources/ArcanePorting/Library/GameStorageUsage.swift](../../Sources/ArcanePorting/Library/GameStorageUsage.swift) | Dimensioni per gioco e totali: distingue assenza e indisponibilità, segnala cache condivise e conserva identità stabili per il focus. |
@@ -662,7 +662,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Sources/NXLibrary/Views/Components/IGDBCredentialsDialog.swift](../../Sources/NXLibrary/Views/Components/IGDBCredentialsDialog.swift) | Guida sintetica in cinque passi, Client ID, Client Secret nascosto, verifica/salvataggio e annullamento; input Settings sospeso. |
 | [Sources/NXLibrary/Views/Settings/SettingsAPISection.swift](../../Sources/NXLibrary/Views/Settings/SettingsAPISection.swift) | Servizi facoltativi: IGDB, SteamGridDB e scheda Nextendo con profilo, stato e amici. |
 | [Sources/NXLibrary/Views/Settings/SettingsCloudLibrarySection.swift](../../Sources/NXLibrary/Views/Settings/SettingsCloudLibrarySection.swift) | Porting → Cloud library: connessione, aspetto e strumenti avanzati. |
-| [Sources/NXLibrary/Views/Settings/CloudSetupAssistant.swift](../../Sources/NXLibrary/Views/Settings/CloudSetupAssistant.swift) | Assistente account, cartella e attivazione dopo la verifica. |
+| [Sources/NXLibrary/Views/Settings/CloudSetupAssistant.swift](../../Sources/NXLibrary/Views/Settings/CloudSetupAssistant.swift) | Accesso Google, proposta o scelta manuale delle cartelle e attivazione dopo la verifica. |
 | [Sources/NXLibrary/Views/Settings/CloudSetupAssistant+Input.swift](../../Sources/NXLibrary/Views/Settings/CloudSetupAssistant+Input.swift) | Traduce tastiera e controller in azioni del focus dell'assistente. |
 | [Sources/NXLibrary/Views/Settings/NextendoClientDialog.swift](../../Sources/NXLibrary/Views/Settings/NextendoClientDialog.swift) | Dialogo Selene per scegliere e validare l’ID client pubblico o riprendere il default della build. |
 
@@ -943,7 +943,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/ArcanePortingTests/CloudGameSourcesTests.swift](../../Tests/ArcanePortingTests/CloudGameSourcesTests.swift) | Fixture rclone locale: conflitti, lease, annullamento e spostamento in un Cestino simulato. |
 | [Tests/ArcanePortingTests/CloudTransferQueueTests.swift](../../Tests/ArcanePortingTests/CloudTransferQueueTests.swift) | Persistenza, ordine e richieste di liberazione ancora valide. |
 | [Tests/ArcanePortingTests/BuildQueueTests.swift](../../Tests/ArcanePortingTests/BuildQueueTests.swift) | Ordine, deduplica, attesa e annullamento della coda di build. |
-| [Tests/ArcanePortingTests/CloudDriveFoldersTests.swift](../../Tests/ArcanePortingTests/CloudDriveFoldersTests.swift) | Cartelle di un remote locale, conteggio e configurazione candidata. |
+| [Tests/ArcanePortingTests/CloudDriveFoldersTests.swift](../../Tests/ArcanePortingTests/CloudDriveFoldersTests.swift) | Ricerca limitata e annullabile con backend finto; cartelle, spostamenti e configurazione candidata con fixture locali. |
 | [Tests/ArcanePortingTests/AppIconPreferenceTests.swift](../../Tests/ArcanePortingTests/AppIconPreferenceTests.swift) | Ambito dell’icona: scelta esplicita, vecchie librerie, scansioni, persistenza e rebuild. |
 | [Tests/ArcanePortingTests/AppIconProgressTests.swift](../../Tests/ArcanePortingTests/AppIconProgressTests.swift) | Verifica che l'esito di un'icona mancante non sovrascriva il log o segnali una build fallita. |
 | [Tests/ArcanePortingTests/IconLaunchWaitTests.swift](../../Tests/ArcanePortingTests/IconLaunchWaitTests.swift) | Attesa Play: successo, errore, annullamento, gioco diverso e nuova firma in coda. |

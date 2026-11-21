@@ -307,9 +307,9 @@ public final class CloudGameSources: @unchecked Sendable {
         }
     }
 
-    private static let fileExtensions: Set<String> = ["nsp", "xci", "nsz", "xcz", "nup"]
+    static let fileExtensions: Set<String> = ["nsp", "xci", "nsz", "xcz", "nup"]
 
-    private static func title(in folder: String) -> String {
+    static func title(in folder: String) -> String {
         let suffix = folder.suffix(18)
         let id = String(suffix.dropFirst().dropLast())
         return suffix.first == "[" && suffix.last == "]" && SaveLocation.validID(id) ? id.uppercased() : folder

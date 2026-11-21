@@ -1,9 +1,80 @@
 import Foundation
+import CryptoKit
 import XCTest
 @testable import NXLibraryCore
 @testable import ArcanePorting
 
 final class CloudDriveFoldersTests: XCTestCase {
+    func testDiscoverLibraryReadsOnlyGamesAndImmediateChildrenUsingValidatedManifests() async throws {
+        let backend = try DiscoveryBackend()
+        var checked = [String]()
+        let match = try await CloudDriveFolders.discoverLibrary(directories: { path in
+            checked.append(path)
+            switch path {
+            case "Games": return ["Empty", "Library", DiscoveryBackend.title]
+            case "Games/Empty": return ["Nested"]
+            case "Games/Library": return [DiscoveryBackend.title, DiscoveryBackend.title]
+            default: throw StorageBackendError.invalidKey
+            }
+        }, count: { path, folders in
+            if path == "Games" { return 0 }
+            return try await CloudDriveFolders.libraryCount(backend, folders: folders)
+        })
+        XCTAssertEqual(match, .init(path: "Games/Library", games: 1))
+        XCTAssertEqual(checked, ["Games", "Games/Empty", "Games/Library"])
+        let reads = await backend.reads
+        XCTAssertEqual(reads, ["\(DiscoveryBackend.title)/manifests", backend.manifest.key.value])
+    }
+
+    func testDiscoveryDistinguishesErrorsAndCancellationFromAbsence() async throws {
+        let absent = try await CloudDriveFolders.discoverLibrary(directories: { _ in throw StorageBackendError.notFound },
+            count: { _, _ in XCTFail("No manifest reads for a missing Games folder"); return 0 })
+        XCTAssertNil(absent)
+        do {
+            _ = try await CloudDriveFolders.discoverLibrary(directories: { _ in ["Library"] },
+                count: { _, _ in throw StorageBackendError.backendUnavailable })
+            XCTFail("Access failure is not an empty library")
+        } catch StorageBackendError.backendUnavailable {}
+        let unreadable = try DiscoveryBackend(corrupt: true)
+        do {
+            _ = try await CloudDriveFolders.discoverLibrary(directories: { _ in [DiscoveryBackend.title] },
+                count: { _, folders in try await CloudDriveFolders.libraryCount(unreadable, folders: folders) })
+            XCTFail("An invalid manifest is not an empty library")
+        } catch CloudArchiveError.invalidManifest {}
+        do {
+            _ = try await CloudDriveFolders.discoverLibrary(directories: { _ in (0...64).map { "Folder \($0)" } },
+                count: { _, _ in 0 })
+            XCTFail("Discovery must cap the number of library candidates")
+        } catch StorageBackendError.invalidResponse {}
+        let cancelled = Task {
+            try await CloudDriveFolders.discoverLibrary(directories: { _ in
+                withUnsafeCurrentTask { $0?.cancel() }
+                return []
+            }, count: { _, _ in XCTFail("No manifest reads after cancellation"); return 0 })
+        }
+        do {
+            _ = try await cancelled.value
+            XCTFail("Expected cancellation")
+        } catch is CancellationError {}
+    }
+
+    func testDiscoverSourcesProbesKnownPathsAndIgnoresDeepOrUnrecognizedFiles() async throws {
+        var checked = [String]()
+        let match = try await CloudDriveFolders.discoverSources(library: "Games/Library") { path in
+            checked.append(path)
+            switch path {
+            case "Games/Library/GameFiles": return ["title/deeper/game.nsp", "readme.txt"]
+            case "Games/Library/Switch/Jeux": throw StorageBackendError.notFound
+            case "Games/Switch/Jeux": return ["Title/Game.XCI"]
+            default: throw StorageBackendError.invalidKey
+            }
+        }
+        XCTAssertEqual(match, .init(path: "Games/Switch/Jeux", games: 1))
+        XCTAssertEqual(checked, ["Games/Library/GameFiles", "Games/Library/Switch/Jeux", "Games/Switch/Jeux"])
+        let loose = try await CloudDriveFolders.discoverSources(library: "Games") { _ in ["game.nsp", "update.nup"] }
+        XCTAssertEqual(loose, .init(path: "Games/GameFiles", games: nil))
+    }
+
     func testArchiveManifestWaitsForObjectsOnResumeAndMoveLeavesGameFilesInPlace() async throws {
         try await withMoveFixture { drive, root in
             let title = "0100123456789ABC"
@@ -173,4 +244,41 @@ final class CloudDriveFoldersTests: XCTestCase {
             return .init(status: 0, stdout: commands.count == 1 ? "[]" : #"[{"Name":"Arcane","IsDir":true}]"#, stderr: "")
         }
     }
+}
+
+private actor DiscoveryBackend: StorageBackend {
+    static let title = "0100123456789ABC"
+    let manifest: StorageObject
+    private let data: Data
+    private(set) var reads: [String] = []
+
+    init(corrupt: Bool = false) throws {
+        let hash = String(repeating: "0", count: 64)
+        let artifacts = CloudArtifactKind.allCases.map {
+            CloudGameManifest.Artifact(kind: $0, size: 7, sha256: hash, md5: String(hash.prefix(32)),
+                unpackedSize: 1, entryCount: 1, inventorySHA256: hash, engineCommit: nil, shaderChain: nil, options: [:])
+        }
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let bytes = try encoder.encode(CloudGameManifest(version: 1, titleID: Self.title, createdAt: Date(), artifacts: artifacts))
+        data = corrupt ? Data(repeating: 0, count: bytes.count) : bytes
+        let digest = SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
+        manifest = .init(key: .init("\(Self.title)/manifests/0000000000000001-\(digest).json"), size: Int64(bytes.count), hashes: [:])
+    }
+
+    func list(in prefix: StorageObjectKey) async throws -> [StorageObject] {
+        reads.append(prefix.value)
+        return [manifest]
+    }
+    func get(_ key: StorageObjectKey, to destination: URL, progress: (@Sendable (StorageProgress) -> Void)?) async throws {
+        reads.append(key.value)
+        try data.write(to: destination)
+    }
+    func list() async throws -> [StorageObject] { throw StorageBackendError.invalidKey }
+    func rootDirectories() async throws -> [String] { throw StorageBackendError.invalidKey }
+    func put(_ source: URL, as object: StorageObject, progress: (@Sendable (StorageProgress) -> Void)?) async throws {
+        XCTFail("Discovery must not write to the backend")
+    }
+    func delete(_ key: StorageObjectKey) async throws { XCTFail("Discovery must not delete from the backend") }
+    func verify(_ object: StorageObject) async throws { throw StorageBackendError.invalidKey }
 }
