@@ -59,7 +59,7 @@ extension AppShellView {
         }
         updater.acquireInstallLease = { [weak viewModel, weak runningGames] in
             guard let viewModel, !viewModel.isBuilding, !viewModel.isCheckingCloudBuild,
-                  !viewModel.cloudLibrary.isWorking,
+                  !viewModel.cloudLibrary.isWorking, !viewModel.cloudLibrary.isChangingConnection,
                   !viewModel.isCleaningStorage, viewModel.launchingGameId == nil,
                   runningGames?.runningGameIDs.isEmpty == true,
                   let token = viewModel.saveGate.beginAppUpdate() else { return nil }

@@ -14,6 +14,7 @@ struct SettingsSectionContent: View {
     let onOpenGroup: (SettingsSection) -> Void
     let onSearchSubmit: () -> Void
     let searchFieldRequest: Int
+    let onEditCloud: (CloudLibraryEditor) -> Void
     let onActions: ([SettingsRowAction]) -> Void
 
     var body: some View {
@@ -23,6 +24,7 @@ struct SettingsSectionContent: View {
                                   onSubmit: onSearchSubmit, fieldRequest: searchFieldRequest, onActions: onActions)
         case .changed:
             SettingsChangedSection(settings: settings, viewModel: viewModel, setup: viewModel.setup,
+                                   cloudLibrary: viewModel.cloudLibrary,
                                    supportsNextendo: supportsNextendo,
                                    onOpenGroup: onOpenGroup, onActions: onActions)
         case .startUp:
@@ -43,6 +45,9 @@ struct SettingsSectionContent: View {
             SettingsGamesSection(viewModel: viewModel, settings: settings, onActions: onActions)
         case .cloudSaves:
             SettingsCloudSavesSection(viewModel: viewModel, settings: settings, onActions: onActions)
+        case .cloudLibrary:
+            SettingsCloudLibrarySection(viewModel: viewModel, model: viewModel.cloudLibrary,
+                                        onEdit: onEditCloud, onActions: onActions)
         case .controllers:
             SettingsControllersSection(settings: settings, onActions: onActions,
                                        onViewControls: onViewControls)

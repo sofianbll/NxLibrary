@@ -150,7 +150,7 @@ extension PortingModel {
     @discardableResult
     func addGame(detected: DetectedGame, selected: [DetectedSource],
                         folder: URL?, bundleId: String? = nil) throws -> PortedGame {
-        guard !app.isCheckingCloudBuild, !app.cloudLibrary.isWorking else { throw CloudArchiveError.busy }
+        guard !app.isCheckingCloudBuild, !app.cloudLibrary.isWorking, !app.cloudLibrary.isChangingConnection else { throw CloudArchiveError.busy }
         let selectedGame = DetectedGame(
             baseTitleId: detected.baseTitleId,
             name: detected.name,
@@ -234,7 +234,7 @@ extension PortingModel {
 
     private func checkBuildIdle(for game: PortedGame) throws {
         guard !app.isBuilding else { throw NXLibraryError.buildAlreadyRunning }
-        guard !app.cloudLibrary.isWorking else { throw CloudArchiveError.busy }
+        guard !app.cloudLibrary.isWorking, !app.cloudLibrary.isChangingConnection else { throw CloudArchiveError.busy }
         guard !app.isCleaningStorage else { throw NXLibraryError.environmentBlocked(L10n.text("wait for storage cleanup to finish")) }
         guard !app.isUpdatingApp else { throw NXLibraryError.environmentBlocked(L10n.text("wait for the app update to finish")) }
         guard !app.appIcon.appIconsInFlight.contains(game.id) else {

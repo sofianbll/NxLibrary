@@ -323,7 +323,7 @@ final class SettingsSectionTests: XCTestCase {
         XCTAssertEqual(SettingsSection.allCases.map(\.title), [
             "Search", "Changed", "Start-up", "Navigation", "Spotlight", "Sound & music", "Look", "Controllers",
             "Online services", "Sources", "Games", "Storage", "Setup and engine", "Keys", "Library", "New games",
-            "Cloud saves", "Storage", "About", "Console"
+            "Cloud saves", "Cloud library", "Storage", "About", "Console"
         ])
         XCTAssertTrue(SettingsSection.allCases.allSatisfy { !$0.icon.rawValue.isEmpty })
     }

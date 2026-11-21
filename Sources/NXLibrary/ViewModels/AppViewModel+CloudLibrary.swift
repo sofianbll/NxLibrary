@@ -20,21 +20,44 @@ struct CloudLibraryState {
 }
 
 final class CloudLibraryModel: ObservableObject {
-    static let preference = "NXLibrary_CloudStorage"
-    let archive: CloudGameArchive?
+    @Published private(set) var preference: CloudLibraryPreference
+    @Published private(set) var chosenExecutable: URL?
+    @Published private(set) var archive: CloudGameArchive?
+    @Published var isChangingConnection = false
     @Published var states: [UUID: CloudLibraryState] = [:]
     var jobs: [UUID: Task<Void, Never>] = [:]
     var jobTokens: [UUID: UUID] = [:]
     var isWorking: Bool { !jobs.isEmpty }
 
     init() {
-        let setting = AppData.preferences.string(forKey: Self.preference)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let parts = setting.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
-        archive = parts.first.flatMap {
-            guard !$0.isEmpty else { return nil }
-            return CloudGameArchive(backend: RcloneStorageBackend(remote: String($0),
-                                                                 root: parts.count == 2 ? String(parts[1]) : "Games"))
-        }
+        let defaults = AppData.preferences
+        preference = CloudLibraryPreference(storage: defaults.string(forKey: CloudLibraryPreference.storageKey),
+            enabled: defaults.object(forKey: CloudLibraryPreference.enabledKey) as? Bool)
+        chosenExecutable = defaults.string(forKey: CloudLibraryPreference.executableKey).map { URL(fileURLWithPath: $0) }
+        rebuildArchive()
+    }
+
+    @MainActor func configure(remote: String?, root: String, enabled: Bool) {
+        let next = CloudLibraryPreference(storage: "\(remote ?? ""):\(root)", enabled: enabled)
+        guard next != preference else { return }
+        AppData.preferences.set(next.storage, forKey: CloudLibraryPreference.storageKey)
+        AppData.preferences.set(next.enabled, forKey: CloudLibraryPreference.enabledKey)
+        preference = next
+        rebuildArchive()
+    }
+
+    @MainActor func chooseExecutable(_ executable: URL?) {
+        guard chosenExecutable != executable else { return }
+        AppData.preferences.set(executable?.path, forKey: CloudLibraryPreference.executableKey)
+        chosenExecutable = executable
+        rebuildArchive()
+    }
+
+    private func rebuildArchive() {
+        states = [:]
+        archive = preference.enabled ? preference.remote.map {
+            CloudGameArchive(backend: RcloneStorageBackend(remote: $0, root: preference.root, executable: chosenExecutable))
+        } : nil
     }
 
     @MainActor func update(_ id: UUID, _ change: (inout CloudLibraryState) -> Void) {
@@ -48,12 +71,17 @@ extension AppViewModel {
     var hasCloudLibrary: Bool { cloudLibrary.archive != nil }
 
     func showsCloudLibrary(_ game: PortedGame) -> Bool {
-        hasCloudLibrary && game.platform == .macApp && game.titleId.map(SaveLocation.validID) == true
+        game.platform == .macApp
+    }
+
+    var canConfigureCloudLibrary: Bool {
+        !isBuilding && !isCheckingCloudBuild && !isUpdatingApp && !cloudLibrary.isWorking && !cloudLibrary.isChangingConnection
     }
 
     @MainActor func canChangeCloudLibrary(_ game: PortedGame) -> Bool {
         guard let title = game.titleId else { return false }
         return !isBuilding && !isCheckingCloudBuild && !isCleaningStorage && !isUpdatingApp && !isScanningLibrary &&
+            !cloudLibrary.isChangingConnection &&
             !appIcon.appIconsInFlight.contains(game.id) && game.pendingInstall == nil &&
             !saveGate.isBusy(titleID: title) && RunningGameMonitor.runningApplication(for: game) == nil
     }
@@ -141,21 +169,24 @@ extension AppViewModel {
 
     @MainActor func refreshCloudLibrary(_ game: PortedGame) async {
         guard let archive = cloudLibrary.archive, let game = libraryGames.first(where: { $0.id == game.id }),
+              game.titleId.map(SaveLocation.validID) == true,
               cloudLibrary.states[game.id]?.refreshing != true, cloudLibrary.jobs[game.id] == nil else { return }
         let id = game.id
         cloudLibrary.update(id) { $0.refreshing = true; $0.remote = nil; $0.message = nil }
-        defer { cloudLibrary.update(id) { $0.refreshing = false } }
+        defer { if cloudLibrary.archive === archive { cloudLibrary.update(id) { $0.refreshing = false } } }
         let target = await cloudLocations(for: game)
         let local = await archive.localStatus(target)
+        guard cloudLibrary.archive === archive, !Task.isCancelled else { return }
         cloudLibrary.update(id) { $0.local = local }
         do {
             let manifest = try await archive.latest(titleID: target.titleID)
             try Task.checkCancellation()
+            guard cloudLibrary.archive === archive else { return }
             cloudLibrary.update(id) { $0.remote = Set(manifest?.artifacts.map(\.kind) ?? []) }
         } catch is CancellationError {
             // Closing the panel cancels this read, but not a user-started transfer.
         } catch {
-            cloudLibrary.update(id) { $0.message = cloudMessage(for: error) }
+            if cloudLibrary.archive === archive { cloudLibrary.update(id) { $0.message = cloudMessage(for: error) } }
         }
     }
 

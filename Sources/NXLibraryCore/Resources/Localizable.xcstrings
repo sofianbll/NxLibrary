@@ -1,6 +1,366 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Enable cloud library": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Enable cloud library"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Attiva libreria cloud"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Activer la bibliothèque cloud"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Bibliothek aktivieren"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Activar la biblioteca en la nube"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Ativar biblioteca na nuvem"}}
+      }
+    },
+    "Cloud storage for ported apps and build caches, separate from saves.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Cloud storage for ported apps and build caches, separate from saves."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Spazio cloud per app convertite e cache di compilazione, separato dai salvataggi."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Stockez les apps portées et leurs caches de compilation sans toucher aux sauvegardes."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Speicher für portierte Apps und Build-Caches, getrennt von Spielständen."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Almacenamiento en la nube para apps adaptadas y cachés de compilación, separado de las partidas guardadas."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Armazenamento na nuvem para apps portados e caches de compilação, separado dos jogos salvos."}}
+      }
+    },
+    "Cloud service": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Cloud service"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Connessione cloud"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Connexion au cloud"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Dienst"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Conexión a la nube"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Conexão com a nuvem"}}
+      }
+    },
+    "Choose an existing rclone remote.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose an existing rclone remote."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli una connessione rclone esistente."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez une connexion déjà configurée dans rclone."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle eine vorhandene rclone-Verbindung aus."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige una conexión ya configurada en rclone."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha uma conexão já configurada no rclone."}}
+      }
+    },
+    "Google Drive": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Google Drive"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Google Drive"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Google Drive"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Google Drive"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Google Drive"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Google Drive"}}
+      }
+    },
+    "Connect Google Drive": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Connect Google Drive"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Collega Google Drive"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Connecter Google Drive"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Google Drive verbinden"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Conectar Google Drive"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Conectar o Google Drive"}}
+      }
+    },
+    "Sign in with your own Google OAuth client in your browser.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Sign in with your own Google OAuth client in your browser."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Accedi nel browser con il tuo client OAuth di Google."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Connectez-vous dans votre navigateur avec votre propre client OAuth Google."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Melde dich im Browser mit deinem eigenen Google-OAuth-Client an."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Inicia sesión en el navegador con tu propio cliente OAuth de Google."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Entre no navegador usando seu próprio cliente OAuth do Google."}}
+      }
+    },
+    "Cloud folder": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Cloud folder"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cartella nel cloud"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Dossier dans le cloud"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Ordner"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Carpeta en la nube"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Pasta na nuvem"}}
+      }
+    },
+    "Folder for game apps and build caches.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Folder for game apps and build caches."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cartella per le app dei giochi e le cache di compilazione."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Dossier où sont stockés les jeux portés et leurs caches de compilation."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Ordner für Spiel-Apps und Build-Caches."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Carpeta para las apps de juegos y las cachés de compilación."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Pasta para os apps dos jogos e os caches de compilação."}}
+      }
+    },
+    "Test connection": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Test connection"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Verifica connessione"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Tester la connexion"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Verbindung testen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Probar la conexión"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Testar conexão"}}
+      }
+    },
+    "Test": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Test"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Verifica"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Tester"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Testen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Probar"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Testar"}}
+      }
+    },
+    "Connection OK": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Connection OK"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Connessione riuscita"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Connexion réussie"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Verbindung erfolgreich"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Conexión correcta"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Conexão bem-sucedida"}}
+      }
+    },
+    "Lists the cloud folder without changing its files.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Lists the cloud folder without changing its files."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Legge il contenuto della cartella cloud senza modificare i file."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vérifie l’accès au dossier sans modifier les fichiers."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Listet den Cloud-Ordner auf, ohne Dateien zu ändern."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Muestra el contenido de la carpeta sin modificar los archivos."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Lista o conteúdo da pasta sem alterar os arquivos."}}
+      }
+    },
+    "rclone": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "rclone"}},
+        "it": {"stringUnit": {"state": "translated", "value": "rclone"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "rclone"}},
+        "de": {"stringUnit": {"state": "translated", "value": "rclone"}},
+        "es": {"stringUnit": {"state": "translated", "value": "rclone"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "rclone"}}
+      }
+    },
+    "Choose the rclone executable or use the detected one.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose the rclone executable or use the detected one."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli il file eseguibile di rclone o usa quello rilevato."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez l’exécutable rclone ou utilisez celui détecté automatiquement."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle das rclone-Programm aus oder verwende das erkannte."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige el ejecutable de rclone o usa el que se ha detectado."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha o executável do rclone ou use o que foi detectado."}}
+      }
+    },
+    "Install rclone from rclone.org or with Homebrew: brew install rclone.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Install rclone from rclone.org or with Homebrew: brew install rclone."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Installa rclone da rclone.org o con Homebrew: brew install rclone."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Installez rclone depuis rclone.org ou avec Homebrew : brew install rclone."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Installiere rclone von rclone.org oder mit Homebrew: brew install rclone."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Instala rclone desde rclone.org o con Homebrew: brew install rclone."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Instale o rclone pelo site rclone.org ou via Homebrew: brew install rclone."}}
+      }
+    },
+    "Disconnect": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Disconnect"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scollega"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Déconnecter"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Trennen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Desconectar"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Desconectar"}}
+      }
+    },
+    "Disconnect cloud service?": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Disconnect cloud service?"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scollegare il servizio cloud?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Déconnecter ce service cloud ?"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Dienst trennen?"}},
+        "es": {"stringUnit": {"state": "translated", "value": "¿Desconectar el servicio en la nube?"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Desconectar o serviço de nuvem?"}}
+      }
+    },
+    "Removes only the local rclone connection. Cloud files stay where they are.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Removes only the local rclone connection. Cloud files stay where they are."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Rimuove solo la connessione locale di rclone. I file restano nel cloud."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Supprime uniquement la connexion rclone sur ce Mac. Les fichiers restent dans le cloud."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Entfernt nur die lokale rclone-Verbindung. Dateien in der Cloud bleiben erhalten."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Solo elimina la conexión local de rclone. Los archivos permanecen en la nube."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Remove apenas a conexão local do rclone. Os arquivos permanecem na nuvem."}}
+      }
+    },
+    "Connection status unavailable": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Connection status unavailable"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Stato della connessione non disponibile"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "État de la connexion indisponible"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Verbindungsstatus nicht verfügbar"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Estado de la conexión no disponible"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Status da conexão indisponível"}}
+      }
+    },
+    "Google client ID": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Google client ID"}},
+        "it": {"stringUnit": {"state": "translated", "value": "ID client Google"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Identifiant client Google"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Google-Client-ID"}},
+        "es": {"stringUnit": {"state": "translated", "value": "ID de cliente de Google"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "ID do cliente do Google"}}
+      }
+    },
+    "Google client secret": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Google client secret"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Segreto client Google"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Secret client Google"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Google-Client-Secret"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Secreto de cliente de Google"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Chave secreta do cliente do Google"}}
+      }
+    },
+    "Use a Google OAuth client for a desktop app. rclone asks for full Google Drive access.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Use a Google OAuth client for a desktop app. rclone asks for full Google Drive access."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Usa un client OAuth di Google per un'applicazione desktop. rclone chiede accesso completo a Google Drive."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Utilisez un client OAuth Google de type Application de bureau. rclone demande un accès complet à Google Drive."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Verwende einen Google-OAuth-Client für eine Desktop-App. rclone fragt nach Vollzugriff auf Google Drive."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Usa un cliente OAuth de Google de tipo aplicación de escritorio. rclone solicita acceso completo a Google Drive."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Use um cliente OAuth do Google do tipo aplicativo para computador. O rclone solicita acesso total ao Google Drive."}}
+      }
+    },
+    "Waiting for Google sign-in in your browser…": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Waiting for Google sign-in in your browser…"}},
+        "it": {"stringUnit": {"state": "translated", "value": "In attesa dell'accesso a Google nel browser…"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "En attente de la connexion à Google dans votre navigateur…"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Warten auf die Google-Anmeldung im Browser…"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Esperando a que inicies sesión en Google en el navegador…"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Aguardando o login do Google no navegador…"}}
+      }
+    },
+    "Cancelling connection…": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Cancelling connection…"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Annullamento della connessione…"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Annulation de la connexion…"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Verbindung wird abgebrochen…"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Cancelando la conexión…"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Cancelando a conexão…"}}
+      }
+    },
+    "Enter a folder path such as Games or Archive/Games.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Enter a folder path such as Games or Archive/Games."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Inserisci un percorso come Games o Archive/Games."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Saisissez un chemin de dossier, par exemple Games ou Archive/Games."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Gib einen Ordnerpfad wie Games oder Archive/Games ein."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Introduce una ruta de carpeta como Games o Archive/Games."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Digite um caminho de pasta, como Games ou Archive/Games."}}
+      }
+    },
+    "Arcane could not run rclone. Choose a working rclone executable.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Arcane could not run rclone. Choose a working rclone executable."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Arcane non ha potuto avviare rclone. Scegli un eseguibile funzionante."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Arcane n’a pas pu lancer rclone. Choisissez un exécutable rclone valide."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Arcane konnte rclone nicht starten. Wähle ein funktionsfähiges rclone-Programm."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Arcane no pudo ejecutar rclone. Elige un ejecutable que funcione."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O Arcane não conseguiu iniciar o rclone. Escolha um executável válido."}}
+      }
+    },
+    "Arcane could not read the rclone configuration. Check access to the login keychain and try again.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Arcane could not read the rclone configuration. Check access to the login keychain and try again."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Arcane non ha potuto leggere la configurazione di rclone. Verifica l'accesso al portachiavi di login e riprova."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Arcane n’a pas pu lire la configuration rclone. Vérifiez l’accès au trousseau de session, puis réessayez."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Arcane konnte die rclone-Konfiguration nicht lesen. Prüfe den Zugriff auf den Anmeldeschlüsselbund und versuche es erneut."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Arcane no pudo leer la configuración de rclone. Comprueba el acceso al llavero de inicio de sesión y vuelve a intentarlo."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O Arcane não conseguiu ler a configuração do rclone. Verifique o acesso às Chaves de início de sessão e tente novamente."}}
+      }
+    },
+    "Arcane could not encrypt the rclone configuration with the login keychain.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Arcane could not encrypt the rclone configuration with the login keychain."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Arcane non ha potuto cifrare la configurazione di rclone con il portachiavi di login."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Arcane n’a pas pu chiffrer la configuration rclone à l’aide du trousseau de session."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Arcane konnte die rclone-Konfiguration nicht mit dem Anmeldeschlüsselbund verschlüsseln."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Arcane no pudo cifrar la configuración de rclone con el llavero de inicio de sesión."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O Arcane não conseguiu criptografar a configuração do rclone usando as Chaves de início de sessão."}}
+      }
+    },
+    "Google Drive could not be connected. Check your credentials and try again.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Google Drive could not be connected. Check your credentials and try again."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Impossibile collegare Google Drive. Verifica le credenziali e riprova."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Impossible de connecter Google Drive. Vérifiez vos identifiants, puis réessayez."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Google Drive konnte nicht verbunden werden. Prüfe deine Zugangsdaten und versuche es erneut."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se pudo conectar Google Drive. Comprueba tus credenciales y vuelve a intentarlo."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível conectar o Google Drive. Verifique suas credenciais e tente novamente."}}
+      }
+    },
+    "Arcane could not list the cloud folder. Check the folder name and your access.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Arcane could not list the cloud folder. Check the folder name and your access."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Arcane non ha potuto leggere la cartella nel cloud. Verifica il nome della cartella e i permessi."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Arcane n’a pas pu lire le dossier dans le cloud. Vérifiez son nom et vos droits d’accès."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Arcane konnte den Cloud-Ordner nicht auflisten. Prüfe den Ordnernamen und deine Zugriffsrechte."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Arcane no pudo leer la carpeta en la nube. Comprueba el nombre y tus permisos."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O Arcane não conseguiu listar a pasta na nuvem. Verifique o nome da pasta e suas permissões."}}
+      }
+    },
+    "Arcane could not remove the local rclone connection.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Arcane could not remove the local rclone connection."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Arcane non ha potuto rimuovere la connessione locale di rclone."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Arcane n’a pas pu supprimer la connexion rclone sur ce Mac."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Arcane konnte die lokale rclone-Verbindung nicht entfernen."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Arcane no pudo eliminar la conexión local de rclone."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O Arcane não conseguiu remover a conexão local do rclone."}}
+      }
+    },
+    "The cloud library is turned off.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "The cloud library is turned off."}},
+        "it": {"stringUnit": {"state": "translated", "value": "La libreria cloud è disattivata."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "La bibliothèque cloud est désactivée."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Die Cloud-Bibliothek ist deaktiviert."}},
+        "es": {"stringUnit": {"state": "translated", "value": "La biblioteca en la nube está desactivada."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "A biblioteca na nuvem está desativada."}}
+      }
+    },
+    "No cloud service is configured.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "No cloud service is configured."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nessun servizio cloud configurato."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Aucun service cloud n’est configuré."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Es ist kein Cloud-Dienst eingerichtet."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No hay ningún servicio en la nube configurado."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nenhum serviço de nuvem foi configurado."}}
+      }
+    },
+    "This game has no valid title ID.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "This game has no valid title ID."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Questo gioco non ha un ID titolo valido."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ce jeu n’a pas d’identifiant de titre valide."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Dieses Spiel hat keine gültige Titel-ID."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Este juego no tiene un ID de título válido."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Este jogo não tem um ID de título válido."}}
+      }
+    },
+    "Open settings": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Open settings"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Apri impostazioni"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ouvrir les réglages"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Einstellungen öffnen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Abrir ajustes"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Abrir ajustes"}}
+      }
+    },
     "After the cloud transfer": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "After the cloud transfer"}},

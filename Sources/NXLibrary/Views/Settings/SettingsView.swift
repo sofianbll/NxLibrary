@@ -19,6 +19,7 @@ struct SettingsView: View {
     @State private var searchFieldRequest = 0
     @State private var section: SettingsSection
     @State private var showingControls = false
+    @State private var cloudEditor: CloudLibraryEditor?
     @State private var localePicker: LocalePickerMode?
     @State private var focusArea: SettingsFocusArea = .sidebar
     @State private var rowFocus = FocusIndex()
@@ -105,6 +106,7 @@ struct SettingsView: View {
         }
         .onDisappear(perform: removeKeyMonitor)
         .onDisappear { igdb.isEditing = false }
+        .onDisappear { cloudEditor = nil }
         .onDisappear {
             nextendo.isEditingClient = false
             nextendo.friendToRemove = nil
@@ -149,6 +151,14 @@ struct SettingsView: View {
         .overlay {
             if supportsNextendo && nextendo.isEditingClient {
                 NextendoClientDialog(settings: settings) { nextendo.isEditingClient = false }
+            }
+        }
+        .disabled(cloudEditor != nil)
+        .accessibilityHidden(cloudEditor != nil)
+        .overlay {
+            if let cloudEditor {
+                CloudLibrarySettingsDialog(editor: cloudEditor, viewModel: viewModel,
+                                           model: viewModel.cloudLibrary) { self.cloudEditor = nil }
             }
         }
         .disabled(nextendo.friendToRemove != nil)
@@ -211,6 +221,7 @@ struct SettingsView: View {
                         onOpenGroup: openGroup,
                         onSearchSubmit: enterRows,
                         searchFieldRequest: searchFieldRequest,
+                        onEditCloud: { cloudEditor = $0 },
                         onActions: updateActions
                     )
                 }
@@ -367,7 +378,7 @@ struct SettingsView: View {
                   !router.isMenuPresented,
                   !viewModel.showSetupCheck,
                   !showingControls, localePicker == nil, !viewModel.isEditingSteamGridDBKey, !igdb.isEditing,
-                  !nextendo.isEditingClient,
+                  !nextendo.isEditingClient, cloudEditor == nil,
                   viewModel.alertMessage == nil, viewModel.settingsNotice == nil,
                   viewModel.gameWithInstallFailure == nil,
                   let window = event.window,
@@ -420,7 +431,7 @@ struct SettingsView: View {
 
     private func handleGamepad(_ action: GamepadAction) {
         // The key dialog takes the controller while it is open.
-        if viewModel.isEditingSteamGridDBKey || igdb.isEditing || nextendo.isEditingClient { return }
+        if viewModel.isEditingSteamGridDBKey || igdb.isEditing || nextendo.isEditingClient || cloudEditor != nil { return }
         if nextendo.friendToRemove != nil {
             switch action {
             case .navigateLeft: nextendoRemovalFocus = .cancel

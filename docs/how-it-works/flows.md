@@ -143,6 +143,8 @@ flowchart TD
 
 **Details → Cloud library.** Con rclone configurato, Send controlla spazio e inventario di app e cache, verifica le copie Apple Archive in staging, pubblica entrambi gli oggetti verificati e infine il manifest. Download verifica hash, inventario e firma prima di pubblicare una copia mancante. Per liberare spazio, la conferma Selene precede una nuova verifica remota e il confronto locale; una divergenza lascia il file dov'è. La voce in libreria resta.
 
+**Settings → Porting → Cloud library.** Da Details, Open settings apre direttamente la sezione se la libreria è spenta o non configurata. Scegli un remote rclone esistente o collega Google Drive: Arcane controlla la cifratura prima di avviare l'accesso nel browser, e Cancel termina il processo rclone. La cartella e l'interruttore si applicano senza riavvio. Test connection legge soltanto l'elenco della cartella. Dopo conferma, Disconnect elimina solo il remote dal file rclone locale.
+
 ## 6. Importare o ripristinare un salvataggio
 
 ```mermaid

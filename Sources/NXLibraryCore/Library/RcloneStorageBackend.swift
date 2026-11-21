@@ -16,12 +16,17 @@ public struct RcloneStorageBackend: StorageBackend {
         self.config = config
     }
 
-    static func findExecutable() -> URL? {
+    public static func findExecutable() -> URL? {
         let path = ProcessInfo.processInfo.environment["PATH"] ?? ""
-        return (["/opt/homebrew/bin"] + path.split(separator: ":").map(String.init))
+        return (["/opt/homebrew/bin", "/usr/local/bin"] + path.split(separator: ":").map(String.init))
             .filter { $0.hasPrefix("/") }
             .map { URL(fileURLWithPath: $0).appendingPathComponent("rclone") }
-            .first { FileManager.default.isExecutableFile(atPath: $0.path) }
+            .first(where: isExecutable)
+    }
+
+    public static func isExecutable(_ url: URL) -> Bool {
+        url.isFileURL && FileManager.default.isExecutableFile(atPath: url.path)
+            && (try? url.resolvingSymlinksInPath().resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
     }
 
     public func list() async throws -> [StorageObject] {
@@ -147,7 +152,7 @@ public struct RcloneStorageBackend: StorageBackend {
 
     private func path(for key: StorageObjectKey) throws -> String {
         let components = key.value.components(separatedBy: "/")
-        guard !components.contains(""), safePath(key.value),
+        guard !components.contains(""), CloudLibraryPreference.safePath(key.value),
               components.first?.lowercased() != Self.staging else {
             throw StorageBackendError.invalidKey
         }
@@ -170,40 +175,26 @@ public struct RcloneStorageBackend: StorageBackend {
 
     private func basePath() throws -> String {
         let name = remote.hasSuffix(":") ? String(remote.dropLast()) : remote
-        guard !root.split(separator: "/").isEmpty, safePath(root), config?.isFileURL != false,
+        guard CloudLibraryPreference.validRoot(root), config?.isFileURL != false,
               remote == ":local:" ? root.hasPrefix("/") && root != "/" :
-                  name.range(of: #"^[A-Za-z0-9_][A-Za-z0-9_. -]*$"#, options: .regularExpression) != nil
+                  CloudLibraryPreference.validRemote(name)
         else { throw StorageBackendError.invalidConfiguration }
         return (remote == ":local:" ? remote : name + ":") + root
     }
 
-    private func safePath(_ path: String) -> Bool {
-        !path.contains("\\") && !path.contains(":")
-            && path.rangeOfCharacter(from: .controlCharacters) == nil
-            && !path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." })
-    }
-
     private func run(_ arguments: [String], progress: (@Sendable (StorageProgress) -> Void)? = nil) async throws -> String {
         try Task.checkCancellation()
-        guard let binary = executable ?? Self.findExecutable(), binary.isFileURL,
-              FileManager.default.isExecutableFile(atPath: binary.path) else {
+        guard let binary = executable ?? Self.findExecutable(), Self.isExecutable(binary) else {
             throw StorageBackendError.backendUnavailable
         }
 
-        var flags = ["--use-json-log", "--stats", "1s", "--stats-log-level", "NOTICE", "--ask-password=false",
+        let flags = ["--use-json-log", "--stats", "1s", "--stats-log-level", "NOTICE",
                      "--drive-skip-shortcuts", "--local-links=false", "--copy-links=false"]
-        if let config { flags += ["--config", config.path] }
-        let environment = ProcessInfo.processInfo.environment.filter {
-            !$0.key.hasPrefix("RCLONE_") || ["RCLONE_CONFIG", "RCLONE_CONFIG_PASS", "RCLONE_PASSWORD_COMMAND"].contains($0.key)
-        }
-        // Apps opened from Finder get no shell environment: an encrypted config is unlocked from the
-        // login keychain item "rclone-config" (rclone only runs the command for an encrypted config).
-        if environment["RCLONE_CONFIG_PASS"] == nil, environment["RCLONE_PASSWORD_COMMAND"] == nil {
-            flags += ["--password-command", "/usr/bin/security find-generic-password -a rclone -s rclone-config -w"]
-        }
+        let environment = RcloneConfiguration.environment()
+        let command = arguments + flags + RcloneConfiguration.flags(config: config, environment: environment)
         let result: CommandResult
         do {
-            result = try await SystemCommandRunner().runCancellable(binary, arguments + flags, environment: environment) { line in
+            result = try await SystemCommandRunner().runCancellable(binary, command, environment: environment) { line in
                 guard let progress,
                       let stats = (try? JSONDecoder().decode(Log.self, from: Data(line.utf8)))?.stats else { return }
                 progress(StorageProgress(bytesTransferred: stats.bytes, totalBytes: stats.totalBytes))
@@ -225,12 +216,8 @@ public struct RcloneStorageBackend: StorageBackend {
             if messages.contains(where: {
                 $0.contains("Failed to create file system") || $0.contains("Failed to load config")
             }) { throw StorageBackendError.backendUnavailable }
-            let home = NSHomeDirectory()
-            let tail = messages.map {
-                DiagnosticsReport.scrub($0, home: home)
-                    .replacingOccurrences(of: #"(?i)https?://[^\s"'<>]+"#, with: "<url>", options: .regularExpression)
-            }.joined(separator: "\n")
-            throw StorageBackendError.processFailed(status: result.status, stderrTail: String(tail.suffix(2048)))
+            // OAuth responses in stderr can contain credentials even outside recognizable keys.
+            throw StorageBackendError.processFailed(status: result.status)
         }
     }
 

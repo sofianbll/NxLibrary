@@ -52,24 +52,28 @@ struct SeleneRow<Trailing: View>: View {
     let subtitle: String?
     let info: String?
     let verbatimTitle: Bool
+    let verbatimSubtitle: Bool
     @ViewBuilder var trailing: () -> Trailing
 
     @Environment(\.seleneFocusedRowID) private var focusedRowID
 
-    init(_ title: String, id: String? = nil, subtitle: String? = nil, info: String? = nil, verbatimTitle: Bool = false,
+    init(_ title: String, id: String? = nil, subtitle: String? = nil, info: String? = nil,
+         verbatimTitle: Bool = false, verbatimSubtitle: Bool = false,
                 @ViewBuilder trailing: @escaping () -> Trailing) {
         self.rowID = id ?? title
         self.title = title
         self.subtitle = subtitle
         self.info = info
         self.verbatimTitle = verbatimTitle
+        self.verbatimSubtitle = verbatimSubtitle
         self.trailing = trailing
     }
 
     private var isFocused: Bool { focusedRowID == rowID }
 
     var body: some View {
-        SeleneOptionRow(icon: nil, title: verbatimTitle ? title : L10n.text(title, context: localization), about: subtitle.map { L10n.text($0, context: localization) }, focused: isFocused) {
+        SeleneOptionRow(icon: nil, title: verbatimTitle ? title : L10n.text(title, context: localization),
+                        about: verbatimSubtitle ? subtitle : subtitle.map { L10n.text($0, context: localization) }, focused: isFocused) {
             HStack(spacing: 10) {
                 if let info {
                     SeleneInfoTip(info)
@@ -144,28 +148,32 @@ struct SeleneValueRow: View {
 }
 
 struct SeleneButtonRow: View {
+    @Environment(\.nxAppLocale) private var localization
     let rowID: String
     let title: String
     let subtitle: String?
     let info: String?
     let buttonTitle: String
     let verbatimTitle: Bool
+    let verbatimSubtitle: Bool
     let action: () -> Void
 
-    init(_ title: String, id: String? = nil, subtitle: String? = nil, info: String? = nil, verbatimTitle: Bool = false,
+    init(_ title: String, id: String? = nil, subtitle: String? = nil, info: String? = nil,
+         verbatimTitle: Bool = false, verbatimSubtitle: Bool = false,
                 buttonTitle: String, action: @escaping () -> Void) {
         self.rowID = id ?? title
         self.title = title
         self.subtitle = subtitle
         self.info = info
         self.verbatimTitle = verbatimTitle
+        self.verbatimSubtitle = verbatimSubtitle
         self.buttonTitle = buttonTitle
         self.action = action
     }
 
     var body: some View {
-        SeleneRow(title, id: rowID, subtitle: subtitle, info: info, verbatimTitle: verbatimTitle) {
-            Button(L10n.text(buttonTitle), action: action)
+        SeleneRow(title, id: rowID, subtitle: subtitle, info: info, verbatimTitle: verbatimTitle, verbatimSubtitle: verbatimSubtitle) {
+            Button(L10n.text(buttonTitle, context: localization), action: action)
                 .buttonStyle(.plain)
                 .seleneFont(15, .semibold)
                 .foregroundColor(SeleneTheme.glyph)
@@ -248,18 +256,21 @@ struct SelenePanel<Content: View>: View {
 
 /// A value row that steps through its choices: Left/Right on a controller, the arrows with a pointer.
 struct SeleneCycleRow: View {
+    @Environment(\.nxAppLocale) private var localization
     let title: String
     let subtitle: String?
     let info: String?
     let value: String
+    let verbatimValue: Bool
     let cycle: (Int) -> Void
 
-    init(_ title: String, subtitle: String? = nil, info: String? = nil, value: String,
+    init(_ title: String, subtitle: String? = nil, info: String? = nil, value: String, verbatimValue: Bool = false,
                 cycle: @escaping (Int) -> Void) {
         self.title = title
         self.subtitle = subtitle
         self.info = info
         self.value = value
+        self.verbatimValue = verbatimValue
         self.cycle = cycle
     }
 
@@ -267,7 +278,7 @@ struct SeleneCycleRow: View {
         SeleneRow(title, subtitle: subtitle, info: info) {
             HStack(spacing: 6) {
                 arrow(.chevronLeft, -1)
-                SeleneValueChip(text: L10n.text(value))
+                SeleneValueChip(text: verbatimValue ? value : L10n.text(value, context: localization))
                 arrow(.chevron, 1)
             }
         }
@@ -280,7 +291,8 @@ struct SeleneCycleRow: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(delta < 0 ? L10n.format("Previous %@", [String(describing: title)]) : L10n.format("Next %@", [String(describing: title)]))
+        .accessibilityLabel(L10n.format(delta < 0 ? "Previous %@" : "Next %@",
+                                       [L10n.text(title, context: localization)], context: localization))
     }
 }
 

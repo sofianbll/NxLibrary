@@ -34,6 +34,8 @@ final class SettingsCatalogTests: XCTestCase {
         "wallpaperBrightness", "animatedBackground", "keepWallpaperOnGames", "backgroundShade", "readableText",
         "showClock", "reduceMotion", "iconAppearance", "boxCovers", "igdb", "steamGridDB", "launchStyle",
         "launchMotion", "launchShade", "surprisePool", "cloudSaves", "cloudSavesPickedFolder", "showsSessionCard",
+        "cloudLibraryEnabled", "cloudLibraryService", "cloudLibraryConnect", "cloudLibraryFolder",
+        "cloudLibraryTest", "cloudLibraryTool", "cloudLibraryDisconnect",
         "hiddenGames", "gameDefaults.fullscreen", "gameDefaults.enable60FPS", "gameDefaults.isDockedMode",
         "gameDefaults.enableMetalFXUpscale", "gameDefaults.enableMetalHUD", "gameDefaults.language",
         "gameDefaults.renderScale", "controllerStatus", "buttonLayout", "controllerDeadzone", "gameDefaults.rumble",
@@ -73,7 +75,7 @@ final class SettingsCatalogTests: XCTestCase {
             [.search, .changed],
             [.startUp, .navigation, .spotlight, .soundMusic, .look, .controllers, .apiServices],
             [.sources, .libraryGames, .storage],
-            [.engine, .keys, .library, .games, .cloudSaves, .portingStorage],
+            [.engine, .keys, .library, .games, .cloudSaves, .cloudLibrary, .portingStorage],
             [.about, .console],
         ])
         XCTAssertEqual(groups.map(\.isPlatform), [false, false, false, true, false])
@@ -147,7 +149,7 @@ final class SettingsCatalogTests: XCTestCase {
     func testSwitchOnlyRowsLiveInTheSwitchSections() {
         let groups = Dictionary(uniqueKeysWithValues: SettingsCatalog.all.map { ($0.id, $0.group) })
         XCTAssertEqual(groups["checkEngineAtLaunch"], .engine)
-        XCTAssertTrue(SettingsCatalog.all.filter { [.engine, .keys, .library, .games, .cloudSaves, .portingStorage].contains($0.group) }
+        XCTAssertTrue(SettingsCatalog.all.filter { [.engine, .keys, .library, .games, .cloudSaves, .cloudLibrary, .portingStorage].contains($0.group) }
             .allSatisfy { $0.group.group.isPlatform })
         XCTAssertEqual(groups["setup"], .engine)
         XCTAssertEqual(groups["refreshLibraryAtLaunch"], .library)
@@ -208,6 +210,7 @@ final class SettingsCatalogTests: XCTestCase {
             ("60 FPS", .games), ("Fullscreen", .games), ("Metal HUD", .games),
             ("Render scale", .games), ("App icon", .look),
             ("Stick navigation deadzone", .controllers), ("Cloud saves folder", .cloudSaves),
+            ("Connect Google Drive", .cloudLibrary), ("Test connection", .cloudLibrary),
             ("Engine repository", .engine), ("Game apps", .library), ("Game files", .library)
         ]
         for (name, group) in controls {

@@ -61,6 +61,7 @@ Arcane is an independent game library and launcher for Apple silicon Macs. It br
 | **Personalisation** | Choose palettes, wallpapers, live backgrounds, interface sounds and controller prompts. |
 | **Porting** | Build compatible Switch titles with nxnative, review updates and DLC, and follow build progress. |
 | **Ported games** | Manage compatible mods and cheats, back up local saves and preview save imports. |
+| **Cloud library** | Archive ported apps and their build caches separately from saves. |
 
 Game files, keys and firmware are not provided. See [Legal and third-party notices](#legal-and-third-party-notices).
 
@@ -142,6 +143,12 @@ To discover existing nxnative game apps, choose **Settings → Porting → Libra
 If an installed app is moved or removed, its library entry stays with a blurred, locked tile and **App not found**. Restore it to its folder or change **Game apps**, then refresh the library. Arcane does not search elsewhere for it. Missing build inputs show **Game files not found** when there is no app to play. An existing app still plays when its source files are missing; only rebuilding is unavailable. To reconnect a game's moved inputs, use **Game Options → Edit details → Attach sources…**.
 
 ## Using Arcane
+
+### Cloud library for ported games
+
+In **Settings → Porting → Cloud library**, Arcane detects rclone or lets you choose its executable. Use a current version from [rclone.org](https://rclone.org/downloads/) or Homebrew. Choose an existing rclone connection or select **Connect Google Drive** and enter your own Google OAuth desktop client ID and secret. rclone opens your browser to ask for full Drive access and stores the credentials in its encrypted configuration; on this Mac, the configuration password is held in the login keychain. An existing connection does not need to sign in again. **Test connection** lists the selected cloud folder (`Games` by default) without changing its files.
+
+Turn on the cloud library and open **Details → Cloud library** for a ported Mac app to manage its app and build cache. **Disconnect** removes only the local rclone connection, which may also be used by other tools. It does not remove cloud files or affect game saves.
 
 ### Your library
 

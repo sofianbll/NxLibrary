@@ -74,6 +74,14 @@ extension SettingsCatalog {
             "One sync choice for all games, applied at next launch: Off, iCloud Drive or a folder you choose. Only the primary user and device save sync.") { $0.cloudSaves },
         row("cloudSavesPickedFolder", .cloudSaves, "Cloud saves folder",
             "The chosen folder for save sync; choosing a folder enables it.") { $0.cloudSavesPickedFolder },
+        action("cloudLibraryEnabled", .cloudLibrary, "Enable cloud library",
+               "Cloud storage for ported apps and build caches, separate from saves."),
+        action("cloudLibraryService", .cloudLibrary, "Cloud service", "Choose an existing rclone remote."),
+        action("cloudLibraryConnect", .cloudLibrary, "Connect Google Drive", "Sign in with your own Google OAuth client in your browser."),
+        action("cloudLibraryFolder", .cloudLibrary, "Cloud folder", "Folder for game apps and build caches."),
+        action("cloudLibraryTest", .cloudLibrary, "Test connection", "Lists the cloud folder without changing its files."),
+        action("cloudLibraryTool", .cloudLibrary, "rclone", "Choose the rclone executable or use the detected one."),
+        action("cloudLibraryDisconnect", .cloudLibrary, "Disconnect", "Removes only the local rclone connection. Cloud files stay where they are."),
 
         // Porting storage
         action("buildCaches", .portingStorage, "Build caches", "Delete a game's build cache or clear all caches after confirmation; rebuilds may take longer."),

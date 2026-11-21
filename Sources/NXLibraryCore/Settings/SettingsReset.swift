@@ -8,7 +8,7 @@ public enum SettingsReset {
         switch section {
         case .startUp, .navigation, .spotlight, .soundMusic, .look, .controllers, .libraryGames, .library, .games:
             return true
-        case .search, .changed, .apiServices, .sources, .storage, .engine, .keys, .cloudSaves, .portingStorage,
+        case .search, .changed, .apiServices, .sources, .storage, .engine, .keys, .cloudSaves, .cloudLibrary, .portingStorage,
              .about, .console:
             return false
         }
@@ -61,7 +61,7 @@ public enum SettingsReset {
         case .library:
             next.refreshLibraryAtLaunch = defaults.refreshLibraryAtLaunch
             next.notifyPortingEnds = defaults.notifyPortingEnds
-        case .games, .controllers, .search, .changed, .apiServices, .sources, .storage, .engine, .keys, .cloudSaves,
+        case .games, .controllers, .search, .changed, .apiServices, .sources, .storage, .engine, .keys, .cloudSaves, .cloudLibrary,
              .portingStorage, .about, .console:
             break
         }

@@ -64,6 +64,7 @@ struct SettingsChangedSection: View {
     @ObservedObject var viewModel: AppViewModel
     /// The engine folder (`SetupModel`), so the Changed list follows it.
     @ObservedObject var setup: SetupModel
+    @ObservedObject var cloudLibrary: CloudLibraryModel
     @ObservedObject private var controller = GameControllerService.shared
     let supportsNextendo: Bool
     let onOpenGroup: (SettingsSection) -> Void
@@ -75,6 +76,10 @@ struct SettingsChangedSection: View {
         if viewModel.iconAppearanceMode != .auto { external.insert("iconAppearance") }
         if abs(controller.deadzone - 0.35) > 0.001 { external.insert("controllerDeadzone") }
         if viewModel.porting.gameFilesFolder != nil { external.insert("gameFolder") }
+        if cloudLibrary.preference.enabled { external.insert("cloudLibraryEnabled") }
+        if cloudLibrary.preference.remote != nil { external.insert("cloudLibraryService") }
+        if cloudLibrary.preference.root != CloudLibraryPreference.defaultRoot { external.insert("cloudLibraryFolder") }
+        if cloudLibrary.chosenExecutable != nil { external.insert("cloudLibraryTool") }
         let root = URL(fileURLWithPath: viewModel.defaultInstallPath)
         if viewModel.libraryFolder?.standardizedFileURL != root.appendingPathComponent("Applications").standardizedFileURL {
             external.insert("libraryFolder")

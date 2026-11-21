@@ -1,0 +1,241 @@
+import Foundation
+import Security
+
+public struct CloudLibraryPreference: Equatable, Sendable {
+    public static let storageKey = "NXLibrary_CloudStorage"
+    public static let enabledKey = "NXLibrary_CloudStorageEnabled"
+    public static let executableKey = "NXLibrary_RclonePath"
+    public static let defaultRoot = "Games"
+
+    public let remote: String?
+    public let root: String
+    public let enabled: Bool
+
+    public init(storage: String?, enabled: Bool?) {
+        let parts = (storage ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            .split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
+        let name = parts.first.map(String.init) ?? ""
+        let folder = parts.count == 2 ? String(parts[1]) : Self.defaultRoot
+        let valid = Self.validRoot(folder)
+        remote = valid && Self.validRemote(name) ? name : nil
+        root = valid ? folder : Self.defaultRoot
+        self.enabled = enabled ?? (remote != nil)
+    }
+
+    public var storage: String? {
+        if let remote { return "\(remote):\(root)" }
+        return root == Self.defaultRoot ? nil : ":\(root)"
+    }
+
+    public static func validRoot(_ root: String) -> Bool {
+        !root.split(separator: "/").isEmpty && safePath(root)
+    }
+
+    static func safePath(_ path: String) -> Bool {
+        !path.contains("\\") && !path.contains(":")
+            && path.rangeOfCharacter(from: .controlCharacters) == nil
+            && !path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." })
+    }
+
+    static func validRemote(_ name: String) -> Bool {
+        name.range(of: #"^[A-Za-z0-9_][A-Za-z0-9_. -]*\z"#, options: .regularExpression) != nil
+    }
+
+    public enum Connection: Equatable {
+        case connected(RcloneRemote), notConnected, unknown
+    }
+
+    /// An unlocked, locally configured remote is connected; only the test checks network access.
+    public func connection(in remotes: [RcloneRemote]?) -> Connection {
+        guard let remote else { return .notConnected }
+        guard let remotes else { return .unknown }
+        return remotes.first { $0.name == remote }.map(Connection.connected) ?? .notConnected
+    }
+}
+
+public struct RcloneRemote: Equatable, Sendable, Decodable {
+    public let name: String
+    public let type: String
+    fileprivate let source: String
+}
+
+public struct RcloneConfiguration: Sendable {
+    static let passwordCommand = "/usr/bin/security find-generic-password -a rclone -s rclone-config -w"
+    private static let service = "rclone-config"
+    private static let account = "rclone"
+
+    typealias Run = @Sendable (URL, [String], [String: String]) async throws -> CommandResult
+    private let executable: URL
+    private let config: URL?
+    private let run: Run
+    private let ensurePassword: @Sendable () async throws -> Void
+    private let environment: [String: String]
+
+    public init(executable: URL) {
+        self.init(executable: executable, config: nil, run: {
+            try await SystemCommandRunner().runCancellable($0, $1, environment: $2)
+        }, ensurePassword: {
+            try await Task.detached(priority: .utility) { try Self.ensureKeychainPassword() }.value
+        }, environment: Self.environment())
+    }
+
+    init(executable: URL, config: URL?, run: @escaping Run,
+         ensurePassword: @escaping @Sendable () async throws -> Void, environment: [String: String] = [:]) {
+        self.executable = executable
+        self.config = config
+        self.run = run
+        self.ensurePassword = ensurePassword
+        self.environment = environment
+    }
+
+    static func environment() -> [String: String] {
+        ProcessInfo.processInfo.environment.filter {
+            !$0.key.hasPrefix("RCLONE_") || ["RCLONE_CONFIG", "RCLONE_CONFIG_PASS", "RCLONE_PASSWORD_COMMAND"].contains($0.key)
+        }
+    }
+
+    static func flags(config: URL?, environment: [String: String]) -> [String] {
+        var flags = ["--ask-password=false"]
+        if let config { flags += ["--config", config.path] }
+        if environment["RCLONE_CONFIG_PASS"] == nil, environment["RCLONE_PASSWORD_COMMAND"] == nil {
+            flags += ["--password-command", passwordCommand]
+        }
+        return flags
+    }
+
+    public enum Failure: Error, LocalizedError, Equatable {
+        case tool, configuration, encryption, connect, test, disconnect
+
+        public var errorDescription: String? { L10n.text(key) }
+
+        public var key: String {
+            switch self {
+            case .tool: return "Arcane could not run rclone. Choose a working rclone executable."
+            case .configuration: return "Arcane could not read the rclone configuration. Check access to the login keychain and try again."
+            case .encryption: return "Arcane could not encrypt the rclone configuration with the login keychain."
+            case .connect: return "Google Drive could not be connected. Check your credentials and try again."
+            case .test: return "Arcane could not list the cloud folder. Check the folder name and your access."
+            case .disconnect: return "Arcane could not remove the local rclone connection."
+            }
+        }
+    }
+
+    public func version() async throws -> String {
+        let output = try await checked(["version"], or: .tool)
+        guard let line = output.split(whereSeparator: \.isNewline).first, line.hasPrefix("rclone v") else {
+            throw Failure.tool
+        }
+        return String(line)
+    }
+
+    public func remotes() async throws -> [RcloneRemote] {
+        try Self.parseRemotes(await checked(["listremotes", "--json"], or: .configuration))
+    }
+
+    static func parseRemotes(_ output: String) throws -> [RcloneRemote] {
+        guard let remotes = try? JSONDecoder().decode([RcloneRemote].self, from: Data(output.utf8)) else {
+            throw Failure.configuration
+        }
+        return remotes.filter { $0.source == "file" && CloudLibraryPreference.validRemote($0.name) }
+    }
+
+    public func connect(clientID: String, secret: String) async throws -> RcloneRemote {
+        let clientID = clientID.trimmingCharacters(in: .whitespacesAndNewlines)
+        let secret = secret.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard Self.validCredential(clientID), Self.validCredential(secret) else { throw Failure.connect }
+        let names = Set(try await remotes().map { $0.name.lowercased() })
+        var name = "gdrive"
+        var index = 2
+        while names.contains(name) {
+            name = "gdrive-\(index)"
+            index += 1
+        }
+
+        let check = ["config", "encryption", "check"]
+        let initial = try await command(check, or: .encryption)
+        if initial.status != 0 {
+            // A locked or unreadable config must never be mistaken for plain text.
+            guard initial.stderr.split(whereSeparator: \.isNewline).contains("Error: config file is NOT encrypted"),
+                  environment["RCLONE_CONFIG_PASS"] == nil, environment["RCLONE_PASSWORD_COMMAND"] == nil
+            else { throw Failure.encryption }
+            do { try await ensurePassword() }
+            catch is CancellationError { throw CancellationError() }
+            catch { throw Failure.encryption }
+            _ = try await checked(["config", "encryption", "set"], or: .encryption)
+            _ = try await checked(check, or: .encryption)
+        }
+
+        _ = try await checked(["config", "create", name, "drive", "client_id=\(clientID)", "client_secret=\(secret)",
+                               "scope=drive", "config_is_local=true", "--no-output"], or: .connect)
+        guard let remote = try await remotes().first(where: { $0.name == name && $0.type == "drive" }) else {
+            throw Failure.connect
+        }
+        return remote
+    }
+
+    public func test(_ preference: CloudLibraryPreference) async throws {
+        guard let remote = preference.remote else { throw Failure.test }
+        let path = "\(remote):\(preference.root)"
+        let flags = ["--drive-skip-shortcuts", "--retries", "1", "--low-level-retries", "1",
+                     "--contimeout", "5s", "--timeout", "10s"]
+        let output = try await checked(["lsjson", path, "--stat"] + flags, or: .test)
+        guard let item = try? JSONDecoder().decode(Item.self, from: Data(output.utf8)), item.isDirectory else {
+            throw Failure.test
+        }
+        _ = try await checked(["lsf", path, "--max-depth", "1"] + flags, or: .test)
+    }
+
+    private struct Item: Decodable {
+        let isDirectory: Bool
+        enum CodingKeys: String, CodingKey { case isDirectory = "IsDir" }
+    }
+
+    public func disconnect(_ remote: String) async throws {
+        guard CloudLibraryPreference.validRemote(remote) else { throw Failure.disconnect }
+        _ = try await checked(["config", "delete", remote], or: .disconnect)
+        guard try await !remotes().contains(where: { $0.name == remote }) else { throw Failure.disconnect }
+    }
+
+    public static func validCredential(_ text: String) -> Bool {
+        let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !text.isEmpty && text.rangeOfCharacter(from: .controlCharacters) == nil
+    }
+
+    private func checked(_ arguments: [String], or failure: Failure) async throws -> String {
+        let result = try await command(arguments, or: failure)
+        guard result.status == 0 else { throw failure }
+        return result.stdout
+    }
+
+    private func command(_ arguments: [String], or failure: Failure) async throws -> CommandResult {
+        try Task.checkCancellation()
+        do { return try await run(executable, arguments + Self.flags(config: config, environment: environment), environment) }
+        catch is CancellationError { throw CancellationError() }
+        // Never surface subprocess output or launch errors: they can contain OAuth credentials.
+        catch { throw failure }
+    }
+
+    private static func ensureKeychainPassword() throws {
+        // The CLI password command reads the file-based login keychain, not the Data Protection keychain.
+        var login: SecKeychain?
+        let path = NSHomeDirectory() + "/Library/Keychains/login.keychain-db"
+        guard SecKeychainOpen(path, &login) == errSecSuccess, let login else { throw Failure.encryption }
+        let query: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword, kSecAttrService: service, kSecAttrAccount: account
+        ]
+        var search = query
+        search[kSecMatchSearchList] = [login]
+        let found = SecItemCopyMatching(search as CFDictionary, nil)
+        if found == errSecSuccess { return }
+        guard found == errSecItemNotFound else { throw Failure.encryption }
+
+        var bytes = Data(count: 32)
+        guard bytes.withUnsafeMutableBytes({ SecRandomCopyBytes(kSecRandomDefault, 32, $0.baseAddress!) }) == errSecSuccess
+        else { throw Failure.encryption }
+        var item = query
+        item[kSecUseKeychain] = login
+        item[kSecValueData] = bytes.base64EncodedData()
+        let status = SecItemAdd(item as CFDictionary, nil)
+        guard status == errSecSuccess || status == errSecDuplicateItem else { throw Failure.encryption }
+    }
+}

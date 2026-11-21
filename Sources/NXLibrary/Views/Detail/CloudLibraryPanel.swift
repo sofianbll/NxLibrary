@@ -16,11 +16,17 @@ struct CloudLibraryPanel: View {
     @State private var focus: Control = .close
 
     private enum Control: Hashable {
-        case upload, free(CloudArtifactKind), download(CloudArtifactKind), cancel, refresh, close
+        case upload, free(CloudArtifactKind), download(CloudArtifactKind), cancel, refresh, settings, close
     }
 
     private var state: CloudLibraryState { model.states[game.id] ?? CloudLibraryState() }
     private var canChange: Bool { state.action == nil && !state.refreshing && viewModel.canChangeCloudLibrary(game) }
+    private var unavailable: String? {
+        if model.preference.remote == nil { return "No cloud service is configured." }
+        if !model.preference.enabled { return "The cloud library is turned off." }
+        if game.titleId.map(SaveLocation.validID) != true { return "This game has no valid title ID." }
+        return nil
+    }
 
     var body: some View {
         ZStack {
@@ -31,8 +37,12 @@ struct CloudLibraryPanel: View {
                     .seleneFont(30, .semibold)
                     .foregroundColor(SeleneTheme.ink)
                     .accessibilityAddTraits(.isHeader)
-                ForEach(CloudArtifactKind.allCases, id: \.self) { kind in
-                    artifactRow(kind)
+                if let unavailable {
+                    Text(text(unavailable)).seleneFont(17).foregroundColor(SeleneTheme.ink75)
+                } else {
+                    ForEach(CloudArtifactKind.allCases, id: \.self) { kind in
+                        artifactRow(kind)
+                    }
                 }
                 if state.action != nil || state.refreshing {
                     HStack(spacing: canvas.u(10)) {
@@ -51,9 +61,10 @@ struct CloudLibraryPanel: View {
                 }
                 HStack(spacing: canvas.u(10)) {
                     button(.close, "Close")
+                    if controls.contains(.settings) { button(.settings, "Open settings") }
                     if state.action != nil {
                         button(.cancel, "Cancel transfer")
-                    } else if !state.refreshing {
+                    } else if controls.contains(.refresh) {
                         button(.refresh, "Refresh")
                         if controls.contains(.upload) { button(.upload, "Send") }
                     }
@@ -104,11 +115,14 @@ struct CloudLibraryPanel: View {
     }
 
     private var controls: [Control] {
+        if model.archive == nil { return [.close, .settings] }
+        if unavailable != nil { return [.close] }
         if state.action != nil { return [.close, .cancel] }
         let artifacts = CloudArtifactKind.allCases.compactMap(artifactControl)
         guard !state.refreshing else { return [.close] }
         let canUpload = canChange && CloudArtifactKind.allCases.allSatisfy { state.local[$0] == true }
-        return artifacts + [.close, .refresh] + (canUpload ? [.upload] : [])
+        return artifacts + [.close] + (state.remote == nil && state.message != nil ? [.settings] : [])
+            + [.refresh] + (canUpload ? [.upload] : [])
     }
 
     private func button(_ control: Control, _ key: String) -> some View {
@@ -142,6 +156,9 @@ struct CloudLibraryPanel: View {
         case .download(let kind): viewModel.performCloudLibrary(.restore(kind), for: game)
         case .cancel: viewModel.cancelCloudLibrary(game)
         case .refresh: Task { await viewModel.refreshCloudLibrary(game) }
+        case .settings:
+            close()
+            viewModel.router?.openSettings(.cloudLibrary)
         case .close: close()
         }
     }

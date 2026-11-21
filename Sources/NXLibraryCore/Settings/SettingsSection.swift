@@ -8,7 +8,7 @@ public enum SettingsSection: String, CaseIterable, Identifiable, Equatable {
     case search, changed
     case startUp, navigation, spotlight, soundMusic, look, controllers, apiServices
     case sources, libraryGames, storage
-    case engine, keys, library, games, cloudSaves, portingStorage
+    case engine, keys, library, games, cloudSaves, cloudLibrary, portingStorage
     case about, console
 
     public var id: String { rawValue }
@@ -38,6 +38,7 @@ public enum SettingsSection: String, CaseIterable, Identifiable, Equatable {
         case .library: return "Library"
         case .games: return "New games"
         case .cloudSaves: return "Cloud saves"
+        case .cloudLibrary: return "Cloud library"
         case .portingStorage: return "Storage"
         case .about: return "About"
         case .console: return "Console"
@@ -63,6 +64,7 @@ public enum SettingsSection: String, CaseIterable, Identifiable, Equatable {
         case .library: return L10n.text("Folders, scans and box covers.")
         case .games: return L10n.text("Defaults copied into each new ported game.")
         case .cloudSaves: return L10n.text("Save sync for ported games: Off, iCloud Drive or a folder.")
+        case .cloudLibrary: return L10n.text("Cloud storage for ported apps and build caches, separate from saves.")
         case .portingStorage: return L10n.text("Build caches for each game and for all games.")
         case .about: return L10n.text("Version, credits and licenses.")
         case .console: return L10n.text("Filter, search and copy build and launch logs.")
@@ -89,6 +91,7 @@ public enum SettingsSection: String, CaseIterable, Identifiable, Equatable {
         case .library: return .collections
         case .games: return .tune
         case .cloudSaves: return .sync
+        case .cloudLibrary: return .collections
         case .portingStorage: return .folder
         case .about: return .info
         case .console: return .terminal
@@ -130,7 +133,7 @@ public struct SettingsSidebarGroup: Identifiable, Equatable {
         .init(heading: nil, sections: [.search, .changed], isPlatform: false),
         .init(heading: "Settings group: General", sections: [.startUp, .navigation, .spotlight, .soundMusic, .look, .controllers, .apiServices], isPlatform: false),
         .init(heading: "Settings group: Library", sections: [.sources, .libraryGames, .storage], isPlatform: false),
-        .init(heading: "Settings group: Porting", sections: [.engine, .keys, .library, .games, .cloudSaves, .portingStorage], isPlatform: true),
+        .init(heading: "Settings group: Porting", sections: [.engine, .keys, .library, .games, .cloudSaves, .cloudLibrary, .portingStorage], isPlatform: true),
         .init(heading: "Settings group: System", sections: [.about, .console], isPlatform: false),
     ]
 }

@@ -39,7 +39,7 @@ public enum StorageBackendError: Error, Equatable, Sendable {
     case notFound
     case hashMismatch
     case backendUnavailable
-    case processFailed(status: Int32, stderrTail: String)
+    case processFailed(status: Int32)
     case invalidResponse
 }
 
