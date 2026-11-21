@@ -48,8 +48,16 @@ public final class CloudGameSources: @unchecked Sendable {
     }
 
     public func status(folderName: String, files: [URL]) async throws -> CloudSourcesStatus {
+        try await status(folderName: folderName, files: files, verifyContents: true)
+    }
+
+    public func availability(folderName: String, files: [URL]) async throws -> CloudSourcesStatus {
+        try await status(folderName: folderName, files: files, verifyContents: false)
+    }
+
+    private func status(folderName: String, files: [URL], verifyContents: Bool) async throws -> CloudSourcesStatus {
         let selection = try Selection(folderName, files)
-        let remote = try await remoteFiles(selection)
+        let remote = try await remoteFiles(selection, withHashes: verifyContents)
         var statuses: [CloudSourcesStatus.File] = []
         for source in selection.files {
             try Task.checkCancellation()
@@ -57,7 +65,9 @@ public final class CloudGameSources: @unchecked Sendable {
             let local = try stamp(at: source)
             let state: CloudArtifactStatus.State
             if let item {
-                if let md5 = item.md5 {
+                if !verifyContents {
+                    state = local == nil && item.size >= 0 ? .cloudOnly : .unknown
+                } else if let md5 = item.md5 {
                     if let local {
                         let matches = local.bytes == item.size ? try await hash(source, stamp: local) == md5 : false
                         state = matches ? .synchronized : .newerOnThisMac
@@ -203,10 +213,10 @@ public final class CloudGameSources: @unchecked Sendable {
         }
     }
 
-    private func remoteFiles(_ selection: Selection) async throws -> [String: StorageObject] {
+    private func remoteFiles(_ selection: Selection, withHashes: Bool = true) async throws -> [String: StorageObject] {
         try Task.checkCancellation()
         let selected = Set(selection.files.map(\.lastPathComponent))
-        let entries = try await backend.list(in: selection.directory, withHashes: true)
+        let entries = try await backend.list(in: selection.directory, withHashes: withHashes)
         try Task.checkCancellation()
         var items: [String: StorageObject] = [:]
         for item in entries {

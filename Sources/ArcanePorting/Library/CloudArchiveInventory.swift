@@ -99,6 +99,10 @@ enum CloudArchiveInventory {
         try scan(root, kind: kind, includeContents: false)
     }
 
+    static func fingerprintKey(_ root: URL, kind: CloudArtifactKind) -> String {
+        hex(SHA256.hash(data: Data("\(kind.rawValue):\(root.path)".utf8)))
+    }
+
     private static func scan(_ root: URL, kind: CloudArtifactKind, includeContents: Bool) throws -> Snapshot {
         var entries: [Entry] = []
         var hash = SHA256()

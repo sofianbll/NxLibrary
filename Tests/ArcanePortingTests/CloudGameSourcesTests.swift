@@ -4,6 +4,17 @@ import XCTest
 @testable import ArcanePorting
 
 final class CloudGameSourcesTests: XCTestCase {
+    func testAvailabilityListsCopiesWithoutTreatingEqualSizesAsSynchronized() async throws {
+        let f = try Fixture()
+        let base = try f.local("Base.nsp", "same")
+        let update = f.localFolder.appendingPathComponent("Update.nsz")
+        _ = try f.remote("Base.nsp", "size")
+        _ = try f.remote("Update.nsz", "update")
+        let status = try await f.service.availability(folderName: f.folder, files: [base, update])
+        XCTAssertEqual(status.files.map(\.state), [.unknown, .cloudOnly])
+        XCTAssertEqual(status.remoteBytes, 10)
+    }
+
     func testFolderNameKeepsMatchingLocalNameAndOtherwiseUsesSafeCatalogTitle() {
         let id = "010019401051C000"
         let existing = "Mario Strikers - Battle League [\(id)]"

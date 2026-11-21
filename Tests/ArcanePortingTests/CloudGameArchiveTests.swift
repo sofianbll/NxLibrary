@@ -7,6 +7,36 @@ import XCTest
 final class CloudGameArchiveTests: XCTestCase {
     private let title = "0100E65002BB8000"
 
+    @MainActor func testCatalogCheckVisitsValidGamesInOrderAndStopsWhenCancelled() async {
+        let titles = [title, "invalid", "0100000000000001", "0100000000000002"]
+        var events: [String] = []
+        let check = Task {
+            await CloudGameArchive.checkCatalogAvailability(titles, titleID: { $0 }) { title in
+                events.append("start \(title)")
+                await Task.yield()
+                events.append("end \(title)")
+                if title == titles[2] { withUnsafeCurrentTask { $0?.cancel() } }
+            }
+        }
+        await check.value
+        XCTAssertEqual(events, ["start \(title)", "end \(title)", "start \(titles[2])", "end \(titles[2])"])
+    }
+
+    func testAvailabilityDoesNotReadArtifactContents() async throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let archive = f.service
+        let manifest = try await archive.upload(f.game)
+        // The recursive inventory rejects a protected file. Presence doesn't inspect any children.
+        try Data().write(to: f.cache.appendingPathComponent("prod.keys"))
+        try FileManager.default.removeItem(at: f.app)
+        let availability = try await archive.availability(f.game)
+        XCTAssertEqual(availability[.app]?.state, .cloudOnly)
+        XCTAssertEqual(availability[.cache]?.state, .unknown)
+        XCTAssertEqual(availability[.cache]?.hasLocalCopy, true)
+        XCTAssertEqual(availability[.cache]?.uploadedAt, manifest.createdAt)
+    }
+
     func testCopyStatusUsesTheManifestInventoryAndDetectsSameSizeEdits() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let app = root.appendingPathComponent("Synthetic.app")
@@ -23,7 +53,10 @@ final class CloudGameArchiveTests: XCTestCase {
         let date = Date(timeIntervalSince1970: 1_700_000_000)
         let manifest = CloudGameManifest(version: 1, titleID: title, createdAt: date, artifacts: [artifact])
         let game = CloudArchiveGame(titleID: title, locations: [.app: app, .cache: cache])
-        let service = CloudGameArchive(backend: RcloneStorageBackend(remote: ":local:", root: "/unused"))
+        let backend = RcloneStorageBackend(remote: ":local:", root: "/unused")
+        let cacheFile = root.appendingPathComponent("fingerprints.json")
+        let fingerprints = CloudArchiveFingerprintCache(file: cacheFile)
+        let service = CloudGameArchive(backend: backend, trash: { _ in }, fingerprints: fingerprints)
 
         let original = try await service.copyStatuses(game, manifest: .success(manifest))
         XCTAssertEqual(original[.app]?.state, .notInCloud)
@@ -33,14 +66,30 @@ final class CloudGameArchiveTests: XCTestCase {
         XCTAssertTrue(CloudArtifactStatus.needsUpload(original), "The app has no cloud copy")
         XCTAssertFalse(CloudArtifactStatus.needsUpload([.app: original[.cache]!, .cache: original[.cache]!]))
 
+        let key = CloudArchiveInventory.fingerprintKey(cache.deletingLastPathComponent().resolvingSymlinksInPath()
+            .appendingPathComponent(cache.lastPathComponent), kind: .cache)
+        let onDisk = try Data(contentsOf: cacheFile)
+        XCTAssertFalse(String(decoding: onDisk, as: UTF8.self).contains(root.lastPathComponent))
+        let reopened = CloudArchiveFingerprintCache(file: cacheFile)
+        let saved = await reopened.entries()[key]
+        XCTAssertEqual(saved?.sha256, inventory.sha256)
+
         let old = try CloudArchiveInventory.node(at: file).st_mtimespec
         try Data("modified".utf8).write(to: file)
         var stamps = [old, old]
         XCTAssertEqual(utimensat(AT_FDCWD, file.path, &stamps, 0), 0)
-        let changed = try await service.copyStatuses(game, manifest: .success(manifest))
+        let restarted = CloudGameArchive(backend: backend, trash: { _ in }, fingerprints: reopened)
+        let changed = try await restarted.copyStatuses(game, manifest: .success(manifest))
         XCTAssertEqual(changed[.cache]?.state, .newerOnThisMac)
         XCTAssertEqual(changed[.cache]?.bytes, 8)
         XCTAssertFalse(CloudArtifactStatus.canUploadAlone(.cache, statuses: changed))
+        let updated = await reopened.entries()[key]
+        XCTAssertNotEqual(updated?.signature, saved?.signature)
+        XCTAssertNotEqual(updated?.sha256, saved?.sha256)
+
+        try Data("invalid JSON".utf8).write(to: cacheFile, options: .atomic)
+        let corrupt = await CloudArchiveFingerprintCache(file: cacheFile).entries()
+        XCTAssertTrue(corrupt.isEmpty)
 
         try FileManager.default.removeItem(at: cache)
         let missing = try await service.copyStatuses(game, manifest: .success(manifest))
@@ -69,6 +118,16 @@ final class CloudGameArchiveTests: XCTestCase {
             _ = try await cancelled.value
             XCTFail("A cancelled comparison must not publish a result")
         } catch is CancellationError {}
+    }
+
+    func testFingerprintCacheEvictsOldestEntry() async {
+        let cache = CloudArchiveFingerprintCache()
+        let fingerprint = CloudArchiveFingerprintCache.Fingerprint(signature: "signature", sha256: "hash", withoutRootMtime: nil)
+        await cache.save(["old": fingerprint])
+        await cache.save(Dictionary(uniqueKeysWithValues: (1...500).map { (String($0), fingerprint) }))
+        let entries = await cache.entries()
+        XCTAssertEqual(entries.count, 500)
+        XCTAssertNil(entries["old"])
     }
 
     func testPartialUploadPreservesRemoteAppWithoutReadingLocalApp() async throws {

@@ -165,7 +165,7 @@ Free up space apre una conferma con le dimensioni e una selezione per app, cache
 
 Se al Build o Rebuild mancano file locali ma il cloud li ha, Arcane mostra la dimensione da scaricare. Download accoda il ripristino e apre il pannello di avanzamento. Solo il ripristino riuscito nella stessa sessione riprende il percorso di build, con i normali controlli per cache e toolchain.
 
-L'aggiornamento dello stato legge il manifest remoto mentre individua e controlla i percorsi locali. Se il demone rclone è indisponibile, i comandi singoli mantengono la distinzione tra copia assente e stato ignoto.
+L'apertura del pannello Cloud legge il manifest e confronta i contenuti locali; riusa le impronte di app e cache anche dopo un riavvio, se sono ancora valide. Se il demone rclone è indisponibile, i comandi singoli mantengono la distinzione tra copia assente e stato ignoto.
 
 **File del gioco (Porting).** Data la selezione del gioco, `CloudGameSources` riusa i file remoti con MD5 uguale e invia solo gli assenti; una divergenza blocca un nuovo invio. La misura del download conta solo i file mancanti sul Mac con copia remota verificabile. Il ripristino pubblica ogni file verificato nella sua cartella locale già presente; la liberazione sposta nel Cestino solo i file locali appena verificati. Un annullamento non annulla i file già pubblicati o spostati nel Cestino.
 
@@ -176,6 +176,8 @@ L'aggiornamento dello stato legge il manifest remoto mentre individua e controll
 Lo spostamento riguarda solo gli archivi app e cache e i manifest. I file del gioco restano dove sono. Connessione mostra entrambi i percorsi `remote:percorso`; da Game files folder si può impostare un percorso relativo sullo stesso remote senza spostare nulla. La riga compare in Search e, quando il percorso è esplicito, in Changed. Il percorso esplicito resta invariato al cambio della libreria; quello predefinito segue la libreria (`GameFiles`). Details → Cloud mostra il percorso di ogni cartella determinabile. I giochi con i file locali nella stessa cartella usano sottocartelle distinte sul remote, identificate dal title ID base.
 
 **Importazione dalla libreria cloud.** All'avvio o alla fine dell'assistente, e quando si riattiva la libreria, Arcane cerca manifest validi e aggiunge i giochi mancanti senza scaricare app o sorgenti. Import games from the cloud in Connessione ripete la ricerca e mostra successo, assenza di nuovi giochi o errore. Un gioco rimosso esplicitamente resta escluso. Un titolo importato compare con badge solo cloud; Details → Download → Play resta lo stesso percorso.
+
+Conclusa l'importazione automatica e ripristinata la coda, Arcane verifica la presenza remota per ogni titolo valido del catalogo in sequenza; il badge di un'app solo cloud non richiede di aprire Details. Se arriva un trasferimento, gli lascia la precedenza; spegnere la libreria ferma il controllo.
 
 ## 6. Importare o ripristinare un salvataggio
 

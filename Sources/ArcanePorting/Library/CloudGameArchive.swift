@@ -22,6 +22,13 @@ public struct CloudArtifactStatus: Equatable, Sendable {
     public let uploadedAt: Date?
     public let skippedRoots: [SkippedRoot]
 
+    /// Presence alone cannot tell whether two copies have the same contents.
+    static func availability(local: Bool?, artifact: CloudGameManifest.Artifact?, uploadedAt: Date?) -> Self {
+        .init(state: artifact == nil ? .notInCloud : local == false ? .cloudOnly : .unknown,
+              hasLocalCopy: local == true, bytes: artifact?.unpackedSize,
+              uploadedAt: artifact == nil ? nil : uploadedAt, skippedRoots: [])
+    }
+
     public static func needsUpload(_ statuses: [CloudArtifactKind: Self]) -> Bool {
         CloudArtifactKind.allCases.allSatisfy { statuses[$0]?.hasLocalCopy == true }
             && statuses.values.contains { $0.state == .notInCloud || $0.state == .newerOnThisMac }
@@ -171,37 +178,30 @@ public enum CloudRebuildDecision: Equatable, Sendable {
 public actor CloudGameArchive {
     public typealias Progress = @Sendable (CloudArchiveProgress) -> Void
     private typealias Artifact = CloudGameManifest.Artifact
+    private typealias Fingerprint = CloudArchiveFingerprintCache.Fingerprint
     private static let manifestLimit = 64 * 1024
     private let backend: any StorageBackend
     private let capacity: @Sendable (URL) -> Int64?
     private let trash: @Sendable (URL) throws -> Void
     private let leases: CloudTitleLeases
-    private struct Fingerprint: Sendable {
-        let signature: String
-        let sha256: String
-        let withoutRootMtime: String?
-
-        func matches(_ artifact: Artifact) -> Bool {
-            sha256 == artifact.inventorySHA256 || withoutRootMtime.map {
-                $0 == artifact.options[CloudArchiveInventory.cacheFingerprintOption]
-            } == true
-        }
-    }
-    private var fingerprints: [URL: Fingerprint] = [:]
+    private let fingerprints: CloudArchiveFingerprintCache
 
     public init(backend: any StorageBackend) {
-        self.init(backend: backend, trash: { try FileManager.default.trashItem(at: $0, resultingItemURL: nil) })
+        self.init(backend: backend, trash: { try FileManager.default.trashItem(at: $0, resultingItemURL: nil) },
+                  fingerprints: .shared)
     }
 
     internal init(backend: any StorageBackend,
                   capacity: @escaping @Sendable (URL) -> Int64? = {
                       (try? FileManager.default.attributesOfFileSystem(forPath: $0.path)[.systemFreeSize] as? NSNumber)?.int64Value
                   },
-                  trash: @escaping @Sendable (URL) throws -> Void) {
+                  trash: @escaping @Sendable (URL) throws -> Void,
+                  fingerprints: CloudArchiveFingerprintCache = .init()) {
         self.backend = backend
         self.leases = (backend as? RcloneStorageBackend)?.leases ?? CloudTitleLeases()
         self.capacity = capacity
         self.trash = trash
+        self.fingerprints = fingerprints
     }
 
     /// A failed manifest read is distinct from a successful lookup with no manifest.
@@ -211,10 +211,10 @@ public actor CloudGameArchive {
         let readable: Bool
         if case .success = lookup { readable = manifest.map { $0.titleID == game.titleID } ?? true }
         else { readable = false }
-        let cached = fingerprints
+        let cached = await fingerprints.entries()
         let worker = Task.detached(priority: .utility) {
             var statuses: [CloudArtifactKind: CloudArtifactStatus] = [:]
-            var fingerprints: [URL: Fingerprint] = [:]
+            var fingerprints: [String: Fingerprint] = [:]
             for kind in CloudArtifactKind.allCases {
                 try Task.checkCancellation()
                 let artifact = readable ? manifest?.artifacts.first { $0.kind == kind } : nil
@@ -247,8 +247,9 @@ public actor CloudGameArchive {
                                 if signature.bytes != artifact.unpackedSize || signature.entries.count != artifact.entryCount {
                                     state = .newerOnThisMac
                                 } else {
+                                    let key = CloudArchiveInventory.fingerprintKey(url, kind: kind)
                                     let fingerprint: Fingerprint
-                                    if let previous = cached[url], previous.signature == signature.sha256 {
+                                    if let previous = cached[key], previous.signature == signature.sha256 {
                                         fingerprint = previous
                                     } else {
                                         let snapshot = try CloudArchiveInventory.scan(url, kind: kind)
@@ -258,8 +259,8 @@ public actor CloudGameArchive {
                                         }
                                         fingerprint = .init(signature: signature.sha256, sha256: snapshot.sha256,
                                                             withoutRootMtime: snapshot.withoutRootMtime)
+                                        fingerprints[key] = fingerprint
                                     }
-                                    fingerprints[url] = fingerprint
                                     state = fingerprint.matches(artifact) ? .synchronized : .newerOnThisMac
                                 }
                             } else if readable {
@@ -279,9 +280,17 @@ public actor CloudGameArchive {
         }
         let (statuses, fresh) = try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
         try Task.checkCancellation()
-        if fingerprints.count + fresh.count > 64 { fingerprints.removeAll() }
-        fingerprints.merge(fresh) { _, new in new }
+        await fingerprints.save(fresh)
         return statuses
+    }
+
+    @MainActor public static func checkCatalogAvailability<Game>(_ games: [Game], titleID: (Game) -> String?,
+                                                                visit: (Game) async -> Void) async {
+        for game in games {
+            guard !Task.isCancelled else { return }
+            guard titleID(game).map(SaveLocation.validID) == true else { continue }
+            await visit(game)
+        }
     }
 
     /// Hold the same title lease as upload, free and restore until the engine exits.
@@ -334,6 +343,24 @@ public actor CloudGameArchive {
             .filter({ $0.key.value.hasPrefix(directory.value + "/") && $0.key.value.hasSuffix(".json") })
             .max(by: { $0.key.value < $1.key.value }) else { return nil }
         return try await readManifest(newest, titleID: title)
+    }
+
+    /// Fetch just the newest manifest; local availability uses a single stat per registered artifact.
+    public func availability(_ game: CloudArchiveGame) async throws -> [CloudArtifactKind: CloudArtifactStatus] {
+        let manifest = try await latest(titleID: game.titleID)
+        try Task.checkCancellation()
+        return Dictionary(uniqueKeysWithValues: CloudArtifactKind.allCases.map { kind in
+            let local: Bool?
+            if let url = game.locations[kind] {
+                do {
+                    let node = try CloudArchiveInventory.node(at: url)
+                    local = node.st_mode & S_IFMT == S_IFDIR ? true : nil
+                } catch CloudArchiveError.localMissing { local = false }
+                catch { local = nil }
+            } else { local = false }
+            return (kind, .availability(local: local, artifact: manifest?.artifacts.first { $0.kind == kind },
+                                        uploadedAt: manifest?.createdAt))
+        })
     }
 
     func readManifest(_ object: StorageObject, titleID title: String) async throws -> CloudGameManifest {
