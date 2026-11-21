@@ -22,6 +22,50 @@ final class CloudGameArchiveTests: XCTestCase {
         XCTAssertEqual(events, ["start \(title)", "end \(title)", "start \(titles[2])", "end \(titles[2])"])
     }
 
+    @MainActor func testCatalogCheckPropagatesOfflineAndCanRetry() async throws {
+        let ids = [title, "0100000000000001"]
+        let unavailable = CloudGameArchive(backend: RcloneStorageBackend(remote: "fixture", root: "Games") { _, _, _ in
+            .init(status: 1, stdout: "", stderr: "dial tcp: network is unreachable")
+        })
+        var attempts: [String] = []
+        do {
+            try await CloudGameArchive.checkCatalogAvailability(ids, titleID: { $0 }) { id in
+                attempts.append(id)
+                _ = try await unavailable.availability(.init(titleID: id, locations: [:]))
+            }
+            XCTFail("The check cannot complete successfully while offline")
+        } catch { XCTAssertEqual(error as? CloudLibraryFailure, .offline) }
+        XCTAssertEqual(attempts, [title])
+        let reachable = CloudGameArchive(backend: RcloneStorageBackend(remote: "fixture", root: "Games") { _, args, _ in
+            if args.contains("--dirs-only") { return .init(status: 0, stdout: "[]", stderr: "") }
+            if args.contains("--stat") { return .init(status: 0, stdout: #"{"IsDir":true}"#, stderr: "") }
+            return .init(status: 3, stdout: "", stderr: "directory not found")
+        })
+        attempts.removeAll()
+        try await CloudGameArchive.checkCatalogAvailability(ids, titleID: { $0 }) { id in
+            let result = try await reachable.availability(.init(titleID: id, locations: [:]))
+            XCTAssertEqual(result[.app]?.state, .notInCloud)
+            attempts.append(id)
+        }
+        XCTAssertEqual(attempts, ids)
+    }
+
+    func testStreamPreservesQuotaFailureFromSyntheticSink() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data([1, 2, 3]).write(to: root.appendingPathComponent("fixture"))
+        let sink = Process()
+        sink.executableURL = URL(fileURLWithPath: "/bin/sh")
+        sink.arguments = ["-c", "cat >/dev/null; echo 'googleapi: Error 403: storageQuotaExceeded' >&2; exit 1"]
+        do {
+            _ = try await CloudArchiveStream.send(
+                ["archive", "-d", root.path, "-a", "lzfse", "-t", "2", "-x", "-include-field", "siz"],
+                to: sink, kind: .cache, estimatedBytes: 3, progress: nil)
+            XCTFail("Synthetic sink should fail")
+        } catch { XCTAssertEqual(error as? CloudLibraryFailure, .quotaFull) }
+    }
+
     func testAvailabilityDoesNotReadArtifactContents() async throws {
         let f = try fixture()
         defer { try? FileManager.default.removeItem(at: f.root) }
@@ -177,7 +221,7 @@ final class CloudGameArchiveTests: XCTestCase {
         do {
             _ = try await missingRoot.latestManifests()
             XCTFail("An unavailable root must not be reported as an empty library")
-        } catch { XCTAssertEqual(error as? StorageBackendError, .notFound) }
+        } catch { XCTAssertEqual(error as? CloudLibraryFailure, .folderMissing) }
         let other = f.remote.appendingPathComponent("0100000000000001")
         try FileManager.default.createDirectory(at: other, withIntermediateDirectories: false)
         let empty = try await service.latestManifests()

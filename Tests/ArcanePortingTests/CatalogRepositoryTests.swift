@@ -51,6 +51,48 @@ final class CatalogRepositoryTests: XCTestCase {
         XCTAssertEqual(removed.games, original.games)
     }
 
+    func testCloudImportAdoptsExactNUPProgramWithoutCopyingLocalPathsOrChangingAnotherEdition() throws {
+        let (fixture, store, _) = try mixed()
+        let repository = CatalogRepository(store: store)
+        let title = "0400123400000002"
+        let other = "0400123400000001"
+        let program = NUPProgramSelection(programID: 0x0400123400000002, applicationID: 0x0400123400000000,
+                                          addOnContentBaseID: 0x0400123400001000)
+        let input = URL(fileURLWithPath: "/fixture/private/Game.nup")
+        let sources: [GameFileItem] = [
+            .init(url: input, kind: .base, titleId: title, versionString: "v0", sizeBytes: 5,
+                  sourceLayout: .container, nupProgram: program),
+            .init(url: input, kind: .update, titleId: title, versionString: "v65536", sizeBytes: 6,
+                  sourceLayout: .container, nupProgram: program),
+        ]
+        let folder = "Fixture [\(title)]"
+        let selection = try XCTUnwrap(CloudGameSources.ArchivedSelection(folder: folder, files: sources, titleID: title))
+        let data = try JSONEncoder().encode(selection)
+        XCTAssertFalse(String(decoding: data, as: UTF8.self).contains("/fixture/private"))
+        let decoded = try JSONDecoder().decode(CloudGameSources.ArchivedSelection.self, from: data)
+        let app = CloudGameManifest.Artifact(kind: .app, size: 10, sha256: "", md5: "",
+            unpackedSize: 20, entryCount: 1, inventorySHA256: "", engineCommit: nil, shaderChain: nil, options: [:])
+        func manifest(_ id: String, _ selection: CloudGameSources.ArchivedSelection? = nil) -> CloudGameManifest {
+            .init(version: 1, titleID: id, createdAt: .distantPast, artifacts: [app], sourceSelection: selection)
+        }
+        let legacy = try repository.importCloudGames([manifest(title)], in: fixture.root)
+        let priorID = try XCTUnwrap(legacy.nxnativeGames.first { $0.titleId == title }?.id)
+        // A folder label alone cannot authorize a NUP from another exact edition.
+        let changedFolder = String(decoding: data, as: UTF8.self).replacingOccurrences(of: folder, with: "Fixture [\(other)]")
+        let wrong = try JSONDecoder().decode(CloudGameSources.ArchivedSelection.self, from: Data(changedFolder.utf8))
+        let manifests = [manifest(title, decoded), manifest(other, wrong)]
+        let imported = try repository.importCloudGames(manifests, in: fixture.root, sourceRoot: fixture.root)
+        let game = try XCTUnwrap(imported.nxnativeGames.first { $0.titleId == title })
+        XCTAssertEqual(game.id, priorID)
+        XCTAssertEqual(game.sources.map(\.nupProgram), [program, program])
+        XCTAssertEqual(game.sources.map(\.versionString), ["v0", "v65536"])
+        XCTAssertEqual(game.sources.map(\.url), Array(repeating: CloudGameSources.importedFolder(for: priorID, in: fixture.root)
+            .appendingPathComponent(folder).appendingPathComponent("Game.nup"), count: 2))
+        XCTAssertEqual(SourceSelection.programIndex(for: game.sources, titleID: title, nupPrograms: true), 2)
+        XCTAssertEqual(imported.nxnativeGames.first { $0.titleId == other }?.sources, [])
+        XCTAssertEqual(try repository.importCloudGames(manifests, in: fixture.root, sourceRoot: fixture.root), imported)
+    }
+
     func testScanUsesLatestFlagsAndDoesNotReplaceSteamOrLegacyBytes() throws {
         let (fixture, store, original) = try mixed()
         let bytes = try Data(contentsOf: fixture.root.appendingPathComponent("library.json"))

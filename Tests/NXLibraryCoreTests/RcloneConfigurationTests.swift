@@ -102,6 +102,31 @@ final class RcloneConfigurationTests: XCTestCase {
         XCTAssertEqual(count, 1)
     }
 
+    func testCloudConnectionFailuresHaveDistinctRecoveryWithoutLeakingOutput() async {
+        let samples: [(Int32, String, CloudLibraryFailure, CloudLibraryFailure.Action)] = [
+            (1, #"{"msg":"Failed to create file system: lookup www.googleapis.com: no such host"}"#, .offline, .retry),
+            (1, #"{"msg":"oauth2: invalid_grant: fake-token"}"#, .authentication, .reconnect),
+            (1, "token expired", .authentication, .reconnect),
+            (1, "googleapi: Error 401: Unauthorized", .authentication, .reconnect),
+            (3, "directory not found", .folderMissing, .chooseFolder),
+            (1, "googleapi: Error 403: storageQuotaExceeded", .quotaFull, .manageDriveStorage),
+            (1, "googleapi: Error 403: Drive storage quota exceeded", .quotaFull, .manageDriveStorage),
+            (1, "googleapi: Error 403: rateLimitExceeded", .unavailable, .retry),
+        ]
+        for (status, stderr, failure, action) in samples {
+            let fixture = Fixture([.init(status: status, stdout: "", stderr: stderr)])
+            do {
+                try await fixture.client.test(.init(storage: "gdrive:Games", enabled: true))
+                XCTFail("A failed command cannot verify a folder")
+            } catch {
+                let issue = error as? CloudLibraryFailure ?? .unavailable
+                XCTAssertEqual(issue, failure)
+                XCTAssertEqual(issue.action, action)
+                XCTAssertFalse(error.localizedDescription.contains("fake-token"))
+            }
+        }
+    }
+
     private static let list = """
     [
         {"name":"gdrive","type":"drive","source":"file","description":"do not display"},

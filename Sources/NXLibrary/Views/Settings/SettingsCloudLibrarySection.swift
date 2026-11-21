@@ -24,6 +24,7 @@ struct SettingsCloudLibrarySection: View {
     @State private var inspection = 0
     @State private var testTask: Task<Void, Never>?
     @State private var testPassed: Bool?
+    @State private var testFailure: CloudLibraryFailure?
 
     private struct Inspection: Equatable {
         let chosen: URL?
@@ -40,9 +41,16 @@ struct SettingsCloudLibrarySection: View {
     private var editable: Bool { viewModel.canConfigureCloudLibrary && testTask == nil }
     private var canTest: Bool { editable && !inspecting && connected != nil }
     private var canImport: Bool { editable && model.archive != nil && model.importTask == nil && !viewModel.isScanningLibrary }
+    private var recoveryFailure: CloudLibraryFailure? { testFailure ?? model.checkFailure }
+    private var canRecover: Bool {
+        recoveryFailure?.action == .retry ? (testFailure != nil ? canTest : canImport) : editable
+    }
     private var focusedToolButton: Int? { focusedRowID == "rclone" ? focusedButton : nil }
 
     private var serviceStatus: String {
+        if let failure = recoveryFailure {
+            return text(failure == .offline ? "Offline" : "Connection status unavailable")
+        }
         switch connection {
         case .connected: return text("Connected")
         case .notConnected: return text("Not connected")
@@ -68,9 +76,14 @@ struct SettingsCloudLibrarySection: View {
 
                 let provider = connected.flatMap { $0.type == "drive" ? nil : $0.type } ?? text("Google Drive")
                 SeleneRow("\(provider) · \(remote)", verbatimTitle: true) {
-                    SeleneStatusDot(text: serviceStatus, color: connected == nil ? SeleneTheme.ink60 : SeleneTheme.statusOK)
+                    SeleneStatusDot(text: serviceStatus, color: connected == nil || recoveryFailure != nil
+                                    ? SeleneTheme.ink60 : SeleneTheme.statusOK)
                 }
 
+                if let failure = recoveryFailure {
+                    SeleneButtonRow(failure.messageKey, id: "cloudRecovery", buttonTitle: failure.action.titleKey, action: recover)
+                        .disabled(!canRecover)
+                }
                 // shortcut: the assistant starts at the account step until it accepts a folder entry point.
                 SeleneButtonRow("Folder", subtitle: selection.storage, verbatimSubtitle: true, truncateSubtitleInMiddle: true,
                                 buttonTitle: "Edit", action: onEdit)
@@ -105,7 +118,8 @@ struct SettingsCloudLibrarySection: View {
         .onChange(of: [editable, canTest, canImport, model.chosenExecutable != nil, inspecting, selection.remote != nil, advanced]) {
             publishActions()
         }
-        .onChange(of: selection) { testPassed = nil }
+        .onChange(of: recoveryFailure) { publishActions() }
+        .onChange(of: selection) { testPassed = nil; testFailure = nil }
         .onDisappear { testTask?.cancel() }
     }
 
@@ -140,7 +154,7 @@ struct SettingsCloudLibrarySection: View {
 
     private var testSubtitle: String {
         if testTask != nil { return "Checking…" }
-        if let testPassed { return testPassed ? "Connection OK" : RcloneConfiguration.Failure.test.key }
+        if testPassed == true { return "Connection OK" }
         return "Lists the cloud folder without changing its files."
     }
 
@@ -163,6 +177,9 @@ struct SettingsCloudLibrarySection: View {
                 .init(id: "cloudLibraryConnect", title: "Change Google credentials", isEnabled: editable, activate: onEdit),
                 .init(id: "cloudLibraryImport", title: "Import games from the cloud", isEnabled: canImport, activate: importGames),
             ]
+            if let failure = recoveryFailure {
+                actions.insert(.init(id: "cloudRecovery", title: failure.messageKey, isEnabled: canRecover, activate: recover), at: 1)
+            }
         } else {
             actions = [.init(id: "cloudLibrarySetup", title: "Configure cloud library", isEnabled: editable, activate: onEdit)]
         }
@@ -195,6 +212,13 @@ struct SettingsCloudLibrarySection: View {
         viewModel.importCloudGames(manually: true)
     }
 
+    private func recover() {
+        guard canRecover, let failure = recoveryFailure else { return }
+        viewModel.recoverCloud(failure.action, sourceFolder: testFailure == nil && model.checkFailureOnSources) {
+            if testFailure != nil { test() } else { viewModel.retryCloudCheck() }
+        }
+    }
+
     private func chooseTool() {
         guard editable else { return }
         let panel = NSOpenPanel()
@@ -219,7 +243,7 @@ struct SettingsCloudLibrarySection: View {
 
     private func inspect() async {
         inspecting = true
-        version = nil; remotes = nil; issue = nil; testPassed = nil
+        version = nil; remotes = nil; issue = nil; testPassed = nil; testFailure = nil
         defer { if !Task.isCancelled { inspecting = false } }
         do {
             let chosen = model.chosenExecutable
@@ -244,13 +268,17 @@ struct SettingsCloudLibrarySection: View {
         guard canTest, let tool else { return }
         let preference = selection
         testPassed = nil
+        testFailure = nil
         testTask = Task { @MainActor in
             defer { testTask = nil }
             do {
                 try await RcloneConfiguration(executable: tool).test(preference)
                 if !Task.isCancelled { testPassed = true }
             } catch {
-                if !Task.isCancelled { testPassed = false }
+                if !Task.isCancelled {
+                    testFailure = (error as? CloudLibraryFailure) ?? .unavailable
+                    testPassed = false
+                }
             }
         }
     }

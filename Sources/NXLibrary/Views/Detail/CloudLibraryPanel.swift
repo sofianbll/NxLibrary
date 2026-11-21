@@ -27,6 +27,7 @@ struct CloudLibraryPanel: View {
     private enum Control: Hashable {
         case upload(CloudArtifactKind?), download(CloudArtifactKind), uploadSources, downloadSources
         case free, cancel, refresh, settings, close
+        case recover(CloudLibraryFailure, CloudLibraryItem?)
     }
 
     private enum FreeControl: Equatable { case item(CloudLibraryItem), cancel, confirm }
@@ -79,9 +80,9 @@ struct CloudLibraryPanel: View {
                 }
             }
             if let message = state.message {
-                Text(message).seleneFont(15).foregroundColor(PortingPillCopy.softRed)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
+                failureLine(message, failure: state.failure, item: nil)
+            } else if let failure = model.checkFailure, state.issue == nil, state.sourcesMessage == nil {
+                failureLine(text(failure.messageKey), failure: failure, item: nil)
             }
             if controls.contains(where: { [.close, .settings, .refresh, .free, .upload(nil)].contains($0) }) {
                 HStack(spacing: canvas.u(10)) {
@@ -155,12 +156,14 @@ struct CloudLibraryPanel: View {
             if live {
                 CloudLibraryProgressView(progress: state.progress, showsSummary: false)
             } else if let issue = state.issue, issue.item == item {
-                Text(issue.message).seleneFont(15)
-                    .foregroundColor(issue.failed ? PortingPillCopy.softRed : SeleneTheme.ink60)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
+                if issue.failed { failureLine(issue.message, failure: state.transferFailure, item: item) }
+                else {
+                    Text(issue.message).seleneFont(15).foregroundColor(SeleneTheme.ink60)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             } else if item == .sources, let message = state.sourcesMessage {
-                Text(message).seleneFont(15).foregroundColor(PortingPillCopy.softRed)
+                failureLine(message, failure: state.sourceFailure, item: item)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -204,11 +207,40 @@ struct CloudLibraryPanel: View {
         let artifacts = CloudLibraryItem.allCases.compactMap(artifactControl)
         if state.action != nil || state.refreshing { return artifacts + close }
         var buttons = artifacts + close
-        if state.message != nil || state.sourcesMessage != nil { buttons.append(.settings) }
+        if let failure = state.failure ?? (state.message == nil && state.issue == nil && state.sourcesMessage == nil
+                                           ? model.checkFailure : nil), canRecover(failure) {
+            buttons.append(.recover(failure, nil))
+        }
+        if let issue = state.issue, let failure = state.transferFailure, canRecover(failure) {
+            buttons.append(.recover(failure, issue.item))
+        }
+        if state.issue?.item != .sources, let failure = state.sourceFailure, canRecover(failure) {
+            buttons.append(.recover(failure, .sources))
+        }
+        if (state.message != nil && state.failure == nil) || (state.sourcesMessage != nil && state.sourceFailure == nil) {
+            buttons.append(.settings)
+        }
         buttons.append(.refresh)
         if canChange && !CloudFreeSelection(state: state).available.isEmpty { buttons.append(.free) }
         if canChange && state.canUploadBoth { buttons.append(.upload(nil)) }
         return buttons
+    }
+
+    private func canRecover(_ failure: CloudLibraryFailure) -> Bool {
+        switch failure.action {
+        case .reconnect, .chooseFolder: return viewModel.canConfigureCloudLibrary
+        default: return true
+        }
+    }
+
+    private func failureLine(_ message: String, failure: CloudLibraryFailure?, item: CloudLibraryItem?) -> some View {
+        HStack {
+            Text(message).seleneFont(15).foregroundColor(PortingPillCopy.softRed)
+                .fixedSize(horizontal: false, vertical: true)
+            if let failure, controls.contains(.recover(failure, item)) {
+                button(.recover(failure, item), failure.action.titleKey)
+            }
+        }
     }
 
     private func button(_ control: Control, _ key: String) -> some View {
@@ -258,6 +290,15 @@ struct CloudLibraryPanel: View {
         case .refresh:
             model.update(game.id) { $0.issue = nil }
             refreshRevision += 1
+        case .recover(let failure, let item):
+            let global = item == nil && state.failure == nil || model.checkFailure == failure && failure == .offline
+            if failure.action == .retry, global {
+                viewModel.retryCloudCheck()
+            }
+            if failure.action == .reconnect || failure.action == .chooseFolder || failure.action == .freeMacStorage { close() }
+            viewModel.recoverCloud(failure.action, sourceFolder: item == .sources || (global && model.checkFailureOnSources)) {
+                choose(.refresh)
+            }
         case .settings:
             close()
             viewModel.router?.openSettings(.cloudLibrary)

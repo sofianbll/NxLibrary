@@ -3,6 +3,26 @@ import XCTest
 @testable import NXLibraryCore
 
 final class RcloneStorageBackendTests: XCTestCase {
+    func testPrefixListingDistinguishesMissingFromEmptyDirectoryWithoutLaunchingRclone() async throws {
+        let empty = RcloneStorageBackend(remote: "fixture", root: "Games") { _, args, _ in
+            .init(status: 0, stdout: args.contains("--stat") ? #"{"IsDir":true}"# : "[]", stderr: "")
+        }
+        let prefix = StorageObjectKey("0000000000000001/manifests")
+        let entries = try await empty.list(in: prefix)
+        XCTAssertTrue(entries.isEmpty)
+        for status: Int32 in [0, 3] {
+            let missing = RcloneStorageBackend(remote: "fixture", root: "Games") { _, args, _ in
+                .init(status: status, stdout: args.contains("--stat") ? "null" : "[]", stderr: "directory not found")
+            }
+            do {
+                _ = try await missing.list(in: prefix)
+                XCTFail("A missing prefix cannot produce an empty listing")
+            } catch {
+                XCTAssertEqual(error as? CloudLibraryFailure, .folderMissing)
+            }
+        }
+    }
+
     func testProgressParsesStderrStatsWithNullableETAAndFractionalSpeed() throws {
         let line = #"{"level":"notice","msg":"Transferred","stats":{"bytes":270000000,"totalBytes":645000000,"speed":3100000.25,"eta":121,"transferring":[{"name":"fixture"}]}}"#
         let progress = try XCTUnwrap(RcloneStorageBackend.transferProgress(from: line))
@@ -55,8 +75,12 @@ final class RcloneStorageBackendTests: XCTestCase {
         XCTAssertEqual(children.map(\.key), [key])
         let pid = try XCTUnwrap(backend.control.processID)
         try await backend.verify(try XCTUnwrap(objects.first))
-        let absent = try await backend.list(in: StorageObjectKey("unknown"))
-        XCTAssertEqual(absent, [])
+        do {
+            _ = try await backend.list(in: StorageObjectKey("unknown"))
+            XCTFail("A missing directory must not look empty")
+        } catch {
+            XCTAssertEqual(error as? CloudLibraryFailure, .folderMissing)
+        }
         try await backend.get(key, to: fixture.download)
         XCTAssertEqual(try Data(contentsOf: fixture.download), Data("abc\n".utf8))
         XCTAssertEqual(backend.control.processID, pid)

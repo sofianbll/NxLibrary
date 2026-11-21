@@ -109,6 +109,14 @@ struct SettingsView: View {
         .onDisappear(perform: removeKeyMonitor)
         .onDisappear { igdb.isEditing = false }
         .onDisappear { showingCloudAssistant = false; editingCloudSources = false }
+        .onReceive(viewModel.cloudLibrary.$recovery) { action in
+            guard let action, router.route == .settings(.cloudLibrary) else { return }
+            switch action {
+            case .reconnect, .archiveFolder: showingCloudAssistant = true
+            case .sourceFolder: editingCloudSources = true
+            }
+            Task { @MainActor in viewModel.cloudLibrary.recovery = nil }
+        }
         .onDisappear {
             nextendo.isEditingClient = false
             nextendo.friendToRemove = nil

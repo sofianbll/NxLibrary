@@ -3,6 +3,30 @@ import XCTest
 @testable import ArcanePorting
 
 final class CloudTransferQueueTests: XCTestCase {
+    func testQueueSaveFailureReportsOnceAndLaterSnapshotsStillWrite() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        try Data().write(to: folder)
+        let store = CloudTransferQueue(file: folder.appendingPathComponent("queue.json"))
+        let notice = expectation(description: "One nonfatal queue error")
+        notice.assertForOverFulfill = true
+        let report: @Sendable (CloudLibraryFailure) -> Void = {
+            XCTAssertEqual($0, .queueNotSaved)
+            XCTAssertEqual($0.action, .dismiss)
+            notice.fulfill()
+        }
+        let entry = CloudTransferQueue.Entry(id: UUID(), action: .downloadSources)
+        store.save([entry], onFailure: report)
+        store.save([], onFailure: report)
+        await store.flush()
+        await fulfillment(of: [notice], timeout: 2)
+        try FileManager.default.removeItem(at: folder)
+        store.save([entry], onFailure: report)
+        await store.flush()
+        let loaded = await store.load()
+        XCTAssertEqual(loaded, [entry])
+    }
+
     func testQuitDecisionWaitsForConfirmationAndQueueCleanup() {
         XCTAssertEqual(CloudQuitDecision.resolve(isWorking: true, hasQueueWrites: true), .confirm)
         XCTAssertEqual(CloudQuitDecision.resolve(isWorking: true, relaunchScheduled: true), .cancel)

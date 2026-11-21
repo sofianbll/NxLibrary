@@ -9,6 +9,7 @@ public struct RcloneStorageBackend: StorageBackend {
     private let root: String
     private let executable: URL?
     private let config: URL?
+    private let commandOverride: RcloneConfiguration.Run?
     let control: RcloneRemoteControl
     package let leases: CloudTitleLeases
 
@@ -16,21 +17,28 @@ public struct RcloneStorageBackend: StorageBackend {
     /// Credentials and unlocking stay in rclone's configuration, not the arguments or Arcane preferences.
     public init(remote: String, root: String, executable: URL? = nil, config: URL? = nil) {
         self.init(remote: remote, root: root, executable: executable, config: config,
-                  control: RcloneRemoteControl(), leases: CloudTitleLeases())
+                  control: RcloneRemoteControl(), leases: CloudTitleLeases(), commandOverride: nil)
+    }
+
+    package init(remote: String, root: String, run: @escaping RcloneConfiguration.Run) {
+        self.init(remote: remote, root: root, executable: nil, config: nil,
+                  control: RcloneRemoteControl(), leases: CloudTitleLeases(), commandOverride: run)
     }
 
     private init(remote: String, root: String, executable: URL?, config: URL?,
-                 control: RcloneRemoteControl, leases: CloudTitleLeases) {
+                 control: RcloneRemoteControl, leases: CloudTitleLeases, commandOverride: RcloneConfiguration.Run?) {
         self.remote = remote
         self.root = root
         self.executable = executable
         self.config = config
         self.control = control
         self.leases = leases
+        self.commandOverride = commandOverride
     }
 
     package func atRoot(_ root: String) -> Self {
-        Self(remote: remote, root: root, executable: executable, config: config, control: control, leases: leases)
+        Self(remote: remote, root: root, executable: executable, config: config,
+             control: control, leases: leases, commandOverride: commandOverride)
     }
 
     /// Ends the RC session when the cloud configuration is replaced or the app quits.
@@ -59,9 +67,11 @@ public struct RcloneStorageBackend: StorageBackend {
         ]) {
             items = try decode(ListResult.self, from: output).list
         } else {
-            let output = try await run(["lsjson", base, "--recursive", "--files-only", "--hash", "--exclude", exclude])
+            let output = try await run(["lsjson", base, "--recursive", "--files-only", "--hash", "--exclude", exclude],
+                                       listingFolder: true)
             items = try decode([Item].self, from: output)
         }
+        if items.isEmpty { try await checkDirectory(base) }
         return items.map {
             StorageObject(key: StorageObjectKey($0.path), size: $0.size, hashes: $0.hashes ?? [:])
         }
@@ -80,28 +90,38 @@ public struct RcloneStorageBackend: StorageBackend {
             items = try decode(ListResult.self, from: output).list
         } else {
             let output = try await run(["lsjson", base, "--dirs-only", "--no-modtime", "--no-mimetype",
-                                        "--retries", "1", "--low-level-retries", "1", "--contimeout", "5s", "--timeout", "10s"])
+                                        "--retries", "1", "--low-level-retries", "1", "--contimeout", "5s", "--timeout", "10s"],
+                                       listingFolder: true)
             items = try decode([Item].self, from: output)
         }
+        if items.isEmpty { try await checkDirectory(base) }
         return items.map(\.name)
     }
 
     package func list(in prefix: StorageObjectKey, withHashes: Bool) async throws -> [StorageObject] {
         let directory = try path(for: prefix)
         let items: [Item]
-        do {
-            if let output = try await rc("operations/list", [
-                "fs": basePath(), "remote": prefix.value, "opt": ["filesOnly": !withHashes, "showHash": withHashes],
-            ]) {
-                items = try decode(ListResult.self, from: output).list
-            } else {
-                let output = try await run(["lsjson", directory, withHashes ? "--hash" : "--files-only"])
-                items = try decode([Item].self, from: output)
-            }
-        } catch StorageBackendError.notFound { return [] }
+        if let output = try await rc("operations/list", [
+            "fs": basePath(), "remote": prefix.value, "opt": ["filesOnly": !withHashes, "showHash": withHashes],
+        ]) {
+            items = try decode(ListResult.self, from: output).list
+        } else {
+            let output = try await run(["lsjson", directory, withHashes ? "--hash" : "--files-only"],
+                                       listingFolder: true)
+            items = try decode([Item].self, from: output)
+        }
+        if items.isEmpty { try await checkDirectory(directory) }
         return items.map {
             StorageObject(key: StorageObjectKey(prefix.value + "/" + $0.name), size: $0.size, hashes: $0.hashes ?? [:])
         }
+    }
+
+    private func checkDirectory(_ path: String) async throws {
+        struct Directory: Decodable { let IsDir: Bool }
+        let output = try await run(["lsjson", path, "--stat", "--no-modtime", "--no-mimetype",
+                                    "--retries", "1", "--low-level-retries", "1", "--contimeout", "5s", "--timeout", "10s"],
+                                   listingFolder: true)
+        guard try decode(Directory?.self, from: output)?.IsDir == true else { throw CloudLibraryFailure.folderMissing }
     }
 
     public func put(_ source: URL, as object: StorageObject,
@@ -302,10 +322,15 @@ public struct RcloneStorageBackend: StorageBackend {
     }
 
     private func rc(_ operation: String, _ parameters: [String: Any]) async throws -> String? {
+        if commandOverride != nil { return nil }
         guard let binary = executable ?? Self.findExecutable(), Self.isExecutable(binary) else { return nil }
         let environment = RcloneConfiguration.environment()
-        return try await control.call(operation, parameters, executable: binary, environment: environment,
-            flags: Self.flags + RcloneConfiguration.flags(config: config, environment: environment))
+        do {
+            return try await control.call(operation, parameters, executable: binary, environment: environment,
+                flags: Self.flags + RcloneConfiguration.flags(config: config, environment: environment))
+        } catch StorageBackendError.notFound where operation == "operations/list" {
+            throw CloudLibraryFailure.folderMissing
+        }
     }
 
     private func isRegularFile(_ url: URL) -> Bool {
@@ -363,22 +388,28 @@ public struct RcloneStorageBackend: StorageBackend {
         return binary
     }
 
-    private func run(_ arguments: [String], progress: (@Sendable (StorageProgress) -> Void)? = nil) async throws -> String {
+    private func run(_ arguments: [String], progress: (@Sendable (StorageProgress) -> Void)? = nil,
+                     listingFolder: Bool = false) async throws -> String {
         try Task.checkCancellation()
-        let binary = try binary()
         let flags = ["--use-json-log", "--stats", "1s", "--stats-log-level", "NOTICE"] + Self.flags
         let environment = RcloneConfiguration.environment()
         let command = arguments + flags + RcloneConfiguration.flags(config: config, environment: environment)
         let result: CommandResult
         do {
-            result = try await SystemCommandRunner().runCancellable(binary, command, environment: environment) { line in
-                if let progress, let update = Self.transferProgress(from: line) { progress(update) }
+            if let commandOverride {
+                result = try await commandOverride(URL(fileURLWithPath: "/fixture/rclone"), command, [:])
+            } else {
+                result = try await SystemCommandRunner().runCancellable(binary(), command, environment: environment) { line in
+                    if let progress, let update = Self.transferProgress(from: line) { progress(update) }
+                }
             }
         } catch is CancellationError {
             throw CancellationError()
         } catch {
             throw StorageBackendError.backendUnavailable
         }
+        if result.status != 0, let failure = CloudLibraryFailure.rclone(result.stderr, status: result.status,
+                                                                       listingFolder: listingFolder) { throw failure }
         switch result.status {
         case 0: return result.stdout
         case 3, 4: throw StorageBackendError.notFound
