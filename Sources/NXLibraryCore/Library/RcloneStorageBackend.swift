@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 public struct RcloneStorageBackend: StorageBackend {
@@ -8,15 +9,28 @@ public struct RcloneStorageBackend: StorageBackend {
     private let root: String
     private let executable: URL?
     private let config: URL?
-    let control = RcloneRemoteControl()
+    let control: RcloneRemoteControl
+    package let leases: CloudTitleLeases
 
     /// `remote` is a configured rclone name (e.g. `gdrive`) or `:local:` with an absolute `root`.
     /// Credentials and unlocking stay in rclone's configuration, not the arguments or Arcane preferences.
     public init(remote: String, root: String, executable: URL? = nil, config: URL? = nil) {
+        self.init(remote: remote, root: root, executable: executable, config: config,
+                  control: RcloneRemoteControl(), leases: CloudTitleLeases())
+    }
+
+    private init(remote: String, root: String, executable: URL?, config: URL?,
+                 control: RcloneRemoteControl, leases: CloudTitleLeases) {
         self.remote = remote
         self.root = root
         self.executable = executable
         self.config = config
+        self.control = control
+        self.leases = leases
+    }
+
+    package func atRoot(_ root: String) -> Self {
+        Self(remote: remote, root: root, executable: executable, config: config, control: control, leases: leases)
     }
 
     /// Ends the RC session when the cloud configuration is replaced or the app quits.
@@ -54,25 +68,44 @@ public struct RcloneStorageBackend: StorageBackend {
     }
 
     public func list(in prefix: StorageObjectKey) async throws -> [StorageObject] {
+        try await list(in: prefix, withHashes: false)
+    }
+
+    package func list(in prefix: StorageObjectKey, withHashes: Bool) async throws -> [StorageObject] {
         let directory = try path(for: prefix)
         let items: [Item]
         do {
             if let output = try await rc("operations/list", [
-                "fs": basePath(), "remote": prefix.value, "opt": ["filesOnly": true],
+                "fs": basePath(), "remote": prefix.value, "opt": ["filesOnly": !withHashes, "showHash": withHashes],
             ]) {
                 items = try decode(ListResult.self, from: output).list
             } else {
-                let output = try await run(["lsjson", directory, "--files-only"])
+                let output = try await run(["lsjson", directory, withHashes ? "--hash" : "--files-only"])
                 items = try decode([Item].self, from: output)
             }
         } catch StorageBackendError.notFound { return [] }
-        return items.map { StorageObject(key: StorageObjectKey(prefix.value + "/" + $0.name), size: $0.size, hashes: [:]) }
+        return items.map {
+            StorageObject(key: StorageObjectKey(prefix.value + "/" + $0.name), size: $0.size, hashes: $0.hashes ?? [:])
+        }
     }
 
     public func put(_ source: URL, as object: StorageObject,
                     progress: (@Sendable (StorageProgress) -> Void)?) async throws {
-        let final = try path(for: object.key)
         try validateFingerprint(object)
+        try await put(source, as: object, md5Only: false, progress: progress)
+    }
+
+    package func putSource(_ source: URL, as object: StorageObject,
+                   progress: (@Sendable (StorageProgress) -> Void)?) async throws {
+        guard object.size >= 0, isHex(object.hashes["md5"], length: 32) else {
+            throw StorageBackendError.invalidFingerprint
+        }
+        try await put(source, as: object, md5Only: true, progress: progress)
+    }
+
+    private func put(_ source: URL, as object: StorageObject, md5Only: Bool,
+                     progress: (@Sendable (StorageProgress) -> Void)?) async throws {
+        let final = try path(for: object.key)
         guard source.isFileURL, isRegularFile(source) else {
             throw StorageBackendError.invalidLocalFile
         }
@@ -83,16 +116,30 @@ public struct RcloneStorageBackend: StorageBackend {
         do {
             _ = try await run(["copyto", source.path, temporary], progress: progress)
             progress?(StorageProgress(bytesTransferred: object.size, totalBytes: object.size, isVerifying: true))
-            try await verify(object, at: temporary)
-            // Do not let moveto fall back to streaming data into the final key.
-            _ = try await run(["moveto", temporary, final, "--ignore-existing", "--immutable", "--checksum",
-                               "--disable", "Copy", "--max-transfer", "0", "--retries", "1"])
-            // A skipped move leaves our unique staging object behind, even for identical content.
-            createdFinal = try await Task.detached { try await item(at: temporary) == nil }.value
+            try await verify(object, at: temporary, md5Only: md5Only)
+            if md5Only && remote == ":local:" {
+                // rclone's local Move uses a replacing rename, so make the local publication exclusive.
+                let destination = URL(fileURLWithPath: String(final.dropFirst(remote.count)))
+                try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(),
+                                                        withIntermediateDirectories: true)
+                try Task.checkCancellation()
+                guard renamex_np(String(temporary.dropFirst(remote.count)), destination.path, UInt32(RENAME_EXCL)) == 0 else {
+                    if errno == EEXIST { throw StorageBackendError.alreadyExists }
+                    throw StorageBackendError.publicationFailed
+                }
+                createdFinal = true
+            } else {
+                // Do not let moveto fall back to streaming data into the final key.
+                _ = try await run(["moveto", temporary, final, "--ignore-existing", "--immutable", "--checksum",
+                                   "--disable", "Copy", "--max-transfer", "0", "--retries", "1"])
+                // A skipped move leaves our unique staging object behind, even for identical content.
+                createdFinal = try await Task.detached { try await item(at: temporary) == nil }.value
+            }
             guard createdFinal else { throw StorageBackendError.alreadyExists }
-            try await verify(object, at: final)
+            // The sources service verifies the published entry in a fresh directory listing for duplicates.
+            if !md5Only { try await verify(object, at: final) }
         } catch {
-            let cleanup = createdFinal ? [final, temporary] : [temporary]
+            let cleanup = createdFinal && !md5Only ? [final, temporary] : [temporary]
             await Task.detached {
                 for target in cleanup {
                     _ = try? await run(["deletefile", target, "--retries", "1", "--low-level-retries", "1",
@@ -144,9 +191,16 @@ public struct RcloneStorageBackend: StorageBackend {
         try await verify(object, at: path(for: object.key))
     }
 
-    private func verify(_ object: StorageObject, at target: String) async throws {
+    private func verify(_ object: StorageObject, at target: String, md5Only: Bool = false) async throws {
         guard let item = try await item(at: target, withHashes: true) else { throw StorageBackendError.notFound }
         guard item.size == object.size else { throw StorageBackendError.hashMismatch }
+        if md5Only {
+            guard isHex(item.hashes?["md5"], length: 32) else { throw StorageBackendError.hashMismatch }
+            guard item.hashes?["md5"]?.lowercased() == object.hashes["md5"]?.lowercased() else {
+                throw StorageBackendError.hashMismatch
+            }
+            return
+        }
         let expected = object.hashes["sha256"]?.lowercased()
         if let actual = item.hashes?["sha256"], !actual.isEmpty {
             guard actual.lowercased() == expected else { throw StorageBackendError.hashMismatch }

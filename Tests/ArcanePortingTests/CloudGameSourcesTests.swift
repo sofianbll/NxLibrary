@@ -1,0 +1,209 @@
+import Foundation
+import XCTest
+@testable import NXLibraryCore
+@testable import ArcanePorting
+
+final class CloudGameSourcesTests: XCTestCase {
+    func testStatusPartialUploadAndConflictNeverOverwrite() async throws {
+        let f = try Fixture()
+        let base = try f.local("Base.nsp", "base")
+        let update = try f.local("Update.nsz", "update")
+        let dlc = try f.local("DLC.nup", "dlc")
+        let existing = try f.remote("Base.nsp", "base")
+        var status = try await f.service.status(folderName: f.folder, files: [base, update])
+        XCTAssertEqual(status.state, .notInCloud)
+        XCTAssertEqual(status.files.map(\.state), [.synchronized, .notInCloud])
+        XCTAssertEqual(status.localBytes, 10)
+        XCTAssertEqual(status.remoteBytes, 4)
+        let inode = try CloudArchiveInventory.node(at: existing).st_ino
+
+        try await f.service.upload(folderName: f.folder, files: [base, update], progress: nil)
+        XCTAssertEqual(try CloudArchiveInventory.node(at: existing).st_ino, inode)
+        status = try await f.service.status(folderName: f.folder, files: [base, update])
+        XCTAssertEqual(status.state, .synchronized)
+        XCTAssertEqual(status.remoteBytes, 10)
+
+        try Data("fake".utf8).write(to: base)
+        status = try await f.service.status(folderName: f.folder, files: [base, dlc])
+        XCTAssertEqual(status.state, .newerOnThisMac)
+        await assertError(.sourcesConflict) {
+            try await f.service.upload(folderName: f.folder, files: [dlc, base], progress: nil)
+        }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: f.remoteFolder.appendingPathComponent("DLC.nup").path))
+        XCTAssertEqual(try String(contentsOf: existing, encoding: .utf8), "base")
+    }
+
+    func testCloudOnlyDownloadSizeAndVerifiedStagingDoNotReplaceLocalFile() async throws {
+        let f = try Fixture()
+        let base = try f.local("Base.xci", "keep")
+        _ = try f.remote("Base.xci", "old!")
+        let dlc = f.localFolder.appendingPathComponent("DLC.xcz")
+        _ = try f.remote("DLC.xcz", "dlc")
+        let status = try await f.service.status(folderName: f.folder, files: [dlc])
+        XCTAssertEqual(status.state, .cloudOnly)
+        XCTAssertNil(status.files.first?.localBytes)
+        let required = try await f.service.downloadSize(folderName: f.folder, files: [base, dlc])
+        XCTAssertEqual(required, 3)
+        try await f.service.download(folderName: f.folder, files: [base, dlc], progress: nil)
+        XCTAssertEqual(try String(contentsOf: base, encoding: .utf8), "keep")
+        XCTAssertEqual(try String(contentsOf: dlc, encoding: .utf8), "dlc")
+        XCTAssertEqual(Set(try FileManager.default.contentsOfDirectory(atPath: f.localFolder.path)), ["Base.xci", "DLC.xcz"])
+    }
+
+    func testFreeRequiresConfirmationAndFreshMD5ThenUsesTrash() async throws {
+        let f = try Fixture()
+        let file = try f.local("Fixture-\(UUID()).nsp", "base")
+        let remote = try f.remote(file.lastPathComponent, "base")
+        await assertError(.confirmationRequired) {
+            _ = try await f.service.free(folderName: f.folder, files: [file], confirmed: false)
+        }
+        _ = try await f.service.status(folderName: f.folder, files: [file])
+        try Data("fake".utf8).write(to: remote)
+        await assertError(.sourcesConflict) {
+            _ = try await f.service.free(folderName: f.folder, files: [file], confirmed: true)
+        }
+        let trash = f.directory.appendingPathComponent(file.lastPathComponent)
+        try Data("base".utf8).write(to: remote)
+        let freed = try await f.service.free(folderName: f.folder, files: [file], confirmed: true)
+        XCTAssertEqual(freed, 4)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+        XCTAssertEqual(try String(contentsOf: trash, encoding: .utf8), "base")
+    }
+
+    func testMissingRemoteMD5IsUnknownAndDoesNotPermitMutation() async throws {
+        let f = try Fixture(withoutHashes: true)
+        let file = try f.local("Base.nsp", "base")
+        _ = try f.remote("Base.nsp", "base")
+        let status = try await f.service.status(folderName: f.folder, files: [file])
+        XCTAssertEqual(status.state, .unknown)
+        XCTAssertEqual(status.files.first?.remoteBytes, 4)
+        await assertError(.invalidArchive) {
+            _ = try await f.service.free(folderName: f.folder, files: [file], confirmed: true)
+        }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: file.path))
+    }
+
+    func testCancelledUploadDoesNotCreateRemoteFileAndReleasesSharedLease() async throws {
+        let f = try Fixture()
+        let file = try f.local("Base.nsp", "base")
+        let archive = CloudGameArchive(backend: f.backend)
+        let lease = try await archive.beginBuild(titleID: f.titleID)
+        await assertError(.busy) {
+            try await f.service.upload(folderName: f.folder, files: [file], progress: nil)
+        }
+        await archive.endBuild(titleID: f.titleID, token: lease)
+        do {
+            try await Task {
+                try await f.service.upload(folderName: f.folder, files: [file]) { progress in
+                    if progress.isVerifying { withUnsafeCurrentTask { $0?.cancel() } }
+                }
+            }.value
+            XCTFail("Expected cancellation")
+        }
+        catch is CancellationError {}
+        XCTAssertFalse(FileManager.default.fileExists(atPath: f.remoteFolder.appendingPathComponent("Base.nsp").path))
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: f.root.appendingPathComponent(".arcane-upload").path), [])
+        try await f.service.upload(folderName: f.folder, files: [file], progress: nil)
+    }
+
+    func testDestinationAppearingInUploadStagingIsNotOverwritten() async throws {
+        let f = try Fixture()
+        let source = try f.local("Base.nsp", "base")
+        let destination = f.remoteFolder.appendingPathComponent("Base.nsp")
+        try FileManager.default.createDirectory(at: f.remoteFolder, withIntermediateDirectories: true)
+        await assertError(.sourcesConflict) {
+            try await f.service.upload(folderName: f.folder, files: [source]) { progress in
+                if progress.isVerifying { try? Data("race".utf8).write(to: destination) }
+            }
+        }
+        XCTAssertEqual(try String(contentsOf: destination, encoding: .utf8), "race")
+    }
+
+    func testDestinationAppearingInDownloadStagingIsNotOverwritten() async throws {
+        let f = try Fixture()
+        let destination = f.localFolder.appendingPathComponent("Base.nsp")
+        _ = try f.remote("Base.nsp", "base")
+        await assertError(.localChanged) {
+            try await f.service.download(folderName: f.folder, files: [destination]) { progress in
+                if progress.isVerifying { try? Data("race".utf8).write(to: destination) }
+            }
+        }
+        XCTAssertEqual(try String(contentsOf: destination, encoding: .utf8), "race")
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: f.localFolder.path), ["Base.nsp"])
+    }
+
+    func testDownloadDoesNotPublishBytesThatDifferFromListedMD5() async throws {
+        let f = try Fixture()
+        let destination = f.localFolder.appendingPathComponent("Base.nsp")
+        let remote = try f.remote("Base.nsp", "base")
+        await assertError(.invalidArchive) {
+            try await f.service.download(folderName: f.folder, files: [destination]) { progress in
+                if progress.bytesTransferred == 0 && !progress.isVerifying {
+                    try? Data("raced".utf8.prefix(4)).write(to: remote)
+                }
+            }
+        }
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: f.localFolder.path), [])
+    }
+
+    private func assertError(_ expected: CloudArchiveError, _ operation: () async throws -> Void) async {
+        do { try await operation(); XCTFail("Expected \(expected)") }
+        catch { XCTAssertEqual(error as? CloudArchiveError, expected) }
+    }
+
+    private final class Fixture {
+        let directory: URL
+        let root: URL
+        let localFolder: URL
+        let remoteFolder: URL
+        let titleID: String
+        let folder: String
+        let backend: RcloneStorageBackend
+        let service: CloudGameSources
+
+        init(withoutHashes: Bool = false) throws {
+            guard let rclone = RcloneStorageBackend.findExecutable() else { throw XCTSkip("rclone unavailable") }
+            directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+            titleID = String(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(16))
+            folder = "Fixture [\(titleID)]"
+            localFolder = directory.appendingPathComponent("local/\(folder)", isDirectory: true)
+            root = directory.appendingPathComponent("Games", isDirectory: true)
+            remoteFolder = root.appendingPathComponent("Switch/Jeux/\(folder)", isDirectory: true)
+            try FileManager.default.createDirectory(at: localFolder, withIntermediateDirectories: true)
+            let config = directory.appendingPathComponent("rclone.conf")
+            try Data().write(to: config)
+            var executable = rclone
+            if withoutHashes {
+                executable = directory.appendingPathComponent("nohash")
+                try """
+                #!/bin/sh
+                [ "$1" != rcd ] || exit 1
+                RCLONE_LOCAL_HASHES=sha1 exec '\(rclone.path)' "$@"
+                """.write(to: executable, atomically: true, encoding: .utf8)
+                try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+            }
+            backend = RcloneStorageBackend(remote: ":local:", root: root.path, executable: executable, config: config)
+            service = CloudGameSources(backend: backend, root: root.path) { [directory] file in
+                try FileManager.default.moveItem(at: file, to: directory.appendingPathComponent(file.lastPathComponent))
+            }
+        }
+
+        deinit {
+            backend.stopRemoteControl()
+            try? FileManager.default.removeItem(at: directory)
+        }
+
+        func local(_ name: String, _ content: String) throws -> URL {
+            let file = localFolder.appendingPathComponent(name)
+            try Data(content.utf8).write(to: file)
+            return file
+        }
+
+        func remote(_ name: String, _ content: String) throws -> URL {
+            try FileManager.default.createDirectory(at: remoteFolder, withIntermediateDirectories: true)
+            let file = remoteFolder.appendingPathComponent(name)
+            try Data(content.utf8).write(to: file)
+            return file
+        }
+    }
+}

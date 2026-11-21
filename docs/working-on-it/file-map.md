@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 21 novembre 2026. Copertura di **832 file** del progetto, compresi i controlli di pubblicazione, la CI con regressioni app senza UI, il master dell’icona, le guide per sviluppo e media, gli screenshot del README, l'integrazione di nxnative, il canale di aggiornamento e il primo avvio che parte da ciò che è già sul Mac, il setup del porting con cartella unica per scoperta e installazione dei giochi. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 21 novembre 2026. Copertura di **834 file** del progetto, compresi i controlli di pubblicazione, la CI con regressioni app senza UI, il master dell’icona, le guide per sviluppo e media, gli screenshot del README, l'integrazione di nxnative, il canale di aggiornamento e il primo avvio che parte da ciò che è già sul Mac, il setup del porting con cartella unica per scoperta e installazione dei giochi. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -224,7 +224,7 @@ Cartella `Sources/NXLibraryCore/Library/`.
 | [Sources/NXLibraryCore/Library/SessionSummary.swift](../../Sources/NXLibraryCore/Library/SessionSummary.swift) | Cosa dice la card di fine sessione: gioco, durata di questa sessione e totale scritto come nelle info del gioco; niente card sotto i dieci secondi. |
 | [Sources/NXLibraryCore/Library/RunningAppsTracker.swift](../../Sources/NXLibraryCore/Library/RunningAppsTracker.swift) | Snapshot dei bundle ID delle applicazioni in esecuzione e cosa è partito o finito dall’ultima lettura. |
 | [Sources/NXLibraryCore/Library/DirectorySize.swift](../../Sources/NXLibraryCore/Library/DirectorySize.swift) | Misura le cartelle con fts; il modulo Porting può contare anche i file nascosti nelle cartelle cache ignorate. |
-| [Sources/NXLibraryCore/Library/StorageBackend.swift](../../Sources/NXLibraryCore/Library/StorageBackend.swift) | Contratto oggetti remoti: chiavi, impronte, trasferimenti e avanzamento. |
+| [Sources/NXLibraryCore/Library/StorageBackend.swift](../../Sources/NXLibraryCore/Library/StorageBackend.swift) | Contratto oggetti remoti: chiavi, impronte, trasferimenti, avanzamento e lease condiviso. |
 | [Sources/NXLibraryCore/Library/RcloneStorageBackend.swift](../../Sources/NXLibraryCore/Library/RcloneStorageBackend.swift) | Staging, verifica SHA-256, movimento nativo e pulizia della copia appena pubblicata se non verificabile. |
 | [Sources/NXLibraryCore/Library/RcloneConfiguration.swift](../../Sources/NXLibraryCore/Library/RcloneConfiguration.swift) | Preferenza compatibile, remoti e tool locali, prova di lettura, OAuth Drive annullabile e cifratura con portachiavi. |
 | [Sources/NXLibraryCore/Library/RcloneRemoteControl.swift](../../Sources/NXLibraryCore/Library/RcloneRemoteControl.swift) | Riusa un daemon locale per le letture; chiude la sessione al cambio di configurazione o all’uscita. |
@@ -410,6 +410,7 @@ Cartella `Sources/ArcanePorting/Library/`.
 | [Sources/ArcanePorting/Library/StorageManager.swift](../../Sources/ArcanePorting/Library/StorageManager.swift) | Misura app, cache e log per gioco e totali senza duplicare percorsi condivisi; verifica cartelle e sorgenti prima della pulizia selettiva. I backup appartengono al flusso Saves. |
 | [Sources/ArcanePorting/Library/CloudArchiveInventory.swift](../../Sources/ArcanePorting/Library/CloudArchiveInventory.swift) | Controlla gerarchia, link, esclusioni, hash e metadati prima e dopo l’estrazione. |
 | [Sources/ArcanePorting/Library/CloudGameArchive.swift](../../Sources/ArcanePorting/Library/CloudGameArchive.swift) | Archivia app e cache con manifest, anche separatamente; verifica firma, contenuti e cache prima di Rebuild e conserva le cartelle ignorate. |
+| [Sources/ArcanePorting/Library/CloudGameSources.swift](../../Sources/ArcanePorting/Library/CloudGameSources.swift) | Confronta, invia e ripristina le sorgenti selezionate senza sostituire copie esistenti. |
 | [Sources/ArcanePorting/Library/GameStorageUsage.swift](../../Sources/ArcanePorting/Library/GameStorageUsage.swift) | Dimensioni per gioco e totali: distingue assenza e indisponibilità, segnala cache condivise e conserva identità stabili per il focus. |
 
 ## Porting · pagina del gioco
@@ -925,6 +926,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/ArcanePortingTests/PortingFailureReasonTests.swift](../../Tests/ArcanePortingTests/PortingFailureReasonTests.swift) | Classificazione dei fallimenti e corrispondenza con i messaggi del pin, anche da un checkout separato scelto con NX_TEST_ENGINE_REPO. |
 | [Tests/ArcanePortingTests/PortingNoticeTests.swift](../../Tests/ArcanePortingTests/PortingNoticeTests.swift) | Condizioni e testi delle notifiche di esito del porting. |
 | [Tests/ArcanePortingTests/PortingPresentationTests.swift](../../Tests/ArcanePortingTests/PortingPresentationTests.swift) | ETA, prewarm, tile, fallimenti del porting e posizione e focus della pill Cloud. |
+| [Tests/ArcanePortingTests/CloudGameSourcesTests.swift](../../Tests/ArcanePortingTests/CloudGameSourcesTests.swift) | Fixture rclone locale: conflitti, lease, annullamento e spostamento in un Cestino simulato. |
 | [Tests/ArcanePortingTests/AppIconPreferenceTests.swift](../../Tests/ArcanePortingTests/AppIconPreferenceTests.swift) | Ambito dell’icona: scelta esplicita, vecchie librerie, scansioni, persistenza e rebuild. |
 | [Tests/ArcanePortingTests/AppIconProgressTests.swift](../../Tests/ArcanePortingTests/AppIconProgressTests.swift) | Verifica che l'esito di un'icona mancante non sovrascriva il log o segnali una build fallita. |
 | [Tests/ArcanePortingTests/IconLaunchWaitTests.swift](../../Tests/ArcanePortingTests/IconLaunchWaitTests.swift) | Attesa Play: successo, errore, annullamento, gioco diverso e nuova firma in coda. |

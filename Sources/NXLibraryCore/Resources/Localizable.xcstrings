@@ -1,6 +1,16 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "A game file differs from its cloud copy. No existing copy is replaced.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "A game file differs from its cloud copy. No existing copy is replaced."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Un file del gioco differisce dalla copia nel cloud. Nessuna copia esistente viene sostituita."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Un fichier du jeu diffère de sa copie dans le cloud. Aucune copie existante n’est remplacée."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Eine Spieldatei weicht von ihrer Cloud-Kopie ab. Keine vorhandene Kopie wird ersetzt."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Un archivo del juego difiere de su copia en la nube. No se reemplaza ninguna copia existente."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Um arquivo do jogo difere da cópia na nuvem. Nenhuma cópia existente é substituída."}}
+      }
+    },
     "Cloud": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Cloud"}},

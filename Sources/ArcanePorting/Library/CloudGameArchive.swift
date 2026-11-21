@@ -101,6 +101,7 @@ public enum CloudArchiveError: LocalizedError, Equatable {
 
     case busy, confirmationRequired, insufficientSpace, unsafePath, localMissing
     case noRemoteCopy, needsFullUpload, invalidManifest, invalidArchive, invalidApp, localChanged, excludedFiles, installFailed
+    case sourcesConflict
     case uploadMismatch(CloudArtifactKind, path: String, reason: UploadDifference)
 
     public var diagnosticDetail: String? {
@@ -123,6 +124,8 @@ public enum CloudArchiveError: LocalizedError, Equatable {
             return L10n.text("The local copy changed. Check it before trying again.")
         case .needsFullUpload:
             return L10n.text("Send both the app and the build cache to create a complete cloud copy.")
+        case .sourcesConflict:
+            return L10n.text("A game file differs from its cloud copy. No existing copy is replaced.")
         case .uploadMismatch(let kind, let path, _):
             return L10n.format(kind == .app ? "The app changed during upload (%@). Try again."
                                : "The build cache changed during upload (%@). Try again.", [path])
@@ -153,7 +156,7 @@ public actor CloudGameArchive {
     private let backend: any StorageBackend
     private let capacity: @Sendable (URL) -> Int64?
     private let trash: @Sendable (URL) throws -> Void
-    private var activeTitles: [String: UUID] = [:]
+    private let leases: CloudTitleLeases
     private struct Fingerprint: Sendable {
         let signature: String
         let sha256: String
@@ -177,6 +180,7 @@ public actor CloudGameArchive {
                   },
                   trash: @escaping @Sendable (URL) throws -> Void) {
         self.backend = backend
+        self.leases = (backend as? RcloneStorageBackend)?.leases ?? CloudTitleLeases()
         self.capacity = capacity
         self.trash = trash
     }
@@ -267,8 +271,7 @@ public actor CloudGameArchive {
     }
 
     public func endBuild(titleID: String, token: UUID) {
-        let title = titleID.uppercased()
-        if activeTitles[title] == token { activeTitles[title] = nil }
+        leases.end(titleID.uppercased(), token: token)
     }
 
     public func checkRebuild(_ game: CloudArchiveGame, sourcesAvailable: Bool, withoutCache: Bool)
@@ -327,8 +330,8 @@ public actor CloudGameArchive {
     }
 
     public func upload(_ game: CloudArchiveGame, kinds: Set<CloudArtifactKind>, progress: Progress? = nil) async throws -> CloudGameManifest {
-        _ = try begin(game.titleID)
-        defer { activeTitles[game.titleID] = nil }
+        let lease = try begin(game.titleID)
+        defer { leases.end(game.titleID, token: lease) }
         let selected = CloudArtifactKind.allCases.filter { kinds.contains($0) }
         guard !selected.isEmpty else { throw CloudArchiveError.needsFullUpload }
         var artifacts: [Artifact] = []
@@ -418,8 +421,8 @@ public actor CloudGameArchive {
     public func free(_ kind: CloudArtifactKind, for game: CloudArchiveGame, confirmed: Bool,
                      beforeMutation: @Sendable () throws -> Void = {}) async throws {
         guard confirmed else { throw CloudArchiveError.confirmationRequired }
-        _ = try begin(game.titleID)
-        defer { activeTitles[game.titleID] = nil }
+        let lease = try begin(game.titleID)
+        defer { leases.end(game.titleID, token: lease) }
         let target = try location(kind, for: game)
         let parent = target.deletingLastPathComponent()
         let volume = try CloudArchiveInventory.node(at: parent)
@@ -454,8 +457,8 @@ public actor CloudGameArchive {
     public func restore(_ kind: CloudArtifactKind, for game: CloudArchiveGame,
                         onlyIfMissing: Bool = false, progress: Progress? = nil,
                         beforeMutation: @Sendable () throws -> Void = {}) async throws -> URL? {
-        _ = try begin(game.titleID)
-        defer { activeTitles[game.titleID] = nil }
+        let lease = try begin(game.titleID)
+        defer { leases.end(game.titleID, token: lease) }
         progress?(.init(.verifying, kind: kind))
         let destination = try location(kind, for: game)
         let parent = destination.deletingLastPathComponent()
@@ -535,10 +538,8 @@ public actor CloudGameArchive {
 
     private func begin(_ titleID: String) throws -> UUID {
         guard SaveLocation.validID(titleID) else { throw CloudArchiveError.unsafePath }
-        guard activeTitles[titleID] == nil else { throw CloudArchiveError.busy }
-        let token = UUID()
-        activeTitles[titleID] = token
-        return token
+        guard let lease = leases.begin(titleID) else { throw CloudArchiveError.busy }
+        return lease
     }
 
     private func remoteArtifact(_ kind: CloudArtifactKind, _ game: CloudArchiveGame) async throws -> Artifact {

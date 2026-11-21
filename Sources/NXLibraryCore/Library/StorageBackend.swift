@@ -1,5 +1,25 @@
 import Foundation
 
+package final class CloudTitleLeases: @unchecked Sendable {
+    private let lock = NSLock()
+    private var titles: [String: UUID] = [:]
+
+    package init() {}
+
+    package func begin(_ title: String) -> UUID? {
+        lock.withLock {
+            guard titles[title] == nil else { return nil }
+            let token = UUID()
+            titles[title] = token
+            return token
+        }
+    }
+
+    package func end(_ title: String, token: UUID) {
+        lock.withLock { if titles[title] == token { titles[title] = nil } }
+    }
+}
+
 /// A backend-relative identifier, not a filesystem URL or a remote specification.
 public struct StorageObjectKey: Codable, Hashable, Sendable {
     public let value: String
@@ -45,6 +65,7 @@ public enum StorageBackendError: Error, Equatable, Sendable {
     case alreadyExists
     case notFound
     case hashMismatch
+    case publicationFailed
     case backendUnavailable
     case processFailed(status: Int32)
     case invalidResponse

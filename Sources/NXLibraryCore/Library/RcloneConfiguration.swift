@@ -31,7 +31,7 @@ public struct CloudLibraryPreference: Equatable, Sendable {
         !root.split(separator: "/").isEmpty && safePath(root)
     }
 
-    static func safePath(_ path: String) -> Bool {
+    package static func safePath(_ path: String) -> Bool {
         !path.contains("\\") && !path.contains(":")
             && path.rangeOfCharacter(from: .controlCharacters) == nil
             && !path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." })
