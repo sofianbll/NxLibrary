@@ -478,6 +478,23 @@ struct CloudLibraryIndicator {
     }
     var queued: Bool { showsAction && state.queued }
     var copy: CloudArtifactStatus.State { state.copy(item ?? .app) ?? .unknown }
+
+    /// The Details and Spotlight pill: one Material glyph drawn like the favorite heart (white, dark when focused).
+    var pillIcon: MaterialIcon {
+        if queued { return .cloudQueue }
+        if progress {
+            switch state.action {
+            case .upload, .uploadSources: return .cloudUpload
+            default: return .cloudDownload
+            }
+        }
+        switch copy {
+        case .synchronized: return .cloudDone
+        case .cloudOnly: return .cloudDownload
+        case .newerOnThisMac: return .cloudUpload
+        case .notInCloud, .unknown: return .cloud
+        }
+    }
     var isTransferring: Bool {
         showsAction && !state.queued && (state.progress?.phase == .uploading || state.progress?.phase == .downloading)
     }
@@ -616,8 +633,9 @@ struct CloudLibraryPill: View {
     let action: () -> Void
 
     var body: some View {
-        SelenePillButton(title: nil, minWidth: 52, height: 52, horizontalPadding: 0,
-                         focused: focused, accessory: AnyView(CloudLibraryBadge(indicator: indicator)), action: action)
+        // Same drawing as the favorite pill: the glyph follows the pill's focus colors (c9ed825).
+        SelenePillButton(title: nil, icon: indicator.pillIcon, iconSize: 20, minWidth: 52, height: 52,
+                         horizontalPadding: 0, focused: focused, action: action)
             .accessibilityLabel(L10n.text("Cloud library", context: localization))
             .accessibilityValue(indicator.label(context: localization))
     }
