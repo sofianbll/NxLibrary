@@ -369,9 +369,10 @@ extension SpotlightView {
 
     /// Play, or Build for a game not built yet (as on the Details page); the page has no build button any more.
     private func play(_ game: PortedGame) {
-        let step = GamePrimaryStep.decide(unavailable: GameResourceState.unavailableReason(for: game) != nil,
+        let step = GamePrimaryStep.decide(unavailable: viewModel.portingPills(game).unavailableReason != nil,
                                           playable: game.isPlayableLocally,
-                                          sourcesAvailable: GameResourceState.sourcesAvailable(for: game))
+                                          sourcesAvailable: GameResourceState.sourcesAvailable(for: game)
+                                              || viewModel.canCheckCloudSources(for: game))
         switch step {
         case .play:
             viewModel.launchGame(game)

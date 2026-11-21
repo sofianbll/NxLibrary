@@ -19,6 +19,7 @@ struct SeleneConfirmDialog<Detail: View>: View {
     let confirmTitle: String
     var cancelTitle: String? = "Cancel"
     var confirmEnabled = true
+    var highlightsPills = true
     @Binding var focus: SeleneConfirmButton
     let onCancel: () -> Void
     let onConfirm: () -> Void
@@ -40,12 +41,12 @@ struct SeleneConfirmDialog<Detail: View>: View {
             detailContent()
             HStack(spacing: canvas.u(22)) {
                 if let cancelTitle {
-                    SelenePillButton(title: cancelTitle, focused: focus == .cancel, action: onCancel)
+                    SelenePillButton(title: cancelTitle, focused: highlightsPills && focus == .cancel, action: onCancel)
                         .onHover { if $0 { focus = .cancel } }
                         .accessibilityLabel(cancelTitle)
                 }
-                SelenePillButton(title: confirmTitle, focused: focus == .confirm, enabled: confirmEnabled, action: onConfirm)
-                    .onHover { if $0 { focus = .confirm } }
+                SelenePillButton(title: confirmTitle, focused: highlightsPills && focus == .confirm, enabled: confirmEnabled, action: onConfirm)
+                    .onHover { if $0 && confirmEnabled { focus = .confirm } }
                     .accessibilityLabel(confirmTitle)
             }
             .padding(.top, canvas.u(34))

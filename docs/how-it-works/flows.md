@@ -122,7 +122,10 @@ flowchart TD
     C --> D["KeyCheck (se le sorgenti sono cifrate)<br/>NUP: identità programma e capacità del checkout"]
     D --> E["Review: GameAppDestination, GameRuntimeConfig.forReview"]
     E --> R{"Sorgenti presenti e cache cloud verificata, se prevista?"}
-    R -->|"sorgenti mancanti"| S["Collegare i file originali"]
+    R -->|"sorgenti mancanti e disponibili nel cloud"| U["Conferma la dimensione e accoda il download"]
+    U -->|"scaricate e verificate"| R
+    U -->|"annullato o non riuscito"| P["Nessuna build"]
+    R -->|"sorgenti mancanti non scaricabili"| S["Collegare i file originali"]
     R -->|"cache non verificata"| T["Scarica la cache o conferma una build con cache temporanea"]
     T -->|"scaricata"| R
     T -->|"confermata e sorgenti presenti"| F
@@ -143,7 +146,11 @@ flowchart TD
 
 **Details → Cloud.** Il pulsante accanto a Options apre la libreria cloud; il link in fondo resta disponibile. Il primo invio è congiunto; Send per riga richiede una copia remota dell’altro elemento. Solo dopo gli oggetti verificati si pubblica il manifest. Una divergenza ferma la pubblicazione: il pannello indica il percorso relativo, la Console anche il motivo. Invio, download e Cestino partono nell’ordine della coda; Cancel toglie una richiesta in attesa o annulla quella attiva.
 
-Con solo una copia cloud dell'app, Download sostituisce il pulsante principale e usa lo stesso ripristino del pannello: verifica hash, inventario e firma prima di pubblicare la copia mancante e riattivare Play. Cancel agisce sul trasferimento della riga; B chiude il pannello e la fase con l'avanzamento resta in Details. Free compare per una copia sincronizzata. La conferma Selene precede una nuova verifica remota e il confronto locale; una divergenza lascia il file dov'è. La voce in libreria resta.
+Con solo una copia cloud dell'app, Download sostituisce il pulsante principale e usa lo stesso ripristino del pannello: verifica hash, inventario e firma prima di pubblicare la copia mancante e riattivare Play. La terza riga propone Send o Download per i file del gioco mancanti da un lato; con una divergenza non offre alcuna azione.
+
+Free up space apre una conferma con le dimensioni e una selezione per app, cache e file del gioco. Solo le copie sincronizzate sono selezionabili; app e cache partono selezionate quando disponibili, i file del gioco no. La conferma precede una nuova verifica prima del Cestino. La voce di libreria resta e lo spazio ritorna quando si svuota il Cestino. Invio, download e liberazione passano per la stessa coda. Cancel rimuove la richiesta in coda o annulla quella attiva; B chiude solo il pannello.
+
+Se al Build o Rebuild mancano file locali ma il cloud li ha, Arcane mostra la dimensione da scaricare. Download accoda il ripristino e apre il pannello di avanzamento. Solo il ripristino riuscito riprende il percorso di build, con i normali controlli per cache e toolchain.
 
 L'aggiornamento dello stato legge il manifest remoto mentre individua e controlla i percorsi locali. Se il demone rclone è indisponibile, i comandi singoli mantengono la distinzione tra copia assente e stato ignoto.
 

@@ -11,6 +11,76 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Um arquivo do jogo difere da cópia na nuvem. Nenhuma cópia existente é substituída."}}
       }
     },
+    "Arcane checks the cloud for missing game files.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Arcane checks the cloud for missing game files."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Arcane cerca i file del gioco mancanti nel cloud."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Arcane cherche les fichiers du jeu manquants dans le cloud."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Arcane sucht in der Cloud nach fehlenden Spieldateien."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Arcane busca en la nube los archivos del juego que faltan."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O Arcane procura na nuvem os arquivos do jogo que faltam."}}
+      }
+    },
+    "Game source files": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Game files"}},
+        "it": {"stringUnit": {"state": "translated", "value": "File del gioco"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Fichiers du jeu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spieldateien"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Archivos del juego"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Arquivos do jogo"}}
+      }
+    },
+    "Different in the cloud. Nothing is overwritten.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Different in the cloud. Nothing is overwritten."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Diversi nel cloud: non viene sovrascritto nulla."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Différent dans le cloud, rien n’est écrasé."}},
+        "de": {"stringUnit": {"state": "translated", "value": "In der Cloud abweichend. Nichts wird überschrieben."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Son distintos en la nube. No se sobrescribe nada."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Diferentes na nuvem. Nada é sobrescrito."}}
+      }
+    },
+    "Moves to the Trash. Empty it to reclaim space. Everything stays available to download.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Moves to the Trash. Empty it to reclaim space. Everything stays available to download."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Va nel Cestino. Svuotalo per recuperare spazio. Tutto resta scaricabile."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Va dans la Corbeille. L’espace revient quand tu la vides. Tout reste téléchargeable."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Kommt in den Papierkorb. Leere ihn, um Speicherplatz freizugeben. Alles bleibt zum Download verfügbar."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Va a la papelera. Vacíala para recuperar espacio. Todo sigue disponible para descargar."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Vai para o Lixo. Esvazie-o para liberar espaço. Tudo continua disponível para baixar."}}
+      }
+    },
+    "Download %@ to rebuild?": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Download %@ to rebuild?"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scaricare %@ per ricompilare?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Télécharger %@ pour recompiler ?"}},
+        "de": {"stringUnit": {"state": "translated", "value": "%@ zum erneuten Erstellen herunterladen?"}},
+        "es": {"stringUnit": {"state": "translated", "value": "¿Descargar %@ para recompilar?"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Baixar %@ para recompilar?"}}
+      }
+    },
+    "Uploading game files": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Uploading game files"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invio dei file del gioco"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoi des fichiers du jeu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spieldateien werden hochgeladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enviando los archivos del juego"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviando os arquivos do jogo"}}
+      }
+    },
+    "Downloading game files": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Downloading game files"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Download dei file del gioco"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Téléchargement des fichiers du jeu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spieldateien werden heruntergeladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Descargando los archivos del juego"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Baixando os arquivos do jogo"}}
+      }
+    },
     "Cloud": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Cloud"}},

@@ -22,6 +22,7 @@ struct SpotlightGameInfoView: View {
     let onHoverPill: (Int) -> Void
     /// The pills follow the porting (`PortingPills`).
     var pillSet: PortingPills = .normal
+    var canCheckCloudSources = false
     /// "About 8 min left" under the Porting pill.
     var etaText: String? = nil
     /// "Last porting failed · Open log".
@@ -106,7 +107,7 @@ struct SpotlightGameInfoView: View {
         case .unavailable(let reason):
             Text(reason.detail).seleneFont(15).foregroundColor(SeleneTheme.ink60)
         case .normal:
-            if !game.sources.isEmpty, !GameResourceState.sourcesAvailable(for: game) {
+            if !canCheckCloudSources && !game.sources.isEmpty && !GameResourceState.sourcesAvailable(for: game) {
                 Text(L10n.text("Game files not found · Rebuild unavailable"))
                     .seleneFont(15).foregroundColor(SeleneTheme.ink60)
             } else if !game.isPlayableLocally {

@@ -92,7 +92,7 @@ struct GameDetailView: View {
                      bands: DetailsFocus.Bands(screenshots: urls.count, mods: modsHost.tiles.count,
                                                actions: links.count, more: more.count),
                      buildBlocked: blocked,
-                     primaryEnabled: p.canPlay || (p.canRebuild && !blocked))
+                     primaryEnabled: p.canPlay || ((p.canRebuild || viewModel.canCheckCloudSources(for: game)) && !blocked))
     }
 
     var metadata: NintendoStoreMetadata? { store.storeMetadata[game.id] }
@@ -276,6 +276,7 @@ struct GameDetailView: View {
                             etaText: viewModel.portingETAText,
                             cloud: viewModel.cloudLibrary,
                             downloadEnabled: viewModel.canChangeCloudLibrary(game),
+                            canCheckCloudSources: viewModel.canCheckCloudSources(for: game),
                             onPill: { pressPill($0) },
                             onOpenLog: { viewModel.revealLog(for: game) })
                 .offset(x: canvas.u(110), y: canvas.u(96))

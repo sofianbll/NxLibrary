@@ -12,7 +12,9 @@ extension AppViewModel {
     }
 
     func portingPills(_ game: PortedGame) -> PortingPills {
-        PortingPills.make(game: game, portingGameID: portingGameID)
+        let pills = PortingPills.make(game: game, portingGameID: portingGameID)
+        if pills == .unavailable(.sourcesMissing), canCheckCloudSources(for: game) { return .normal }
+        return pills
     }
 
     /// "About 8 min left" under the Porting pill; nil before the shaders.

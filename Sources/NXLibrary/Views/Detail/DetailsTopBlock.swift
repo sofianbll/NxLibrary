@@ -35,6 +35,7 @@ struct DetailsTopBlock: View {
     var etaText: String? = nil
     @ObservedObject var cloud: CloudLibraryModel
     var downloadEnabled = false
+    var canCheckCloudSources = false
     var onPill: (Int) -> Void = { _ in }
     var onOpenLog: () -> Void = {}
     private var pillSet: PortingPills { portingPills.detailsPresentation(cloudOnly: downloadsApp && !isRunning) }
@@ -76,11 +77,11 @@ struct DetailsTopBlock: View {
                 }
             }
                 .padding(.top, canvas.u(pillSet.isFailed ? 10 : 26))
-            if let state = cloud.states[game.id], state.action != nil, !state.queued {
+            if let state = cloud.states[game.id], let active = state.activeItem, active != .sources, !state.queued {
                 CloudLibraryProgressView(progress: state.progress)
                     .frame(maxWidth: canvas.u(700), alignment: .leading)
                     .padding(.top, canvas.u(12))
-            } else if let issue = cloud.states[game.id]?.issue {
+            } else if let issue = cloud.states[game.id]?.issue, issue.item != .sources {
                 Text(issue.message).seleneFont(15).foregroundColor(issue.failed ? PortingPillCopy.softRed : SeleneTheme.ink60)
                     .padding(.top, canvas.u(12))
             }
@@ -149,7 +150,7 @@ struct DetailsTopBlock: View {
         case .normal, .unavailable:
             if downloadsApp {
                 EmptyView()
-            } else if !game.sources.isEmpty, !GameResourceState.sourcesAvailable(for: game) {
+            } else if !canCheckCloudSources && !game.sources.isEmpty && !GameResourceState.sourcesAvailable(for: game) {
                 Text(L10n.text("Game files not found · Rebuild unavailable")).seleneFont(15).foregroundColor(SeleneTheme.ink60)
             } else if !game.isPlayableLocally {
                 Text(L10n.text("Not built yet")).seleneFont(15).foregroundColor(SeleneTheme.ink60)

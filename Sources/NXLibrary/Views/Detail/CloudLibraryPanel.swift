@@ -16,6 +16,8 @@ struct CloudLibraryPanel: View {
     let game: PortedGame
     @State private var focus: Control?
     @State private var refreshRevision = 0
+    @State private var freeSelection: CloudFreeSelection?
+    @State private var freeFocus: FreeControl = .cancel
 
     private struct ReadRequest: Equatable {
         let game: PortedGame
@@ -23,8 +25,11 @@ struct CloudLibraryPanel: View {
     }
 
     private enum Control: Hashable {
-        case upload(CloudArtifactKind?), free(CloudArtifactKind), download(CloudArtifactKind), cancel, refresh, settings, close
+        case upload(CloudArtifactKind?), download(CloudArtifactKind), uploadSources, downloadSources
+        case free, cancel, refresh, settings, close
     }
+
+    private enum FreeControl: Equatable { case item(CloudLibraryItem), cancel, confirm }
 
     private var state: CloudLibraryState { model.states[game.id] ?? CloudLibraryState() }
     private var canChange: Bool { state.action == nil && !state.refreshing && viewModel.canChangeCloudLibrary(game) }
@@ -44,6 +49,9 @@ struct CloudLibraryPanel: View {
                 SeleneHintsBar(left: [HintItem(.b, "Close", action: close)],
                                right: controls.isEmpty ? [] : [HintItem(.a, "Select")])
             }
+            .allowsHitTesting(freeSelection == nil)
+            .accessibilityHidden(freeSelection != nil)
+            if let freeSelection { freeDialog(freeSelection) }
         }
         .task(id: ReadRequest(game: game, revision: refreshRevision)) { await viewModel.refreshCloudLibrary(game) }
         .onChange(of: controls) { _, controls in
@@ -66,8 +74,8 @@ struct CloudLibraryPanel: View {
             if let unavailable {
                 Text(text(unavailable)).seleneFont(17).foregroundColor(SeleneTheme.ink75)
             } else {
-                ForEach(CloudArtifactKind.allCases, id: \.self) { kind in
-                    artifactRow(kind)
+                ForEach(CloudLibraryItem.allCases, id: \.self) { item in
+                    artifactRow(item)
                 }
             }
             if let message = state.message {
@@ -75,11 +83,12 @@ struct CloudLibraryPanel: View {
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            if controls.contains(where: { [.close, .settings, .refresh, .upload(nil)].contains($0) }) {
+            if controls.contains(where: { [.close, .settings, .refresh, .free, .upload(nil)].contains($0) }) {
                 HStack(spacing: canvas.u(10)) {
                     if !showHints { button(.close, "Close") }
                     if controls.contains(.settings) { button(.settings, "Open settings") }
                     if controls.contains(.refresh) { button(.refresh, "Refresh") }
+                    if controls.contains(.free) { button(.free, "Free up space") }
                     if controls.contains(.upload(nil)) {
                         button(.upload(nil), state.needsCombinedUpload ? "Send the app and cache" : "Send update")
                     }
@@ -90,11 +99,11 @@ struct CloudLibraryPanel: View {
         .modifier(SeleneDialogCard())
     }
 
-    private func artifactRow(_ kind: CloudArtifactKind) -> some View {
-        let title = text(kind == .app ? "Game app" : "Build cache")
-        let copy = state.copies[kind]
-        let live = state.activeKind == kind && !state.queued
-        let size = copy?.bytes.map { $0.formatted(.byteCount(style: .file).locale(localization.formatLocale)) }
+    private func artifactRow(_ item: CloudLibraryItem) -> some View {
+        let title = text(item.title)
+        let copy = item.artifact.flatMap { state.copies[$0] }
+        let live = state.activeItem == item && !state.queued
+        let size = state.bytes(item).map(formattedBytes)
         let sent = copy?.uploadedAt.map {
             L10n.format("Sent %@", [$0.formatted(.relative(presentation: .named, unitsStyle: .abbreviated)
                 .locale(localization.formatLocale))],
@@ -105,7 +114,7 @@ struct CloudLibraryPanel: View {
                 VStack(alignment: .leading, spacing: canvas.u(5)) {
                     Text(title).seleneFont(17, .semibold).foregroundColor(SeleneTheme.ink90)
                         .accessibilityAddTraits(.isHeader)
-                    CloudLibraryIndicator(state: state, kind: kind).dot(context: localization, title: title)
+                    CloudLibraryIndicator(state: state, item: item).dot(context: localization, title: title)
                 }
                 .multilineTextAlignment(.leading)
                 .layoutPriority(1)
@@ -122,21 +131,23 @@ struct CloudLibraryPanel: View {
                 }
                 .foregroundColor(SeleneTheme.ink75)
                 .multilineTextAlignment(.trailing)
-                if let control = artifactControl(kind) {
+                if let control = artifactControl(item) {
                     switch control {
                     case .cancel: button(.cancel, "Cancel")
-                    case .upload: button(control, "Send")
-                    case .free: button(control, size == nil ? "Free up space" : "Free %@", arguments: size.map { [$0] } ?? [])
+                    case .upload, .uploadSources: button(control, "Send")
                     default: button(control, "Download")
                     }
                 }
             }
             if live {
                 CloudLibraryProgressView(progress: state.progress, showsSummary: false)
-            } else if let issue = state.issue, issue.kind == kind {
+            } else if let issue = state.issue, issue.item == item {
                 Text(issue.message).seleneFont(15)
                     .foregroundColor(issue.failed ? PortingPillCopy.softRed : SeleneTheme.ink60)
                     .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if item == .sources, let message = state.sourcesMessage {
+                Text(message).seleneFont(15).foregroundColor(PortingPillCopy.softRed)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -144,11 +155,17 @@ struct CloudLibraryPanel: View {
         .background(SeleneTheme.glassLight, in: RoundedRectangle(cornerRadius: canvas.u(SeleneTheme.rowRadius)))
     }
 
-    private func artifactControl(_ kind: CloudArtifactKind) -> Control? {
-        if state.activeKind == kind { return .cancel }
+    private func artifactControl(_ item: CloudLibraryItem) -> Control? {
+        if state.activeItem == item { return .cancel }
         guard canChange else { return nil }
+        guard let kind = item.artifact else {
+            switch state.sources?.state {
+            case .notInCloud: return GameResourceState.sourcesAvailable(for: game) ? .uploadSources : nil
+            case .cloudOnly: return .downloadSources
+            default: return nil
+            }
+        }
         switch state.copies[kind]?.state {
-        case .synchronized: return .free(kind)
         case .cloudOnly: return .download(kind)
         default: return state.canUpload(kind) ? .upload(kind) : nil
         }
@@ -158,19 +175,24 @@ struct CloudLibraryPanel: View {
         let close: [Control] = showHints ? [] : [.close]
         if model.archive == nil { return close + [.settings] }
         if unavailable != nil { return close }
-        let artifacts = CloudArtifactKind.allCases.compactMap(artifactControl)
+        let artifacts = CloudLibraryItem.allCases.compactMap(artifactControl)
         if state.action != nil || state.refreshing { return artifacts + close }
-        return artifacts + close + (state.message == nil ? [] : [.settings])
-            + [.refresh] + (canChange && state.canUploadBoth ? [.upload(nil)] : [])
+        var buttons = artifacts + close
+        if state.message != nil || state.sourcesMessage != nil { buttons.append(.settings) }
+        buttons.append(.refresh)
+        if canChange && !CloudFreeSelection(state: state).available.isEmpty { buttons.append(.free) }
+        if canChange && state.canUploadBoth { buttons.append(.upload(nil)) }
+        return buttons
     }
 
-    private func button(_ control: Control, _ key: String, arguments: [String] = []) -> some View {
-        SelenePillButton(title: key, titleArguments: arguments, minWidth: 96, height: 36, horizontalPadding: 14,
+    private func button(_ control: Control, _ key: String) -> some View {
+        SelenePillButton(title: key, minWidth: 96, height: 36, horizontalPadding: 14,
                          focused: (focus ?? controls.first) == control, action: { choose(control) })
             .onHover { if $0 { focus = control } }
     }
 
     private func handle(_ action: GamepadAction) {
+        if let freeSelection { handleFree(action, selection: freeSelection); return }
         let controls = self.controls
         if action == .cancel { close(); return }
         guard !controls.isEmpty else { return }
@@ -193,7 +215,11 @@ struct CloudLibraryPanel: View {
         guard controls.contains(control) else { return }
         switch control {
         case .upload(let kind): viewModel.performCloudLibrary(.upload(kind), for: game)
-        case .free(let kind): viewModel.confirmCloudFree(kind, for: game)
+        case .uploadSources: viewModel.performCloudLibrary(.uploadSources, for: game)
+        case .downloadSources: viewModel.performCloudLibrary(.downloadSources, for: game)
+        case .free:
+            freeFocus = .cancel
+            freeSelection = CloudFreeSelection(state: state)
         case .download(let kind): viewModel.performCloudLibrary(.restore(kind), for: game)
         case .cancel: viewModel.cancelCloudLibrary(game)
         case .refresh:
@@ -206,6 +232,66 @@ struct CloudLibraryPanel: View {
         }
     }
 
+    private func freeDialog(_ selection: CloudFreeSelection) -> some View {
+        ZStack {
+            SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle())
+                .onTapGesture { freeSelection = nil }
+            SeleneConfirmDialog(title: "Free up space",
+                message: text("Moves to the Trash. Empty it to reclaim space. Everything stays available to download."),
+                confirmTitle: "Free up space", confirmEnabled: !selection.selected.isEmpty,
+                highlightsPills: freeFocus == .cancel || freeFocus == .confirm,
+                focus: Binding(get: { freeFocus == .confirm ? .confirm : .cancel },
+                               set: { freeFocus = $0 == .cancel ? .cancel : .confirm }),
+                onCancel: { freeSelection = nil }, onConfirm: confirmFree) {
+                VStack(spacing: canvas.u(6)) {
+                    ForEach(CloudLibraryItem.allCases, id: \.self) { item in
+                        let size = selection.sizes[item].map(formattedBytes) ?? "—"
+                        SeleneRow(item.title, subtitle: size, verbatimSubtitle: true) {
+                            SeleneSwitch(isOn: Binding(get: { freeSelection?.selected.contains(item) == true },
+                                                       set: { _ in freeSelection?.toggle(item) }))
+                                .disabled(!selection.allows(item))
+                                .accessibilityLabel(text(item.title))
+                        }
+                        .environment(\.seleneFocusedRowID, freeFocus == .item(item) ? item.title : nil)
+                        .onHover { if $0 && selection.allows(item) { freeFocus = .item(item) } }
+                    }
+                }
+                .padding(.top, canvas.u(18))
+            }
+        }
+    }
+
+    private func handleFree(_ action: GamepadAction, selection: CloudFreeSelection) {
+        let choices = CloudLibraryItem.allCases.filter(selection.allows).map(FreeControl.item)
+            + [.cancel] + (selection.selected.isEmpty ? [] : [.confirm])
+        switch action {
+        case .cancel: freeSelection = nil
+        case .confirm:
+            switch freeFocus {
+            case .cancel: freeSelection = nil
+            case .confirm: confirmFree()
+            case .item(let item):
+                freeSelection?.toggle(item)
+                SoundEffectService.shared.play(.key)
+            }
+        case .navigateLeft, .navigateUp, .navigateRight, .navigateDown:
+            var index = FocusIndex(index: choices.firstIndex(of: freeFocus) ?? (choices.count - 1))
+            index.move(by: action == .navigateLeft || action == .navigateUp ? -1 : 1, count: choices.count)
+            let next = choices[index.index]
+            if next != freeFocus { SoundEffectService.shared.play(.focus); freeFocus = next }
+        default: break
+        }
+    }
+
+    private func confirmFree() {
+        guard let selection = freeSelection, !selection.selected.isEmpty else { return }
+        freeSelection = nil
+        viewModel.performCloudLibrary(.free(selection.selected), for: game)
+    }
+
+    private func formattedBytes(_ bytes: Int64) -> String {
+        bytes.formatted(.byteCount(style: .file).locale(localization.formatLocale))
+    }
     private func close() { viewModel.cloudLibraryGameID = nil }
     private func text(_ key: String) -> String { L10n.text(key, context: localization) }
 }
@@ -269,12 +355,14 @@ struct CloudLibraryProgressView: View {
         case (.archiving, .app): return "Archiving app"
         case (.archiving, _): return "Archiving cache"
         case (.uploading, .app): return "Uploading app"
-        case (.uploading, _): return "Uploading cache"
+        case (.uploading, .cache): return "Uploading cache"
+        case (.uploading, nil): return "Uploading game files"
         case (.verifying, .app): return "Verifying app"
         case (.verifying, .cache): return "Verifying cache"
         case (.verifying, nil): return "Verifying cloud copy"
         case (.downloading, .app): return "Downloading app"
-        case (.downloading, _): return "Downloading cache"
+        case (.downloading, .cache): return "Downloading cache"
+        case (.downloading, nil): return "Downloading game files"
         case (.restoring, .app): return "Restoring app"
         case (.restoring, _): return "Restoring cache"
         }
@@ -285,16 +373,19 @@ struct CloudLibraryProgressView: View {
 /// Shared cloud copy vocabulary. An artifact row only shows its own transfer or failure.
 struct CloudLibraryIndicator {
     let state: CloudLibraryState
-    var kind: CloudArtifactKind? = nil
+    var item: CloudLibraryItem? = nil
 
-    private var showsAction: Bool { state.action != nil && (kind == nil || state.activeKind == kind) }
+    private var showsAction: Bool {
+        guard let active = state.activeItem else { return false }
+        return item.map { $0 == active } ?? (active != .sources)
+    }
     var progress: Bool { showsAction && !state.queued }
     var queued: Bool { showsAction && state.queued }
-    var copy: CloudArtifactStatus.State { state.copies[kind ?? .app]?.state ?? .unknown }
+    var copy: CloudArtifactStatus.State { state.copy(item ?? .app) ?? .unknown }
     // Bound once: comparing two optional-chained tuple fields crashes Swift 6.4.2's Release optimizer (SemanticARCOpts).
     private var failed: Bool {
         guard let issue = state.issue, issue.failed else { return false }
-        return kind == nil || issue.kind == kind
+        return item.map { $0 == issue.item } ?? (issue.item != .sources)
     }
 
     var color: Color {
@@ -317,7 +408,7 @@ struct CloudLibraryIndicator {
         if queued { return L10n.text("Queued", context: context) }
         if progress {
             if let fraction = CloudLibraryProgressView.fraction(state.progress) {
-                let key = state.progress?.phase == .uploading ? "Sending %@" : "Downloading %@"
+                let key = state.progress?.phase == .uploading || state.action == .uploadSources ? "Sending %@" : "Downloading %@"
                 return L10n.format(key, [CloudLibraryProgressView.percent(fraction, context: context)], context: context)
             }
             return L10n.text(state.progress.map(CloudLibraryProgressView.phaseKey) ?? "Preparing cloud operation…", context: context)
@@ -327,7 +418,8 @@ struct CloudLibraryIndicator {
         switch copy {
         case .synchronized: key = "Synchronized"
         case .cloudOnly: key = "Cloud only"
-        case .newerOnThisMac: key = "Newer on this Mac"
+        case .newerOnThisMac:
+            key = item == .sources ? "Different in the cloud. Nothing is overwritten." : "Newer on this Mac"
         case .notInCloud: key = "Not in the cloud"
         case .unknown: key = state.refreshing ? "Checking…" : "Cloud status unknown"
         }

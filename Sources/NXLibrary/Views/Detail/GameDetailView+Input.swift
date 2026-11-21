@@ -164,7 +164,7 @@ extension GameDetailView {
         if runningGames.isRunning(game) {
             SoundEffectService.shared.play(.click)
             runningGames.resume(game)
-        } else if GameResourceState.unavailableReason(for: game) != nil {
+        } else if viewModel.portingPills(game).unavailableReason != nil {
             SoundEffectService.shared.play(.error)
         } else if currentModel.presentation.canPlay {
             SoundEffectService.shared.play(.click)
@@ -175,7 +175,7 @@ extension GameDetailView {
     }
 
     func rebuild() {
-        guard currentModel.presentation.canRebuild else {
+        guard currentModel.presentation.canRebuild || viewModel.canCheckCloudSources(for: game) else {
             SoundEffectService.shared.play(.error)
             return
         }

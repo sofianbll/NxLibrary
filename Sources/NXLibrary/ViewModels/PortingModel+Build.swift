@@ -46,7 +46,8 @@ extension PortingModel {
     private func buildScope(for game: PortedGame) -> CloudWorkScope {
         let workspace = game.workspacePath.map { URL(fileURLWithPath: $0) }
         return buildScope(title: game.titleId ?? "", appURL: finalAppURL(for: game),
-                          registered: [game.url] + [workspace, game.buildCachePath.map { URL(fileURLWithPath: $0) }].compactMap { $0 },
+                          registered: [game.url] + game.sources.map(\.url) +
+                              [workspace, game.buildCachePath.map { URL(fileURLWithPath: $0) }].compactMap { $0 },
                           workspace: workspace)
     }
 
@@ -66,7 +67,7 @@ extension PortingModel {
                 let workspace = existing?.workspacePath.map { URL(fileURLWithPath: $0) } ?? selectedFolderWorkspace
                 return !app.cloudLibrary.conflicts(with: buildScope(title: title, appURL: selectedBuildAppURL,
                     registered: [existing?.url, workspace, existing?.buildCachePath.map { URL(fileURLWithPath: $0) }]
-                        .compactMap { $0 }, workspace: workspace))
+                        .compactMap { $0 } + selectedSources.map(\.url), workspace: workspace))
             } == true)
             && !app.isCleaningStorage
             && !app.isUpdatingApp
@@ -121,7 +122,17 @@ extension PortingModel {
         }
         let files = self.selectedSources
         if buildNow, !files.allSatisfy({ FileManager.default.fileExists(atPath: $0.url.path) }) {
-            presentBuildError(NXLibraryError.missingSources)
+            guard let archive = app.cloudLibrary.archive, let existing = selectedLibraryGame,
+                  app.canCheckCloudSources(for: existing),
+                  Set(existing.sources.map(\.url)) == Set(files.map(\.url)) else {
+                presentBuildError(NXLibraryError.missingSources)
+                return
+            }
+            let selectionID = selection.id
+            requestCloudBuild(for: existing, archive: archive, extraArguments: [], onStarted: nil) { [weak self] in
+                guard let self, self.selectedGame?.id == selectionID, self.selectedSources == files else { return }
+                self.addSelectedGame(buildNow: true)
+            }
             return
         }
         let sources = files.compactMap(Self.detectedSource(from:))
@@ -247,7 +258,8 @@ extension PortingModel {
     }
 
     func requestCloudBuild(for game: PortedGame, archive: CloudGameArchive, extraArguments: [String],
-                           onStarted: (() -> Void)?, withoutCache: Bool = false) {
+                           onStarted: (() -> Void)?, withoutCache: Bool = false,
+                           afterSourcesDownloaded: (() -> Void)? = nil) {
         guard !app.isCheckingCloudBuild else { return }
         let target = app.libraryGames.first(where: { $0.id == game.id }) ?? game
         do { try checkBuildIdle(for: target) }
@@ -255,9 +267,16 @@ extension PortingModel {
         checkingCloudBuildScope = buildScope(for: target)
         app.isCheckingCloudBuild = true
         Task { @MainActor in
+            if let afterSourcesDownloaded, GameResourceState.sourcesAvailable(for: target) {
+                checkingCloudBuildScope = nil
+                app.isCheckingCloudBuild = false
+                afterSourcesDownloaded()
+                return
+            }
             defer { checkingCloudBuildScope = nil; app.isCheckingCloudBuild = false }
             await app.startCloudBuild(for: game, archive: archive, extraArguments: extraArguments,
-                                      onStarted: onStarted, withoutCache: withoutCache)
+                                      onStarted: onStarted, withoutCache: withoutCache,
+                                      afterSourcesDownloaded: afterSourcesDownloaded)
         }
     }
 

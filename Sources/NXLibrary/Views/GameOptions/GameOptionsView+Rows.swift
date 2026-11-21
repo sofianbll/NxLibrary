@@ -96,12 +96,13 @@ extension GameOptionsView {
 
     private func rowView(_ row: GameOptionsRow, _ p: GameOptionsPresentation,
                          focused: GameOptionsRow?) -> some View {
-        SeleneOptionRow(icon: row.icon,
+        let downloadsSources = row == .rebuild && p.sourcesDetached && viewModel.canCheckCloudSources(for: current)
+        return SeleneOptionRow(icon: row.icon,
                         title: row.title,
-                        about: p.about(row),
+                        about: downloadsSources && !p.toolchainBlocked ? L10n.text("Arcane checks the cloud for missing game files.") : p.about(row),
                         focused: focused == row,
                         destructive: row.isDestructive,
-                        enabled: !p.isDimmed(row)) {
+                        enabled: downloadsSources ? !p.toolchainBlocked : !p.isDimmed(row)) {
             HStack(spacing: canvas.u(12)) {
                 if let info = p.info(row) {
                     SeleneInfoTip(info, isShowing: Binding(
