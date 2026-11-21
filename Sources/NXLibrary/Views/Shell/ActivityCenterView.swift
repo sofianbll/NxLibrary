@@ -27,6 +27,10 @@ struct ActivityCenterView: View {
             results: viewModel.activityResults.entries.map(\.id).filter { !pending.contains($0) })
     }
 
+    private var focusInset: EdgeInsets {
+        EdgeInsets(top: canvas.u(12), leading: canvas.u(24), bottom: canvas.u(12), trailing: canvas.u(24))
+    }
+
     var body: some View {
         let rows = Self.rows(viewModel)
         let focused = focus.current(in: rows)
@@ -36,17 +40,17 @@ struct ActivityCenterView: View {
             VStack(alignment: .leading, spacing: canvas.u(20)) {
                 Text(text("Activity center")).seleneFont(30, .semibold)
                     .accessibilityAddTraits(.isHeader)
-                if rows.isEmpty {
-                    sections(rows, focused: focused)
-                } else {
-                    ScrollViewReader { scroll in
-                        ScrollView {
-                            sections(rows, focused: focused)
-                        }
-                        .frame(maxHeight: canvas.u(620))
-                        .onAppear { scroll.scrollTo(focused) }
-                        .onChange(of: focused) { _, row in scroll.scrollTo(row) }
+                // The list takes its own height up to the cap, then scrolls; the inset keeps focus glows unclipped.
+                ScrollViewReader { scroll in
+                    ScrollView {
+                        sections(rows, focused: focused).padding(focusInset)
                     }
+                    .padding(EdgeInsets(top: -focusInset.top, leading: -focusInset.leading,
+                                        bottom: -focusInset.bottom, trailing: -focusInset.trailing))
+                    .frame(maxHeight: canvas.u(620))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .onAppear { scroll.scrollTo(focused) }
+                    .onChange(of: focused) { _, row in scroll.scrollTo(row) }
                 }
             }
             .foregroundColor(SeleneTheme.ink)
@@ -113,7 +117,9 @@ struct ActivityCenterView: View {
                 Group {
                     switch row {
                     case .clearAll:
-                        SelenePillButton(title: "Clear all", focused: focused == row) { onOpen(row) }
+                        SelenePillButton(title: "Clear all", minWidth: 0, height: 44, horizontalPadding: 16,
+                                         focused: focused == row) { onOpen(row) }
+                            .frame(maxWidth: .infinity, alignment: .trailing)
                     case .result(let id):
                         if let item = result(id) {
                             let status = status(item.outcome, job: item.job)

@@ -166,8 +166,8 @@ extension CloudDriveFolders.Listing {
         assert 'section("Cloud", empty: "No cloud transfer"' in view
         assert 'if rows.isEmpty, let empty' in view and 'Text(text(empty))' in view
         # ImageRenderer does not draw AppKit-backed scrolling. Keep the real rows and their layout.
-        change(activity, r'                    ScrollViewReader \{ scroll in\n                        ScrollView \{\n', "")
-        change(activity, r'                        }\n                        \.frame\(maxHeight: canvas.u\(620\)\).*?\n                    }\n', "")
+        change(activity, r'                ScrollViewReader \{ scroll in\n                    ScrollView \{\n', "")
+        change(activity, r'                    }\n                    \.padding\(EdgeInsets.*?\.onChange\(of: focused\)[^\n]*\n                }\n', "")
         change(activity, r'        LazyVStack\(', '        VStack(')
         host = HOST
         if "onEditLibrary:" in section.read_text():
