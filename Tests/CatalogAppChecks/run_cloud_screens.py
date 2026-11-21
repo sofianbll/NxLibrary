@@ -47,17 +47,34 @@ import ArcanePorting
                 officialName: { _ in nil }, needsMetadata: { _ in }, cloud: model,
                 showsCloudBadges: true, onSelect: { _ in }, onActivate: { _ in }),
             size: .init(width: 400, height: 440))
-        let request = CloudLibraryModel.Request(id: game.id, name: game.name, action: .restore(.app),
+        let queuedRequest = CloudLibraryModel.Request(id: game.id, name: game.name, action: .restore(.app),
             storage: model.preference.storage, scope: .init(title: game.titleId!, urls: []),
             importDestination: nil, sourceFiles: nil, onSuccess: nil)
+        let activity = ActivityCenterView(viewModel: vm, porting: vm.porting, cloudLibrary: model, focus: .init(),
+            onFocus: { _ in }, onOpen: { _ in }, onCancel: { _ in }, onClose: {})
+        precondition(ActivityCenterView.rows(vm).isEmpty)
+        try render("activity-empty", output, activity)
+        model.queue = [queuedRequest]
+        model.update(game.id) { $0.action = queuedRequest.action; $0.queued = true }
+        try render("panel-queued", output, CloudLibraryPanel(viewModel: vm, model: model, game: game))
+        let activeGame = PortedGame(name: "Solar Observatory", url: data.appendingPathComponent("Active.app"),
+                                  platform: .macApp, sizeBytes: 0, modificationDate: .now, titleId: "0100000000002000")
+        let request = CloudLibraryModel.Request(id: activeGame.id, name: activeGame.name, action: .restore(.app),
+            storage: model.preference.storage, scope: .init(title: activeGame.titleId!, urls: []),
+            importDestination: nil, sourceFiles: nil, onSuccess: nil)
         model.active = (request, Task {})
-        model.update(game.id) {
+        model.update(activeGame.id) {
             $0.action = request.action
             $0.progress = .init(.downloading, kind: .app, transfer: .init(bytesTransferred: 42_000_000, totalBytes: 100_000_000))
         }
-        try render("activity", output, ActivityCenterView(
-            viewModel: vm, porting: vm.porting, cloudLibrary: model, focus: .init(),
-            onFocus: { _ in }, onOpen: { _ in }, onCancel: { _ in }, onClose: {}))
+        try render("activity", output, activity)
+        try render("tile-progress", output,
+            CollectionCoverRow(games: [.init(nxnative: activeGame)], selectedID: activeGame.id,
+                artwork: ArtworkStore(), boxArt: vm.boxArt, boxArtIndexVersion: 0,
+                officialName: { _ in nil }, needsMetadata: { _ in }, cloud: model,
+                showsCloudBadges: true, onSelect: { _ in }, onActivate: { _ in }),
+            size: .init(width: 400, height: 440))
+        // TYPED_PATH_CHECK
     }
 
     @MainActor static func render<V: View>(_ name: String, _ output: URL, _ view: V,
@@ -144,6 +161,10 @@ extension CloudDriveFolders.Listing {
         change(app / "Views/Components/SwitchBoxArtCover.swift",
                r'        \.task\(id: coverKey.*?\n        \.task\(id: game.id[^\n]*\n', "")
         activity = app / "Views/Shell/ActivityCenterView.swift"
+        view = activity.read_text()
+        assert 'section("Compilation", empty: "No compilation"' in view
+        assert 'section("Cloud", empty: "No cloud transfer"' in view
+        assert 'if rows.isEmpty, let empty' in view and 'Text(text(empty))' in view
         # ImageRenderer does not draw AppKit-backed scrolling. Keep the real rows and their layout.
         change(activity, r'                    ScrollViewReader \{ scroll in\n                        ScrollView \{\n', "")
         change(activity, r'                        }\n                        \.frame\(maxHeight: canvas.u\(620\)\).*?\n                    }\n', "")
@@ -160,11 +181,34 @@ extension CloudDriveFolders.Listing {
         uploading.action = .upload(nil)
         uploading.progress = .init(.uploading, kind: .cache)
         let pendingApp = CloudLibraryIndicator(state: uploading, item: .app)
-        precondition(pendingApp.label(context: en) == "Sending · published when the upload ends")
-        precondition(pendingApp.label(context: fr).hasPrefix("Envoi en cours"))
+        precondition(pendingApp.label(context: en) == "Sent · published when the upload ends")
+        precondition(pendingApp.label(context: fr) == "Envoyée · publiée à la fin de l'envoi")
         precondition(CloudLibraryIndicator(state: model.states[game.id]!).label(context: en) == "Cloud only")''')
-            if browser:
-                host = host.replace("// ASSISTANT_CHECK", '''
+        if browser:
+            host = host.replace("// TYPED_PATH_CHECK", '''
+        model.active = nil
+        model.queue = []
+        let typedPath = CloudSetupAssistant(viewModel: vm, model: model, entry: .sources) {}
+        typedPath.checkTypedPath("Arcane/../Sources", expected: nil)
+        typedPath.checkTypedPath("  Future/Uncreated files  ", expected: "Future/Uncreated files")
+''')
+            with assistant.open("a") as swift:
+                swift.write('''
+extension CloudSetupAssistant {
+    @MainActor func checkTypedPath(_ path: String, expected: String?) {
+        var view = self
+        view._listing = State(initialValue: nil)
+        view._enteredSourcesPath = State(initialValue: path)
+        precondition(view.focusRows.flatMap { $0 }.contains(.sourcesPath))
+        precondition(view.primaryEnabled == (expected != nil))
+        let previous = model.preference
+        view.perform(.primary)
+        precondition(model.preference.sourcesRootOverride == (expected ?? previous.sourcesRootOverride))
+        precondition(model.preference.remote == previous.remote && model.preference.root == previous.root)
+    }
+}
+''')
+            host = host.replace("// ASSISTANT_CHECK", '''
         precondition(assistant.focusedTarget == .primary)
         precondition(CloudLibraryIndicator(state: model.states[game.id]!).status == .pending)
         precondition(CloudLibraryIndicator(state: model.states[game.id]!, item: .cache).status == .synchronized)
@@ -173,7 +217,11 @@ extension CloudDriveFolders.Listing {
         precondition(transferring.status == .pending && transferring.isTransferring)
         uploading.queued = true
         let queued = CloudLibraryIndicator(state: uploading, item: .cache)
-        precondition(queued.status == .pending && !queued.isTransferring)
+        precondition(queued.status.color == SeleneTheme.ink60 && !queued.isTransferring)
+        precondition(transferring.status.color == SeleneTheme.statusCloud)
+        precondition(CloudLibraryBadge(indicator: queued).isVisibleOnTile)
+        precondition(CloudLibraryBadge(indicator: transferring).isVisibleOnTile)
+        precondition(CloudLibraryBadge(indicator: .init(state: model.states[game.id]!)).isVisibleOnTile)
         var failed = CloudLibraryState()
         failed.sourceFailure = .offline
         precondition(CloudLibraryIndicator(state: failed, item: .sources).status == .failed)
@@ -181,6 +229,8 @@ extension CloudDriveFolders.Listing {
         var local = CloudLibraryState()
         local.copies[.app] = .screenFixture(.notInCloud, hasLocalCopy: true)
         precondition(CloudLibraryIndicator(state: local).status == .needsUpload)
+        precondition(!CloudLibraryBadge(indicator: .init(state: local)).isVisibleOnTile)
+        precondition(!CloudLibraryBadge(indicator: .init(state: .init(refreshing: true))).isVisibleOnTile)
 ''')
         else:
             change(assistant, r'@State private var draft = CloudSetupAssistantDraft\(\)', '''

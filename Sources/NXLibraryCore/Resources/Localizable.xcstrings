@@ -100,15 +100,15 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "已发布：%@"}}
       }
     },
-    "Sending · published when the upload ends": {
+    "Enter a path": {
       "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "Sending · published when the upload ends"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Invio in corso · pubblicazione a fine invio"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Envoi en cours · publication à la fin de l’envoi"}},
-        "de": {"stringUnit": {"state": "translated", "value": "Upload läuft · Veröffentlichung nach Abschluss"}},
-        "es": {"stringUnit": {"state": "translated", "value": "Envío en curso · se publica al terminar"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Envio em andamento · publicação ao concluir"}},
-        "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在上传 · 上传完成后发布"}}
+        "en": {"stringUnit": {"state": "translated", "value": "Enter a path"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Inserisci un percorso"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Saisir un chemin"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Pfad eingeben"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Introducir una ruta"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Digitar um caminho"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "输入路径"}}
       }
     },
     "Send build cache": {

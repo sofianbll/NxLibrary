@@ -3,6 +3,7 @@ public struct CloudSetupAssistantFocus {
         case console, guide, client, secret, advanced, changeCredentials, retry
         case breadcrumb(String), folder(String), newFolder, folderName
         case resumeFolder, otherFolder
+        case enterSourcesPath, sourcesPath
         case moveGames, confirmMove, cancel, primary, create
     }
 

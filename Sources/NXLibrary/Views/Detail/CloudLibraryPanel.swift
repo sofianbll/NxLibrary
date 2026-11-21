@@ -118,6 +118,8 @@ struct CloudLibraryPanel: View {
                     Text(title).seleneFont(17, .semibold).foregroundColor(SeleneTheme.ink90)
                         .accessibilityAddTraits(.isHeader)
                     SeleneStatusDot(text: indicator.label(context: localization), color: indicator.status.color,
+                                    labelColor: indicator.status == .failed ? PortingPillCopy.softRed : SeleneTheme.ink90,
+                                    accessibilityTitle: title,
                                     pulses: indicator.isTransferring)
                 }
                 .multilineTextAlignment(.leading)
@@ -449,7 +451,7 @@ struct CloudLibraryProgressView: View {
 }
 
 enum CloudLibraryStatus {
-    case synchronized, pending, needsUpload, failed, unknown
+    case synchronized, queued, pending, needsUpload, failed, unknown
 
     var color: Color {
         switch self {
@@ -457,7 +459,7 @@ enum CloudLibraryStatus {
         case .pending: return SeleneTheme.statusCloud
         case .needsUpload: return SeleneTheme.untested
         case .failed: return SeleneTheme.danger
-        case .unknown: return SeleneTheme.ink60
+        case .queued, .unknown: return SeleneTheme.ink60
         }
     }
 }
@@ -507,7 +509,8 @@ struct CloudLibraryIndicator {
     }
 
     var status: CloudLibraryStatus {
-        if queued || progress { return .pending }
+        if queued { return .queued }
+        if progress { return .pending }
         if failed { return .failed }
         switch copy {
         case .synchronized: return .synchronized
@@ -540,10 +543,10 @@ struct CloudLibraryIndicator {
         }
     }
 
-    func label(context: AppLocale) -> String {
+    func label(context: AppLocale, showingFailure: Bool = true) -> String {
         if queued { return L10n.text("Queued", context: context) }
         if progress {
-            if sentAwaitingPublish { return L10n.text("Sending · published when the upload ends", context: context) }
+            if sentAwaitingPublish { return L10n.text("Sent · published when the upload ends", context: context) }
             if let fraction = CloudLibraryProgressView.fraction(state.progress) {
                 let key: String
                 switch state.action {
@@ -554,7 +557,7 @@ struct CloudLibraryIndicator {
             }
             return L10n.text(state.progress.map(CloudLibraryProgressView.phaseKey) ?? "Preparing cloud operation…", context: context)
         }
-        if failed { return L10n.text("Cloud operation failed", context: context) }
+        if failed && showingFailure { return L10n.text("Cloud operation failed", context: context) }
         let key: String
         switch copy {
         case .synchronized: key = "Synchronized"
@@ -578,7 +581,7 @@ struct CloudLibraryTileBadge: ViewModifier {
     static func artworkOpacity(_ state: CloudLibraryState?) -> Double { state?.appIsCloudOnly == true ? 0.55 : 1 }
 
     func body(content: Content) -> some View {
-        let badge = state.map { CloudLibraryBadge(indicator: CloudLibraryIndicator(state: $0), showsTileProgress: true) }
+        let badge = state.map { CloudLibraryBadge(indicator: CloudLibraryIndicator(state: $0)) }
         content.overlay(alignment: .topTrailing) {
             if let badge, badge.isVisibleOnTile {
                 badge
@@ -588,25 +591,38 @@ struct CloudLibraryTileBadge: ViewModifier {
             }
         }
         .accessibilityValue(badge?.isVisibleOnTile == true
-                            ? badge?.indicator.label(context: localization) ?? "" : "")
+                            ? badge?.indicator.label(context: localization, showingFailure: false) ?? "" : "")
     }
 }
 
-/// Cloud mark reserved for tiles and the pill next to Play.
+/// Cloud mark and transfer ring on tiles.
 struct CloudLibraryBadge: View {
     let indicator: CloudLibraryIndicator
-    var showsTileProgress = false
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.nxAppLocale) private var localization
 
     var isVisibleOnTile: Bool {
-        indicator.status != .unknown
+        if indicator.progress || indicator.queued { return true }
+        switch indicator.copy {
+        case .synchronized, .cloudOnly, .newerOnThisMac: return true
+        case .notInCloud, .unknown: return false
+        }
     }
 
     var body: some View {
-        VStack(spacing: canvas.u(2)) {
+        let fraction = CloudLibraryProgressView.fraction(indicator.state.progress)
+        return VStack(spacing: canvas.u(2)) {
             ZStack(alignment: .bottomTrailing) {
                 Circle().fill(SeleneTheme.scrim.opacity(0.94))
+                if indicator.progress {
+                    Circle().strokeBorder(SeleneTheme.ink25, lineWidth: canvas.u(2))
+                    if let fraction {
+                        Circle().trim(from: 0, to: fraction)
+                            .stroke(SeleneTheme.ink, style: StrokeStyle(lineWidth: canvas.u(2), lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                            .padding(canvas.u(1))
+                    }
+                }
                 MaterialIconView(indicator.icon, size: 18)
                     .foregroundColor(SeleneTheme.ink)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -615,12 +631,12 @@ struct CloudLibraryBadge: View {
             }
             .frame(width: canvas.u(32), height: canvas.u(32))
             .accessibilityHidden(true)
-            if showsTileProgress, indicator.progress,
-               let fraction = CloudLibraryProgressView.fraction(indicator.state.progress) {
+            if indicator.progress, let fraction {
                 Text(CloudLibraryProgressView.percent(fraction, context: localization)).seleneFont(11, .semibold)
                     .monospacedDigit().foregroundColor(SeleneTheme.ink)
                     .padding(.horizontal, canvas.u(4)).padding(.vertical, canvas.u(2))
                     .background(SeleneTheme.scrim.opacity(0.94), in: Capsule())
+                    .fixedSize()
             }
         }
     }

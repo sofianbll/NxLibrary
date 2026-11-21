@@ -37,19 +37,11 @@ struct ActivityCenterView: View {
                 Text(text("Activity center")).seleneFont(30, .semibold)
                     .accessibilityAddTraits(.isHeader)
                 if rows.isEmpty {
-                    Text(text("No activity")).seleneFont(15).foregroundColor(SeleneTheme.ink60)
+                    sections(rows, focused: focused)
                 } else {
                     ScrollViewReader { scroll in
                         ScrollView {
-                            VStack(alignment: .leading, spacing: canvas.u(20)) {
-                                section("Compilation", rows: rows.filter(\.opensPorting), focused: focused)
-                                section("Cloud", rows: rows.filter {
-                                    switch $0 { case .cloud, .queuedCloud, .move: return true; default: return false }
-                                }, focused: focused)
-                                section("Results", rows: rows.filter {
-                                    switch $0 { case .result, .clearAll: return true; default: return false }
-                                }, focused: focused)
-                            }
+                            sections(rows, focused: focused)
                         }
                         .frame(maxHeight: canvas.u(620))
                         .onAppear { scroll.scrollTo(focused) }
@@ -66,6 +58,18 @@ struct ActivityCenterView: View {
                            right: hints(focused))
         }
         .accessibilityAction(.escape, onClose)
+    }
+
+    private func sections(_ rows: [ActivityCenterFocus.Row], focused: ActivityCenterFocus.Row) -> some View {
+        VStack(alignment: .leading, spacing: canvas.u(20)) {
+            section("Compilation", empty: "No compilation", rows: rows.filter(\.opensPorting), focused: focused)
+            section("Cloud", empty: "No cloud transfer", rows: rows.filter {
+                switch $0 { case .cloud, .queuedCloud, .move: return true; default: return false }
+            }, focused: focused)
+            section("Results", rows: rows.filter {
+                switch $0 { case .result, .clearAll: return true; default: return false }
+            }, focused: focused)
+        }
     }
 
     private func hints(_ row: ActivityCenterFocus.Row) -> [HintItem] {
@@ -85,14 +89,19 @@ struct ActivityCenterView: View {
         ].compactMap { $0 }
     }
 
-    @ViewBuilder private func section(_ key: String, rows: [ActivityCenterFocus.Row],
+    @ViewBuilder private func section(_ key: String, empty: String? = nil, rows: [ActivityCenterFocus.Row],
                          focused: ActivityCenterFocus.Row) -> some View {
-        if !rows.isEmpty {
+        if !rows.isEmpty || empty != nil {
             VStack(alignment: .leading, spacing: canvas.u(8)) {
                 Text(text(key)).seleneFont(12, .bold).tracking(canvas.u(1.4))
                     .textCase(.uppercase).foregroundColor(SeleneTheme.ink60)
                     .accessibilityAddTraits(.isHeader)
-                rowList(rows, focused: focused)
+                if rows.isEmpty, let empty {
+                    Text(text(empty)).seleneFont(15).foregroundColor(SeleneTheme.ink60)
+                        .padding(.vertical, canvas.u(4))
+                } else {
+                    rowList(rows, focused: focused)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
