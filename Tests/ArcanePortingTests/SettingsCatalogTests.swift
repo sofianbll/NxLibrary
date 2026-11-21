@@ -134,7 +134,9 @@ final class SettingsCatalogTests: XCTestCase {
         "libraryFolder", "libraryRefresh", "notifyPortingEnds", "gameDefaults.fullscreen",
         "gameDefaults.enable60FPS", "gameDefaults.isDockedMode", "gameDefaults.enableMetalFXUpscale",
         "gameDefaults.enableMetalHUD", "gameDefaults.language", "gameDefaults.renderScale", "gameDefaults.rumble",
-        "gameDefaults.rumbleGain", "cloudSaves", "cloudSavesPickedFolder", "buildCaches", "diagnostics",
+        "gameDefaults.rumbleGain", "cloudSaves", "cloudSavesPickedFolder", "cloudLibraryEnabled",
+        "cloudLibraryService", "cloudLibraryConnect", "cloudLibraryFolder", "cloudLibraryTest",
+        "cloudLibraryTool", "cloudLibraryDisconnect", "buildCaches", "diagnostics",
         "appUpdates", "projectDocs", "console"
         ])
     }

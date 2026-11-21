@@ -924,7 +924,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/ArcanePortingTests/PortedGameTests.swift](../../Tests/ArcanePortingTests/PortedGameTests.swift) | Modello del gioco, compatibilità dei record e condizioni di disponibilità dell’app. |
 | [Tests/ArcanePortingTests/PortingFailureReasonTests.swift](../../Tests/ArcanePortingTests/PortingFailureReasonTests.swift) | Classificazione dei fallimenti e corrispondenza con i messaggi del pin, anche da un checkout separato scelto con NX_TEST_ENGINE_REPO. |
 | [Tests/ArcanePortingTests/PortingNoticeTests.swift](../../Tests/ArcanePortingTests/PortingNoticeTests.swift) | Condizioni e testi delle notifiche di esito del porting. |
-| [Tests/ArcanePortingTests/PortingPresentationTests.swift](../../Tests/ArcanePortingTests/PortingPresentationTests.swift) | ETA, attività del prewarm senza stime storiche, tile, pill e rappresentazione dei fallimenti del porting. |
+| [Tests/ArcanePortingTests/PortingPresentationTests.swift](../../Tests/ArcanePortingTests/PortingPresentationTests.swift) | ETA, prewarm, tile, fallimenti del porting e posizione e focus della pill Cloud. |
 | [Tests/ArcanePortingTests/AppIconPreferenceTests.swift](../../Tests/ArcanePortingTests/AppIconPreferenceTests.swift) | Ambito dell’icona: scelta esplicita, vecchie librerie, scansioni, persistenza e rebuild. |
 | [Tests/ArcanePortingTests/AppIconProgressTests.swift](../../Tests/ArcanePortingTests/AppIconProgressTests.swift) | Verifica che l'esito di un'icona mancante non sovrascriva il log o segnali una build fallita. |
 | [Tests/ArcanePortingTests/IconLaunchWaitTests.swift](../../Tests/ArcanePortingTests/IconLaunchWaitTests.swift) | Attesa Play: successo, errore, annullamento, gioco diverso e nuova firma in coda. |

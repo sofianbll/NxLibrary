@@ -4,22 +4,6 @@ import XCTest
 final class DetailsFocusTests: XCTestCase {
     private let all = DetailsFocus.Bands(screenshots: 3, actions: 5, more: 2)
 
-    func testCloudPillIsAfterOptionsAndPointerAndControllerUseTheSameIndex() {
-        let pills = PortingPills.normal
-        var focus = DetailsFocus()
-        focus.setPillLimit(pills.count + 1)
-        XCTAssertTrue(focus.right(in: all))
-        XCTAssertTrue(focus.right(in: all))
-        XCTAssertEqual(focus.pill, pills.detailsCloudIndex)
-        focus.focus(zone: DetailsFocus.actionsZone, index: 0, in: all)
-        focus.focus(zone: DetailsFocus.topZone, index: 3, in: all)
-        XCTAssertEqual(focus.zone, DetailsFocus.topZone)
-        XCTAssertEqual(focus.pill, 3)
-        XCTAssertEqual(PortingPills.porting.detailsCloudIndex, 1)
-        XCTAssertEqual(PortingPills.failed(.failed).detailsCloudIndex, 3)
-        XCTAssertEqual(PortingPills.failed(.failed).detailsPresentation(cloudOnly: true), .normalAfterFailure(.failed))
-    }
-
     func testDownWalksTopThenBandsInOrder() {
         var focus = DetailsFocus()
         XCTAssertTrue(focus.down(in: all))
