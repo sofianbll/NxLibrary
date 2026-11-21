@@ -286,7 +286,11 @@ struct CloudLibraryIndicator {
 
     var progress: Bool { state.action != nil && (kind == nil || state.activeKind == kind) }
     var copy: CloudArtifactStatus.State { state.copies[kind ?? .app]?.state ?? .unknown }
-    private var failed: Bool { state.issue?.failed == true && (kind == nil || state.issue?.kind == kind) }
+    // Bound once: comparing two optional-chained tuple fields crashes Swift 6.4.2's Release optimizer (SemanticARCOpts).
+    private var failed: Bool {
+        guard let issue = state.issue, issue.failed else { return false }
+        return kind == nil || issue.kind == kind
+    }
 
     var color: Color {
         if progress { return SeleneTheme.ink }
