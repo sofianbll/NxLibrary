@@ -37,11 +37,11 @@ extension AppShellView {
             router.closeMenu()
             router.openAddGame()
         case .cancelBuild(let id):
-            guard viewModel.portingGameID == id, !viewModel.isCancellingBuild else { return }
-            viewModel.cancelBuild()
+            guard viewModel.portingGameID == id, !viewModel.porting.isCancellingBuild else { return }
+            viewModel.porting.cancelBuild()
         case .queuedBuild(let id):
             guard viewModel.buildQueue.contains(id) else { return }
-            viewModel.cancelQueuedBuild(id)
+            viewModel.porting.cancelQueuedBuild(id)
         case .cancelCloud(let token): viewModel.cancelActiveCloudLibrary(token)
         case .queuedCloud(let token): viewModel.cancelQueuedCloudLibrary(token)
         case .close: router.closeMenu()

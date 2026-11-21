@@ -122,7 +122,7 @@ extension AppShellView {
             if router.isMenuPresented {
                 Group {
                     if let focus = router.activityCenterFocus {
-                        ActivityCenterView(viewModel: viewModel, cloudLibrary: viewModel.cloudLibrary, focus: focus,
+                        ActivityCenterView(viewModel: viewModel, porting: viewModel.porting, cloudLibrary: viewModel.cloudLibrary, focus: focus,
                                            onFocus: { router.activityCenterFocus?.selected = $0 },
                                            onSelect: { selectActivityCenterRow($0, router: router, viewModel: viewModel) })
                             .transition(.opacity)

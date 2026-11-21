@@ -196,6 +196,7 @@ final class AppIconModel: ObservableObject {
                 }
                 self.finishIconLaunchWait(for: game, rerun: again, outcome: outcome)
                 if again { self.syncPendingAppIcons() }
+                self.app.porting.scheduleNextBuild()
             }
         }
     }

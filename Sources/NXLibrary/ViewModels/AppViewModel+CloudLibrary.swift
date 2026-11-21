@@ -374,10 +374,11 @@ extension AppViewModel {
 
     @MainActor func startCloudBuild(for game: PortedGame, archive: CloudGameArchive, extraArguments: [String],
                                     onStarted: (() -> Void)?, withoutCache: Bool,
+                                    queuedName: String?, canStart: ((PortedGame) -> Bool)?,
                                     afterSourcesDownloaded: (() -> Void)?) async {
         let target = libraryGames.first(where: { $0.id == game.id }) ?? game
         guard let title = target.titleId, SaveLocation.validID(title) else {
-            porting.presentBuildError(NXLibraryError.missingTitleId)
+            reportCloudBuildError(NXLibraryError.missingTitleId, queuedName: queuedName)
             return
         }
         do {
@@ -411,6 +412,10 @@ extension AppViewModel {
                     guard let current = libraryGames.first(where: { $0.id == target.id }),
                           current.titleId == target.titleId, current.workspacePath == target.workspacePath,
                           current.buildCachePath == target.buildCachePath else { throw CloudArchiveError.busy }
+                    if canStart?(current) == false {
+                        await release()
+                        return
+                    }
                     try porting.beginBuild(for: target, extraArguments: extraArguments, verifiedCache: check.verifiedCache,
                                    withoutCache: withoutCache,
                                    releaseCloudBuild: release)
@@ -421,8 +426,13 @@ extension AppViewModel {
                 throw error
             }
         } catch {
-            porting.presentBuildError(error)
+            reportCloudBuildError(error, queuedName: queuedName)
         }
+    }
+
+    private func reportCloudBuildError(_ error: Error, queuedName: String?) {
+        if let queuedName { porting.logSkippedBuild(queuedName, reason: error.localizedDescription) }
+        else { porting.presentBuildError(error) }
     }
 
     func canCheckCloudSources(for game: PortedGame) -> Bool {
@@ -454,8 +464,8 @@ extension AppViewModel {
                     if self.cloudLibraryGameID == game.id { self.cloudLibraryGameID = nil }
                     if let afterSourcesDownloaded { afterSourcesDownloaded() }
                     else {
-                        self.porting.requestCloudBuild(for: game, archive: archive, extraArguments: extraArguments,
-                                               onStarted: onStarted, withoutCache: withoutCache)
+                        self.porting.submitBuild(for: game, extraArguments: extraArguments, onStarted: onStarted,
+                                         withoutCache: withoutCache)
                     }
                 }
                 if queued { self.cloudLibraryGameID = game.id }
@@ -470,8 +480,12 @@ extension AppViewModel {
             self?.showSettingsNotice(title: title,
                 message: L10n.text("Rebuild from the original game files without using the existing cache? This can take much longer."),
                 actionTitle: "Rebuild without cache", cancelTitle: "Cancel") { [weak self] in
-                    self?.porting.requestCloudBuild(for: game, archive: archive, extraArguments: extraArguments,
-                                            onStarted: onStarted, withoutCache: true)
+                    guard let self else { return }
+                    guard self.cloudLibrary.archive === archive else {
+                        self.porting.presentBuildError(CloudArchiveError.busy)
+                        return
+                    }
+                    self.porting.submitBuild(for: game, extraArguments: extraArguments, onStarted: onStarted, withoutCache: true)
                 }
         }
         if canDownload {
@@ -638,6 +652,7 @@ extension AppViewModel {
             return
         }
         resumeLibraryScanAfterCloud()
+        porting.scheduleNextBuild()
     }
 
     @MainActor private func runCloudOperation(_ request: CloudLibraryModel.Request, archive: CloudGameArchive,
@@ -844,6 +859,7 @@ extension AppViewModel {
         cloudLibrary.update(request.id) { $0.action = nil; $0.queued = false }
         cloudLibrary.persistQueue()
         appIcon.syncPendingAppIcons()
+        porting.scheduleNextBuild()
     }
 
     @MainActor private func cloudImportDestination(for game: PortedGame, action: CloudLibraryAction) -> URL? {

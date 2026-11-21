@@ -1,6 +1,46 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Build queued": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Build queued"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Compilazione in coda"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "En attente de compilation"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Build in der Warteschlange"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Compilación en cola"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Compilação na fila"}}
+      }
+    },
+    "Cancel queued build": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Cancel queued build"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Annulla la compilazione in coda"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Annuler la compilation en attente"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Vorgemerkten Build abbrechen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Cancelar la compilación en cola"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Cancelar compilação na fila"}}
+      }
+    },
+    "Game or source files not found.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Game or source files not found."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Gioco o file sorgente non trovati."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Jeu ou fichiers sources introuvables."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spiel oder Quelldateien nicht gefunden."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se encontró el juego o los archivos de origen."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Jogo ou arquivos de origem não encontrados."}}
+      }
+    },
+    "Skipped build for %@: %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Skipped build for %@: %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Compilazione di %@ saltata: %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Compilation de %@ ignorée : %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Build für %@ übersprungen: %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Se omitió la compilación de %@: %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Compilação de %@ ignorada: %@"}}
+      }
+    },
     "%d game in %@": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "%d game in %@"}},

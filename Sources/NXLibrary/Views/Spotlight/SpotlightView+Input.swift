@@ -327,6 +327,10 @@ extension SpotlightView {
 
     func pressPill(_ index: Int, game: PortedGame) {
         SoundEffectService.shared.play(.click)
+        if index == queuedCancelIndex(game) {
+            viewModel.porting.cancelQueuedBuild(game.id)
+            return
+        }
         switch viewModel.portingPills(game) {
         case .porting:
             // The porting pill shows the porting.

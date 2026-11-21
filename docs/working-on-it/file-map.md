@@ -418,6 +418,7 @@ Cartella `Sources/ArcanePorting/Library/`.
 | [Sources/ArcanePorting/Library/CloudTransferQueue.swift](../../Sources/ArcanePorting/Library/CloudTransferQueue.swift) | Salva le richieste cloud nel profilo e rimette il lavoro interrotto in testa. |
 | [Sources/ArcanePorting/Library/CloudDriveFolders.swift](../../Sources/ArcanePorting/Library/CloudDriveFolders.swift) | Elenca cartelle, conta gli archivi Porting e coordina il trasferimento fra radici. |
 | [Sources/ArcanePorting/GameSettings/RemotePlayAdapters.swift](../../Sources/ArcanePorting/GameSettings/RemotePlayAdapters.swift) | Rileva interfacce ZeroTier e altre VPN per il gioco locale a distanza. |
+| [Sources/ArcanePorting/Build/BuildQueue.swift](../../Sources/ArcanePorting/Build/BuildQueue.swift) | Coda FIFO di sessione con deduplica e nuova verifica prima dell'avvio. |
 | [Sources/ArcanePorting/Library/GameStorageUsage.swift](../../Sources/ArcanePorting/Library/GameStorageUsage.swift) | Dimensioni per gioco e totali: distingue assenza e indisponibilità, segnala cache condivise e conserva identità stabili per il focus. |
 
 ## Porting · pagina del gioco
@@ -938,6 +939,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/ArcanePortingTests/PortingPresentationTests.swift](../../Tests/ArcanePortingTests/PortingPresentationTests.swift) | ETA, prewarm, tile, fallimenti del porting e posizione e focus della pill Cloud. |
 | [Tests/ArcanePortingTests/CloudGameSourcesTests.swift](../../Tests/ArcanePortingTests/CloudGameSourcesTests.swift) | Fixture rclone locale: conflitti, lease, annullamento e spostamento in un Cestino simulato. |
 | [Tests/ArcanePortingTests/CloudTransferQueueTests.swift](../../Tests/ArcanePortingTests/CloudTransferQueueTests.swift) | Persistenza, ordine e richieste di liberazione ancora valide. |
+| [Tests/ArcanePortingTests/BuildQueueTests.swift](../../Tests/ArcanePortingTests/BuildQueueTests.swift) | Ordine, deduplica, attesa e annullamento della coda di build. |
 | [Tests/ArcanePortingTests/CloudDriveFoldersTests.swift](../../Tests/ArcanePortingTests/CloudDriveFoldersTests.swift) | Cartelle di un remote locale, conteggio e configurazione candidata. |
 | [Tests/ArcanePortingTests/AppIconPreferenceTests.swift](../../Tests/ArcanePortingTests/AppIconPreferenceTests.swift) | Ambito dell’icona: scelta esplicita, vecchie librerie, scansioni, persistenza e rebuild. |
 | [Tests/ArcanePortingTests/AppIconProgressTests.swift](../../Tests/ArcanePortingTests/AppIconProgressTests.swift) | Verifica che l'esito di un'icona mancante non sovrascriva il log o segnali una build fallita. |

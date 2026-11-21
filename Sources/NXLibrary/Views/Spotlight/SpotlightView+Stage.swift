@@ -183,6 +183,7 @@ extension SpotlightView {
                     cloud: viewModel.cloudLibrary,
                     showsCloudPill: showsCloudPill(game),
                     canCheckCloudSources: viewModel.canCheckCloudSources(for: game),
+                    queuedCancelIndex: queuedCancelIndex(game),
                     etaText: viewModel.portingETAText,
                     onOpenLog: { viewModel.revealLog(for: game) }
                 )

@@ -3,6 +3,7 @@ import NXLibraryCore
 
 struct ActivityCenterView: View {
     @ObservedObject var viewModel: AppViewModel
+    @ObservedObject var porting: PortingModel
     @ObservedObject var cloudLibrary: CloudLibraryModel
     let focus: ActivityCenterFocus
     let onFocus: (ActivityCenterFocus.Row) -> Void
@@ -74,8 +75,8 @@ struct ActivityCenterView: View {
                 if let id = viewModel.portingGameID {
                     Text(gameName(id)).seleneFont(19, .semibold).lineLimit(1)
                 }
-                let stage = viewModel.isCancellingBuild ? text("Cancelling…")
-                    : viewModel.buildStages.isEmpty ? text("Preparing") : viewModel.currentStageName
+                let stage = porting.isCancellingBuild ? text("Cancelling…")
+                    : porting.buildStages.isEmpty ? text("Preparing") : porting.currentStageName
                 let fraction = viewModel.portingProgress?.overall ?? 0
                 let percent = fraction.formatted(.percent.precision(.fractionLength(0)).locale(localization.formatLocale))
                 caption("\(stage) · \(percent)")
@@ -85,7 +86,7 @@ struct ActivityCenterView: View {
             VStack(spacing: canvas.u(8)) {
                 button("Open porting", row: .porting, focused: focused)
                 if let id = viewModel.portingGameID {
-                    button("Cancel", row: .cancelBuild(id), focused: focused, enabled: !viewModel.isCancellingBuild)
+                    button("Cancel", row: .cancelBuild(id), focused: focused, enabled: !porting.isCancellingBuild)
                 }
             }
         }

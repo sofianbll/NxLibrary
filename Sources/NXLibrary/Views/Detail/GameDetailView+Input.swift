@@ -63,6 +63,11 @@ extension GameDetailView {
     }
 
     func runPill(_ index: Int) {
+        if index == queuedCancelIndex {
+            SoundEffectService.shared.play(.click)
+            viewModel.porting.cancelQueuedBuild(game.id)
+            return
+        }
         let pills = pillSet
         if showsCloudPill, index == pills.detailsCloudIndex {
             SoundEffectService.shared.play(.click)

@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import AppKit
+import Combine
 import UniformTypeIdentifiers
 import NXLibraryCore
 import ArcanePorting
@@ -24,7 +25,10 @@ final class AppViewModel: ObservableObject {
     static let automaticIconArtwork = ArtworkStore()
     let saveGate = SaveOperationGate()
     let cloudLibrary = CloudLibraryModel()
-    @Published var cloudQuitRequested = false
+    @Published var cloudQuitRequested = false {
+        didSet { if !cloudQuitRequested { porting.scheduleNextBuild() } }
+    }
+    private var cloudConnectionObservation: AnyCancellable?
     @Published var cloudLibraryGameID: UUID?
     @Published var isCheckingCloudBuild = false
     let saveQueue = DispatchQueue(label: "local.nxlibrary.saves", qos: .userInitiated)
@@ -34,13 +38,16 @@ final class AppViewModel: ObservableObject {
                 appIcon.iconLaunchWait.cancel()
                 if launchingGameId == waitingGame { launchingGameId = nil }
             }
+            if settingsNotice == nil { porting.scheduleNextBuild() }
         }
     }
     @Published var settingsNoticeFocus = 0
     /// A SteamGridDB API key is saved (Settings → Online services → SteamGridDB), so Change artwork searches it.
     @Published var hasSteamGridDBKey = SteamGridDBKey().load() != nil
     @Published var isEditingSteamGridDBKey = false
-    @Published var isUpdatingApp = false
+    @Published var isUpdatingApp = false {
+        didSet { if !isUpdatingApp { porting.scheduleNextBuild() } }
+    }
     @Published private(set) var hasActiveSaveOperations = false
     @Published var runningGameCount = 0
 
@@ -174,6 +181,7 @@ final class AppViewModel: ObservableObject {
     /// that show it.
     private(set) lazy var store = StoreMetadataModel(app: self)
     @Published var isBuilding: Bool = false
+    @Published var buildQueue: [UUID] = []
     /// The running (or just finished) porting folded into one overall fraction for the home.
     @Published var portingProgress: PortingProgress? = nil
     /// The game ported last in this session leads Spotlight's row until quit.
@@ -258,9 +266,13 @@ final class AppViewModel: ObservableObject {
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.hasActiveSaveOperations = self.saveGate.hasActiveOperations
+                self.porting.scheduleNextBuild()
             }
         }
         let startup = settingsStore.settings
+        cloudConnectionObservation = cloudLibrary.$isChangingConnection.dropFirst().sink { [weak self] changing in
+            if !changing { self?.porting.scheduleNextBuild() }
+        }
         let didCompleteSetup = AppData.preferences.bool(forKey: StorageKeys.setupCompleted)
         self.firstRunSetup = FirstRunSetup(completed: didCompleteSetup,
                                            savedPage: AppData.preferences.string(forKey: StorageKeys.setupPage),
@@ -443,6 +455,7 @@ final class AppViewModel: ObservableObject {
                     self.showSettingsNotice(title: L10n.text("Some files were not deleted"), message: failures.joined(separator: "\n"))
                 }
                 self.refreshStorageUsage()
+                self.porting.scheduleNextBuild()
             }
         }
     }
@@ -457,6 +470,7 @@ final class AppViewModel: ObservableObject {
         libraryGames = document.nxnativeGames.sorted {
             $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
         }
+        if !buildQueue.isEmpty { porting.scheduleNextBuild() }
     }
 
     var cloudSavesPreferences = CloudSavesPreferences()

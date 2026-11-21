@@ -61,6 +61,7 @@ extension PortingModel {
     var canStartBuild: Bool {
         !app.isBuilding
             && !app.isCheckingCloudBuild
+            && app.buildQueue.isEmpty
             && !app.cloudLibrary.isChangingConnection
             && (!app.cloudLibrary.isWorking || selectedGame?.titleId.map { title in
                 let existing = selectedLibraryGame
@@ -129,10 +130,11 @@ extension PortingModel {
                 return
             }
             let selectionID = selection.id
-            requestCloudBuild(for: existing, archive: archive, extraArguments: [], onStarted: nil) { [weak self] in
+            requestCloudBuild(for: existing, archive: archive, extraArguments: [], onStarted: nil,
+                              afterSourcesDownloaded: { [weak self] in
                 guard let self, self.selectedGame?.id == selectionID, self.selectedSources == files else { return }
                 self.addSelectedGame(buildNow: true)
-            }
+            })
             return
         }
         let sources = files.compactMap(Self.detectedSource(from:))
@@ -244,38 +246,128 @@ extension PortingModel {
         return catalog.nxnativeGames.first(where: { $0.titleId == titleId }) ?? game
     }
 
+    /// A queued build starts in the background, without reopening the UI that requested it.
     func startBuild(for game: PortedGame, extraArguments: [String] = [], onStarted: (() -> Void)? = nil) {
+        submitBuild(for: game, extraArguments: extraArguments, onStarted: onStarted)
+    }
+
+    func submitBuild(for game: PortedGame, extraArguments: [String], onStarted: (() -> Void)?,
+                     withoutCache: Bool = false) {
+        let activeID = app.portingGameID ?? checkingCloudBuild?.id
+        guard activeID != game.id, !app.buildQueue.contains(game.id) else { return }
+        if app.isBuilding || app.isCheckingCloudBuild || !app.buildQueue.isEmpty {
+            pendingBuilds.enqueue((game.name, extraArguments, withoutCache), id: game.id, activeID: activeID)
+            app.buildQueue = pendingBuilds.ids
+            scheduleNextBuild()
+            return
+        }
+        startBuildImmediately(for: game, extraArguments: extraArguments,
+                              onStarted: onStarted, withoutCache: withoutCache)
+    }
+
+    func cancelQueuedBuild(_ id: UUID) {
+        guard pendingBuilds.cancel(id) else { return }
+        app.buildQueue = pendingBuilds.ids
+        scheduleNextBuild()
+    }
+
+    func scheduleNextBuild() {
+        guard !app.buildQueue.isEmpty else { return }
+        DispatchQueue.main.async { [weak self] in self?.startNextBuild() }
+    }
+
+    private func startNextBuild() {
+        guard !app.isBuilding, !app.isCheckingCloudBuild, !app.cloudQuitRequested, !app.cloudLibrary.isQuitting,
+              !app.cloudLibrary.isChangingConnection, !app.isCleaningStorage, !app.isUpdatingApp,
+              app.settingsNotice == nil else { return }
+        while !app.isBuilding && !app.isCheckingCloudBuild {
+            var target: PortedGame?
+            guard let entry = pendingBuilds.takeNext({ id in
+                guard let game = app.libraryGames.first(where: { $0.id == id }) else { return .skip }
+                guard !buildTitleBusy(game) else { return .wait }
+                guard GameResourceState.sourcesAvailable(for: game) || app.canCheckCloudSources(for: game) else {
+                    return .skip
+                }
+                target = game
+                return .start
+            }) else { return }
+            app.buildQueue = pendingBuilds.ids
+            guard let target else {
+                logSkippedBuild(entry.value.name, reason: L10n.text("Game or source files not found."))
+                continue
+            }
+            startBuildImmediately(for: target, extraArguments: entry.value.arguments,
+                                  onStarted: nil, withoutCache: entry.value.withoutCache,
+                                  queued: (entry.id, entry.value))
+        }
+    }
+
+    func logSkippedBuild(_ name: String, reason: String) {
+        app.logs.append(LogEntry(level: .warning, message: L10n.format("Skipped build for %@: %@", [name, reason])))
+    }
+
+    private func buildTitleBusy(_ game: PortedGame) -> Bool {
+        app.appIcon.appIconsInFlight.contains(game.id)
+            || app.cloudLibrary.conflicts(with: buildScope(for: game))
+            || game.titleId.map { app.saveGate.isBusy(titleID: $0) } == true
+    }
+
+    private func startBuildImmediately(for game: PortedGame, extraArguments: [String], onStarted: (() -> Void)?,
+                                       withoutCache: Bool, queued: BuildQueue<QueuedBuild>.Entry? = nil) {
         if let archive = app.cloudLibrary.archive {
-            requestCloudBuild(for: game, archive: archive, extraArguments: extraArguments, onStarted: onStarted)
+            requestCloudBuild(for: game, archive: archive, extraArguments: extraArguments, onStarted: onStarted,
+                              withoutCache: withoutCache, queuedName: queued?.value.name,
+                              canStart: queued.map { entry in
+                { [weak self] target in
+                    guard let self else { return false }
+                    guard !self.buildTitleBusy(target) else {
+                        self.pendingBuilds.retryFirst(entry)
+                        self.app.buildQueue = self.pendingBuilds.ids
+                        return false
+                    }
+                    return true
+                }
+            })
             return
         }
         do {
-            try beginBuild(for: game, extraArguments: extraArguments)
+            try beginBuild(for: game, extraArguments: extraArguments, withoutCache: withoutCache)
             onStarted?()
         } catch {
-            presentBuildError(error)
+            if let queued { logSkippedBuild(queued.value.name, reason: error.localizedDescription) }
+            else { presentBuildError(error) }
         }
     }
 
     func requestCloudBuild(for game: PortedGame, archive: CloudGameArchive, extraArguments: [String],
                            onStarted: (() -> Void)?, withoutCache: Bool = false,
+                           queuedName: String? = nil, canStart: ((PortedGame) -> Bool)? = nil,
                            afterSourcesDownloaded: (() -> Void)? = nil) {
         guard !app.isCheckingCloudBuild else { return }
         let target = app.libraryGames.first(where: { $0.id == game.id }) ?? game
         do { try checkBuildIdle(for: target) }
-        catch { presentBuildError(error); return }
-        checkingCloudBuildScope = buildScope(for: target)
+        catch {
+            if let queuedName { logSkippedBuild(queuedName, reason: error.localizedDescription) }
+            else { presentBuildError(error) }
+            return
+        }
+        checkingCloudBuild = (target.id, buildScope(for: target))
         app.isCheckingCloudBuild = true
         Task { @MainActor in
             if let afterSourcesDownloaded, GameResourceState.sourcesAvailable(for: target) {
-                checkingCloudBuildScope = nil
+                checkingCloudBuild = nil
                 app.isCheckingCloudBuild = false
                 afterSourcesDownloaded()
                 return
             }
-            defer { checkingCloudBuildScope = nil; app.isCheckingCloudBuild = false }
+            defer {
+                checkingCloudBuild = nil
+                app.isCheckingCloudBuild = false
+                scheduleNextBuild()
+            }
             await app.startCloudBuild(for: game, archive: archive, extraArguments: extraArguments,
                                       onStarted: onStarted, withoutCache: withoutCache,
+                                      queuedName: queuedName, canStart: canStart,
                                       afterSourcesDownloaded: afterSourcesDownloaded)
         }
     }
@@ -540,12 +632,16 @@ extension PortingModel {
             // Replacing the app under its running game can crash it: the new app waits for the game to quit.
             holdInstall: { RunningGameMonitor.runningApplication(for: target) != nil },
             acquireInstall: { [weak self] in self?.app.acquireSaveInstallLease(for: target) },
-            eventHandler: { [weak self] event in
-                DispatchQueue.main.async { self?.handleBuildEvent(event) }
+            eventHandler: { [weak self, weak service] event in
+                DispatchQueue.main.async {
+                    guard let service, self?.buildService === service else { return }
+                    self?.handleBuildEvent(event)
+                }
             },
-            completion: { [weak self] result in
+            completion: { [weak self, weak service] result in
                 Task { @MainActor in
                     if let releaseCloudBuild { await releaseCloudBuild() }
+                    guard let service, self?.buildService === service else { return }
                     self?.finishBuild(result, gameID: target.id,
                                       finalApp: finalApp, tempDir: tempRoot,
                                       nextendoRequested: nextendoRequested, stagedCodeMods: stagedCodeMods)

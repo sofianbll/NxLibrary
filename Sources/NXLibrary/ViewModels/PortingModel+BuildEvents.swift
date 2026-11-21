@@ -259,6 +259,7 @@ extension PortingModel {
         buildPreviousStatus = nil
         app.currentBuildGameID = nil
         activeBuildToolchain = nil
+        scheduleNextBuild()
     }
 
     func presentBuildError(_ error: Error) {

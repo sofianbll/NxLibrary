@@ -193,7 +193,16 @@ struct SpotlightView: View {
 
     /// One pill while the selected game ports, three otherwise.
     var selectedPillCount: Int {
-        selectedGame.map { viewModel.portingPills($0).count + (showsCloudPill($0) ? 1 : 0) } ?? SpotlightState.pillCount
+        guard let selectedGame else { return SpotlightState.pillCount }
+        return basePillCount(selectedGame) + (queuedCancelIndex(selectedGame) == nil ? 0 : 1)
+    }
+
+    private func basePillCount(_ game: PortedGame) -> Int {
+        viewModel.portingPills(game).count + (showsCloudPill(game) ? 1 : 0)
+    }
+
+    func queuedCancelIndex(_ game: PortedGame) -> Int? {
+        viewModel.buildQueue.contains(game.id) ? basePillCount(game) : nil
     }
 
     func showsCloudPill(_ game: PortedGame) -> Bool {

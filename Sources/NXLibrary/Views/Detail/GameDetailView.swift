@@ -225,7 +225,9 @@ struct GameDetailView: View {
         cloud.archive != nil && cloud.states[game.id]?.appIsCloudOnly == true && !runningGames.isRunning(game)
     }
     var pillSet: PortingPills { viewModel.portingPills(game).detailsPresentation(cloudOnly: downloadsCloudApp) }
-    private var pillCount: Int { pillSet.count + (showsCloudPill ? 1 : 0) }
+    private var basePillCount: Int { pillSet.count + (showsCloudPill ? 1 : 0) }
+    var queuedCancelIndex: Int? { viewModel.buildQueue.contains(game.id) ? basePillCount : nil }
+    private var pillCount: Int { basePillCount + (queuedCancelIndex == nil ? 0 : 1) }
 
     // MARK: - Stage
 
@@ -292,7 +294,7 @@ struct GameDetailView: View {
                             wikipedia: wikipediaAbout?.matching(aboutLookup(model)),
                             onPrimary: { pressPill(0) },
                             onSecondary: { pressPill(1) },
-                            onFavorite: { pressPill(pillCount - 1) },
+                            onFavorite: { pressPill(basePillCount - 1) },
                             onHoverPill: { hoverPill($0) },
                             pillSet: pillSet,
                             etaText: viewModel.portingETAText,
@@ -300,6 +302,7 @@ struct GameDetailView: View {
                             showsCloudPill: showsCloudPill,
                             downloadEnabled: viewModel.canChangeCloudLibrary(game),
                             canCheckCloudSources: viewModel.canCheckCloudSources(for: game),
+                            queuedCancelIndex: queuedCancelIndex,
                             onPill: { pressPill($0) },
                             onOpenLog: { viewModel.revealLog(for: game) })
                 .offset(x: canvas.u(110), y: canvas.u(96))

@@ -26,8 +26,11 @@ public final class SaveOperationGate {
         return appUpdate != nil || leases[key] != nil || recovery.contains(key)
     }
     public func setRecoveryBlocked(_ blocked: Bool, titleID: String) {
-        lock.lock(); defer { lock.unlock() }
-        if blocked { recovery.insert(titleID.uppercased()) } else { recovery.remove(titleID.uppercased()) }
+        lock.lock()
+        let key = titleID.uppercased()
+        let changed = blocked ? recovery.insert(key).inserted : recovery.remove(key) != nil
+        lock.unlock()
+        if changed { onActivityChange?() }
     }
 
     /// A blocked recovery without active I/O may need a newer app to resolve it.

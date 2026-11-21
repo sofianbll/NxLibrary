@@ -37,6 +37,7 @@ struct DetailsTopBlock: View {
     let showsCloudPill: Bool
     var downloadEnabled = false
     var canCheckCloudSources = false
+    var queuedCancelIndex: Int?
     var onPill: (Int) -> Void = { _ in }
     var onOpenLog: () -> Void = {}
 
@@ -70,6 +71,11 @@ struct DetailsTopBlock: View {
             HStack(spacing: canvas.u(14)) {
                 pills
                 if showsCloudPill && (pillSet == .porting || pillSet.isFailed) { cloudPill }
+                if let index = queuedCancelIndex {
+                    SelenePillButton(title: L10n.text("Cancel"), height: 52, focused: focusedPill == index) { onPill(index) }
+                        .onHover { if $0 { onHoverPill(index) } }
+                        .accessibilityLabel(L10n.text("Cancel queued build"))
+                }
             }
                 .padding(.top, canvas.u(pillSet.isFailed ? 10 : 26))
             if let state = cloud.states[game.id], let active = state.activeItem, active != .sources, !state.queued {
@@ -125,6 +131,14 @@ struct DetailsTopBlock: View {
     // MARK: - Pills
 
     @ViewBuilder private var note: some View {
+        if queuedCancelIndex != nil {
+            Text(L10n.text("Build queued")).seleneFont(16).foregroundColor(SeleneTheme.ink75)
+        } else {
+            portingNote
+        }
+    }
+
+    @ViewBuilder private var portingNote: some View {
         switch pillSet {
         case .porting:
             if let etaText {
