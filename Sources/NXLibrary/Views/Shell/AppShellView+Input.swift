@@ -223,6 +223,17 @@ extension AppShellView {
         case .quit:
             router.closeMenu()
             NSApplication.shared.terminate(nil)
+        case .sleep:
+            router.closeMenu()
+            // Sleeping would stall a cloud transfer, like a restart would.
+            guard !viewModel.cloudLibrary.isWorking else {
+                viewModel.showSettingsNotice(title: L10n.text("Sleep"), message: L10n.text("After the cloud transfer"))
+                return
+            }
+            let sleep = Process()
+            sleep.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
+            sleep.arguments = ["sleepnow"]
+            try? sleep.run()
         case .hide:
             router.closeMenu()
             NSApplication.shared.hide(nil)

@@ -116,8 +116,8 @@ final class MenuSelectionModelTests: XCTestCase {
                        [.addGame, .refreshLibrary, .settings, .theme, .console, .setupCheck, .manageSources, .power])
         XCTAssertEqual(MenuAction.allCases.map(\.title),
                        ["Add Game", "Library refresh", "Settings", "Theme", "Console", "Setup check", "Manage sources", "Power"])
-        XCTAssertEqual(PowerAction.allCases, [.quit, .hide, .relaunch])
-        XCTAssertEqual(PowerAction.allCases.map(\.title), ["Quit", "Hide", "Restart app"])
+        XCTAssertEqual(PowerAction.allCases, [.quit, .sleep, .hide, .relaunch])
+        XCTAssertEqual(PowerAction.allCases.map(\.title), ["Quit", "Sleep", "Hide", "Restart app"])
     }
 
     func testMoveClampsAtBothEnds() {

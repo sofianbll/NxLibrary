@@ -172,7 +172,9 @@ final class GameControllerService: ObservableObject {
             case .zl: triggerAction(.jumpToStart)
             case .zr: triggerAction(.jumpToEnd)
             case .r3: triggerAction(.rightStickPress)
-            case .menu, .view, .l3, .home, .capture: break
+            // Home opens the control center (Power: Quit, Sleep…), as the Menu button does.
+            case .home: triggerAction(.menu)
+            case .menu, .view, .l3, .capture: break
             }
         }
     }

@@ -735,6 +735,8 @@ Prove e misure di queste scelte: [docs/history/reviews/2026-11-16-ratings-metada
 
 ## Interfaccia Selene e input
 
+- Il tasto Home del controller apre il centro di controllo come Menu. Le pillole Power sono Quit, Sleep (`pmset sleepnow`, rinviato durante un trasferimento cloud), Hide e Restart app (`PowerAction`, `AppShellView.runPower`).
+
 **Canvas, temi e componenti.**
 - `SeleneCanvas` scala il canvas 1920×1080 nello spazio disponibile, e `seleneCanvas` (in `SeleneCanvasEnvironment.swift`) espone unità e font alle viste. `SeleneTheme` ricava colori e curve di animazione dalla palette. `MaterialIcon` elenca i glifi; `SeleneFonts` registra il font e li rende in SwiftUI.
 - I componenti condivisi in `Views/Components` disegnano righe, switch, pill, focus, suggerimenti dei tasti, dialoghi e conferme. Quando usarli è in [conventions.md](../working-on-it/conventions.md#3-una-schermata-o-un-pannello-selene).

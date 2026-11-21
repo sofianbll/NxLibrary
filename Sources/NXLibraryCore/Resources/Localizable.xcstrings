@@ -1,6 +1,16 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Sleep": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Sleep"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Stop"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Veille"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Ruhezustand"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Suspender"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Repouso"}}
+      }
+    },
     "Sent · published when the upload ends": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Sent · published when the upload ends"}},

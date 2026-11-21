@@ -34,12 +34,13 @@ public enum MenuAction: String, CaseIterable, Identifiable, Equatable {
 
 /// The pills stacked above Power.
 public enum PowerAction: String, CaseIterable, Identifiable, Equatable {
-    case quit, hide, relaunch
+    case quit, sleep, hide, relaunch
     public var id: String { rawValue }
 
     public var title: String {
         switch self {
         case .quit: return L10n.text("Quit")
+        case .sleep: return L10n.text("Sleep")
         case .hide: return L10n.text("Hide")
         case .relaunch: return L10n.text("Restart app")
         }
@@ -48,6 +49,7 @@ public enum PowerAction: String, CaseIterable, Identifiable, Equatable {
     public var icon: MaterialIcon {
         switch self {
         case .quit: return .power
+        case .sleep: return .bedtime
         case .hide: return .hidden
         case .relaunch: return .restartAlt
         }
