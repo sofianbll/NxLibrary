@@ -32,9 +32,18 @@ fail() { echo "error: $*" >&2; exit 1; }
 
 [[ "$VERSION" =~ ^[0-9]+(\.[0-9]+){1,3}$ ]] || fail "the version must be dotted numbers, like 0.2.0"
 TAG="v$VERSION"
+
+# Private Google client: published builds never receive these variables.
+if [ "$PUBLISH" = "1" ] && [ -n "${ARCANE_GOOGLE_CLIENT_ID+x}${ARCANE_GOOGLE_CLIENT_SECRET+x}" ]; then
+  fail "unset ARCANE_GOOGLE_CLIENT_ID and ARCANE_GOOGLE_CLIENT_SECRET before using --publish"
+fi
+GOOGLE_CLIENT_ID="${ARCANE_GOOGLE_CLIENT_ID:-}"
+GOOGLE_CLIENT_SECRET="${ARCANE_GOOGLE_CLIENT_SECRET:-}"
+unset ARCANE_GOOGLE_CLIENT_ID ARCANE_GOOGLE_CLIENT_SECRET
+PRIVATE=0
+if [[ "$GOOGLE_CLIENT_ID" =~ [^[:space:]] && "$GOOGLE_CLIENT_SECRET" =~ [^[:space:]] ]]; then PRIVATE=1; fi
+
 if [ "$PUBLISH" = "1" ]; then
-  [ -z "${ARCANE_GOOGLE_CLIENT_ID:-}${ARCANE_GOOGLE_CLIENT_SECRET:-}" ] \
-    || fail "unset the private Google OAuth client before publishing"
   [ -n "$NOTES" ] && [ -f "$NOTES" ] || fail "--publish needs --notes <file> with the release notes"
   command -v gh >/dev/null || fail "--publish needs the GitHub CLI (gh)"
   REPOSITORY="$(sed -n 's/.*defaultRepository: String? = "\([^"]*\)".*/\1/p' "$ROOT/Sources/NXLibraryCore/App/AppUpdate.swift")"
@@ -42,12 +51,7 @@ if [ "$PUBLISH" = "1" ]; then
   [ "$(gh api "repos/$REPOSITORY" --jq .private)" = "false" ] \
     || fail "the update repository must be publicly accessible before publishing"
 fi
-GOOGLE_CLIENT_ID="${ARCANE_GOOGLE_CLIENT_ID:-}"
-GOOGLE_CLIENT_SECRET="${ARCANE_GOOGLE_CLIENT_SECRET:-}"
-unset ARCANE_GOOGLE_CLIENT_ID ARCANE_GOOGLE_CLIENT_SECRET
 [ -z "$(git status --porcelain)" ] || fail "the working tree has changes; commit or stash them first"
-PRIVATE=0
-if [ -n "$GOOGLE_CLIENT_ID" ] && [ -n "$GOOGLE_CLIENT_SECRET" ]; then PRIVATE=1; fi
 if [ "$PRIVATE" = "0" ] && git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
   fail "the tag $TAG already exists"
 fi
@@ -85,10 +89,22 @@ ZIP="$OUT/NXLibrary-$VERSION.zip"
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
-ARCANE_GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" ARCANE_GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
+if [ "$PRIVATE" = "1" ]; then
+  ARCANE_GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" ARCANE_GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
+    NX_VERSION="$VERSION" NX_RELEASE=1 bash "$ROOT/scripts/build_app.sh" "$APP"
+else
   NX_VERSION="$VERSION" NX_RELEASE=1 bash "$ROOT/scripts/build_app.sh" "$APP"
+fi
 unset GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET
 codesign --verify --deep --strict "$APP"
+if [ "$PUBLISH" = "1" ]; then
+  /usr/bin/plutil -lint "$APP/Contents/Info.plist" >/dev/null
+  for key in ArcaneGoogleClientID ArcaneGoogleClientSecret; do
+    if /usr/libexec/PlistBuddy -c "Print :$key" "$APP/Contents/Info.plist" >/dev/null 2>&1; then
+      fail "the built Info.plist contains a private Google OAuth key; nothing was published"
+    fi
+  done
+fi
 if /usr/libexec/PlistBuddy -c 'Print :NXLibraryDevelopmentProfile' "$APP/Contents/Info.plist" >/dev/null 2>&1; then
   fail "a release must not select the development data profile"
 fi

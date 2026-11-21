@@ -40,7 +40,7 @@ Register a public PKCE application with Nextendo for `http://127.0.0.1:47823/cal
 
 ### Private Google Drive builds
 
-Supply both `ARCANE_GOOGLE_CLIENT_ID` and `ARCANE_GOOGLE_CLIENT_SECRET` in the environment of `scripts/release.sh` (without `--publish`) or `scripts/build_app.sh`. Use a desktop OAuth client. If either variable is missing or blank, no Google client keys are added to `Info.plist`. These keys are readable by anyone with the app, ZIP or DMG: keep the artifacts private and don't run the scripts with shell tracing. `release.sh --publish` refuses either variable. Personal releases go to `work/release-private`, accept an existing version tag without changing it, and can lose the embedded client when a public update replaces the app.
+Supply both `ARCANE_GOOGLE_CLIENT_ID` and `ARCANE_GOOGLE_CLIENT_SECRET` in the environment of `scripts/release.sh` (without `--publish`) or `scripts/build_app.sh`. Use a desktop OAuth client. If either variable is missing or blank, no Google client keys are added to `Info.plist`. These keys are readable by anyone with the app, ZIP or DMG: keep the artifacts private and don't run the scripts with shell tracing. `release.sh --publish` refuses either variable even if set to an empty string and checks that the built plist has neither key. Personal releases go to `work/release-private`, accept an existing version tag without changing it, and can lose the embedded client when a public update replaces the app.
 
 The release build downloads the official macOS arm64 rclone 1.75.2 archive, verifies it against both the pinned SHA-256 and the upstream `SHA256SUMS`, then signs the helper in `Contents/Helpers`. Development builds use a local rclone; Arcane never downloads a helper at runtime.
 

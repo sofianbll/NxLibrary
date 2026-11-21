@@ -12,6 +12,18 @@ BUILD_APP = Path(__file__).resolve().parents[2] / "scripts/build_app.sh"
 
 
 class AppBundleInfo(unittest.TestCase):
+    def test_publish_refuses_each_google_variable_even_if_empty_before_other_checks(self):
+        release = BUILD_APP.with_name("release.sh")
+        keys = ("ARCANE_GOOGLE_CLIENT_ID", "ARCANE_GOOGLE_CLIENT_SECRET")
+        environment = {key: value for key, value in os.environ.items() if key not in keys}
+        for key in keys:
+            for value in ("", "placeholder"):
+                with self.subTest(key=key, empty=not value):
+                    result = subprocess.run(["/bin/bash", str(release), "0.0.0", "--publish"],
+                                            env=environment | {key: value}, capture_output=True, text=True)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn("unset ARCANE_GOOGLE_CLIENT_ID and ARCANE_GOOGLE_CLIENT_SECRET", result.stderr)
+
     def test_optional_google_client_pair_is_injected_without_xml_interpolation(self):
         helper = BUILD_APP.with_name("inject_google_client.py")
         keys = ("ARCANE_GOOGLE_CLIENT_ID", "ARCANE_GOOGLE_CLIENT_SECRET")

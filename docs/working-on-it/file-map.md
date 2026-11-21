@@ -1063,7 +1063,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [SteamArtworkRequestTests.swift](../../Tests/NXLibraryCoreTests/SteamArtworkRequestTests.swift) | Quadrato dall’icona originale e mai dalla copertina, scelta personale prima, link che escono dal bundle ignorati, icona automatica solo senza app. |
 | [SteamAutomaticIconTests.swift](../../Tests/NXLibraryCoreTests/SteamAutomaticIconTests.swift) | Quadrato LaunchBox della voce PC preso intero, scaricato una volta e conservato; nessun quadrato non si richiede di nuovo nella sessione. |
 | [SteamBackdropChoiceTests.swift](../../Tests/NXLibraryCoreTests/SteamBackdropChoiceTests.swift) | Solo arte in formato schermo, ordine store → screenshot → banner, fan art LaunchBox fra store e screenshot, ripiego sulla prima immagine che si carica. |
-| [test_app_bundle.py](../../Tests/PublicationChecks/test_app_bundle.py) | Verifica che il bundle del launcher rinunci a Game Mode e che la coppia OAuth facoltativa venga aggiunta al plist solo se completa. |
+| [test_app_bundle.py](../../Tests/PublicationChecks/test_app_bundle.py) | Verifica Game Mode, iniezione della coppia OAuth nel plist solo se completa e rifiuto delle variabili in pubblicazione. |
 
 ## Script di sviluppo e packaging
 
@@ -1075,7 +1075,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [scripts/check_publication.py](../../scripts/check_publication.py) | Rifiuta contenuti personali o di gioco versionati e formati di segreto riconoscibili; verifica il runtime rispetto al lock prima del packaging. |
 | [scripts/build_dmg.sh](../../scripts/build_dmg.sh) | Confeziona un bundle già costruito in un’immagine DMG di sviluppo. |
 | [scripts/bundle_runtime.sh](../../scripts/bundle_runtime.sh) | Prepara Python e strumenti dalle versioni bloccate, verifica gli hash e firma il runtime incluso. |
-| [scripts/release.sh](../../scripts/release.sh) | Controlla prerequisiti, suite Swift e regressioni app; produce ZIP e DMG di release. La pubblicazione esplicita rifiuta il client Google privato. |
+| [scripts/release.sh](../../scripts/release.sh) | Controlla prerequisiti, suite Swift e regressioni app; produce ZIP e DMG. In pubblicazione rifiuta variabili e chiavi plist del client Google privato. |
 | [scripts/validate_update.py](../../scripts/validate_update.py) | Verifica struttura, percorsi e limiti degli archivi prima dell'estrazione, sia nel bundle sia durante il packaging delle release. |
 | [scripts/relink_macho.py](../../scripts/relink_macho.py) | Riscrive riferimenti Mach-O dei binari e delle librerie affinché il runtime incluso sia rilocabile. |
 | [scripts/make_icons.swift](../../scripts/make_icons.swift) | Genera le risorse dell’icona dell’app nelle varianti usate dal bundle. |
