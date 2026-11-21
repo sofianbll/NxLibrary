@@ -231,4 +231,17 @@ final class CloudGameSourcesTests: XCTestCase {
             return file
         }
     }
+
+    func testForEachChunkReadsWholeFileInBoundedChunks() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let data = Data((0..<10_000).map { UInt8($0 % 251) })
+        try data.write(to: url)
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        var read = Data(), sizes: [Int] = []
+        try handle.forEachChunk(4096) { read.append($0); sizes.append($0.count) }
+        XCTAssertEqual(read, data)
+        XCTAssertEqual(sizes, [4096, 4096, 1808])
+    }
 }

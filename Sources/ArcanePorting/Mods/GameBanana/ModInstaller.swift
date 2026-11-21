@@ -81,7 +81,7 @@ public struct ModInstaller {
         guard let handle = try? FileHandle(forReadingFrom: archive) else { throw ModInstallError.damaged }
         defer { try? handle.close() }
         var md5 = Insecure.MD5()
-        while let chunk = try? handle.read(upToCount: 1 << 20), !chunk.isEmpty { md5.update(data: chunk) }
+        try? handle.forEachChunk { md5.update(data: $0) }
         let digest = md5.finalize().map { String(format: "%02x", $0) }.joined()
         guard digest == file.md5.lowercased() else { throw ModInstallError.damaged }
     }

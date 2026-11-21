@@ -94,7 +94,7 @@ extension SaveFiles {
                 guard fd >= 0 else { throw SaveFailure.io("Could not read a save file.") }
                 let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
                 var hash = SHA256()
-                while let chunk = try handle.read(upToCount: 1024 * 1024), !chunk.isEmpty { hash.update(data: chunk) }
+                try handle.forEachChunk { hash.update(data: $0) }
                 digest = hash.finalize().map { String(format: "%02x", $0) }.joined()
             }
             entries.append(SaveInventoryEntry(slot: slot, path: relative, isDirectory: kind == S_IFDIR,

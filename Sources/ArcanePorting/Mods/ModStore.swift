@@ -488,7 +488,7 @@ public struct ModStore {
                 var contents = SHA256()
                 let handle = try FileHandle(forReadingFrom: input)
                 defer { try? handle.close() }
-                while let chunk = try handle.read(upToCount: 1 << 20), !chunk.isEmpty { contents.update(data: chunk) }
+                try handle.forEachChunk { contents.update(data: $0) }
                 hash.update(data: Data(("\u{0}" + patch.relative + "\u{0}").utf8))
                 hash.update(data: Data(contents.finalize()))
             }

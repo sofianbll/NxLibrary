@@ -263,7 +263,7 @@ public final class CloudGameSources: @unchecked Sendable {
             defer { try? handle.close() }
             var info = stat(), md5 = Insecure.MD5()
             guard fstat(fd, &info) == 0, try Stamp(info) == stamp else { throw CloudArchiveError.localChanged }
-            while let bytes = try handle.read(upToCount: 1024 * 1024), !bytes.isEmpty {
+            try handle.forEachChunk { bytes in
                 try Task.checkCancellation()
                 md5.update(data: bytes)
             }

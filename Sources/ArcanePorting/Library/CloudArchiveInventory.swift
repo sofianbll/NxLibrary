@@ -190,7 +190,7 @@ enum CloudArchiveInventory {
         let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
         var st = stat(), sha = SHA256(), md5 = Insecure.MD5()
         guard fstat(fd, &st) == 0, st.st_mode & S_IFMT == S_IFREG else { throw CloudArchiveError.unsafePath }
-        while let chunk = try handle.read(upToCount: 1024 * 1024), !chunk.isEmpty {
+        try handle.forEachChunk { chunk in
             try Task.checkCancellation()
             sha.update(data: chunk)
             if includeMD5 { md5.update(data: chunk) }
