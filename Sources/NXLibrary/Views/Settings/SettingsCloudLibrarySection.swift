@@ -64,6 +64,12 @@ struct SettingsCloudLibrarySection: View {
         }
     }
 
+    private var connectionStatus: CloudLibraryStatus {
+        if testTask != nil { return .pending }
+        if recoveryFailure != nil { return .failed }
+        return model.connectionCheck == nil || selection.remote == nil ? .unknown : .synchronized
+    }
+
     private var toolSubtitle: String {
         if let tool {
             let path = (tool.path as NSString).abbreviatingWithTildeInPath
@@ -78,8 +84,7 @@ struct SettingsCloudLibrarySection: View {
             let provider = connected.flatMap { $0.type == "drive" ? nil : $0.type } ?? text("Google Drive")
             SeleneRow(selection.remote.map { "\(provider) · \($0)" } ?? text("Cloud service"),
                       subtitle: lastTest, verbatimTitle: true, verbatimSubtitle: true) {
-                SeleneStatusDot(text: serviceStatus, color: testTask == nil && model.connectionCheck?.failure == nil
-                    && model.connectionCheck != nil ? SeleneTheme.statusOK : SeleneTheme.ink60)
+                SeleneStatusDot(text: serviceStatus, color: connectionStatus.color)
             }
             if let failure = recoveryFailure {
                 SeleneButtonRow(failure.messageKey, id: "cloudRecovery", buttonTitle: failure.action.titleKey, action: recover)
@@ -107,7 +112,7 @@ struct SettingsCloudLibrarySection: View {
             SeleneButtonRow("Import games from the cloud", id: "cloudLibraryImport",
                             subtitle: model.importTask == nil ? nil : "Checking…", buttonTitle: "Import", action: importGames)
                 .disabled(!canImport)
-            if model.importTask != nil { SeleneProgressBar(progress: nil) }
+            if model.importTask != nil { SeleneProgressBar(progress: nil, color: CloudLibraryStatus.pending.color) }
 
             SettingsSubheading("Appearance")
             SeleneToggleRow("Icon next to Play", isOn: $settings.settings.showsCloudPlayIcon)

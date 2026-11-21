@@ -109,17 +109,22 @@ struct ActivityCenterView: View {
                         if let item = result(id) {
                             let status = status(item.outcome, job: item.job)
                             ActivityRow(title: title(item.job, name: item.name), detail: status.detail,
-                                        fraction: nil, cloud: isCloud(item.job), status: status.key, color: status.color, focused: focused == row,
+                                        fraction: nil, status: text(status.key), color: status.color, focused: focused == row,
                                         open: nil, cancel: nil, retry: item.canRetry ? { onOpen(row) } : nil,
                                         clear: { onCancel(row) })
                         }
                     default:
                         let job = liveJob(row)
+                        let indicator = transferIndicator(row)
+                        let cloud = !row.opensPorting
+                        let color = cloud ? (indicator?.status ?? .pending).color
+                            : (job.active ? SeleneTheme.ink : SeleneTheme.ink60)
+                        let moving: Bool = if case .move = row { cloudLibrary.libraryMove?.isCancelling == false } else { false }
                         ActivityRow(title: job.title, detail: job.detail, fraction: job.fraction,
-                                    cloud: !row.opensPorting, indeterminate: job.active && !row.opensPorting,
-                                    indicator: transferIndicator(row),
-                                    status: job.active ? "In progress" : "Queued",
-                                    color: job.active ? SeleneTheme.ink : SeleneTheme.ink60,
+                                    indeterminate: job.active && cloud,
+                                    pulses: indicator?.isTransferring ?? moving,
+                                    status: indicator?.label(context: localization) ?? text(job.active ? "In progress" : "Queued"),
+                                    color: color, progressColor: cloud ? color : SeleneTheme.focus,
                                     focused: focused == row, open: row.opensPorting ? { onOpen(row) } : nil,
                                     cancel: canCancel(row) ? { onCancel(row) } : nil, retry: nil, clear: nil)
                     }
@@ -191,11 +196,6 @@ struct ActivityCenterView: View {
         viewModel.activityResults.entries.first { $0.id == id }
     }
 
-    private func isCloud(_ job: ActivityHistory.Job) -> Bool {
-        if case .build = job { return false }
-        return true
-    }
-
     private func transferIndicator(_ row: ActivityCenterFocus.Row) -> CloudLibraryIndicator? {
         let request: CloudLibraryModel.Request?
         switch row {
@@ -238,11 +238,11 @@ struct ActivityCenterView: View {
         switch outcome {
         case .succeeded:
             if case .cloud(let request) = job, case .upload = request.action {
-                return ("Published", SeleneTheme.statusOK, nil)
+                return ("Published", CloudLibraryStatus.synchronized.color, nil)
             }
-            return ("Succeeded", SeleneTheme.statusOK, nil)
-        case .failed(let reason): return ("Failed", SeleneTheme.danger, reason)
-        case .cancelled: return ("Cancelled", SeleneTheme.ink60, nil)
+            return ("Succeeded", CloudLibraryStatus.synchronized.color, nil)
+        case .failed(let reason): return ("Failed", CloudLibraryStatus.failed.color, reason)
+        case .cancelled: return ("Cancelled", CloudLibraryStatus.unknown.color, nil)
         }
     }
 
@@ -255,11 +255,11 @@ private struct ActivityRow: View {
     let title: String
     let detail: String?
     let fraction: Double?
-    var cloud = false
     var indeterminate = false
-    var indicator: CloudLibraryIndicator? = nil
+    var pulses = false
     let status: String
     let color: Color
+    var progressColor = SeleneTheme.focus
     let focused: Bool
     let open: (() -> Void)?
     let cancel: (() -> Void)?
@@ -278,13 +278,8 @@ private struct ActivityRow: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                if cloud {
-                    CloudLibraryBadge(indicator: indicator, showsLabel: true,
-                                      status: indicator == nil ? L10n.text(status, context: localization) : nil,
-                                      statusColor: color)
-                } else {
-                    SeleneStatusDot(text: L10n.text(status, context: localization), color: color).fixedSize()
-                }
+                SeleneStatusDot(text: status, color: color, pulses: pulses)
+                    .fixedSize(horizontal: false, vertical: true)
                 if let retry {
                     SelenePillButton(title: "Retry", minWidth: 0, height: 44, horizontalPadding: 16,
                                      focused: focused, action: retry)
@@ -304,7 +299,7 @@ private struct ActivityRow: View {
             }
             .frame(minHeight: canvas.u(44))
             if indeterminate || fraction.map({ $0 > 0 }) == true {
-                SeleneProgressBar(progress: fraction)
+                SeleneProgressBar(progress: fraction, color: progressColor)
             }
         }
         .modifier(SeleneOptionRowSurface(focused: focused))

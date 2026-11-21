@@ -156,12 +156,13 @@ struct AchievementProgressBar: View {
     /// Canvas units: the page's open block uses a finer bar than the screen.
     var height: CGFloat = 6
     var track: Color = SeleneTheme.ink15
+    var fill: Color = SeleneTheme.focus
 
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
                 Capsule().fill(track)
-                Capsule().fill(SeleneTheme.focus)
+                Capsule().fill(fill)
                     .frame(width: proxy.size.width * min(max(fraction, 0), 1))
             }
         }

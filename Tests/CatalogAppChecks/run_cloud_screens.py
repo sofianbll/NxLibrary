@@ -37,7 +37,9 @@ import ArcanePorting
             viewModel: vm, model: model, settings: settings, advanced: .constant(false),
             onEdit: {}, onEditSources: {}, onActions: { _ in })
             .padding(24).frame(width: 1040))
-        try render("assistant", output, CloudSetupAssistant(viewModel: vm, model: model /* ENTRY */) {})
+        let assistant = CloudSetupAssistant(viewModel: vm, model: model /* ENTRY */) {}
+        // ASSISTANT_CHECK
+        try render("assistant", output, assistant)
         precondition(CloudLibraryTileBadge.artworkOpacity(model.states[game.id]) == 0.55)
         try render("tile", output,
             CollectionCoverRow(games: [.init(nxnative: game)], selectedID: game.id,
@@ -115,10 +117,29 @@ def main():
         assistant = app / "Views/Settings/CloudSetupAssistant.swift"
         change(assistant, r'        \.onAppear \{\s*.*?installAssistantKeys\(\)(?: \}|\n        })\n', "")
         change(assistant, r'@State private var remotes: \[RcloneRemote\]\?', '@State private var remotes: [RcloneRemote]? = []')
-        # TextField is AppKit-backed and ImageRenderer shows a placeholder instead of its text.
-        change(assistant, r'TextField\(text\("Game files folder"\), text: \$sourcesPath,\s+'
-               r'prompt: Text\(verbatim: [^\n]+\)\)\s+\.focused\([^\n]+',
-               'Text(verbatim: sourcesPath).frame(maxWidth: .infinity, alignment: .leading)')
+        browser = "private var browsingPath" in assistant.read_text()
+        if browser:
+            change(assistant, r'        self.onClose = onClose', '''        self.onClose = onClose
+        _listing = State(initialValue: .screenFixture)''')
+            # Render the real breadcrumb and folder rows without AppKit-backed scrolling.
+            change(assistant, r'                ScrollView\(\.horizontal\) \{\n(.*?)\n                }\n                if listing != nil',
+                   re.search(r'                ScrollView\(\.horizontal\) \{\n(.*?)\n                }\n                if listing != nil',
+                             assistant.read_text(), re.S)[1] + '\n                if listing != nil')
+            change(assistant, r'                    ScrollViewReader \{ proxy in\n                        ScrollView \{\n'
+                   r'                            LazyVStack', '                    VStack')
+            change(assistant, r'                        }\n                        \.frame\(height: canvas.u\(CGFloat\(min\(folderNames.count.*?\n'
+                   r'                    }\n                    option\(\.newFolder', '                    option(.newFolder')
+            with (package / "Sources/ArcanePorting/Library/CloudDriveFolders.swift").open("a") as swift:
+                swift.write('''
+extension CloudDriveFolders.Listing {
+    public static var screenFixture: Self { .init(ticket: UUID(), names: ["Nintendo", "Switch"]) }
+}
+''')
+        else:
+            # TextField is AppKit-backed and ImageRenderer shows a placeholder instead of its text.
+            change(assistant, r'TextField\(text\("Game files folder"\), text: \$sourcesPath,\s+'
+                   r'prompt: Text\(verbatim: [^\n]+\)\)\s+\.focused\([^\n]+',
+                   'Text(verbatim: sourcesPath).frame(maxWidth: .infinity, alignment: .leading)')
         change(app / "Views/Components/SwitchBoxArtCover.swift",
                r'        \.task\(id: coverKey.*?\n        \.task\(id: game.id[^\n]*\n', "")
         activity = app / "Views/Shell/ActivityCenterView.swift"
@@ -141,6 +162,25 @@ def main():
         precondition(pendingApp.label(context: en) == "Sending · published when the upload ends")
         precondition(pendingApp.label(context: fr).hasPrefix("Envoi en cours"))
         precondition(CloudLibraryIndicator(state: model.states[game.id]!).label(context: en) == "Cloud only")''')
+            if browser:
+                host = host.replace("// ASSISTANT_CHECK", '''
+        precondition(assistant.focusedTarget == .primary)
+        precondition(CloudLibraryIndicator(state: model.states[game.id]!).status == .pending)
+        precondition(CloudLibraryIndicator(state: model.states[game.id]!, item: .cache).status == .synchronized)
+        precondition(pendingApp.status == .pending && !pendingApp.isTransferring)
+        let transferring = CloudLibraryIndicator(state: uploading, item: .cache)
+        precondition(transferring.status == .pending && transferring.isTransferring)
+        uploading.queued = true
+        let queued = CloudLibraryIndicator(state: uploading, item: .cache)
+        precondition(queued.status == .pending && !queued.isTransferring)
+        var failed = CloudLibraryState()
+        failed.sourceFailure = .offline
+        precondition(CloudLibraryIndicator(state: failed, item: .sources).status == .failed)
+        precondition(CloudLibraryIndicator(state: failed).status == .unknown)
+        var local = CloudLibraryState()
+        local.copies[.app] = .screenFixture(.notInCloud, hasLocalCopy: true)
+        precondition(CloudLibraryIndicator(state: local).status == .needsUpload)
+''')
         else:
             change(assistant, r'@State private var draft = CloudSetupAssistantDraft\(\)', '''
     @State private var draft: CloudSetupAssistantDraft = {
@@ -156,8 +196,8 @@ def main():
         with (package / "Sources/ArcanePorting/Library/CloudGameArchive.swift").open("a") as swift:
             swift.write('''
 extension CloudArtifactStatus {
-    public static func screenFixture(_ state: State) -> Self {
-        .init(state: state, hasLocalCopy: state == .synchronized, bytes: 100_000_000,
+    public static func screenFixture(_ state: State, hasLocalCopy: Bool? = nil) -> Self {
+        .init(state: state, hasLocalCopy: hasLocalCopy ?? (state == .synchronized), bytes: 100_000_000,
               uploadedAt: Date(timeIntervalSince1970: 1_795_000_000), skippedRoots: [])
     }
 }

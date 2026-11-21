@@ -117,7 +117,8 @@ struct CloudLibraryPanel: View {
                 VStack(alignment: .leading, spacing: canvas.u(5)) {
                     Text(title).seleneFont(17, .semibold).foregroundColor(SeleneTheme.ink90)
                         .accessibilityAddTraits(.isHeader)
-                    CloudLibraryBadge(indicator: indicator, showsLabel: true)
+                    SeleneStatusDot(text: indicator.label(context: localization), color: indicator.status.color,
+                                    pulses: indicator.isTransferring)
                 }
                 .multilineTextAlignment(.leading)
                 .layoutPriority(1)
@@ -157,7 +158,7 @@ struct CloudLibraryPanel: View {
                     .help(path)
             }
             if live {
-                CloudLibraryProgressView(progress: state.progress, showsSummary: false)
+                CloudLibraryProgressView(progress: state.progress, status: indicator.status, showsSummary: false)
             } else if let issue = state.issue, issue.item == item {
                 if issue.failed { failureLine(issue.message, failure: state.transferFailure, item: item) }
                 else {
@@ -238,7 +239,7 @@ struct CloudLibraryPanel: View {
 
     private func failureLine(_ message: String, failure: CloudLibraryFailure?, item: CloudLibraryItem?) -> some View {
         HStack {
-            Text(message).seleneFont(15).foregroundColor(PortingPillCopy.softRed)
+            Text(message).seleneFont(15).foregroundColor(CloudLibraryStatus.failed.color)
                 .fixedSize(horizontal: false, vertical: true)
             if let failure, controls.contains(.recover(failure, item)) {
                 button(.recover(failure, item), failure.action.titleKey)
@@ -373,11 +374,12 @@ struct CloudLibraryPanel: View {
     private func text(_ key: String) -> String { L10n.text(key, context: localization) }
 }
 
-/// Same labelled progress in Details and in the transfer panel; the bar uses Selene's existing fill.
+/// Same labelled progress and semantic color in Details and in the transfer panel.
 struct CloudLibraryProgressView: View {
     @Environment(\.nxAppLocale) private var localization
     @Environment(\.seleneCanvas) private var canvas
     let progress: CloudArchiveProgress?
+    var status: CloudLibraryStatus = .pending
     var showsSummary = true
 
     var body: some View {
@@ -386,7 +388,7 @@ struct CloudLibraryProgressView: View {
                 Text(Self.summary(progress, context: localization)).seleneFont(15).monospacedDigit()
                     .foregroundColor(SeleneTheme.ink90)
             }
-            SeleneProgressBar(progress: Self.fraction(progress), height: showsSummary ? 6 : 4)
+            SeleneProgressBar(progress: Self.fraction(progress), height: showsSummary ? 6 : 4, color: status.color)
         }
     }
 
@@ -446,6 +448,20 @@ struct CloudLibraryProgressView: View {
 
 }
 
+enum CloudLibraryStatus {
+    case synchronized, pending, needsUpload, failed, unknown
+
+    var color: Color {
+        switch self {
+        case .synchronized: return SeleneTheme.statusOK
+        case .pending: return SeleneTheme.statusCloud
+        case .needsUpload: return SeleneTheme.untested
+        case .failed: return SeleneTheme.danger
+        case .unknown: return SeleneTheme.ink60
+        }
+    }
+}
+
 /// Shared cloud copy vocabulary. An artifact row only shows its own transfer or failure.
 struct CloudLibraryIndicator {
     let state: CloudLibraryState
@@ -462,17 +478,32 @@ struct CloudLibraryIndicator {
     }
     var queued: Bool { showsAction && state.queued }
     var copy: CloudArtifactStatus.State { state.copy(item ?? .app) ?? .unknown }
+    var isTransferring: Bool {
+        showsAction && !state.queued && (state.progress?.phase == .uploading || state.progress?.phase == .downloading)
+    }
     // Bound once: comparing two optional-chained tuple fields crashes Swift 6.4.2's Release optimizer (SemanticARCOpts).
     var failed: Bool {
+        if item == .sources, state.sourceFailure != nil { return true }
+        if (item == nil || item == .app), state.failure != nil { return true }
         guard let issue = state.issue, issue.failed else { return false }
         return item.map { $0 == issue.item } ?? (issue.item != .sources)
     }
 
-    var color: Color {
-        if queued { return SeleneTheme.ink60 }
-        if progress { return SeleneTheme.ink }
-        if failed { return PortingPillCopy.softRed }
-        return Self.copyColor(copy)
+    var status: CloudLibraryStatus {
+        if queued || progress { return .pending }
+        if failed { return .failed }
+        switch copy {
+        case .synchronized: return .synchronized
+        case .cloudOnly: return .pending
+        case .newerOnThisMac: return .needsUpload
+        case .notInCloud:
+            if let artifact = (item ?? .app).artifact {
+                let copy = state.copies[artifact] ?? state.availability[artifact]
+                return copy?.hasLocalCopy == true ? .needsUpload : .unknown
+            }
+            return .needsUpload
+        case .unknown: return state.refreshing ? .pending : .unknown
+        }
     }
 
     var icon: MaterialIcon {
@@ -489,15 +520,6 @@ struct CloudLibraryIndicator {
         case .cloudOnly: return .cloudDownload
         case .newerOnThisMac: return .cloudUpload
         case .notInCloud, .unknown: return .cloud
-        }
-    }
-
-    static func copyColor(_ copy: CloudArtifactStatus.State) -> Color {
-        switch copy {
-        case .synchronized: return SeleneTheme.statusOK
-        case .cloudOnly: return SeleneTheme.statusCloud
-        case .newerOnThisMac: return SeleneTheme.untested
-        case .notInCloud, .unknown: return SeleneTheme.ink60
         }
     }
 
@@ -549,47 +571,35 @@ struct CloudLibraryTileBadge: ViewModifier {
             }
         }
         .accessibilityValue(badge?.isVisibleOnTile == true
-                            ? badge?.indicator?.label(context: localization) ?? "" : "")
+                            ? badge?.indicator.label(context: localization) ?? "" : "")
     }
 }
 
-/// One cloud mark; rows read the status aloud and tiles reserve room for artwork.
+/// Cloud mark reserved for tiles and the pill next to Play.
 struct CloudLibraryBadge: View {
-    var indicator: CloudLibraryIndicator? = nil
-    var showsLabel = false
+    let indicator: CloudLibraryIndicator
     var showsTileProgress = false
-    var status: String? = nil
-    var statusColor = SeleneTheme.ink60
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.nxAppLocale) private var localization
 
     var isVisibleOnTile: Bool {
-        guard let indicator else { return false }
-        return indicator.progress || indicator.queued || indicator.failed
-            || [.synchronized, .cloudOnly, .newerOnThisMac].contains(indicator.copy)
+        indicator.status != .unknown
     }
 
     var body: some View {
-        let color = status == nil ? indicator?.color ?? statusColor : statusColor
         VStack(spacing: canvas.u(2)) {
-            HStack(spacing: canvas.u(8)) {
-                ZStack(alignment: .bottomTrailing) {
-                    Circle().fill(SeleneTheme.scrim.opacity(0.94))
-                    MaterialIconView(indicator?.icon ?? .cloud, size: 18)
-                        .foregroundColor(SeleneTheme.ink)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    Circle().fill(color).frame(width: canvas.u(7), height: canvas.u(7))
-                        .padding(canvas.u(2))
-                }
-                .frame(width: canvas.u(32), height: canvas.u(32))
-                .accessibilityHidden(true)
-                if showsLabel, let label = status ?? indicator?.label(context: localization) {
-                    Text(label).seleneFont(15).foregroundColor(SeleneTheme.ink90)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+            ZStack(alignment: .bottomTrailing) {
+                Circle().fill(SeleneTheme.scrim.opacity(0.94))
+                MaterialIconView(indicator.icon, size: 18)
+                    .foregroundColor(SeleneTheme.ink)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                SeleneStatusMark(color: indicator.status.color, pulses: indicator.isTransferring)
+                    .padding(canvas.u(2))
             }
-            if showsTileProgress, indicator?.progress == true,
-               let fraction = CloudLibraryProgressView.fraction(indicator?.state.progress) {
+            .frame(width: canvas.u(32), height: canvas.u(32))
+            .accessibilityHidden(true)
+            if showsTileProgress, indicator.progress,
+               let fraction = CloudLibraryProgressView.fraction(indicator.state.progress) {
                 Text(CloudLibraryProgressView.percent(fraction, context: localization)).seleneFont(11, .semibold)
                     .monospacedDigit().foregroundColor(SeleneTheme.ink)
                     .padding(.horizontal, canvas.u(4)).padding(.vertical, canvas.u(2))

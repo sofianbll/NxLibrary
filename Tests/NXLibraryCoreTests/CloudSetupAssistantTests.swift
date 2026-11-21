@@ -49,19 +49,18 @@ final class CloudSetupAssistantTests: XCTestCase {
         XCTAssertEqual(draft.activation?.enabled, true)
     }
 
-    func testConfirmationStartsOnCancelAndFocusSkipsDisabledControls() {
+    func testPrimaryTakesDefaultFocusWhenReadyButExplicitCancelIsPreserved() {
         var focus = CloudSetupAssistantFocus()
         let rows: [[CloudSetupAssistantFocus.Target]] = [[.folder("A")], [.cancel, .primary]]
+        XCTAssertEqual(focus.current(in: [[.cancel]]), .cancel)
+        XCTAssertEqual(focus.current(in: rows), .primary)
+        focus.move(.left, in: rows)
+        XCTAssertEqual(focus.current(in: rows), .cancel)
         focus.move(.up, in: rows)
-        XCTAssertEqual(focus.target, .folder("A"))
-        focus.move(.down, in: rows)
-        focus.move(.right, in: rows)
-        XCTAssertEqual(focus.target, .primary)
-        focus.settle(in: [[.cancel]])
-        XCTAssertEqual(focus.target, .cancel)
-        focus.move(.right, in: [[.cancel, .create]])
-        XCTAssertEqual(focus.target, .create)
+        XCTAssertEqual(focus.current(in: rows), .folder("A"))
         focus.reset()
-        XCTAssertEqual(focus.target, .cancel)
+        XCTAssertEqual(focus.current(in: rows), .primary)
+        XCTAssertEqual(focus.current(in: [[.cancel, .create]]), .cancel)
+        XCTAssertEqual(focus.current(in: [[.cancel, .confirmMove]]), .cancel)
     }
 }

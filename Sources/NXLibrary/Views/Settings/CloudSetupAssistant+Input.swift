@@ -9,7 +9,7 @@ extension CloudSetupAssistant {
         case .navigateDown: moveAssistantFocus(.down)
         case .navigateLeft: moveAssistantFocus(.left)
         case .navigateRight: moveAssistantFocus(.right)
-        case .confirm: perform(focus.target)
+        case .confirm: perform(focusedTarget)
         case .cancel: cancel()
         default: break
         }

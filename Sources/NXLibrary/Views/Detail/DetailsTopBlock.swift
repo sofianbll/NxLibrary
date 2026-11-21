@@ -77,7 +77,8 @@ struct DetailsTopBlock: View {
                     .frame(maxWidth: canvas.u(700), alignment: .leading)
                     .padding(.top, canvas.u(12))
             } else if let issue = cloud.states[game.id]?.issue, issue.item != .sources {
-                Text(issue.message).seleneFont(15).foregroundColor(issue.failed ? PortingPillCopy.softRed : SeleneTheme.ink60)
+                Text(issue.message).seleneFont(15)
+                    .foregroundColor((issue.failed ? CloudLibraryStatus.failed : .unknown).color)
                     .padding(.top, canvas.u(12))
             }
             portingNote
