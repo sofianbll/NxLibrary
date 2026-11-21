@@ -151,6 +151,236 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Remove apenas a conexão local. Os arquivos na nuvem permanecem onde estão."}}
       }
     },
+    "Set up cloud library": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Set up cloud library"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Configura la libreria cloud"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Configurer la bibliothèque cloud"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Bibliothek einrichten"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Configurar la biblioteca en la nube"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Configurar a biblioteca na nuvem"}}
+      }
+    },
+    "Google account": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Google account"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Account Google"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Compte Google"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Google-Konto"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Cuenta de Google"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Conta Google"}}
+      }
+    },
+    "Verify": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Verify"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Verifica"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vérifier"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Prüfen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Verificar"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Verificar"}}
+      }
+    },
+    "Step %d of 3: %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Step %d of 3: %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Passaggio %d di 3: %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Étape %d sur 3 : %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Schritt %d von 3: %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Paso %d de 3: %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Etapa %d de 3: %@"}}
+      }
+    },
+    "rclone detected · %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "rclone detected · %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "rclone rilevato · %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "rclone détecté · %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "rclone erkannt · %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "rclone detectado · %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "rclone detectado · %@"}}
+      }
+    },
+    "Install rclone: brew install rclone": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Install rclone: brew install rclone"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Installa rclone: brew install rclone"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Installe rclone : brew install rclone"}},
+        "de": {"stringUnit": {"state": "translated", "value": "rclone installieren: brew install rclone"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Instala rclone: brew install rclone"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Instale o rclone: brew install rclone"}}
+      }
+    },
+    "Keep this account": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Keep this account"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Mantieni questo account"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Garder ce compte"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Dieses Konto behalten"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Mantener esta cuenta"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Manter esta conta"}}
+      }
+    },
+    "Change credentials": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Change credentials"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cambia credenziali"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Changer les identifiants"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Zugangsdaten ändern"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Cambiar credenciales"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Alterar credenciais"}}
+      }
+    },
+    "Sign in": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Sign in"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Accedi"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Se connecter"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Anmelden"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Iniciar sesión"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Entrar"}}
+      }
+    },
+    "Google Console": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Google Console"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Console Google"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Console Google"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Google-Konsole"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Consola de Google"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Console do Google"}}
+      }
+    },
+    "Valid format": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Valid format"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Formato valido"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Format valide"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Gültiges Format"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Formato válido"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Formato válido"}}
+      }
+    },
+    "Use an ID ending in .apps.googleusercontent.com": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Use an ID ending in .apps.googleusercontent.com"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Usa un ID che termina con .apps.googleusercontent.com"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Utilise un ID qui se termine par .apps.googleusercontent.com"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Die ID muss auf .apps.googleusercontent.com enden"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Usa un ID que termine en .apps.googleusercontent.com"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Use um ID que termine em .apps.googleusercontent.com"}}
+      }
+    },
+    "My Drive": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "My Drive"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Il mio Drive"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mon Drive"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Meine Ablage"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Mi unidad"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Meu Drive"}}
+      }
+    },
+    "New folder…": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "New folder…"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nuova cartella…"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Nouveau dossier…"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Neuer Ordner…"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Nueva carpeta…"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nova pasta…"}}
+      }
+    },
+    "Folder name": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Folder name"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nome della cartella"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Nom du dossier"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Ordnername"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Nombre de la carpeta"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nome da pasta"}}
+      }
+    },
+    "Use this folder": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Use this folder"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Usa questa cartella"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Utiliser ce dossier"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Diesen Ordner verwenden"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Usar esta carpeta"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Usar esta pasta"}}
+      }
+    },
+    "Create “%@”?": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Create “%@”?"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Creare «%@»?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Créer « %@ » ?"}},
+        "de": {"stringUnit": {"state": "translated", "value": "„%@“ erstellen?"}},
+        "es": {"stringUnit": {"state": "translated", "value": "¿Crear «%@»?"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Criar “%@”?"}}
+      }
+    },
+    "Create": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Create"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Crea"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Créer"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Erstellen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Crear"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Criar"}}
+      }
+    },
+    "Existing files stay where they are.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Existing files stay where they are."}},
+        "it": {"stringUnit": {"state": "translated", "value": "I file esistenti restano dove sono."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Les fichiers existants restent là où ils sont."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Vorhandene Dateien bleiben an ihrem Platz."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Los archivos existentes no se mueven."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Os arquivos existentes permanecem onde estão."}}
+      }
+    },
+    "Arcane library found: %d game": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Arcane library found: %d game"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Libreria Arcane trovata: %d gioco"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Bibliothèque Arcane trouvée : %d jeu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Arcane-Bibliothek gefunden: %d Spiel"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Biblioteca de Arcane encontrada: %d juego"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Biblioteca Arcane encontrada: %d jogo"}}
+      }
+    },
+    "Arcane library found: %d games": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Arcane library found: %d games"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Libreria Arcane trovata: %d giochi"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Bibliothèque Arcane trouvée : %d jeux"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Arcane-Bibliothek gefunden: %d Spiele"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Biblioteca de Arcane encontrada: %d juegos"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Biblioteca Arcane encontrada: %d jogos"}}
+      }
+    },
+    "Arcane library status unavailable": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Arcane library status unavailable"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Stato della libreria Arcane non disponibile"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "État de la bibliothèque Arcane indisponible"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Status der Arcane-Bibliothek nicht verfügbar"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Estado de la biblioteca de Arcane no disponible"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Status da biblioteca Arcane indisponível"}}
+      }
+    },
+    "Activate": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Activate"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Attiva"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Activer"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Aktivieren"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Activar"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Ativar"}}
+      }
+    },
     "Cloud": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Cloud"}},
