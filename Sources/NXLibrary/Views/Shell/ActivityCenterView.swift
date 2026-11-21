@@ -11,12 +11,15 @@ struct ActivityCenterView: View {
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.nxAppLocale) private var localization
 
-    private var focusedRow: ActivityCenterFocus.Row {
-        focus.current(in: ActivityCenterFocus.rows(isBuilding: viewModel.isBuilding, queued: cloudLibrary.queue.map(\.token)))
+    static func rows(_ viewModel: AppViewModel) -> [ActivityCenterFocus.Row] {
+        let cloud = viewModel.cloudLibrary
+        return ActivityCenterFocus.rows(isBuilding: viewModel.isBuilding, activeBuild: viewModel.portingGameID,
+                                        queuedBuilds: viewModel.buildQueue, activeCloud: cloud.active?.request.token,
+                                        queuedCloud: cloud.queue.map(\.token))
     }
 
     var body: some View {
-        let focused = focusedRow
+        let focused = focus.current(in: Self.rows(viewModel))
         ZStack(alignment: .bottom) {
             SeleneTheme.scrim.opacity(0.55)
                 .ignoresSafeArea()
@@ -27,20 +30,30 @@ struct ActivityCenterView: View {
                     heading("Compilation")
                     if viewModel.isBuilding {
                         porting(focused: focused)
-                    } else {
+                    } else if viewModel.buildQueue.isEmpty {
                         caption(text("No compilation"))
+                    }
+                    if !viewModel.buildQueue.isEmpty {
+                        queue(viewModel.buildQueue.map { (.queuedBuild($0), gameName($0)) }, focused: focused)
                     }
                     Divider()
                     heading("Cloud")
                     if let request = cloudLibrary.active?.request {
-                        let progress = cloudLibrary.states[request.id]?.progress
-                        Text(gameName(request)).seleneFont(19, .semibold).lineLimit(1)
-                        SeleneStatusDot(text: text("Activity in progress"), color: SeleneTheme.ink)
-                        CloudLibraryProgressView(progress: progress)
+                        HStack(spacing: canvas.u(22)) {
+                            VStack(alignment: .leading, spacing: canvas.u(5)) {
+                                Text(gameName(request.id, fallback: request.scope.title)).seleneFont(19, .semibold).lineLimit(1)
+                                SeleneStatusDot(text: text("Activity in progress"), color: SeleneTheme.ink)
+                                CloudLibraryProgressView(progress: cloudLibrary.states[request.id]?.progress)
+                            }
+                            button("Cancel", row: .cancelCloud(request.token), focused: focused)
+                        }
                     } else if cloudLibrary.queue.isEmpty {
                         caption(text("No cloud transfer"))
                     }
-                    if !cloudLibrary.queue.isEmpty { queue(focused: focused) }
+                    if !cloudLibrary.queue.isEmpty {
+                        queue(cloudLibrary.queue.map { (.queuedCloud($0.token), gameName($0.id, fallback: $0.scope.title)) },
+                              focused: focused)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .multilineTextAlignment(.leading)
@@ -58,8 +71,8 @@ struct ActivityCenterView: View {
     private func porting(focused: ActivityCenterFocus.Row) -> some View {
         HStack(spacing: canvas.u(22)) {
             VStack(alignment: .leading, spacing: canvas.u(5)) {
-                if let game = viewModel.libraryGames.first(where: { $0.id == viewModel.portingGameID }) {
-                    Text(game.name).seleneFont(19, .semibold).lineLimit(1)
+                if let id = viewModel.portingGameID {
+                    Text(gameName(id)).seleneFont(19, .semibold).lineLimit(1)
                 }
                 let stage = viewModel.isCancellingBuild ? text("Cancelling…")
                     : viewModel.buildStages.isEmpty ? text("Preparing") : viewModel.currentStageName
@@ -69,44 +82,51 @@ struct ActivityCenterView: View {
                 if let eta = viewModel.portingETAText { caption(eta) }
                 AchievementProgressBar(fraction: fraction, height: 6)
             }
-            button("Open porting", row: .porting, focused: focused)
+            VStack(spacing: canvas.u(8)) {
+                button("Open porting", row: .porting, focused: focused)
+                if let id = viewModel.portingGameID {
+                    button("Cancel", row: .cancelBuild(id), focused: focused, enabled: !viewModel.isCancellingBuild)
+                }
+            }
         }
     }
 
-    private func queue(focused: ActivityCenterFocus.Row) -> some View {
+    private func queue(_ entries: [(id: ActivityCenterFocus.Row, name: String)], focused: ActivityCenterFocus.Row) -> some View {
         ScrollViewReader { scroll in
             ScrollView {
                 LazyVStack(spacing: canvas.u(8)) {
-                    ForEach(cloudLibrary.queue, id: \.token) { request in
-                        let name = gameName(request)
+                    ForEach(entries, id: \.id) { entry in
                         HStack(spacing: canvas.u(20)) {
                             VStack(alignment: .leading, spacing: canvas.u(4)) {
-                                Text(name).seleneFont(18, .semibold).lineLimit(1)
+                                Text(entry.name).seleneFont(18, .semibold).lineLimit(1)
                                 SeleneStatusDot(text: text("Queued"), color: SeleneTheme.ink60)
                             }
                             Spacer()
-                            button("Cancel", row: .queued(request.token), focused: focused).accessibilityHint(name)
+                            button("Cancel", row: entry.id, focused: focused).accessibilityHint(entry.name)
                         }
                         .padding(.horizontal, canvas.u(12))
                         .frame(height: canvas.u(62))
-                        .id(ActivityCenterFocus.Row.queued(request.token))
+                        .id(entry.id)
                     }
                 }
             }
-            .frame(height: canvas.u(CGFloat(min(cloudLibrary.queue.count, 4) * 70 - 8)))
+            .frame(height: canvas.u(CGFloat(min(entries.count, 3) * 70 - 8)))
             .onChange(of: focused) { row in
-                if case .queued = row { scroll.scrollTo(row) }
+                if entries.contains(where: { $0.id == row }) { scroll.scrollTo(row) }
             }
         }
     }
 
-    private func button(_ title: String, row: ActivityCenterFocus.Row, focused: ActivityCenterFocus.Row) -> some View {
-        SelenePillButton(title: title, height: 48, focused: focused == row) { onSelect(row) }
+    private func button(_ title: String, row: ActivityCenterFocus.Row, focused: ActivityCenterFocus.Row,
+                        enabled: Bool = true) -> some View {
+        SelenePillButton(title: title, height: 48, focused: focused == row, enabled: enabled) {
+            if enabled { onSelect(row) }
+        }
             .onHover { if $0 { onFocus(row) } }
     }
 
-    private func gameName(_ request: CloudLibraryModel.Request) -> String {
-        viewModel.libraryGames.first { $0.id == request.id }?.name ?? request.scope.title
+    private func gameName(_ id: UUID, fallback: String = "") -> String {
+        viewModel.libraryGames.first { $0.id == id }?.name ?? fallback
     }
 
     private func heading(_ key: String) -> some View { Text(text(key)).seleneFont(23, .semibold) }

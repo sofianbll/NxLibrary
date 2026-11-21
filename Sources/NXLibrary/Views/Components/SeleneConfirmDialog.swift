@@ -170,7 +170,6 @@ struct SeleneSuccessNotice: View {
 /// Selene's dialog card: 640u, glass, a hairline and a deep shadow.
 struct SeleneDialogCard: ViewModifier {
     @Environment(\.seleneCanvas) private var canvas
-    /// Canvas units; a panel with rows of paths and sizes (Cloud library) uses a wider card.
     var width: CGFloat = 640
 
     func body(content: Content) -> some View {

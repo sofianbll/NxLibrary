@@ -144,19 +144,33 @@ final class MenuSelectionModelTests: XCTestCase {
     func testActivityFocusTracksRequestsThroughQueueChanges() {
         let first = UUID(), second = UUID()
         var focus = ActivityCenterFocus()
-        let rows = ActivityCenterFocus.rows(isBuilding: true, queued: [first, second])
+        let rows = ActivityCenterFocus.rows(isBuilding: true, queuedCloud: [first, second])
         XCTAssertEqual(focus.current(in: rows), .porting)
         focus.move(by: -1, in: rows)
         XCTAssertEqual(focus.current(in: rows), .porting)
         focus.move(by: 2, in: rows)
-        XCTAssertEqual(focus.current(in: rows), .queued(second))
-        let remaining = ActivityCenterFocus.rows(isBuilding: false, queued: [second])
-        XCTAssertEqual(focus.current(in: remaining), .queued(second))
-        let empty = ActivityCenterFocus.rows(isBuilding: false, queued: [])
+        XCTAssertEqual(focus.current(in: rows), .queuedCloud(second))
+        let remaining = ActivityCenterFocus.rows(isBuilding: false, queuedCloud: [second])
+        XCTAssertEqual(focus.current(in: remaining), .queuedCloud(second))
+        let empty = ActivityCenterFocus.rows(isBuilding: false)
         XCTAssertEqual(focus.current(in: empty), .close)
-        XCTAssertEqual(focus.current(in: ActivityCenterFocus.rows(isBuilding: false, queued: [first])), .close)
+        XCTAssertEqual(focus.current(in: ActivityCenterFocus.rows(isBuilding: false, queuedCloud: [first])), .close)
         focus.move(by: 1, in: empty)
         XCTAssertEqual(focus.current(in: empty), .close)
+    }
+
+    func testActivityFocusSeparatesActiveAndQueuedCancellations() {
+        let build = UUID(), queuedBuild = UUID(), transfer = UUID(), queuedCloud = UUID()
+        let rows = ActivityCenterFocus.rows(isBuilding: true, activeBuild: build, queuedBuilds: [queuedBuild],
+                                            activeCloud: transfer, queuedCloud: [queuedCloud])
+        XCTAssertEqual(rows, [.porting, .cancelBuild(build), .queuedBuild(queuedBuild),
+                              .cancelCloud(transfer), .queuedCloud(queuedCloud), .close])
+        var focus = ActivityCenterFocus()
+        focus.selected = .queuedBuild(queuedBuild)
+        let promoted = ActivityCenterFocus.rows(isBuilding: true, activeBuild: queuedBuild, activeCloud: queuedCloud)
+        XCTAssertEqual(focus.current(in: promoted), .close)
+        focus.selected = .queuedCloud(queuedCloud)
+        XCTAssertEqual(focus.current(in: promoted), .close)
     }
 
     func testPowerSubmenuOpensAndCloses() {

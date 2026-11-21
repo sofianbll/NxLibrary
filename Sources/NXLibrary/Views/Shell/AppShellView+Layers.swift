@@ -134,7 +134,7 @@ extension AppShellView {
                         MenuOverlayView(
                             router: router,
                             cloudLibrary: viewModel.cloudLibrary,
-                            isBuilding: viewModel.isBuilding,
+                            hasBuildActivity: viewModel.isBuilding || !viewModel.buildQueue.isEmpty,
                             onSelect: { runMenuAction($0) },
                             onSelectPower: { runPower($0) }
                         )

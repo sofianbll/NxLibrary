@@ -5,13 +5,9 @@ import NXLibraryCore
 
 /// Keyboard equivalents of the controller gestures, the menu's input and its actions.
 extension AppShellView {
-    func activityCenterRows(_ viewModel: AppViewModel) -> [ActivityCenterFocus.Row] {
-        ActivityCenterFocus.rows(isBuilding: viewModel.isBuilding, queued: viewModel.cloudLibrary.queue.map(\.token))
-    }
-
     func activityCenterInput(_ action: GamepadAction, router: AppRouter, viewModel: AppViewModel) {
         guard var focus = router.activityCenterFocus else { return }
-        let rows = activityCenterRows(viewModel)
+        let rows = ActivityCenterView.rows(viewModel)
         let current = focus.current(in: rows)
         switch action {
         case .navigateUp, .navigateDown:
@@ -40,7 +36,14 @@ extension AppShellView {
             guard viewModel.isBuilding else { return }
             router.closeMenu()
             router.openAddGame()
-        case .queued(let token): viewModel.cancelQueuedCloudLibrary(token)
+        case .cancelBuild(let id):
+            guard viewModel.portingGameID == id, !viewModel.isCancellingBuild else { return }
+            viewModel.cancelBuild()
+        case .queuedBuild(let id):
+            guard viewModel.buildQueue.contains(id) else { return }
+            viewModel.cancelQueuedBuild(id)
+        case .cancelCloud(let token): viewModel.cancelActiveCloudLibrary(token)
+        case .queuedCloud(let token): viewModel.cancelQueuedCloudLibrary(token)
         case .close: router.closeMenu()
         }
     }
@@ -241,7 +244,7 @@ extension AppShellView {
         case .activityCenter:
             router.closePowerMenu()
             var focus = ActivityCenterFocus()
-            focus.selected = activityCenterRows(viewModel).first
+            focus.selected = ActivityCenterView.rows(viewModel).first
             router.activityCenterFocus = focus
             SoundEffectService.shared.play(.openPanel)
         case .power:

@@ -2,15 +2,20 @@ import Foundation
 
 public struct ActivityCenterFocus: Equatable {
     public enum Row: Hashable {
-        case porting, queued(UUID), close
+        case porting, cancelBuild(UUID), queuedBuild(UUID), cancelCloud(UUID), queuedCloud(UUID), close
     }
 
     public var selected: Row?
 
     public init() {}
 
-    public static func rows(isBuilding: Bool, queued: [UUID]) -> [Row] {
-        (isBuilding ? [.porting] : []) + queued.map(Row.queued) + [.close]
+    public static func rows(isBuilding: Bool, activeBuild: UUID? = nil, queuedBuilds: [UUID] = [],
+                            activeCloud: UUID? = nil, queuedCloud: [UUID] = []) -> [Row] {
+        var rows: [Row] = isBuilding ? [.porting] : []
+        if let activeBuild { rows.append(.cancelBuild(activeBuild)) }
+        rows += queuedBuilds.map(Row.queuedBuild)
+        if let activeCloud { rows.append(.cancelCloud(activeCloud)) }
+        return rows + queuedCloud.map(Row.queuedCloud) + [.close]
     }
 
     public func current(in rows: [Row]) -> Row {

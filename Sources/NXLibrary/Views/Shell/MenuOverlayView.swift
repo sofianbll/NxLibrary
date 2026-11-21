@@ -11,7 +11,7 @@ import NXLibraryCore
 struct MenuOverlayView: View {
     @ObservedObject var router: AppRouter
     @ObservedObject var cloudLibrary: CloudLibraryModel
-    let isBuilding: Bool
+    let hasBuildActivity: Bool
     /// A click on a row button; the shell runs it.
     let onSelect: (MenuAction) -> Void
     /// A click on a Power pill; the shell runs it.
@@ -75,7 +75,7 @@ struct MenuOverlayView: View {
 
     private func button(_ action: MenuAction, index: Int) -> some View {
         let isFocused = router.menuSelection.selected == action
-        let hasActivity = action == .activityCenter && (isBuilding || cloudLibrary.isWorking)
+        let hasActivity = action == .activityCenter && (hasBuildActivity || cloudLibrary.isWorking)
 
         return Button {
             router.menuSelection.selected = action

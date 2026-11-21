@@ -828,8 +828,13 @@ extension AppViewModel {
         if let request = cloudLibrary.queue.first(where: { $0.id == game.id && $0.action == action }) {
             cancelQueuedCloudLibrary(request.token)
         } else if let active = cloudLibrary.active, active.request.id == game.id, active.request.action == action {
-            active.task.cancel()
+            cancelActiveCloudLibrary(active.request.token)
         }
+    }
+
+    @MainActor func cancelActiveCloudLibrary(_ token: UUID) {
+        guard let active = cloudLibrary.active, active.request.token == token else { return }
+        active.task.cancel()
     }
 
     @MainActor func cancelQueuedCloudLibrary(_ token: UUID) {
