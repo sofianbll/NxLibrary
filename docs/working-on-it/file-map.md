@@ -414,7 +414,7 @@ Cartella `Sources/ArcanePorting/Library/`.
 | [Sources/ArcanePorting/Library/CloudGameArchive.swift](../../Sources/ArcanePorting/Library/CloudGameArchive.swift) | Archivia app e cache con manifest, anche separatamente; verifica firma, contenuti e cache prima di Rebuild e conserva le cartelle ignorate. |
 | [Sources/ArcanePorting/Library/CloudGameSources.swift](../../Sources/ArcanePorting/Library/CloudGameSources.swift) | Confronta, invia e ripristina le sorgenti selezionate senza sostituire copie esistenti. |
 | [Sources/ArcanePorting/Library/CloudTransferQueue.swift](../../Sources/ArcanePorting/Library/CloudTransferQueue.swift) | Salva le richieste cloud nel profilo e rimette il lavoro interrotto in testa. |
-| [Sources/ArcanePorting/Library/CloudDriveFolders.swift](../../Sources/ArcanePorting/Library/CloudDriveFolders.swift) | Elenca e verifica cartelle remote e conta gli archivi Porting validi. |
+| [Sources/ArcanePorting/Library/CloudDriveFolders.swift](../../Sources/ArcanePorting/Library/CloudDriveFolders.swift) | Elenca cartelle, conta gli archivi Porting e coordina il trasferimento fra radici. |
 | [Sources/ArcanePorting/Library/GameStorageUsage.swift](../../Sources/ArcanePorting/Library/GameStorageUsage.swift) | Dimensioni per gioco e totali: distingue assenza e indisponibilità, segnala cache condivise e conserva identità stabili per il focus. |
 
 ## Porting · pagina del gioco

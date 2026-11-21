@@ -2,6 +2,25 @@ import XCTest
 @testable import NXLibraryCore
 
 final class CloudSetupAssistantTests: XCTestCase {
+    func testOptInBlocksActivationUntilMoveCompletesForCurrentFolder() {
+        var draft = CloudSetupAssistantDraft()
+        draft.chooseAccount("drive")
+        draft.browse("New")
+        XCTAssertFalse(draft.wantsMove)
+        let stale = draft.ticket
+        draft.toggleMove()
+        XCTAssertTrue(draft.useFolder())
+        draft.acceptAccessCheck(draft.ticket)
+        draft.acceptMove(stale)
+        XCTAssertNil(draft.activation)
+        draft.acceptMove(draft.ticket)
+        XCTAssertEqual(draft.activation?.root, "New")
+        draft.backToFolders()
+        draft.browse("Other")
+        XCTAssertFalse(draft.wantsMove)
+        XCTAssertNil(draft.activation)
+    }
+
     func testGoogleIDIsStricterThanCredentialSyntax() {
         XCTAssertTrue(CloudSetupAssistantDraft.validGoogleClientID(" 123-example.apps.googleusercontent.com "))
         XCTAssertTrue(RcloneConfiguration.validCredential("not-a-google-client"))

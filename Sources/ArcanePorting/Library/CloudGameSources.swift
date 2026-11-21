@@ -284,6 +284,15 @@ public final class CloudGameSources: @unchecked Sendable {
         }
     }
 
+    static let directory = "Switch/Jeux"
+    static let fileExtensions: Set<String> = ["nsp", "xci", "nsz", "xcz", "nup"]
+
+    static func title(in folder: String) -> String {
+        let suffix = folder.suffix(18)
+        let id = String(suffix.dropFirst().dropLast())
+        return suffix.first == "[" && suffix.last == "]" && SaveLocation.validID(id) ? id.uppercased() : folder
+    }
+
     private struct Selection {
         let title: String
         let directory: StorageObjectKey
@@ -291,16 +300,14 @@ public final class CloudGameSources: @unchecked Sendable {
 
         init(_ folder: String, _ urls: [URL]) throws {
             guard Self.safeName(folder) else { throw CloudArchiveError.unsafePath }
-            directory = StorageObjectKey("Switch/Jeux/" + folder)
-            let suffix = folder.suffix(18)
-            let id = String(suffix.dropFirst().dropLast())
-            title = suffix.first == "[" && suffix.last == "]" && SaveLocation.validID(id) ? id.uppercased() : folder
+            directory = StorageObjectKey(CloudGameSources.directory + "/" + folder)
+            title = CloudGameSources.title(in: folder)
             var names: [String: URL] = [:]
             var files: [URL] = []
             for url in urls {
                 guard url.isFileURL, !url.hasDirectoryPath,
                       !url.pathComponents.contains(".."), Self.safeName(url.lastPathComponent),
-                      ["nsp", "xci", "nsz", "xcz", "nup"].contains(url.pathExtension.lowercased()) else {
+                      CloudGameSources.fileExtensions.contains(url.pathExtension.lowercased()) else {
                     throw CloudArchiveError.unsafePath
                 }
                 let file = url.standardizedFileURL
@@ -321,7 +328,7 @@ public final class CloudGameSources: @unchecked Sendable {
     }
 }
 
-private extension StorageObject {
+extension StorageObject {
     var md5: String? {
         guard size >= 0, let hash = hashes["md5"], hash.utf8.count == 32,
               hash.utf8.allSatisfy({ "0123456789abcdefABCDEF".utf8.contains($0) }) else { return nil }

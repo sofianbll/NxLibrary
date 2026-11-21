@@ -160,6 +160,8 @@ L'aggiornamento dello stato legge il manifest remoto mentre individua e controll
 
 **Settings → Porting → Cloud library.** Dal pannello Cloud, Open settings apre la sezione se la libreria è spenta o non configurata. In Connessione, Configure cloud library apre l'assistente. Una volta configurata, la sezione mostra servizio e cartella; Folder e Change Google credentials riaprono l'assistente. L'interruttore si applica senza riavvio. Aspetto cambia subito icona, link e badge con attenuazione delle copertine. Reset group ripristina solo queste scelte. Advanced si apre anche da un risultato pertinente in Search o Changed. Test connection legge soltanto l'elenco della cartella. Dopo conferma, Disconnect elimina solo il remote dal file rclone locale.
 
+**Cambiare cartella cloud.** In Folder, l'assistente mostra i giochi della cartella precedente quando può spostarli. Se non si seleziona lo spostamento, Activate cambia solo la preferenza. Se lo si seleziona, Activate chiede conferma con numero di giochi e dimensione. La barra avanza per file e Cancel ferma il lavoro tra due file. Con un conflitto o un'interruzione, la preferenza resta invariata ma i file già spostati restano nella nuova cartella: ripetere la scelta con la stessa destinazione per completare. L'assistente mostra il numero dei file in conflitto e il primo percorso. La cartella di origine non viene rimossa.
+
 ## 6. Importare o ripristinare un salvataggio
 
 ```mermaid

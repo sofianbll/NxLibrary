@@ -2,7 +2,7 @@ public struct CloudSetupAssistantFocus {
     public enum Target: Hashable {
         case console, guide, client, secret, changeCredentials, retry
         case breadcrumb(String), folder(String), newFolder, folderName
-        case cancel, primary, create
+        case moveGames, confirmMove, cancel, primary, create
     }
 
     public enum Direction { case left, right, up, down }

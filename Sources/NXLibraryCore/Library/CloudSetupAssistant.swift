@@ -8,6 +8,8 @@ public struct CloudSetupAssistantDraft {
     public private(set) var path = ""
     public private(set) var ticket = UUID()
     public private(set) var verified = false
+    public private(set) var wantsMove = false
+    private var moveCompleted = false
 
     public init() {}
 
@@ -26,12 +28,14 @@ public struct CloudSetupAssistantDraft {
     @discardableResult
     public mutating func browse(_ folder: String) -> UUID {
         path = folder
+        wantsMove = false
         return renewTicket()
     }
 
     @discardableResult
     public mutating func renewTicket() -> UUID {
         verified = false
+        moveCompleted = false
         ticket = UUID()
         return ticket
     }
@@ -55,11 +59,19 @@ public struct CloudSetupAssistantDraft {
         if step == .verify, matches(ticket) { verified = true }
     }
 
+    public mutating func toggleMove() {
+        if step == .folder { wantsMove.toggle() }
+    }
+
+    public mutating func acceptMove(_ ticket: UUID) {
+        if step == .verify, verified, wantsMove, matches(ticket) { moveCompleted = true }
+    }
+
     public var candidate: CloudLibraryPreference? {
         guard let remote, CloudLibraryPreference.validRoot(path) else { return nil }
         let preference = CloudLibraryPreference(storage: "\(remote):\(path)", enabled: true)
         return preference.remote == remote && preference.root == path ? preference : nil
     }
 
-    public var activation: CloudLibraryPreference? { verified ? candidate : nil }
+    public var activation: CloudLibraryPreference? { verified && (!wantsMove || moveCompleted) ? candidate : nil }
 }

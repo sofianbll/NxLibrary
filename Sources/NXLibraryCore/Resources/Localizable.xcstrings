@@ -1,6 +1,136 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%d game in %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "%d game in %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "%d gioco in %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "%d jeu dans %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "%d Spiel in %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "%d juego en %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "%d jogo em %@"}}
+      }
+    },
+    "%d games in %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "%d games in %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "%d giochi in %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "%d jeux dans %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "%d Spiele in %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "%d juegos en %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "%d jogos em %@"}}
+      }
+    },
+    "Move my games here": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Move my games here"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Sposta qui i miei giochi"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Déplacer mes jeux ici"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Meine Spiele hierher verschieben"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Mover mis juegos aquí"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Mover meus jogos para cá"}}
+      }
+    },
+    "Move %d game (%@) to %@?": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Move %d game (%@) to %@?"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Spostare %d gioco (%@) in %@?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Déplacer %d jeu (%@) vers %@ ?"}},
+        "de": {"stringUnit": {"state": "translated", "value": "%d Spiel (%@) nach %@ verschieben?"}},
+        "es": {"stringUnit": {"state": "translated", "value": "¿Mover %d juego (%@) a %@?"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Mover %d jogo (%@) para %@?"}}
+      }
+    },
+    "Move %d games (%@) to %@?": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Move %d games (%@) to %@?"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Spostare %d giochi (%@) in %@?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Déplacer %d jeux (%@) vers %@ ?"}},
+        "de": {"stringUnit": {"state": "translated", "value": "%d Spiele (%@) nach %@ verschieben?"}},
+        "es": {"stringUnit": {"state": "translated", "value": "¿Mover %d juegos (%@) a %@?"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Mover %d jogos (%@) para %@?"}}
+      }
+    },
+    "Nothing is downloaded again.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Nothing is downloaded again."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Non viene scaricato di nuovo nulla."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Rien n’est retéléchargé."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Nichts wird erneut heruntergeladen."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se vuelve a descargar nada."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nada é baixado de novo."}}
+      }
+    },
+    "Checking the old folder…": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Checking the old folder…"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Controllo della vecchia cartella…"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vérification de l’ancien dossier…"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Alter Ordner wird geprüft…"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Comprobando la carpeta anterior…"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Verificando a pasta anterior…"}}
+      }
+    },
+    "Could not check the old folder.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Could not check the old folder."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Impossibile controllare la vecchia cartella."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Impossible de vérifier l’ancien dossier."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Der alte Ordner konnte nicht geprüft werden."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se pudo comprobar la carpeta anterior."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível verificar a pasta anterior."}}
+      }
+    },
+    "Moving games…": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Moving games…"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Spostamento dei giochi…"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Déplacement des jeux…"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spiele werden verschoben…"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Moviendo juegos…"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Movendo jogos…"}}
+      }
+    },
+    "%d file has a conflict: %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "%d file has a conflict: %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "%d file in conflitto: %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "%d fichier en conflit : %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "%d Dateikonflikt: %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "%d archivo en conflicto: %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "%d arquivo em conflito: %@"}}
+      }
+    },
+    "%d files have conflicts. First: %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "%d files have conflicts. First: %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "%d file in conflitto. Primo: %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "%d fichiers en conflit. Premier : %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "%d Dateikonflikte. Erster Konflikt: %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "%d archivos en conflicto. Primero: %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "%d arquivos em conflito. Primeiro: %@"}}
+      }
+    },
+    "Move stopped. Try again to move the remaining files.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Move stopped. Try again to move the remaining files."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Spostamento interrotto. Riprova per spostare i file rimasti."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Déplacement arrêté. Réessaie pour déplacer les fichiers restants."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Verschieben gestoppt. Versuche es erneut, um die übrigen Dateien zu verschieben."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Traslado detenido. Vuelve a intentarlo para mover los archivos restantes."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Transferência interrompida. Tente de novo para mover os arquivos restantes."}}
+      }
+    },
+    "Could not finish moving games. Try again to move the remaining files.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Could not finish moving games. Try again to move the remaining files."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Spostamento incompleto. Riprova per spostare i file rimasti."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Déplacement incomplet. Réessaie pour déplacer les fichiers restants."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Verschieben fehlgeschlagen. Versuche es erneut, um die übrigen Dateien zu verschieben."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se completó el traslado. Vuelve a intentarlo para mover los archivos restantes."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível concluir a transferência. Tente de novo para mover os arquivos restantes."}}
+      }
+    },
     "Sleep": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Sleep"}},

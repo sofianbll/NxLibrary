@@ -8,6 +8,19 @@ public struct CloudDriveFolders: Sendable {
         public let names: [String]
     }
 
+    public struct MovePlan: Sendable {
+        public let source: String
+        public let games: Int
+        public let bytes: Int64
+        fileprivate let remote: String
+        fileprivate let entries: [MoveEntry]
+    }
+
+    fileprivate struct MoveEntry: Sendable {
+        let file: StorageObject
+        let dependencies: [StorageObject]
+    }
+
     private let remote: String
     private let executable: URL
     private let localRoot: URL?
@@ -74,10 +87,7 @@ public struct CloudDriveFolders: Sendable {
     }
 
     public func libraryCount(in folder: String, folders: [String]) async throws -> Int {
-        let path = try target(folder)
-        let prefix = remote == ":local:" ? remote : remote + ":"
-        let backend = RcloneStorageBackend(remote: remote, root: String(path.dropFirst(prefix.count)),
-                                          executable: executable, config: config)
+        let backend = try backend(in: folder)
         defer { backend.stopRemoteControl() }
         let archive = CloudGameArchive(backend: backend)
         let ids = Set(folders.filter(SaveLocation.validID).map { $0.uppercased() })
@@ -89,9 +99,195 @@ public struct CloudDriveFolders: Sendable {
         return count
     }
 
+    public static func canMove(from source: String, to destination: String) -> Bool {
+        let old = source.lowercased(), new = destination.lowercased()
+        guard CloudLibraryPreference.validRoot(old), CloudLibraryPreference.validRoot(new), old != new else { return false }
+        for (parent, child) in [(old, new), (new, old)] where child.hasPrefix(parent + "/") {
+            guard let subtree = child.dropFirst(parent.count + 1).split(separator: "/").first,
+                  subtree != "switch", !SaveLocation.validID(String(subtree)) else { return false }
+        }
+        return true
+    }
+
+    public func movePlan(from source: String) async throws -> MovePlan {
+        try await verifyUniqueFolder(source)
+        let items = try await contents(source, recursive: true)
+        let paths = Dictionary(grouping: items, by: \.Path)
+        let backend = try backend(in: source)
+        defer { backend.stopRemoteControl() }
+        let archive = CloudGameArchive(backend: backend)
+        var games = Set<String>()
+        var archiveTitles = Set<String>()
+        var objects: [MoveEntry] = [], manifests: [MoveEntry] = []
+        for item in items.sorted(by: { $0.Path < $1.Path }) where !item.IsDir {
+            let path = item.Path
+            let parts = path.components(separatedBy: "/")
+            guard parts.allSatisfy(Self.validName) else { continue }
+            if parts.count == 3, SaveLocation.validID(parts[0]), parts[0] == parts[0].uppercased(),
+               parts[1] == "manifests", path.hasSuffix(".json") {
+                guard Self.uniquePath(path, in: paths) else { throw StorageBackendError.alreadyExists }
+                let manifest: CloudGameManifest
+                do { manifest = try await archive.readManifest(item.object, titleID: parts[0]) }
+                catch CloudArchiveError.invalidManifest { continue }
+                games.insert(manifest.titleID)
+                archiveTitles.insert(manifest.titleID)
+                manifests.append(.init(file: item.object, dependencies: manifest.artifacts.map {
+                    $0.object(titleID: manifest.titleID)
+                }))
+            } else if parts.count == 4, parts.prefix(2).joined(separator: "/") == CloudGameSources.directory,
+                      CloudGameSources.fileExtensions.contains((parts[3] as NSString).pathExtension.lowercased()) {
+                games.insert(CloudGameSources.title(in: parts[2]))
+                objects.append(.init(file: item.object, dependencies: []))
+            }
+        }
+        for item in items where !item.IsDir {
+            let parts = item.Path.components(separatedBy: "/")
+            if parts.count == 3, archiveTitles.contains(parts[0]), CloudArtifactKind(rawValue: parts[1]) != nil,
+               parts[2].range(of: #"^[0-9a-f]{64}\.aar\z"#, options: .regularExpression) != nil {
+                objects.append(.init(file: item.object, dependencies: []))
+            }
+        }
+        // Keep each key once even when Drive lists several objects with that name. The mover reports the conflict.
+        var seen = Set<StorageObjectKey>()
+        let entries = (objects.sorted { $0.file.key.value < $1.file.key.value } + manifests)
+            .filter { seen.insert($0.file.key).inserted }
+        var bytes: Int64 = 0
+        for entry in entries {
+            let (total, overflow) = bytes.addingReportingOverflow(entry.file.size)
+            guard !overflow, entry.file.size >= 0 else { throw StorageBackendError.invalidResponse }
+            bytes = total
+        }
+        return MovePlan(source: source, games: games.count, bytes: bytes, remote: remote, entries: entries)
+    }
+
+    /// Run only after confirmation; a skipped key (or manifest with missing dependencies) prevents activation.
+    public func move(_ plan: MovePlan, to destination: String,
+                     progress: (Int, Int) async throws -> Void) async throws -> [String] {
+        guard remote == plan.remote, Self.canMove(from: plan.source, to: destination) else {
+            throw StorageBackendError.invalidKey
+        }
+        try await verifyUniqueFolder(plan.source)
+        try await verifyUniqueFolder(destination)
+        let sourcePaths = Dictionary(grouping: try await contents(plan.source, recursive: true), by: \.Path)
+        var destinationPaths = Dictionary(grouping: try await contents(destination, recursive: true), by: \.Path)
+        var conflicts: [String] = []
+        var blockedTitles = Set<Substring>()
+        try await progress(0, plan.entries.count)
+        for (index, entry) in plan.entries.enumerated() {
+            try Task.checkCancellation()
+            let path = entry.file.key.value
+            let title = path.prefix { $0 != "/" }
+            if Self.uniquePath(path, in: sourcePaths), Self.uniquePath(path, in: destinationPaths),
+               entry.dependencies.isEmpty || (!blockedTitles.contains(title) && entry.dependencies.allSatisfy({
+                   Self.uniquePath($0.key.value, in: destinationPaths)
+                       && Self.matches($0, destinationPaths[$0.key.value] ?? [])
+               })),
+               let final = try await moveFile(entry.file, from: plan.source, to: destination) {
+                destinationPaths[path] = [final]
+            } else {
+                conflicts.append(path)
+                blockedTitles.insert(title)
+            }
+            try await progress(index + 1, plan.entries.count)
+        }
+        return conflicts
+    }
+
+    private func moveFile(_ file: StorageObject, from source: String, to destination: String) async throws -> Item? {
+        let key = file.key.value
+        let old = try target(Self.joining(source, key))
+        let new = try target(Self.joining(destination, key))
+        let parts = key.components(separatedBy: "/")
+        let parent = parts.dropLast().joined(separator: "/")
+        let name = parts.last
+        func siblings(_ root: String) async throws -> [Item] {
+            try await contents(Self.joining(root, parent), recursive: false).filter { $0.Name == name }
+        }
+        let current = try await siblings(source)
+        let existing = try await siblings(destination)
+        if current.isEmpty { return Self.matches(file, existing) ? existing.first : nil }
+        guard Self.matches(file, current) else { return nil }
+        if !existing.isEmpty {
+            guard Self.matches(file, existing),
+                  current[0].ID.map({ $0 != existing[0].ID }) ?? true else { return nil }
+            _ = try await checked(["deletefile", old])
+        } else if remote == ":local:" {
+            // The local rclone Move uses a replacing rename.
+            let path = String(new.dropFirst(remote.count))
+            try FileManager.default.createDirectory(at: URL(fileURLWithPath: path).deletingLastPathComponent(),
+                                                    withIntermediateDirectories: true)
+            try Task.checkCancellation()
+            guard renamex_np(String(old.dropFirst(remote.count)), path, UInt32(RENAME_EXCL)) == 0 else {
+                if errno == EEXIST { return nil }
+                throw CloudArchiveError.installFailed
+            }
+        } else {
+            _ = try await checked(["moveto", old, new, "--ignore-existing", "--immutable", "--checksum",
+                                   "--disable", "Copy", "--max-transfer", "0"])
+        }
+        let final = try await siblings(destination)
+        let remaining = try await siblings(source)
+        return Self.matches(file, final) && remaining.isEmpty ? final.first : nil
+    }
+
+    private static func matches(_ file: StorageObject, _ items: [Item]) -> Bool {
+        items.count == 1 && !items[0].IsDir && file.size == items[0].Size
+            && file.md5 != nil && file.md5 == items[0].object.md5
+    }
+
+    private static func uniquePath(_ path: String, in listing: [String: [Item]]) -> Bool {
+        var prefix = ""
+        let parts = path.components(separatedBy: "/")
+        for (index, part) in parts.enumerated() {
+            prefix = joining(prefix, part)
+            guard let items = listing[prefix] else { continue }
+            if items.count != 1 || items[0].IsDir != (index < parts.count - 1) { return false }
+        }
+        return true
+    }
+
+    private func verifyUniqueFolder(_ folder: String) async throws {
+        _ = try target(folder)
+        guard !folder.isEmpty else { throw StorageBackendError.invalidKey }
+        var parent = ""
+        for name in folder.components(separatedBy: "/") {
+            let matches = try await contents(parent, recursive: false, hashes: false).filter { $0.Name == name }
+            guard matches.count == 1, matches[0].IsDir else { throw StorageBackendError.invalidKey }
+            parent = Self.joining(parent, name)
+        }
+    }
+
+    private func contents(_ folder: String, recursive: Bool, hashes: Bool = true) async throws -> [Item] {
+        let scope = recursive ? ["--recursive", "--max-depth", "4", "--exclude", "/.arcane-upload/**"] : []
+        let hashing = hashes ? ["--hash-type", "MD5"] : []
+        do {
+            let output = try await checked(["lsjson", try target(folder), "--no-modtime", "--no-mimetype"] + scope + hashing)
+            return try JSONDecoder().decode([Item].self, from: Data(output.utf8))
+        } catch StorageBackendError.notFound { return [] }
+    }
+
+    private func backend(in folder: String) throws -> RcloneStorageBackend {
+        let path = try target(folder)
+        let prefix = remote == ":local:" ? remote : remote + ":"
+        return RcloneStorageBackend(remote: remote, root: String(path.dropFirst(prefix.count)),
+                                    executable: executable, config: config)
+    }
+
     private struct Item: Decodable {
         let Name: String
         let IsDir: Bool
+        let path: String?
+        let size: Int64?
+        let Hashes: [String: String]?
+        let ID: String?
+
+        enum CodingKeys: String, CodingKey { case Name, IsDir, Hashes, ID, path = "Path", size = "Size" }
+        var Path: String { path ?? Name }
+        var Size: Int64 { size ?? -1 }
+        var object: StorageObject {
+            StorageObject(key: StorageObjectKey(Path), size: Size,
+                          hashes: (Hashes ?? [:]).reduce(into: [:]) { $0[$1.key.lowercased()] = $1.value })
+        }
     }
 
     private func target(_ folder: String) throws -> String {

@@ -300,16 +300,23 @@ public actor CloudGameArchive {
         guard let newest = try await backend.list(in: directory)
             .filter({ $0.key.value.hasPrefix(directory.value + "/") && $0.key.value.hasSuffix(".json") })
             .max(by: { $0.key.value < $1.key.value }) else { return nil }
-        let name = newest.key.value.dropFirst(directory.value.count + 1).dropLast(5)
+        return try await readManifest(newest, titleID: title)
+    }
+
+    func readManifest(_ object: StorageObject, titleID title: String) async throws -> CloudGameManifest {
+        let prefix = "\(title)/manifests/"
+        guard SaveLocation.validID(title), object.key.value.hasPrefix(prefix),
+              object.key.value.hasSuffix(".json") else { throw CloudArchiveError.invalidManifest }
+        let name = object.key.value.dropFirst(prefix.count).dropLast(5)
         let parts = name.split(separator: "-", omittingEmptySubsequences: false)
         guard parts.count == 2, parts[0].count == 16, Int64(parts[0]) != nil, Self.isHex(String(parts[1]), count: 64),
-              (1...Int64(Self.manifestLimit)).contains(newest.size) else { throw CloudArchiveError.invalidManifest }
+              (1...Int64(Self.manifestLimit)).contains(object.size) else { throw CloudArchiveError.invalidManifest }
         let stage = try staging(in: FileManager.default.temporaryDirectory)
         defer { try? FileManager.default.removeItem(at: stage) }
         let file = stage.appendingPathComponent("manifest.json")
-        try await backend.get(newest.key, to: file)
+        try await backend.get(object.key, to: file)
         let data = try SaveFiles.readRegular(file, limit: Self.manifestLimit)
-        guard Int64(data.count) == newest.size,
+        guard Int64(data.count) == object.size,
               try CloudArchiveInventory.hashes(at: file, includeMD5: false)["sha256"] == String(parts[1])
         else { throw CloudArchiveError.invalidManifest }
         let decoder = JSONDecoder()
