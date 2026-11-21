@@ -86,16 +86,16 @@ final class AppRouterTests: XCTestCase {
         router.menuSelection.selected = .power
         router.openPowerMenu()
         router.movePowerMenu(by: 1)
-        XCTAssertEqual(router.menuSelection.power, .hide)
+        XCTAssertEqual(router.menuSelection.power, .sleep)
         XCTAssertEqual(router.menuSelection.selected, .power)
         // Left and Right do nothing while the pills are open.
         router.moveMenu(by: -1)
         XCTAssertEqual(router.menuSelection.selected, .power)
-        XCTAssertEqual(router.menuSelection.power, .hide)
+        XCTAssertEqual(router.menuSelection.power, .sleep)
         router.closePowerMenu()
         // Up and Down do nothing while the pills are closed.
         router.movePowerMenu(by: 1)
-        XCTAssertEqual(router.menuSelection.power, .hide)
+        XCTAssertEqual(router.menuSelection.power, .sleep)
         router.moveMenu(by: -1)
         XCTAssertEqual(router.menuSelection.selected, .manageSources)
     }
