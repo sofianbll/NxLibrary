@@ -7,6 +7,14 @@ import XCTest
 final class CloudGameArchiveTests: XCTestCase {
     private let title = "0100E65002BB8000"
 
+    func testCloudOnlyRequiresAManifestAppAndKnownLocalAbsence() {
+        XCTAssertEqual(CloudAppAvailability(remote: [.app], localApp: false), .cloudOnly)
+        XCTAssertEqual(CloudAppAvailability(remote: [.app], localApp: true), .cloudCopy)
+        XCTAssertEqual(CloudAppAvailability(remote: [.app], localApp: nil), .cloudCopy)
+        XCTAssertEqual(CloudAppAvailability(remote: [.cache], localApp: false), .unknown)
+        XCTAssertEqual(CloudAppAvailability(remote: nil, localApp: false), .unknown)
+    }
+
     func testRebuildDecisionRequiresSourcesAndVerifiedRemoteCacheUnlessExplicitlyOverridden() {
         func decision(_ sources: Bool = true, _ remote: Bool = true, _ verified: Bool = false,
                       _ override: Bool = false) -> CloudRebuildDecision {
@@ -50,7 +58,12 @@ final class CloudGameArchiveTests: XCTestCase {
         let service = fixture.service
         let before = try await service.checkRebuild(fixture.game, sourcesAvailable: true, withoutCache: false)
         XCTAssertEqual(before.decision, .allowed)
-        let manifest = try await service.upload(fixture.game)
+        let updates = ProgressRecorder()
+        let manifest = try await service.upload(fixture.game, progress: { updates.record($0) })
+        let phases = updates.snapshot()
+        XCTAssertTrue(phases.contains { $0.phase == .archiving && $0.kind == .app })
+        XCTAssertTrue(phases.contains { $0.phase == .uploading && $0.kind == .app && $0.transfer?.bytesTransferred == 0 })
+        XCTAssertTrue(phases.contains { $0.phase == .verifying && $0.kind == .cache })
         XCTAssertEqual(manifest.artifacts.map(\.kind), [.app, .cache])
         XCTAssertEqual(manifest.artifacts.first?.engineCommit, "72d43ff6")
         XCTAssertEqual(manifest.artifacts.first?.shaderChain, "1234567890ab")
@@ -73,7 +86,9 @@ final class CloudGameArchiveTests: XCTestCase {
                 let missing = try await service.checkRebuild(fixture.game, sourcesAvailable: true, withoutCache: false)
                 XCTAssertEqual(missing.decision, .downloadCache)
             }
-            _ = try await service.restore(kind, for: fixture.game)
+            _ = try await service.restore(kind, for: fixture.game, progress: { updates.record($0) })
+            XCTAssertTrue(updates.snapshot().contains { $0.phase == .downloading && $0.kind == kind && $0.transfer != nil })
+            XCTAssertTrue(updates.snapshot().contains { $0.phase == .restoring && $0.kind == kind })
         }
         let restored = try await service.checkRebuild(fixture.game, sourcesAvailable: true, withoutCache: false)
         XCTAssertEqual(restored.decision, .allowed)
@@ -284,4 +299,11 @@ final class CloudGameArchiveTests: XCTestCase {
         XCTAssertEqual(lstat(file.path, &info), 0)
         return (info.st_mtimespec.tv_sec, info.st_mtimespec.tv_nsec, info.st_mode & 0o777)
     }
+}
+
+private final class ProgressRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var values: [CloudArchiveProgress] = []
+    func record(_ value: CloudArchiveProgress) { lock.withLock { values.append(value) } }
+    func snapshot() -> [CloudArchiveProgress] { lock.withLock { values } }
 }

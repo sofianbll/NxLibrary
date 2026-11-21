@@ -63,7 +63,25 @@ extension GameDetailView {
     }
 
     func runPill(_ index: Int) {
-        switch viewModel.portingPills(game) {
+        let state = viewModel.cloudLibrary.states[game.id]
+        let cloudOnly = viewModel.cloudLibrary.archive != nil && state?.appAvailability == .cloudOnly
+            && !runningGames.isRunning(game)
+        let pills = viewModel.portingPills(game).detailsPresentation(cloudOnly: cloudOnly)
+        if viewModel.showsCloudLibrary(game), index == pills.detailsCloudIndex {
+            SoundEffectService.shared.play(.click)
+            viewModel.openCloudLibrary(for: game)
+            return
+        }
+        if index == 0, pills != .porting, cloudOnly, let state {
+            guard state.action == nil, !state.refreshing, viewModel.canChangeCloudLibrary(game) else {
+                SoundEffectService.shared.play(.error)
+                return
+            }
+            SoundEffectService.shared.play(.click)
+            viewModel.performCloudLibrary(.restore(.app), for: game)
+            return
+        }
+        switch pills {
         case .porting:
             SoundEffectService.shared.play(.click)
             router.openAddGame()

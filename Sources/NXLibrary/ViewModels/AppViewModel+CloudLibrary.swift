@@ -14,9 +14,21 @@ struct CloudLibraryState {
     var local: [CloudArtifactKind: Bool] = [:]
     var remote: Set<CloudArtifactKind>?
     var action: CloudLibraryAction?
-    var progress: Double?
+    var progress: CloudArchiveProgress?
     var message: String?
+    var operationMessage: String?
     var refreshing = false
+
+    var appAvailability: CloudAppAvailability { .init(remote: remote, localApp: local[.app]) }
+
+    func statusKey(installed: Bool) -> String? {
+        if action != nil { return "In progress" }
+        switch appAvailability {
+        case .unknown: return nil
+        case .cloudOnly: return "In the cloud"
+        case .cloudCopy: return installed ? "Installed · Cloud copy ✓" : "In the cloud"
+        }
+    }
 }
 
 final class CloudLibraryModel: ObservableObject {
@@ -72,6 +84,25 @@ extension AppViewModel {
 
     func showsCloudLibrary(_ game: PortedGame) -> Bool {
         game.platform == .macApp
+    }
+
+    @MainActor func openCloudLibrary(for game: PortedGame) {
+        if cloudLibrary.archive == nil { router?.openSettings(.cloudLibrary) }
+        else { cloudLibraryGameID = game.id }
+    }
+
+    /// Read only the settled selection, not every tile or every game passed during a scroll.
+    @MainActor func prefetchCloudLibrary(_ game: PortedGame?) async {
+        guard let game, cloudLibrary.archive != nil, showsCloudLibrary(game) else { return }
+        func needsStatus() -> Bool {
+            let state = cloudLibrary.states[game.id]
+            guard state?.action == nil else { return false }
+            if state?.remote == nil { return true }
+            return state?.local[.app].map { $0 != game.isPlayableLocally } ?? false
+        }
+        guard needsStatus() else { return }
+        do { try await Task.sleep(nanoseconds: 250_000_000) } catch { return }
+        if needsStatus() { await refreshCloudLibrary(game) }
     }
 
     var canConfigureCloudLibrary: Bool {
@@ -172,7 +203,7 @@ extension AppViewModel {
               game.titleId.map(SaveLocation.validID) == true,
               cloudLibrary.states[game.id]?.refreshing != true, cloudLibrary.jobs[game.id] == nil else { return }
         let id = game.id
-        cloudLibrary.update(id) { $0.refreshing = true; $0.remote = nil; $0.message = nil }
+        cloudLibrary.update(id) { $0.refreshing = true; $0.message = nil }
         defer { if cloudLibrary.archive === archive { cloudLibrary.update(id) { $0.refreshing = false } } }
         let target = await cloudLocations(for: game)
         let local = await archive.localStatus(target)
@@ -186,7 +217,9 @@ extension AppViewModel {
         } catch is CancellationError {
             // Closing the panel cancels this read, but not a user-started transfer.
         } catch {
-            if cloudLibrary.archive === archive { cloudLibrary.update(id) { $0.message = cloudMessage(for: error) } }
+            if cloudLibrary.archive === archive {
+                cloudLibrary.update(id) { $0.remote = nil; $0.message = cloudMessage(for: error) }
+            }
         }
     }
 
@@ -205,15 +238,16 @@ extension AppViewModel {
               let game = libraryGames.first(where: { $0.id == selected.id }),
               game.url == selected.url, game.buildCachePath == selected.buildCachePath,
               game.workspacePath == selected.workspacePath,
+              game.titleId.map(SaveLocation.validID) == true,
               cloudLibrary.jobs[game.id] == nil, cloudLibrary.states[game.id]?.refreshing != true,
               canChangeCloudLibrary(game), let release = acquireSaveInstallLease(for: game) else {
-            cloudLibrary.update(selected.id) { $0.message = cloudMessage(for: CloudArchiveError.busy) }
+            cloudLibrary.update(selected.id) { $0.operationMessage = cloudMessage(for: CloudArchiveError.busy) }
             return
         }
         let id = game.id
         let token = UUID()
         cloudLibrary.jobTokens[id] = token
-        cloudLibrary.update(id) { $0.action = action; $0.progress = nil; $0.message = nil }
+        cloudLibrary.update(id) { $0.action = action; $0.progress = nil; $0.message = nil; $0.operationMessage = nil }
         cloudLibrary.jobs[id] = Task { [weak self] in
             guard let self else { release(); return }
             defer {
@@ -225,12 +259,15 @@ extension AppViewModel {
                 self.resumeLibraryScanAfterCloud()
             }
             let target = await self.cloudLocations(for: game)
-            let progress: CloudGameArchive.Progress = { [weak self] value in
-                Task { @MainActor in
-                    guard let self, self.cloudLibrary.jobTokens[id] == token else { return }
+            let (updates, continuation) = AsyncStream.makeStream(of: CloudArchiveProgress.self, bufferingPolicy: .bufferingNewest(1))
+            let listener = Task { @MainActor in
+                for await value in updates {
+                    guard self.cloudLibrary.jobTokens[id] == token else { break }
                     self.cloudLibrary.update(id) { $0.progress = value }
                 }
             }
+            defer { continuation.finish(); listener.cancel() }
+            let progress: CloudGameArchive.Progress = { continuation.yield($0) }
             // Also catch a direct Finder launch, which does not take Arcane's lease.
             let gameClosed: @Sendable () throws -> Void = {
                 if RunningGameMonitor.runningApplication(for: game) != nil { throw CloudArchiveError.busy }
@@ -241,6 +278,7 @@ extension AppViewModel {
                     let manifest = try await archive.upload(target, progress: progress)
                     self.cloudLibrary.update(id) { $0.remote = Set(manifest.artifacts.map(\.kind)) }
                 case .free(let kind):
+                    self.cloudLibrary.update(id) { $0.progress = .init(.verifying, kind: kind) }
                     try await archive.free(kind, for: target, confirmed: true, beforeMutation: gameClosed)
                     if kind == .app {
                         self.applyCatalog(try self.catalogRepository.updateNXNative(id: id) { $0.status = .appMissing })
@@ -271,10 +309,10 @@ extension AppViewModel {
                     }
                 }
             } catch is CancellationError {
-                self.cloudLibrary.update(id) { $0.message = L10n.text("Transfer cancelled.") }
+                self.cloudLibrary.update(id) { $0.operationMessage = L10n.text("Transfer cancelled.") }
             } catch {
                 self.cloudLibrary.update(id) {
-                    $0.message = self.cloudMessage(for: error)
+                    $0.operationMessage = self.cloudMessage(for: error)
                     if error is StorageBackendError || error as? CloudArchiveError == .invalidManifest { $0.remote = nil }
                 }
             }

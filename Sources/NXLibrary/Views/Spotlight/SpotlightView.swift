@@ -354,6 +354,7 @@ struct SpotlightView: View {
             if model.selectedCatalogGame?.integration == .steam, !Task.isCancelled { modsBackdrop = false }
         }
         .task(id: art.logoTaskKey(model.selectedGame, metadata: model.selectedGame.flatMap { store.storeMetadata[$0.id] })) { await loadLogo(model.selectedGame) }
+        .task(id: model.selectedGame) { await viewModel.prefetchCloudLibrary(model.selectedGame) }
     }
 
 }

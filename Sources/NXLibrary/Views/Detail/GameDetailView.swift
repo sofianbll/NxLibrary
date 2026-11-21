@@ -167,8 +167,8 @@ struct GameDetailView: View {
         .frame(width: canvas.size.width, height: canvas.size.height, alignment: .topLeading)
         .clipped()
         .onAppear(perform: appear)
-        .onAppear { focus.setPillLimit(viewModel.portingPills(game).count) }
-        .onChange(of: viewModel.portingPills(game).count) { focus.setPillLimit($1) }
+        .onAppear { focus.setPillLimit(pillCount) }
+        .onChange(of: pillCount) { _, count in focus.setPillLimit(count) }
         .onDisappear {
             modsHost.stop()
             removeKeyMonitor()
@@ -200,7 +200,10 @@ struct GameDetailView: View {
         .task(id: art.logoTaskKey(game, metadata: metadata)) {
             await art.loadLogo(game: game, metadata: metadata, artwork: artwork, personalizations: viewModel.personalizations)
         }
+        .task(id: game) { await viewModel.prefetchCloudLibrary(game) }
     }
+
+    private var pillCount: Int { viewModel.portingPills(game).count + (viewModel.showsCloudLibrary(game) ? 1 : 0) }
 
     // MARK: - Stage
 
@@ -267,10 +270,12 @@ struct GameDetailView: View {
                             wikipedia: wikipediaAbout?.matching(aboutLookup(model)),
                             onPrimary: { pressPill(0) },
                             onSecondary: { pressPill(1) },
-                            onFavorite: { pressPill(2) },
+                            onFavorite: { pressPill(viewModel.showsCloudLibrary(game) ? 3 : 2) },
                             onHoverPill: { hoverPill($0) },
-                            pillSet: viewModel.portingPills(game),
+                            portingPills: viewModel.portingPills(game),
                             etaText: viewModel.portingETAText,
+                            cloud: viewModel.cloudLibrary,
+                            downloadEnabled: viewModel.canChangeCloudLibrary(game),
                             onPill: { pressPill($0) },
                             onOpenLog: { viewModel.revealLog(for: game) })
                 .offset(x: canvas.u(110), y: canvas.u(96))

@@ -78,6 +78,7 @@ extension SpotlightView {
                         isReadingLibrary: viewModel.isScanningLibrary) ? filter : nil,
                     artwork: artwork,
                     tileLook: viewModel.portingTileLook,
+                    cloud: viewModel.cloudLibrary,
                     modsCover: storeHost.cover,
                     entrance: entrance,
                     onEntranceEnd: { finishEntrance() },

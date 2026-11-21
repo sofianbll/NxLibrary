@@ -60,6 +60,7 @@ public struct RcloneStorageBackend: StorageBackend {
         var createdFinal = false
         do {
             _ = try await run(["copyto", source.path, temporary], progress: progress)
+            progress?(StorageProgress(bytesTransferred: object.size, totalBytes: object.size, isVerifying: true))
             try await verify(object, at: temporary)
             // Do not let moveto fall back to streaming data into the final key.
             _ = try await run(["moveto", temporary, final, "--ignore-existing", "--immutable", "--checksum",
@@ -195,9 +196,7 @@ public struct RcloneStorageBackend: StorageBackend {
         let result: CommandResult
         do {
             result = try await SystemCommandRunner().runCancellable(binary, command, environment: environment) { line in
-                guard let progress,
-                      let stats = (try? JSONDecoder().decode(Log.self, from: Data(line.utf8)))?.stats else { return }
-                progress(StorageProgress(bytesTransferred: stats.bytes, totalBytes: stats.totalBytes))
+                if let progress, let update = Self.transferProgress(from: line) { progress(update) }
             }
         } catch is CancellationError {
             throw CancellationError()
@@ -226,6 +225,15 @@ public struct RcloneStorageBackend: StorageBackend {
         catch { throw StorageBackendError.invalidResponse }
     }
 
+    static func transferProgress(from line: String) -> StorageProgress? {
+        guard let stats = (try? JSONDecoder().decode(Log.self, from: Data(line.utf8)))?.stats,
+              stats.bytes >= 0, stats.totalBytes > 0 else { return nil }
+        let speed = [stats.speed, stats.transferring?.first?.speed].compactMap { $0 }.first { $0.isFinite && $0 > 0 }
+        let eta = stats.eta ?? speed.map { Double(max(0, stats.totalBytes - stats.bytes)) / $0 }
+        return StorageProgress(bytesTransferred: min(stats.bytes, stats.totalBytes), totalBytes: stats.totalBytes,
+                               bytesPerSecond: speed, etaSeconds: eta)
+    }
+
     private struct Item: Decodable {
         let path: String
         let size: Int64
@@ -236,8 +244,12 @@ public struct RcloneStorageBackend: StorageBackend {
 
     private struct Log: Decodable {
         struct Stats: Decodable {
+            struct Active: Decodable { let speed: Double? }
             let bytes: Int64
             let totalBytes: Int64
+            let speed: Double?
+            let eta: Double?
+            let transferring: [Active]?
         }
 
         let message: String

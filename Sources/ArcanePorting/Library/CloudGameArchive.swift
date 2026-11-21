@@ -6,6 +6,28 @@ public enum CloudArtifactKind: String, Codable, CaseIterable, Hashable, Sendable
     case app, cache
 }
 
+public enum CloudAppAvailability: Equatable {
+    case unknown, cloudCopy, cloudOnly
+
+    public init(remote: Set<CloudArtifactKind>?, localApp: Bool?) {
+        if remote?.contains(.app) == true { self = localApp == false ? .cloudOnly : .cloudCopy }
+        else { self = .unknown }
+    }
+}
+
+public struct CloudArchiveProgress: Equatable, Sendable {
+    public enum Phase: Equatable, Sendable { case archiving, uploading, verifying, downloading, restoring }
+    public let phase: Phase
+    public let kind: CloudArtifactKind?
+    public let transfer: StorageProgress?
+
+    public init(_ phase: Phase, kind: CloudArtifactKind? = nil, transfer: StorageProgress? = nil) {
+        self.phase = phase
+        self.kind = kind
+        self.transfer = transfer
+    }
+}
+
 public struct CloudArchiveGame: Sendable {
     public let titleID: String
     public let locations: [CloudArtifactKind: URL]
@@ -91,7 +113,7 @@ public enum CloudRebuildDecision: Equatable, Sendable {
 }
 
 public actor CloudGameArchive {
-    public typealias Progress = @Sendable (Double?) -> Void
+    public typealias Progress = @Sendable (CloudArchiveProgress) -> Void
     private typealias Artifact = CloudGameManifest.Artifact
     private static let manifestLimit = 64 * 1024
     private let backend: any StorageBackend
@@ -190,6 +212,7 @@ public actor CloudGameArchive {
         _ = try begin(game.titleID)
         defer { activeTitles[game.titleID] = nil }
         let snapshots = try CloudArtifactKind.allCases.map { kind in
+            progress?(.init(.archiving, kind: kind))
             let source = try location(kind, for: game)
             let snapshot = try CloudArchiveInventory.scan(source, kind: kind)
             guard !snapshot.hasExcludedFiles else { throw CloudArchiveError.excludedFiles }
@@ -197,7 +220,7 @@ public actor CloudGameArchive {
         }
         var artifacts: [Artifact] = []
         for (index, kind) in CloudArtifactKind.allCases.enumerated() {
-            progress?(nil)
+            progress?(.init(.archiving, kind: kind))
             let (source, initial) = snapshots[index]
             let parent = source.deletingLastPathComponent()
             let volume = try CloudArchiveInventory.node(at: parent)
@@ -209,6 +232,7 @@ public actor CloudGameArchive {
                 + CloudArchiveInventory.excludedNames.flatMap { ["-exclude-name", $0] }
             _ = try await command("aa", ["archive", "-d", source.path, "-o", archive.path, "-a", "lzfse", "-x",
                                          "-include-field", "siz"] + exclusions)
+            progress?(.init(.verifying, kind: kind))
             let listed = try await inventory(in: archive, kind: kind)
             guard ordered(listed) == ordered(initial.entries), try sameDirectory(volume, at: parent) else {
                 throw CloudArchiveError.localChanged
@@ -225,10 +249,13 @@ public actor CloudGameArchive {
                                     shaderChain: shaderChain(at: check, kind: kind),
                                     options: info.filter { ["DMLanguage", "CFBundleShortVersionString"].contains($0.key) })
             let object = artifact.object(titleID: game.titleID)
-            try await put(archive, object: object, progress: transfer(progress, offset: Double(index) / 2, scale: 0.5))
+            let update = transfer(progress, phase: .uploading, kind: kind, total: object.size)
+            try await put(archive, object: object, progress: update, beforeVerify: {
+                progress?(.init(.verifying, kind: kind))
+            })
             artifacts.append(artifact)
         }
-        progress?(nil)
+        progress?(.init(.verifying))
         let now = Date()
         let manifest = CloudGameManifest(version: 1, titleID: game.titleID, createdAt: now, artifacts: artifacts)
         let stage = try staging(in: FileManager.default.temporaryDirectory)
@@ -278,6 +305,7 @@ public actor CloudGameArchive {
                         beforeMutation: @Sendable () throws -> Void = {}) async throws -> URL? {
         _ = try begin(game.titleID)
         defer { activeTitles[game.titleID] = nil }
+        progress?(.init(.verifying, kind: kind))
         let destination = try location(kind, for: game)
         let parent = destination.deletingLastPathComponent()
         let volume = try CloudArchiveInventory.node(at: parent)
@@ -295,8 +323,8 @@ public actor CloudGameArchive {
         defer { if !keepStage { try? FileManager.default.removeItem(at: stage) } }
         let archive = stage.appendingPathComponent("item.aar")
         try await backend.get(artifact.object(titleID: game.titleID).key, to: archive,
-                              progress: transfer(progress, offset: 0, scale: 1))
-        progress?(nil)
+                              progress: transfer(progress, phase: .downloading, kind: kind, total: artifact.size))
+        progress?(.init(.verifying, kind: kind))
         guard try CloudArchiveInventory.node(at: archive).st_size == artifact.size,
               try CloudArchiveInventory.hashes(at: archive, includeMD5: false)["sha256"] == artifact.sha256
         else { throw StorageBackendError.hashMismatch }
@@ -306,6 +334,7 @@ public actor CloudGameArchive {
         else { throw CloudArchiveError.invalidArchive }
         try requireSpace(in: parent, bytes: artifact.unpackedSize, entries: artifact.entryCount)
         let incoming = stage.appendingPathComponent(destination.lastPathComponent, isDirectory: true)
+        progress?(.init(.restoring, kind: kind))
         _ = try await unpack(archive, to: incoming, kind: kind, titleID: game.titleID,
                              listed: entries, fingerprint: artifact.inventorySHA256)
         try beforeMutation()
@@ -434,17 +463,20 @@ public actor CloudGameArchive {
         return result.stdout
     }
 
-    private func put(_ file: URL, object: StorageObject, progress: (@Sendable (StorageProgress) -> Void)?) async throws {
+    private func put(_ file: URL, object: StorageObject, progress: (@Sendable (StorageProgress) -> Void)?,
+                     beforeVerify: () -> Void = {}) async throws {
         do { try await backend.put(file, as: object, progress: progress) }
         catch StorageBackendError.alreadyExists { /* Reuse only after checking the exact object. */ }
+        beforeVerify()
         try await backend.verify(object)
     }
 
-    private func transfer(_ progress: Progress?, offset: Double, scale: Double) -> (@Sendable (StorageProgress) -> Void)? {
+    private func transfer(_ progress: Progress?, phase: CloudArchiveProgress.Phase, kind: CloudArtifactKind,
+                          total: Int64) -> (@Sendable (StorageProgress) -> Void)? {
         guard let progress else { return nil }
+        progress(.init(phase, kind: kind, transfer: StorageProgress(bytesTransferred: 0, totalBytes: total)))
         return { value in
-            guard value.totalBytes > 0 else { return }
-            progress(offset + scale * min(1, max(0, Double(value.bytesTransferred) / Double(value.totalBytes))))
+            progress(value.isVerifying ? .init(.verifying, kind: kind) : .init(phase, kind: kind, transfer: value))
         }
     }
 }

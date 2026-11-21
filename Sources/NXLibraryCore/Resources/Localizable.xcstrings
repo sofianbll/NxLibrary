@@ -1,6 +1,186 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Cloud": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Cloud"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cloud"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Cloud"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Nube"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nuvem"}}
+      }
+    },
+    "Installed · Cloud copy ✓": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Installed · Cloud copy ✓"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Installato · Copia cloud ✓"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Installé · Copie cloud ✓"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Installiert · Cloud-Kopie ✓"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Instalado · Copia en la nube ✓"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Instalado · Cópia na nuvem ✓"}}
+      }
+    },
+    "Preparing cloud operation…": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Preparing cloud operation…"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Preparazione dell’operazione cloud…"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Préparation de l’opération cloud…"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Vorgang wird vorbereitet…"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Preparando la operación en la nube…"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Preparando a operação na nuvem…"}}
+      }
+    },
+    "%@ of %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "%@ of %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "%@ su %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "%@ sur %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "%@ von %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "%@ de %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "%@ de %@"}}
+      }
+    },
+    "%@/s": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "%@/s"}},
+        "it": {"stringUnit": {"state": "translated", "value": "%@/s"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "%@/s"}},
+        "de": {"stringUnit": {"state": "translated", "value": "%@/s"}},
+        "es": {"stringUnit": {"state": "translated", "value": "%@/s"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "%@/s"}}
+      }
+    },
+    "%@ s": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "%@ s"}},
+        "it": {"stringUnit": {"state": "translated", "value": "%@ s"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "%@ s"}},
+        "de": {"stringUnit": {"state": "translated", "value": "%@ s"}},
+        "es": {"stringUnit": {"state": "translated", "value": "%@ s"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "%@ s"}}
+      }
+    },
+    "About %@ left": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "about %@ left"}},
+        "it": {"stringUnit": {"state": "translated", "value": "ancora circa %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "encore ~%@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "noch ca. %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "quedan unos %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "faltam cerca de %@"}}
+      }
+    },
+    "Archiving app": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Archiving app"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Archiviazione dell’app"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Archivage de l’app"}},
+        "de": {"stringUnit": {"state": "translated", "value": "App wird archiviert"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Archivando la app"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Arquivando o app"}}
+      }
+    },
+    "Archiving cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Archiving cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Archiviazione della cache"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Archivage du cache"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cache wird archiviert"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Archivando la caché"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Arquivando o cache"}}
+      }
+    },
+    "Uploading app": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Uploading app"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invio dell’app"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoi de l’app"}},
+        "de": {"stringUnit": {"state": "translated", "value": "App wird hochgeladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Subiendo la app"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviando o app"}}
+      }
+    },
+    "Uploading cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Uploading cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invio della cache"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Envoi du cache"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cache wird hochgeladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Subiendo la caché"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviando o cache"}}
+      }
+    },
+    "Verifying app": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Verifying app"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Verifica dell’app"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vérification de l’app"}},
+        "de": {"stringUnit": {"state": "translated", "value": "App wird geprüft"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Verificando la app"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Verificando o app"}}
+      }
+    },
+    "Verifying cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Verifying cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Verifica della cache"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vérification du cache"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cache wird geprüft"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Verificando la caché"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Verificando o cache"}}
+      }
+    },
+    "Verifying cloud copy": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Verifying cloud copy"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Verifica della copia cloud"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vérification de la copie cloud"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Kopie wird geprüft"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Verificando la copia en la nube"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Verificando a cópia na nuvem"}}
+      }
+    },
+    "Downloading app": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Downloading app"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Download dell’app"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Téléchargement de l’app"}},
+        "de": {"stringUnit": {"state": "translated", "value": "App wird heruntergeladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Descargando la app"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Baixando o app"}}
+      }
+    },
+    "Downloading cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Downloading cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Download della cache"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Téléchargement du cache"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cache wird heruntergeladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Descargando la caché"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Baixando o cache"}}
+      }
+    },
+    "Restoring app": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Restoring app"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ripristino dell’app"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Restauration de l’app"}},
+        "de": {"stringUnit": {"state": "translated", "value": "App wird wiederhergestellt"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Restaurando la app"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Restaurando o app"}}
+      }
+    },
+    "Restoring cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Restoring cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ripristino della cache"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Restauration du cache"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cache wird wiederhergestellt"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Restaurando la caché"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Restaurando o cache"}}
+      }
+    },
     "Enable cloud library": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Enable cloud library"}},

@@ -3,6 +3,19 @@ import XCTest
 @testable import NXLibraryCore
 
 final class RcloneStorageBackendTests: XCTestCase {
+    func testProgressParsesStderrStatsWithNullableETAAndFractionalSpeed() throws {
+        let line = #"{"level":"notice","msg":"Transferred","stats":{"bytes":270000000,"totalBytes":645000000,"speed":3100000.25,"eta":121,"transferring":[{"name":"fixture"}]}}"#
+        let progress = try XCTUnwrap(RcloneStorageBackend.transferProgress(from: line))
+        XCTAssertEqual(progress.bytesTransferred, 270_000_000)
+        XCTAssertEqual(progress.totalBytes, 645_000_000)
+        XCTAssertEqual(progress.bytesPerSecond, 3_100_000.25)
+        XCTAssertEqual(progress.etaSeconds, 121)
+        XCTAssertEqual(RcloneStorageBackend.transferProgress(from: #"{"msg":"","stats":{"bytes":2,"totalBytes":9,"eta":null,"speed":0}}"#),
+                       StorageProgress(bytesTransferred: 2, totalBytes: 9))
+        XCTAssertEqual(RcloneStorageBackend.transferProgress(from: #"{"msg":"","stats":{"bytes":2,"totalBytes":8,"eta":null,"speed":0,"transferring":[{"speed":3}]}}"#),
+                       StorageProgress(bytesTransferred: 2, totalBytes: 8, bytesPerSecond: 3, etaSeconds: 2))
+        XCTAssertNil(RcloneStorageBackend.transferProgress(from: #"{"msg":"not a stats line"}"#))
+    }
     func testObjectRoundTripAndTransferProgress() async throws {
         let fixture = try Fixture()
         let bytesSent = expectation(description: "rclone reports transferred bytes")
@@ -11,7 +24,7 @@ final class RcloneStorageBackendTests: XCTestCase {
         XCTAssertEqual(before, [])
 
         try await fixture.backend.put(fixture.source, as: fixture.object) { progress in
-            if progress.bytesTransferred == 4, progress.totalBytes == 4 { bytesSent.fulfill() }
+            if !progress.isVerifying, progress.bytesTransferred == 4, progress.totalBytes == 4 { bytesSent.fulfill() }
         }
         await fulfillment(of: [bytesSent], timeout: 2)
 

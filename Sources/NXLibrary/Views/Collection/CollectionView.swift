@@ -99,6 +99,7 @@ struct CollectionView: View {
         .task(id: art.heroTaskKey(game, metadata: game.flatMap { store.storeMetadata[$0.id] })) { await loadHero(game) }
         .task(id: art.steamHeroTaskKey(selectedCatalogGame)) { await art.loadSteamHero(game: selectedCatalogGame, current: { selectedCatalogGame?.id }, artwork: artwork) }
         .task(id: art.logoTaskKey(game, metadata: game.flatMap { store.storeMetadata[$0.id] })) { await loadLogo(game) }
+        .task(id: game) { await viewModel.prefetchCloudLibrary(game) }
     }
 
     private func stage(games: [CatalogGame], game: PortedGame?) -> some View {
@@ -137,6 +138,7 @@ struct CollectionView: View {
                     officialName: { store.storeMetadata[$0.id]?.name },
                     needsMetadata: { store.loadStoreMetadata(for: $0) },
                     tileLook: viewModel.portingTileLook,
+                    cloud: viewModel.cloudLibrary,
                     onSelect: { select($0.id) },
                     onActivate: { record in select(record.id); activateCatalog(record) })
                     .offset(y: canvas.u(576))

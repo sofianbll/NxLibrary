@@ -148,7 +148,7 @@ If an installed app is moved or removed, its library entry stays with a blurred,
 
 In **Settings → Porting → Cloud library**, Arcane detects rclone or lets you choose its executable. Use a current version from [rclone.org](https://rclone.org/downloads/) or Homebrew. Choose an existing rclone connection or select **Connect Google Drive** and enter your own Google OAuth desktop client ID and secret. rclone opens your browser to ask for full Drive access and stores the credentials in its encrypted configuration; on this Mac, the configuration password is held in the login keychain. An existing connection does not need to sign in again. **Test connection** lists the selected cloud folder (`Games` by default) without changing its files.
 
-Turn on the cloud library and open **Details → Cloud library** for a ported Mac app to manage its app and build cache. **Disconnect** removes only the local rclone connection, which may also be used by other tools. It does not remove cloud files or affect game saves.
+Turn on the cloud library and choose **Cloud** beside **Options** on a ported game's Details page to manage the app and its build cache. If the app is only in the cloud, **Download** restores it and becomes **Play** once it is ready. Transfer progress remains visible in Details when you close the Cloud panel. **Disconnect** removes only the local rclone connection, which may also be used by other tools. It does not remove cloud files or affect game saves.
 
 ### Your library
 

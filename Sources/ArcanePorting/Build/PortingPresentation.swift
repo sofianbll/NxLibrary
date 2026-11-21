@@ -115,6 +115,19 @@ public enum PortingPills: Equatable {
 
     public var count: Int { self == .porting ? 1 : 3 }
 
+    /// Play and Options keep their positions. On special porting rows, Cloud follows their last action.
+    public var detailsCloudIndex: Int {
+        switch self {
+        case .porting, .failed: return count
+        case .normal, .normalAfterFailure, .unavailable: return 2
+        }
+    }
+
+    public func detailsPresentation(cloudOnly: Bool) -> Self {
+        if cloudOnly, case .failed(let failure) = self { return .normalAfterFailure(failure) }
+        return self
+    }
+
     public var unavailableReason: GameUnavailableReason? {
         if case .unavailable(let reason) = self { return reason }
         return nil

@@ -22,6 +22,7 @@ struct CollectionCoverRow: View {
     let needsMetadata: (PortedGame) -> Void
     /// The porting look of a game's cover (`PortingTileLook`).
     var tileLook: (PortedGame) -> PortingTileLook = { _ in .normal }
+    let cloud: CloudLibraryModel
     let onSelect: (CatalogGame) -> Void
     let onActivate: (CatalogGame) -> Void
 
@@ -100,6 +101,7 @@ struct CollectionCoverRow: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(game.name)
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+        .modifier(CloudLibraryTileBadge(cloud: cloud, game: game.nxnativeGame))
         .task(id: game.id) { if let native = game.nxnativeGame { needsMetadata(native) } }
     }
 }

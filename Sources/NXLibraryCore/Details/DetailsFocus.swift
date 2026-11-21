@@ -141,7 +141,12 @@ public struct DetailsFocus: Equatable {
 
     /// A pointer press on a band item: that band and item, clamped to what it holds.
     public mutating func focus(zone target: Int, index: Int, in bands: Bands) {
-        guard target != Self.topZone, bands.count(target) > 0 else { return }
+        if target == Self.topZone {
+            zone = target
+            pill = Self.clamp(index, count: pillLimit)
+            return
+        }
+        guard bands.count(target) > 0 else { return }
         zone = target
         switch target {
         case Self.screenshotsZone: shot = Self.clamp(index, count: bands.screenshots)

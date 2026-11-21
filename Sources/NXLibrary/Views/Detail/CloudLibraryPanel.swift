@@ -44,17 +44,12 @@ struct CloudLibraryPanel: View {
                         artifactRow(kind)
                     }
                 }
-                if state.action != nil || state.refreshing {
-                    HStack(spacing: canvas.u(10)) {
-                        SeleneValueChip(text: text("In progress"))
-                        if let progress = state.progress {
-                            ProgressView(value: progress).progressViewStyle(.linear).tint(SeleneTheme.focus)
-                        } else {
-                            ProgressView().controlSize(.mini).tint(SeleneTheme.focus)
-                        }
-                    }
+                if state.action != nil {
+                    CloudLibraryProgressView(progress: state.progress)
+                } else if state.refreshing {
+                    Text(text("Checking…")).seleneFont(15).foregroundColor(SeleneTheme.ink75)
                 }
-                if let message = state.message {
+                if let message = state.operationMessage ?? state.message {
                     Text(message).seleneFont(15).foregroundColor(SeleneTheme.danger)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
@@ -121,7 +116,7 @@ struct CloudLibraryPanel: View {
         let artifacts = CloudArtifactKind.allCases.compactMap(artifactControl)
         guard !state.refreshing else { return [.close] }
         let canUpload = canChange && CloudArtifactKind.allCases.allSatisfy { state.local[$0] == true }
-        return artifacts + [.close] + (state.remote == nil && state.message != nil ? [.settings] : [])
+        return artifacts + [.close] + (state.remote == nil && (state.message != nil || state.operationMessage != nil) ? [.settings] : [])
             + [.refresh] + (canUpload ? [.upload] : [])
     }
 
@@ -165,4 +160,99 @@ struct CloudLibraryPanel: View {
 
     private func close() { viewModel.cloudLibraryGameID = nil }
     private func text(_ key: String) -> String { L10n.text(key, context: localization) }
+}
+
+/// Same labelled progress in Details and in the transfer panel; the bar uses Selene's existing fill.
+struct CloudLibraryProgressView: View {
+    @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.nxAppLocale) private var localization
+    let progress: CloudArchiveProgress?
+
+    var body: some View {
+        let fraction = progress?.transfer.flatMap { $0.totalBytes > 0
+            ? Double($0.bytesTransferred) / Double($0.totalBytes) : nil }
+        VStack(alignment: .leading, spacing: canvas.u(5)) {
+            Text(summary(fraction)).seleneFont(15).monospacedDigit().foregroundColor(SeleneTheme.ink90)
+            if let fraction {
+                AchievementProgressBar(fraction: fraction)
+            } else {
+                ProgressView().progressViewStyle(.linear).controlSize(.mini).tint(SeleneTheme.focus)
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+
+    private func summary(_ fraction: Double?) -> String {
+        guard let progress else { return text("Preparing cloud operation…") }
+        var segments = [text(phaseKey(progress))]
+        let locale = localization.formatLocale
+        if let transfer = progress.transfer, let fraction {
+            segments.append(L10n.format("%@ of %@", [bytes(transfer.bytesTransferred), bytes(transfer.totalBytes)], context: localization))
+            segments.append(fraction.formatted(.percent.precision(.fractionLength(0)).locale(locale)))
+            if let speed = transfer.bytesPerSecond, speed.isFinite, speed > 0, speed < Double(Int64.max) {
+                segments.append(L10n.format("%@/s", [bytes(Int64(speed))], context: localization))
+            }
+            if let eta = transfer.etaSeconds, eta.isFinite, eta >= 0, eta <= 86_400, fraction < 1 {
+                let seconds = max(1, Int(eta.rounded()))
+                let duration = seconds < 60
+                    ? L10n.format("%@ s", [seconds.formatted(.number.locale(locale))], context: localization)
+                    : L10n.format("%@ min", [Int((Double(seconds) / 60).rounded()).formatted(.number.locale(locale))], context: localization)
+                segments.append(L10n.format("About %@ left", [duration], context: localization))
+            }
+        }
+        return segments.joined(separator: " · ")
+    }
+
+    private func bytes(_ count: Int64) -> String {
+        count.formatted(.byteCount(style: .file).locale(localization.formatLocale))
+    }
+
+    private func phaseKey(_ progress: CloudArchiveProgress) -> String {
+        switch (progress.phase, progress.kind) {
+        case (.archiving, .app): return "Archiving app"
+        case (.archiving, _): return "Archiving cache"
+        case (.uploading, .app): return "Uploading app"
+        case (.uploading, _): return "Uploading cache"
+        case (.verifying, .app): return "Verifying app"
+        case (.verifying, .cache): return "Verifying cache"
+        case (.verifying, nil): return "Verifying cloud copy"
+        case (.downloading, .app): return "Downloading app"
+        case (.downloading, _): return "Downloading cache"
+        case (.restoring, .app): return "Restoring app"
+        case (.restoring, _): return "Restoring cache"
+        }
+    }
+
+    private func text(_ key: String) -> String { L10n.text(key, context: localization) }
+}
+
+/// A non-interactive tile overlay; only known manifest state or an active operation draws a badge.
+struct CloudLibraryTileBadge: ViewModifier {
+    @ObservedObject var cloud: CloudLibraryModel
+    let game: PortedGame?
+    @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.nxAppLocale) private var localization
+
+    func body(content: Content) -> some View {
+        let state = game.flatMap { cloud.states[$0.id] }
+        let installed = game?.isPlayableLocally == true
+        let label = state?.statusKey(installed: installed).map { L10n.text($0, context: localization) }
+        content.overlay(alignment: .topTrailing) {
+            if let label, let state {
+                SeleneValueChip(text: label, symbol: symbol(state))
+                .padding(canvas.u(10))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            }
+        }
+        .accessibilityValue(label ?? "")
+    }
+
+    private func symbol(_ state: CloudLibraryState) -> String {
+        switch state.action {
+        case .upload: return "icloud.and.arrow.up"
+        case .restore, .restoreBuildCache: return "icloud.and.arrow.down"
+        case .free, nil: return state.appAvailability == .cloudOnly ? "icloud.and.arrow.down" : "icloud"
+        }
+    }
 }

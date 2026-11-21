@@ -30,10 +30,13 @@ struct DetailsTopBlock: View {
     let onFavorite: () -> Void
     let onHoverPill: (Int) -> Void
     /// The pills follow the porting (`PortingPills`); any pill press goes to `onPill`.
-    var pillSet: PortingPills = .normal
+    var portingPills: PortingPills = .normal
     var etaText: String? = nil
+    @ObservedObject var cloud: CloudLibraryModel
+    var downloadEnabled = false
     var onPill: (Int) -> Void = { _ in }
     var onOpenLog: () -> Void = {}
+    private var pillSet: PortingPills { portingPills.detailsPresentation(cloudOnly: downloadsApp && !isRunning) }
 
     /// Longer than this, the description gets a "Read more" (five lines hold about 520 characters at this width).
     static let readMoreThreshold = 520
@@ -55,15 +58,31 @@ struct DetailsTopBlock: View {
                     .padding(.leading, canvas.u(4))
                     .padding(.top, canvas.u(22))
             }
-            if let reason = pillSet.unavailableReason {
+            if let reason = pillSet.unavailableReason, !downloadsApp {
                 Text(reason.title)
                     .seleneFont(19, .semibold)
                     .foregroundColor(SeleneTheme.ink75)
                     .padding(.leading, canvas.u(4))
                     .padding(.top, canvas.u(22))
             }
-            pills
+            HStack(spacing: canvas.u(14)) {
+                pills
+                if game.platform == .macApp {
+                    if pillSet == .porting || pillSet.isFailed { cloudPill }
+                    if let status = cloud.states[game.id]?.statusKey(installed: game.isPlayableLocally) {
+                        SeleneValueChip(text: L10n.text(status))
+                    }
+                }
+            }
                 .padding(.top, canvas.u(pillSet.isFailed ? 10 : 26))
+            if let state = cloud.states[game.id], state.action != nil {
+                CloudLibraryProgressView(progress: state.progress)
+                    .frame(maxWidth: canvas.u(700), alignment: .leading)
+                    .padding(.top, canvas.u(12))
+            } else if let message = cloud.states[game.id]?.operationMessage {
+                Text(message).seleneFont(15).foregroundColor(SeleneTheme.danger)
+                    .padding(.top, canvas.u(12))
+            }
             note
                 .padding(.leading, canvas.u(4))
                 .padding(.top, canvas.u(12))
@@ -124,10 +143,12 @@ struct DetailsTopBlock: View {
             if failure == .failed, let reason = game.portingFailureReason {
                 Text(reason.title).seleneFont(15).foregroundColor(SeleneTheme.ink60)
             }
-        case .unavailable(let reason):
+        case .unavailable(let reason) where !downloadsApp:
             Text(reason.detail).seleneFont(15).foregroundColor(SeleneTheme.ink60)
-        case .normal:
-            if !game.sources.isEmpty, !GameResourceState.sourcesAvailable(for: game) {
+        case .normal, .unavailable:
+            if downloadsApp {
+                EmptyView()
+            } else if !game.sources.isEmpty, !GameResourceState.sourcesAvailable(for: game) {
                 Text(L10n.text("Game files not found · Rebuild unavailable")).seleneFont(15).foregroundColor(SeleneTheme.ink60)
             } else if !game.isPlayableLocally {
                 Text(L10n.text("Not built yet")).seleneFont(15).foregroundColor(SeleneTheme.ink60)
@@ -159,24 +180,41 @@ struct DetailsTopBlock: View {
         HStack(spacing: canvas.u(14)) {
             SelenePillButton(title: primaryTitle, minWidth: 200, height: 52,
                              horizontalPadding: 36, focused: focusedPill == 0,
-                             enabled: isRunning || (primaryEnabled && pillSet.unavailableReason == nil), action: onPrimary)
+                             enabled: isRunning || (downloadsApp ? downloadEnabled && cloud.states[game.id]?.action == nil
+                                 && cloud.states[game.id]?.refreshing != true
+                                 : primaryEnabled && pillSet.unavailableReason == nil), action: onPrimary)
                 .onHover { if $0 { onHoverPill(0) } }
             SelenePillButton(title: isRunning ? L10n.text("Close Game") : L10n.text("Options"), minWidth: 200, height: 52,
                              horizontalPadding: 36, focused: focusedPill == 1,
                              action: onSecondary)
                 .onHover { if $0 { onHoverPill(1) } }
+            if game.platform == .macApp { cloudPill }
+            let favorite = game.platform == .macApp ? 3 : 2
             SelenePillButton(title: nil, icon: game.isFavorite ? .favorite : .favoriteBorder,
                              iconSize: 20, minWidth: 52, height: 52, horizontalPadding: 0,
-                             focused: focusedPill == 2, action: onFavorite)
-                .onHover { if $0 { onHoverPill(2) } }
+                             focused: focusedPill == favorite, action: onFavorite)
+                .onHover { if $0 { onHoverPill(favorite) } }
                 .accessibilityLabel(game.isFavorite ? L10n.text("Remove from favorites") : L10n.text("Add to favorites"))
         }
     }
 
+    private var cloudPill: some View {
+        let index = pillSet.detailsCloudIndex
+        return SelenePillButton(title: "Cloud", minWidth: 128, height: 52, horizontalPadding: 36,
+                               focused: focusedPill == index) { onPill(index) }
+            .onHover { if $0 { onHoverPill(index) } }
+            .accessibilityLabel(L10n.text("Cloud library"))
+    }
+
     private var primaryTitle: String {
         if isRunning { return L10n.text("Resume") }
+        if downloadsApp { return L10n.text("Download") }
         if pillSet.unavailableReason != nil { return L10n.text("Unavailable") }
         return presentation.canPlay ? L10n.text("Play") : "Build"
+    }
+
+    private var downloadsApp: Bool {
+        cloud.archive != nil && cloud.states[game.id]?.appAvailability == .cloudOnly
     }
 
     // MARK: - Stats

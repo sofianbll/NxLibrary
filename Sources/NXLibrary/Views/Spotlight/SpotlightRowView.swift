@@ -21,6 +21,7 @@ struct SpotlightRowView: View {
     let artwork: ArtworkStore
     /// The porting look of a game's tile (`PortingTileLook`).
     var tileLook: (PortedGame) -> PortingTileLook = { _ in .normal }
+    let cloud: CloudLibraryModel
     /// Mods' art for the Mods card's face (up to four); empty draws Selene's own face.
     var modsCover: [URL] = []
     /// Spotlight's entrance (`SpotlightView+Entrance`): the tiles fly in from the centre while it plays.
@@ -164,7 +165,8 @@ struct SpotlightRowView: View {
 
     /// A tile at its own size; `TileGlide` places and grows it.
     private func tile(_ item: SpotlightItem, selected: Bool) -> some View {
-        ZStack(alignment: .topLeading) {
+        let native: PortedGame? = if case .game(let id) = item { gamesByID[id] } else { nil }
+        return ZStack(alignment: .topLeading) {
             face(item, selected: selected)
                 .padding(canvas.u(7))
             SeleneTileRing(cornerRadius: canvas.u(19), active: selected)
@@ -178,6 +180,7 @@ struct SpotlightRowView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title(of: item))
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+        .modifier(CloudLibraryTileBadge(cloud: cloud, game: native))
     }
 
     @ViewBuilder

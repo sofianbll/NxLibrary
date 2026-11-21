@@ -23,10 +23,17 @@ public struct StorageObject: Equatable, Sendable {
 public struct StorageProgress: Equatable, Sendable {
     public let bytesTransferred: Int64
     public let totalBytes: Int64
+    public let bytesPerSecond: Double?
+    public let etaSeconds: Double?
+    public let isVerifying: Bool
 
-    public init(bytesTransferred: Int64, totalBytes: Int64) {
+    public init(bytesTransferred: Int64, totalBytes: Int64, bytesPerSecond: Double? = nil,
+                etaSeconds: Double? = nil, isVerifying: Bool = false) {
         self.bytesTransferred = bytesTransferred
         self.totalBytes = totalBytes
+        self.bytesPerSecond = bytesPerSecond
+        self.etaSeconds = etaSeconds
+        self.isVerifying = isVerifying
     }
 }
 
