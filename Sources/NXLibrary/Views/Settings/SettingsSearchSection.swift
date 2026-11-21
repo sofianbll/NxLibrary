@@ -4,9 +4,9 @@ import ArcanePorting
 
 /// Search: a Selene pill field over `SettingsCatalog.search`; picking a result opens its group.
 struct SettingsSearchSection: View {
-    @ObservedObject var settings: AppSettingsStore
+    @ObservedObject var cloudLibrary: CloudLibraryModel
     let supportsNextendo: Bool
-    let onOpenGroup: (SettingsSection) -> Void
+    let onOpenGroup: (SettingDescriptor) -> Void
     let onSubmit: () -> Void
     /// Bumped when the player opens the field (A or Right from the sidebar). Selecting Search never
     /// takes the keys by itself: Up/Down keep moving through the sidebar.
@@ -17,7 +17,9 @@ struct SettingsSearchSection: View {
     @State private var query = ""
     @FocusState private var fieldFocused: Bool
 
-    private var results: [SettingDescriptor] { SettingsCatalog.search(query, supportsNextendo: supportsNextendo) }
+    private var results: [SettingDescriptor] {
+        SettingsCatalog.search(query, supportsNextendo: supportsNextendo, cloudConfigured: cloudLibrary.preference.remote != nil)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: canvas.u(8)) {
@@ -67,7 +69,7 @@ struct SettingsChangedSection: View {
     @ObservedObject var cloudLibrary: CloudLibraryModel
     @ObservedObject private var controller = GameControllerService.shared
     let supportsNextendo: Bool
-    let onOpenGroup: (SettingsSection) -> Void
+    let onOpenGroup: (SettingDescriptor) -> Void
     let onActions: ([SettingsRowAction]) -> Void
     @Environment(\.seleneCanvas) private var canvas
 
@@ -87,7 +89,8 @@ struct SettingsChangedSection: View {
         if URL(fileURLWithPath: setup.nxnativePath).standardizedFileURL != root.appendingPathComponent("nxnative").standardizedFileURL {
             external.insert("engineFolder")
         }
-        return SettingsCatalog.changed(in: settings.settings, externalChanges: external, supportsNextendo: supportsNextendo)
+        return SettingsCatalog.changed(in: settings.settings, externalChanges: external, supportsNextendo: supportsNextendo,
+                                       cloudConfigured: cloudLibrary.preference.remote != nil)
     }
 
     var body: some View {
@@ -111,15 +114,15 @@ struct SettingsChangedSection: View {
 /// Catalog rows with their group as a chip; A or a click opens the group.
 struct SettingsDescriptorList: View {
     let rows: [SettingDescriptor]
-    let onOpenGroup: (SettingsSection) -> Void
+    let onOpenGroup: (SettingDescriptor) -> Void
     @Environment(\.seleneCanvas) private var canvas
 
     static func title(_ row: SettingDescriptor) -> String { "\(row.group.place) · \(L10n.text(row.title))" }
 
     static func actions(_ rows: [SettingDescriptor],
-                        onOpenGroup: @escaping (SettingsSection) -> Void) -> [SettingsRowAction] {
+                        onOpenGroup: @escaping (SettingDescriptor) -> Void) -> [SettingsRowAction] {
         rows.map { row in
-            SettingsRowAction(id: row.id, title: title(row), rowID: row.id) { onOpenGroup(row.group) }
+            SettingsRowAction(id: row.id, title: title(row), rowID: row.id) { onOpenGroup(row) }
         }
     }
 
@@ -131,7 +134,7 @@ struct SettingsDescriptorList: View {
                         .foregroundColor(SeleneTheme.ink60)
                 }
                 .contentShape(Rectangle())
-                .onTapGesture { onOpenGroup(row.group) }
+                .onTapGesture { onOpenGroup(row) }
             }
         }
     }

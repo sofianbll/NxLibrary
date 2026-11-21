@@ -8,13 +8,29 @@ extension SettingsCatalog {
     public static let all: [SettingDescriptor] = ordered(baseRows + portingRows)
 
     public static func changed(in settings: AppSettings, externalChanges: Set<String> = [],
-                               supportsNextendo: Bool = false) -> [SettingDescriptor] {
-        changed(in: settings, externalChanges: externalChanges, rows: supportsNextendo ? includingNextendo : all)
+                               supportsNextendo: Bool = false, cloudConfigured: Bool = false) -> [SettingDescriptor] {
+        changed(in: settings, externalChanges: externalChanges,
+                rows: visible(supportsNextendo: supportsNextendo, cloudConfigured: cloudConfigured))
     }
 
     /// Case- and diacritic-insensitive match over title and about.
-    public static func search(_ query: String, supportsNextendo: Bool = false) -> [SettingDescriptor] {
-        search(query, in: supportsNextendo ? includingNextendo : all)
+    public static func search(_ query: String, supportsNextendo: Bool = false, cloudConfigured: Bool = false) -> [SettingDescriptor] {
+        search(query, in: visible(supportsNextendo: supportsNextendo, cloudConfigured: cloudConfigured))
+    }
+
+    public static func opensCloudAdvanced(_ id: String) -> Bool {
+        ["cloudLibraryAdvanced", "cloudLibraryTool", "cloudLibraryTest", "cloudLibraryDisconnect"].contains(id)
+    }
+
+    private static func visible(supportsNextendo: Bool, cloudConfigured: Bool) -> [SettingDescriptor] {
+        (supportsNextendo ? includingNextendo : all).filter { row in
+            guard row.group == .cloudLibrary else { return true }
+            switch row.id {
+            case "cloudLibrarySetup": return !cloudConfigured
+            case "cloudLibraryAdvanced", "cloudLibraryTool": return true
+            default: return cloudConfigured
+            }
+        }
     }
 
     private static let includingNextendo = ordered(baseRows + portingRows + [
@@ -74,14 +90,16 @@ extension SettingsCatalog {
             "One sync choice for all games, applied at next launch: Off, iCloud Drive or a folder you choose. Only the primary user and device save sync.") { $0.cloudSaves },
         row("cloudSavesPickedFolder", .cloudSaves, "Cloud saves folder",
             "The chosen folder for save sync; choosing a folder enables it.") { $0.cloudSavesPickedFolder },
+        action("cloudLibrarySetup", .cloudLibrary, "Configure cloud library", "Connect Google Drive."),
         action("cloudLibraryEnabled", .cloudLibrary, "Enable cloud library",
                "Cloud storage for ported apps and build caches, separate from saves."),
-        action("cloudLibraryService", .cloudLibrary, "Cloud service", "Choose an existing rclone remote."),
-        action("cloudLibraryConnect", .cloudLibrary, "Connect Google Drive", "Sign in with your own Google OAuth client in your browser."),
-        action("cloudLibraryFolder", .cloudLibrary, "Cloud folder", "Folder for game apps and build caches."),
+        action("cloudLibraryService", .cloudLibrary, "Cloud service", "Google Drive"),
+        action("cloudLibraryFolder", .cloudLibrary, "Folder", "Folder for game apps and build caches."),
+        action("cloudLibraryConnect", .cloudLibrary, "Change Google credentials", "Sign in with your own Google OAuth client in your browser."),
+        action("cloudLibraryAdvanced", .cloudLibrary, "Advanced", "Connection tools"),
+        action("cloudLibraryTool", .cloudLibrary, "Cloud tool", "Choose the executable or use the detected one."),
         action("cloudLibraryTest", .cloudLibrary, "Test connection", "Lists the cloud folder without changing its files."),
-        action("cloudLibraryTool", .cloudLibrary, "rclone", "Choose the rclone executable or use the detected one."),
-        action("cloudLibraryDisconnect", .cloudLibrary, "Disconnect", "Removes only the local rclone connection. Cloud files stay where they are."),
+        action("cloudLibraryDisconnect", .cloudLibrary, "Disconnect", "Removes only the local connection. Cloud files stay where they are."),
 
         // Porting storage
         action("buildCaches", .portingStorage, "Build caches", "Delete a game's build cache or clear all caches after confirmation; rebuilds may take longer."),

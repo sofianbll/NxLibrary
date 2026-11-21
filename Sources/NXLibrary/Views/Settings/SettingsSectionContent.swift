@@ -11,16 +11,17 @@ struct SettingsSectionContent: View {
     let onChooseLanguage: () -> Void
     let onChooseRegion: () -> Void
     let onOpenConsole: () -> Void
-    let onOpenGroup: (SettingsSection) -> Void
+    let onOpenGroup: (SettingDescriptor) -> Void
     let onSearchSubmit: () -> Void
     let searchFieldRequest: Int
-    let onEditCloud: (CloudLibraryEditor) -> Void
+    @Binding var cloudAdvanced: Bool
+    let onEditCloud: () -> Void
     let onActions: ([SettingsRowAction]) -> Void
 
     var body: some View {
         switch section {
         case .search:
-            SettingsSearchSection(settings: settings, supportsNextendo: supportsNextendo, onOpenGroup: onOpenGroup,
+            SettingsSearchSection(cloudLibrary: viewModel.cloudLibrary, supportsNextendo: supportsNextendo, onOpenGroup: onOpenGroup,
                                   onSubmit: onSearchSubmit, fieldRequest: searchFieldRequest, onActions: onActions)
         case .changed:
             SettingsChangedSection(settings: settings, viewModel: viewModel, setup: viewModel.setup,
@@ -46,7 +47,7 @@ struct SettingsSectionContent: View {
         case .cloudSaves:
             SettingsCloudSavesSection(viewModel: viewModel, settings: settings, onActions: onActions)
         case .cloudLibrary:
-            SettingsCloudLibrarySection(viewModel: viewModel, model: viewModel.cloudLibrary,
+            SettingsCloudLibrarySection(viewModel: viewModel, model: viewModel.cloudLibrary, advanced: $cloudAdvanced,
                                         onEdit: onEditCloud, onActions: onActions)
         case .controllers:
             SettingsControllersSection(settings: settings, onActions: onActions,

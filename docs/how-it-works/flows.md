@@ -156,7 +156,7 @@ L'aggiornamento dello stato legge il manifest remoto mentre individua e controll
 
 **File del gioco (Porting).** Data la selezione del gioco, `CloudGameSources` riusa i file remoti con MD5 uguale e invia solo gli assenti; una divergenza blocca un nuovo invio. La misura del download conta solo i file mancanti sul Mac con copia remota verificabile. Il ripristino pubblica ogni file verificato nella sua cartella locale già presente; la liberazione sposta nel Cestino solo i file locali appena verificati. Un annullamento non annulla i file già pubblicati o spostati nel Cestino.
 
-**Settings → Porting → Cloud library.** Da Details, Open settings apre direttamente la sezione se la libreria è spenta o non configurata. Scegli un remote rclone esistente o collega Google Drive: Arcane controlla la cifratura prima di avviare l'accesso nel browser, e Cancel termina il processo rclone. La cartella e l'interruttore si applicano senza riavvio. Test connection legge soltanto l'elenco della cartella. Dopo conferma, Disconnect elimina solo il remote dal file rclone locale.
+**Settings → Porting → Cloud library.** Da Details, Open settings apre direttamente la sezione se la libreria è spenta o non configurata. Configure cloud library apre l'assistente. Una volta configurata, la sezione mostra servizio e cartella; Folder e Change Google credentials riaprono l'assistente. L'interruttore si applica senza riavvio. Advanced si apre anche da un risultato pertinente in Search o Changed. Test connection legge soltanto l'elenco della cartella. Dopo conferma, Disconnect elimina solo il remote dal file rclone locale.
 
 ## 6. Importare o ripristinare un salvataggio
 

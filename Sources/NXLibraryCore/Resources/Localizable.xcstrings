@@ -81,6 +81,76 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Baixando os arquivos do jogo"}}
       }
     },
+    "Configure cloud library": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Configure cloud library"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Configura la libreria cloud"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Configurer la bibliothèque cloud"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Bibliothek einrichten"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Configurar la biblioteca en la nube"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Configurar a biblioteca na nuvem"}}
+      }
+    },
+    "Connect Google Drive.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Connect Google Drive."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Collega Google Drive."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Connecter Google Drive."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Google Drive verbinden."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Conecta Google Drive."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Conecte o Google Drive."}}
+      }
+    },
+    "Change Google credentials": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Change Google credentials"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Modifica le credenziali Google"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Changer les identifiants Google"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Google-Zugangsdaten ändern"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Cambiar las credenciales de Google"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Alterar as credenciais do Google"}}
+      }
+    },
+    "Connection tools": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Connection tools"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Strumenti di connessione"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Outils de connexion"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Verbindungswerkzeuge"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Herramientas de conexión"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Ferramentas de conexão"}}
+      }
+    },
+    "Cloud tool": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Cloud tool"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Strumento cloud"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Outil cloud"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Werkzeug"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Herramienta de nube"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Ferramenta de nuvem"}}
+      }
+    },
+    "Choose the executable or use the detected one.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose the executable or use the detected one."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli l’eseguibile o usa quello rilevato."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez l’exécutable ou utilisez celui qui a été détecté."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle die ausführbare Datei oder nutze die erkannte."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige el ejecutable o usa el detectado."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha o executável ou use o detectado."}}
+      }
+    },
+    "Removes only the local connection. Cloud files stay where they are.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Removes only the local connection. Cloud files stay where they are."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Rimuove solo la connessione locale. I file nel cloud restano dove sono."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Supprime uniquement la connexion locale. Les fichiers cloud restent en place."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Entfernt nur die lokale Verbindung. Cloud-Dateien bleiben unverändert."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Solo elimina la conexión local. Los archivos en la nube permanecen en su sitio."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Remove apenas a conexão local. Os arquivos na nuvem permanecem onde estão."}}
+      }
+    },
     "Cloud": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Cloud"}},
