@@ -88,6 +88,28 @@ final class SaveTransactionTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: location.directory(.account).appendingPathComponent("data"), encoding: .utf8), "changed while confirming")
         try store.discardRestore(preview, location: location)
     }
+    func testPartialRollbackCopyDoesNotBlockNextRecovery() throws {
+        let h = try SaveTestHome(); defer { h.remove() }
+        let location = try h.location(); let store = SaveSnapshotStore(root: h.backups)
+        let file = location.directory(.account).appendingPathComponent("data")
+        try h.write("target", file)
+        let target = try store.create(location: location, identity: h.identity, reason: .manual)
+        try h.write("original", file)
+        var io = SaveFileIO()
+        io.afterMutation = { if $0 == "account" { throw SaveFailure.io("Interrupted") } }
+        XCTAssertThrowsError(try SaveTransaction(store: store, isRunning: { false }, io: io)
+            .restore(target, location: location, identity: h.identity))
+        io.copy = { _, destination in
+            try h.write("part", destination.appendingPathComponent("data"))
+            throw POSIXError(.ENOSPC)
+        }
+        XCTAssertThrowsError(try SaveTransaction(store: store, isRunning: { false }, io: io).recover(location: location))
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "target")
+        let restarted = SaveTransaction(store: store, isRunning: { false })
+        try restarted.recover(location: location)
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "original")
+        XCTAssertFalse(SaveTransaction.needsRecovery(location: location))
+    }
     func testRecoveryKeepsUnexpectedExternalChangesAndItsJournal() throws {
         let h = try SaveTestHome(); defer { h.remove() }
         let location = try h.location(); let store = SaveSnapshotStore(root: h.backups)

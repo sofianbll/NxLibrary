@@ -602,6 +602,8 @@ Il percorso completo è in [flows.md](flows.md#6-importare-o-ripristinare-un-sal
   il journal 2 osserva il gruppo completo. `mutatedSlots` manca nei journal storici, che conservano
   l’ambito dei due slot originali. Un journal committed verifica il risultato prima della pulizia.
   La recovery può a sua volta interrompersi e riprendere. Il gioco deve restare chiuso anche per lanci esterni.
+- Una copia di rollback incompleta resta in una cartella di lavoro dichiarata dal journal, fuori
+  dagli slot di transazione. Il prossimo tentativo può eliminarla e ricrearla dal backup verificato.
 - Dati modificati da fuori o copie non verificabili tengono il recupero bloccato e conservano gli artefatti per l'intervento. Play aspetta la risoluzione.
 
 **Pannello e backup.**
