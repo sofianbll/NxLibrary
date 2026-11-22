@@ -268,6 +268,8 @@ flowchart TD
     G --> B
 ```
 
+In Porting → Game folders, X ripristina le preferenze della sezione, senza cambiare le cartelle. Il pulsante Reset nella riga Game apps ripristina solo quella cartella.
+
 Nel menu rapido, Theme apre prima i colori con anteprima viva; A applica la palette e passa alla selezione dello sfondo. Il tema Arcane conserva il blu classico e l’identità predefinita `selene`; le alternative Arcane Crystal e Arcane Flow salvano `arcane-crystal` e `arcane-flow` nello stesso `colorThemeID`. La shell conserva un backdrop persistente; le pagine ne dichiarano stile, pausa e Mods con `SeleneBackdropRequest`, mantenendo artwork e maschere locali. La shell passa la palette completa in `SeleneBackdropStyle`: cambia il valore dell’ambiente e aggiorna sfondo e maschere anche senza spostare la selezione. La superficie usa lo stesso renderer, con orologio e regole di pausa condivisi. Le particelle sono sempre morbide, senza una scelta aggiuntiva. La scelta dello sfondo mantiene il dialogo di destinazione esistente.
 
 Settings → Profiles → At startup passa da «Chi gioca?» a «Ultimo profilo» e poi ai nomi dei singoli profili. Il vecchio interruttore acceso equivale a «Chi gioca?», spento a «Ultimo profilo». Un profilo fisso rimosso riporta a «Chi gioca?». Un profilo bloccato apre il selettore con il suo ritratto a fuoco, anziché entrare automaticamente. Nel selettore `+` aggiunge, Y modifica, X apre una conferma con Keep a fuoco, quando l’azione è disponibile. Il selettore di avvio non è annullabile. Si salva solo dopo nome, avatar, tema e sfondo; l’anteprima non cambia l’aspetto già salvato. Una nuova immagine di sfondo si copia alla conferma.

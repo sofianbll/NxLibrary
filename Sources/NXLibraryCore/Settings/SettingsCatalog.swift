@@ -134,8 +134,8 @@ public enum SettingsCatalog {
             "Which games Surprise me picks from.") { $0.surprisePool },
         row("showsSessionCard", .libraryGames, "Session card",
             "When you close a game, a card shows how long you played this time and in total.") { $0.showsSessionCard },
-        action("hiddenGames", .libraryGames, "Hidden games",
-               "Games you hid from Game options; Show puts one back in your lists."),
+        action("hiddenGames", .libraryGames, "Hidden game apps",
+               "Game apps you hid from Game options; Show puts one back in your lists."),
 
         // Controllers
         action("controllerStatus", .controllers, "Gamepad",

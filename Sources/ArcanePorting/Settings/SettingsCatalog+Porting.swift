@@ -109,6 +109,6 @@ extension SettingsCatalog {
         action("cloudLibraryDisconnect", .cloudLibrary, "Disconnect", "Removes only the local connection. Cloud files stay where they are."),
 
         // Porting storage
-        action("buildCaches", .portingStorage, "Build caches", "Delete a game's build cache or clear all caches after confirmation; rebuilds may take longer."),
+        action("buildCaches", .portingStorage, "Build caches", "Move one game's build cache or all build caches to the Trash after confirmation; rebuilds may take longer."),
     ]
 }

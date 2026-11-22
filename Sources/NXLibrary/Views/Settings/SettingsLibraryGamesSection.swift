@@ -62,10 +62,10 @@ struct SettingsLibraryGamesSection: View {
                 settings.settings.surprisePool = settings.settings.surprisePool.stepped(step)
             }
 
-            SettingsSubheading(L10n.text("Hidden games"))
+            SettingsSubheading(L10n.text("Hidden game apps"))
 
             if hiddenGames.isEmpty {
-                Text(L10n.text("No hidden games. Hide one from its Game options; it comes back here."))
+                Text(L10n.text("No hidden game apps. Hide one from its Game options; it comes back here."))
                     .seleneFont(15)
                     .foregroundColor(SeleneTheme.ink60)
                     .frame(maxWidth: .infinity, alignment: .leading)

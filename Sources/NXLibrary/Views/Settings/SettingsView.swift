@@ -31,7 +31,6 @@ struct SettingsView: View {
     @State private var rowButton = 0
     @State private var rowActions: [SettingsRowAction] = []
     @State private var keyMonitor: Any?
-    @State private var resetNotice: String?
     @Environment(\.seleneReduceMotion) private var environmentReduceMotion
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneBackdropStyle) private var appBackdropStyle
@@ -85,21 +84,9 @@ struct SettingsView: View {
             .padding(.horizontal, canvas.u(SeleneTokens.Space.stageGutter))
             .padding(.top, canvas.u(SeleneTokens.Space.stageHeader))
             .frame(maxHeight: .infinity, alignment: .top)
-            SeleneHintsBar(right: commandHints)
+            SeleneHintsBar(left: [HintItem(.b, L10n.text("Back")) { handleBack() }], right: commandHints)
         }
         .id(theme.palette.id)
-        .overlay(alignment: .bottom) {
-            if let resetNotice {
-                SeleneSuccessNotice(title: L10n.text("Group reset"), message: resetNotice)
-                    .padding(.bottom, canvas.u(SeleneTokens.Space.settingsHintsClearance))
-                    .allowsHitTesting(false)
-            }
-        }
-        .task(id: resetNotice) {
-            guard resetNotice != nil else { return }
-            do { try await Task.sleep(nanoseconds: 3_000_000_000) } catch { return }
-            withAnimation(reduceMotion ? nil : SeleneTheme.quick) { resetNotice = nil }
-        }
         .background(SeleneBackdrop().environment(\.seleneBackdropStyle, settingsBackdropStyle))
         .onAppear(perform: installKeyMonitor)
         .onAppear {
@@ -272,7 +259,7 @@ struct SettingsView: View {
     }
 
     private var commandHints: [HintItem] {
-        var hints = [HintItem(.b, L10n.text("Back")) { handleBack() }]
+        var hints: [HintItem] = []
         if canResetSection {
             hints.append(HintItem(.x, L10n.text("Reset group")) { resetSection() })
         }
@@ -347,11 +334,6 @@ struct SettingsView: View {
             viewModel.iconAppearanceMode = .auto
         case .controllers:
             GameControllerService.shared.deadzone = 0.35
-        case .library:
-            resetNotice = L10n.text("Sources folder kept")
-            viewModel.libraryFolder = URL(fileURLWithPath: viewModel.defaultInstallPath)
-                .appendingPathComponent("Applications")
-            viewModel.loadLibrary()
         default:
             break
         }

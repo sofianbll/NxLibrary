@@ -107,6 +107,6 @@ func seleneBytes(_ bytes: Int64) -> String {
 }
 
 func seleneShort(_ commit: String?) -> String {
-    guard let commit, !commit.isEmpty else { return "unknown" }
+    guard let commit, !commit.isEmpty else { return "—" }
     return String(commit.prefix(7))
 }

@@ -2,7 +2,7 @@ import SwiftUI
 import NXLibraryCore
 import ArcanePorting
 
-/// Porting → Storage: the build caches of each game and of all games, largest first.
+/// Porting → Porting storage: the build caches of each game and of all games, largest first.
 struct SettingsPortingStorageSection: View {
     @ObservedObject var viewModel: AppViewModel
     let onActions: ([SettingsRowAction]) -> Void
@@ -19,7 +19,7 @@ struct SettingsPortingStorageSection: View {
                 ForEach(snapshot.games) { game in
                     SeleneButtonRow(game.name, id: game.rowID,
                                     subtitle: gameSummary(game), verbatimTitle: true,
-                                    buttonTitle: "Delete permanently") {
+                                    buttonTitle: "Move to Trash") {
                         confirmCacheCleanup(game)
                     }
                     .disabled(!canDelete(game))
@@ -32,8 +32,8 @@ struct SettingsPortingStorageSection: View {
                             subtitle: viewModel.isBuilding
                                 ? "Available after the active build finishes or is cancelled."
                                 : "Extracted build caches for every library game. Apps, sources and saves are untouched.",
-                            info: "Intermediate files created during shader translation and staging in the app-owned workspace. Deleting them frees disk space; your built games and saves will not be touched.",
-                            buttonTitle: "Delete permanently") {
+                            info: "Intermediate files created during shader translation and staging in the app-owned workspace. Empty the Trash afterward to reclaim disk space. Your built games and saves will not be touched.",
+                            buttonTitle: "Move to Trash") {
                 confirmAllCachesCleanup()
             }
             .disabled(!viewModel.canCleanStorage || (viewModel.storageUsage?.cacheBytes ?? 0) == 0)
@@ -75,21 +75,21 @@ struct SettingsPortingStorageSection: View {
     private func confirmCacheCleanup(_ usage: GameStorageUsage) {
         guard canDelete(usage),
               let game = viewModel.libraryGames.first(where: { $0.id == usage.id }) else { return }
-        var message = L10n.format("Delete %@ of build cache for %@? This permanently removes extracted and compiled build files. The next rebuild may take longer. The game app, original game files, saves and logs are kept.", [String(describing: seleneBytes(usage.cache.knownBytes ?? 0)), String(describing: game.name)])
+        var message = L10n.format("Move %@ of build cache for %@ to the Trash? The next rebuild may take longer. The game app, original game files, saves and logs are kept.", [String(describing: seleneBytes(usage.cache.knownBytes ?? 0)), String(describing: game.name)])
         if !usage.sharedCacheWith.isEmpty {
             message += L10n.format(" This build cache is also used by %@; their next rebuilds may take longer too.", [String(describing: usage.sharedCacheWith.joined(separator: ", "))])
         }
-        viewModel.showSettingsNotice(title: L10n.text("Delete this game's build cache?"), message: message,
-                                    actionTitle: "Delete permanently", cancelTitle: "Cancel") {
+        viewModel.showSettingsNotice(title: L10n.text("Move this game's build cache to the Trash?"), message: message,
+                                    actionTitle: "Move to Trash", cancelTitle: "Cancel") {
             viewModel.deleteCaches(for: game)
         }
     }
 
     private func confirmAllCachesCleanup() {
         let amount = seleneBytes(viewModel.storageUsage?.cacheBytes ?? 0)
-        let message = L10n.format("Permanently remove %@ of build caches for all games? Future rebuilds may take longer. Your games, original game files, saves and logs will be kept. Unavailable folders will be left alone.", [String(describing: amount)])
-        viewModel.showSettingsNotice(title: L10n.text("Delete build caches?"), message: message,
-                                    actionTitle: "Delete permanently", cancelTitle: "Cancel") {
+        let message = L10n.format("Move %@ of build caches for all games to the Trash? Future rebuilds may take longer. Your games, original game files, saves and logs will be kept. Unavailable folders will be left alone.", [String(describing: amount)])
+        viewModel.showSettingsNotice(title: L10n.text("Move build caches to the Trash?"), message: message,
+                                    actionTitle: "Move to Trash", cancelTitle: "Cancel") {
             viewModel.deleteCaches()
         }
     }

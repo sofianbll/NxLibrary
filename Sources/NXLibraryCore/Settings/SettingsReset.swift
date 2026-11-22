@@ -1,8 +1,8 @@
 import Foundation
 
 /// What Reset group puts back in `AppSettings`, one section at a time. Preferences outside
-/// `AppSettings` (theme applied, app icon, stick deadzone, game apps folder) are reset by the
-/// Settings screen beside this; cloud saves and credentials are never reset.
+/// `AppSettings` (theme applied, app icon, stick deadzone) are reset by the Settings screen
+/// beside this; game folders, cloud saves and credentials are never reset.
 public enum SettingsReset {
     public static func canReset(_ section: SettingsSection) -> Bool {
         switch section {

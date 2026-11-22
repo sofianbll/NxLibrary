@@ -240,12 +240,63 @@ import ArcanePorting
             SettingsView(initialSection: .profiles, viewModel: vm, settings: settings, router: AppRouter(), artwork: art)
         }.environment(\.nxAppLocale, french), in: out, refs, "screenshots/game-options.png")
         settings.settings.profileStartup = .ask
-        for (name, section) in [("21-settings-console", SettingsSection.console), ("22-settings-setup", .engine)] {
+        let appsFolder = data.appendingPathComponent("Fixture game apps", isDirectory: true)
+        let sourcesFolder = data.appendingPathComponent("Fixture game files", isDirectory: true)
+        let originalAppsFolder = vm.libraryFolder
+        let originalAppsPath = AppData.preferences.string(forKey: AppViewModel.StorageKeys.savedLibraryFolder)
+        vm.libraryFolder = appsFolder
+        AppData.preferences.set(sourcesFolder.path, forKey: PortingModel.savedGameFolderKey)
+        settings.settings.refreshLibraryAtLaunch.toggle()
+        settings.settings.notifyPortingEnds.toggle()
+        SoundEffectService.shared.isSoundEnabled = false
+        SettingsView(initialSection: .library, viewModel: vm, settings: settings, router: AppRouter(), artwork: art)
+            .pressScreenFixtureReset()
+        precondition(vm.libraryFolder?.path == appsFolder.path, "X must preserve the chosen game apps folder")
+        precondition(AppData.preferences.string(forKey: AppViewModel.StorageKeys.savedLibraryFolder) == appsFolder.path)
+        precondition(vm.porting.gameFilesFolder?.path == sourcesFolder.path)
+        precondition(settings.settings.refreshLibraryAtLaunch == AppSettings().refreshLibraryAtLaunch)
+        precondition(settings.settings.notifyPortingEnds == AppSettings().notifyPortingEnds)
+
+        var cachedGame = game
+        cachedGame.isHidden = true
+        let cache = data.appendingPathComponent("\(game.titleId!)_build", isDirectory: true)
+        try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
+        try Data(repeating: 0, count: 4096).write(to: cache.appendingPathComponent("fixture"))
+        cachedGame.workspacePath = data.path
+        cachedGame.buildCachePath = cache.path
+        vm.applyCatalog(.init(games: [.init(nxnative: cachedGame)]))
+        vm.storageSnapshot = StorageManager(logsRoot: data).snapshot(games: [cachedGame], applicationsFolder: appsFolder)
+        for (name, section) in [("21-settings-console", SettingsSection.console), ("22-settings-setup", .engine),
+                                ("23-settings-game-folders", .library), ("24-settings-porting-storage", .portingStorage),
+                                ("25-settings-hidden-apps", .libraryGames)] {
             try render(name, ZStack {
                 SeleneBackdrop().still(true)
                 SettingsView(initialSection: section, viewModel: vm, settings: settings, router: AppRouter(), artwork: art)
             }.environment(\.nxAppLocale, french), in: out, refs, "screenshots/game-options.png")
         }
+        var storageActions: [SettingsRowAction] = []
+        SettingsPortingStorageSection(viewModel: vm) { storageActions = $0 }.publishScreenFixtureActions()
+        precondition(storageActions.count == 2)
+        for (index, action) in storageActions.enumerated() {
+            precondition(action.isEnabled)
+            action.activate()
+            let notice = vm.settingsNotice!
+            precondition(notice.actionTitle == "Move to Trash")
+            precondition(notice.initialFocus == notice.cancelIndex)
+            try render("26-settings-trash-\(index)", SeleneOverlay(style: .dialog) {
+                SeleneChoiceDialog(title: notice.title, message: notice.message, choices: notice.choices,
+                                   focus: .constant(notice.initialFocus), cancelIndex: notice.cancelIndex, onChoose: { _ in })
+            }.background(SeleneBackdrop().still(true)).environment(\.nxAppLocale, french), in: out, refs, "none")
+        }
+        vm.settingsNotice = nil
+        vm.storageSnapshot = nil
+        vm.applyCatalog(.init())
+        try render("27-settings-no-hidden-apps",
+                   SettingsView(initialSection: .libraryGames, viewModel: vm, settings: settings, router: AppRouter(), artwork: art)
+                       .environment(\.nxAppLocale, french), in: out, refs, "none")
+        vm.libraryFolder = originalAppsFolder
+        AppData.preferences.set(originalAppsPath, forKey: AppViewModel.StorageKeys.savedLibraryFolder)
+        AppData.preferences.removeObject(forKey: PortingModel.savedGameFolderKey)
         L10n.setContext(.init(language: .english, region: "US"))
         try render("11-remove", picker(selected: sam.id, removing: sam), in: out, refs, "web/182-15.png")
         // Y on a profile: the wizard replaces the selector, with one bar of hints; closing it brings the selector back.
@@ -726,6 +777,10 @@ def main():
                 lambda m: "        Group {" + m[1] + "\n        }\n    }\n\n    private var reduceMotion")
         replace(app / "Views/Settings/SettingsSidebar.swift", r"            ScrollViewReader \{ proxy in\n.*?\n            }",
                 "            GeometryReader { _ in groups }.clipped()")
+        with (app / "Views/Settings/SettingsView.swift").open("a") as swift:
+            swift.write("\nextension SettingsView {\n    func pressScreenFixtureReset() { handleGamepad(.secondaryAction) }\n}\n")
+        with (app / "Views/Settings/SettingsPortingStorageSection.swift").open("a") as swift:
+            swift.write("\nextension SettingsPortingStorageSection {\n    func publishScreenFixtureActions() { publishActions() }\n}\n")
         replace(app / "Views/Shell/ProfilePickerView.swift",
                 r"                ScrollViewReader .*?\n                        (HStack\(spacing: canvas.u\(56\)\).*?)\n                    }\n                    \.scrollIndicators.*?\n                }\n                if profiles.failed",
                 lambda m: "                " + m[1] + "\n                if profiles.failed")
