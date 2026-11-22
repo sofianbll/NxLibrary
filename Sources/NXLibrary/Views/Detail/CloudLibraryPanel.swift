@@ -578,7 +578,8 @@ struct CloudLibraryProgressView: View {
         case (.downloading, nil): return "Downloading game files"
         case (.restoring, .app): return "Restoring app"
         case (.restoring, _): return "Restoring build cache"
-        case (.readyToInstall, _): return "Update ready · applied when you quit the game"
+        // The Details header keeps its original copy; the Activity and Cloud panels use the shared transfer status.
+        case (.readyToInstall, _): return "Details: Update ready · applied when you quit the game"
         }
     }
 
