@@ -45,7 +45,7 @@ final class LocalBuildCacheTests: XCTestCase {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("LocalBuildCache-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
         let valid = try cache(in: root, name: "valid", chain: "cb8db34ecfb3", ready: nil)
-        XCTAssertEqual(LocalBuildCache.usable(atPath: valid.path), valid)
+        XCTAssertEqual(LocalBuildCache.usable(atPath: valid.path)?.path, valid.path)
         let empty = root.appendingPathComponent("empty")
         try FileManager.default.createDirectory(at: empty, withIntermediateDirectories: true)
         XCTAssertNil(LocalBuildCache.usable(atPath: empty.path), "An empty folder is never a cache")
