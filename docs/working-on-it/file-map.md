@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 22 novembre 2026. Copertura di **881 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 22 novembre 2026. Copertura di **883 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -173,6 +173,7 @@ Cartella `Sources/NXLibraryCore/App/`.
 | File | Responsabilità |
 |---|---|
 | [Sources/NXLibraryCore/App/AppRouter.swift](../../Sources/NXLibraryCore/App/AppRouter.swift) | Gestisce route, ritorno, menu, ricerca e richieste Spotlight; ShellBackdropCover definisce quali strati sono coperti da Setup, benvenuto e scelta tema. |
+| [Sources/NXLibraryCore/App/ProfileLayers.swift](../../Sources/NXLibraryCore/App/ProfileLayers.swift) | Strati della schermata profilo (selettore, procedura guidata, domanda di rimozione): solo quella in cima riceve l’input e mostra i suggerimenti; la procedura guidata nasconde il selettore. |
 | [Sources/NXLibraryCore/App/FirstRunSetup.swift](../../Sources/NXLibraryCore/App/FirstRunSetup.swift) | Coordina pagina e completamento del Setup, scelta Steam persistente fino alla fine, ripresa, focus e consumo unico delle selezioni da Your games. |
 | [Sources/NXLibraryCore/App/FirstRunFindings.swift](../../Sources/NXLibraryCore/App/FirstRunFindings.swift) | Conta giochi Steam senza modifiche, e le app del modulo con il conteggio che riceve; distingue lettura incompleta da assenza e permette nuove letture annullabili. |
 | [Sources/NXLibraryCore/App/ArcaneWelcome.swift](../../Sources/NXLibraryCore/App/ArcaneWelcome.swift) | Decide quando compare il benvenuto in Arcane, l'offerta di Steam, il focus e come ogni uscita lo segna visto. |
@@ -868,7 +869,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/NXLibraryCoreTests/AppUpdateTests.swift](../../Tests/NXLibraryCoreTests/AppUpdateTests.swift) | Versioni (anche con data nel quarto campo), asset release, requisiti, digest, identità del bundle, collisioni con copie esistenti e guasti di copia, scambio e Cestino. |
 | [Tests/NXLibraryCoreTests/AppUpdatePresentationTests.swift](../../Tests/NXLibraryCoreTests/AppUpdatePresentationTests.swift) | Verifica che i controlli manuali non permettano sostituzioni di copie di sviluppo, in sola lettura o con una versione uguale/più recente. |
 | [Tests/NXLibraryCoreTests/ArcaneWelcomeTests.swift](../../Tests/NXLibraryCoreTests/ArcaneWelcomeTests.swift) | Una volta dopo l'aggiornamento, mai dopo un primo Setup né con un recupero in corso, decodifica di un file vecchio, offerta di Steam, focus e uscite. |
-| [Tests/NXLibraryCoreTests/ShellOverlayInputTests.swift](../../Tests/NXLibraryCoreTests/ShellOverlayInputTests.swift) | Ogni monitor della tastiera che cede all'offerta di aggiornamento cede anche al benvenuto, così Invio non arriva alla schermata sotto. |
+| [Tests/NXLibraryCoreTests/ShellOverlayInputTests.swift](../../Tests/NXLibraryCoreTests/ShellOverlayInputTests.swift) | Ogni monitor della tastiera che cede all'offerta di aggiornamento cede anche al benvenuto, così Invio non arriva alla schermata sotto. Sotto il centro di controllo e la schermata profilo, schermata, Aggiungi gioco e console nascondono i propri suggerimenti. |
 | [Tests/NXLibraryCoreTests/ArcaneNameTests.swift](../../Tests/NXLibraryCoreTests/ArcaneNameTests.swift) | Nessun testo del catalogo, in nessuna lingua, mostra il vecchio nome; User-Agent con il nome Arcane e nessuna sorgente con il vecchio. |
 | [Tests/NXLibraryCoreTests/ArtworkPickerFocusTests.swift](../../Tests/NXLibraryCoreTests/ArtworkPickerFocusTests.swift) | Spostamenti nella griglia dei candidati e passaggi fra slot di artwork. |
 | [Tests/ArcanePortingTests/ArtworkPickerTests.swift](../../Tests/ArcanePortingTests/ArtworkPickerTests.swift) | Decodifica Title DB, candidati per slot e scelte manuali. |
@@ -956,6 +957,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/ArcanePortingTests/PendingInstallTests.swift](../../Tests/ArcanePortingTests/PendingInstallTests.swift) | Staging, installazione e cartelle da conservare; riapertura e scansione prima di completare un’installazione già pubblicata. |
 | [Tests/ArcanePortingTests/PlaySessionStoreTests.swift](../../Tests/ArcanePortingTests/PlaySessionStoreTests.swift) | Persistenza, durata, heartbeat, riconciliazione delle sessioni e bundle ID di un avvio generico. |
 | [Tests/NXLibraryCoreTests/LocalProfileStoreTests.swift](../../Tests/NXLibraryCoreTests/LocalProfileStoreTests.swift) | Migrazione, profilo corrente, dati illeggibili e attribuzione al profilo che avvia il gioco. |
+| [Tests/NXLibraryCoreTests/ProfileLayersTests.swift](../../Tests/NXLibraryCoreTests/ProfileLayersTests.swift) | In ogni stato un solo strato della schermata profilo riceve l’input e mostra i suggerimenti; la procedura guidata sostituisce il selettore. |
 | [Tests/ArcanePortingTests/PortedGameTests.swift](../../Tests/ArcanePortingTests/PortedGameTests.swift) | Modello del gioco, compatibilità dei record e condizioni di disponibilità dell’app. |
 | [Tests/ArcanePortingTests/PortingFailureReasonTests.swift](../../Tests/ArcanePortingTests/PortingFailureReasonTests.swift) | Classificazione dei fallimenti e corrispondenza con i messaggi del pin, anche da un checkout separato scelto con NX_TEST_ENGINE_REPO. |
 | [Tests/ArcanePortingTests/PortingNoticeTests.swift](../../Tests/ArcanePortingTests/PortingNoticeTests.swift) | Condizioni e testi delle notifiche di esito del porting. |

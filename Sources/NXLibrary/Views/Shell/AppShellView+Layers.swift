@@ -21,6 +21,7 @@ extension AppShellView {
                 .allowsHitTesting(!fullScreenCover && !router.route.isOverlay && !viewModel.isGameOptionsOpen
                                   && viewModel.cloudLibraryGameID == nil && router.activityCenterFocus == nil && profileFlow == nil)
                 .accessibilityHidden(router.activityCenterFocus != nil || profileFlow != nil)
+                .environment(\.seleneHintsCovered, hintsCovered)
             if router.route == .addGame {
                 AddGameView(viewModel: viewModel,
                             router: router,
@@ -30,6 +31,7 @@ extension AppShellView {
                     .opacity(opacityBelowCover(0.8))
                     .allowsHitTesting(!currentBackdropCover.covers(0.8) && router.activityCenterFocus == nil && profileFlow == nil)
                     .accessibilityHidden(router.activityCenterFocus != nil || profileFlow != nil)
+                    .environment(\.seleneHintsCovered, hintsCovered)
                     .transition(overlayTransition)
                     .zIndex(0.8)
             }
@@ -39,6 +41,7 @@ extension AppShellView {
                     .opacity(opacityBelowCover(0.8))
                     .allowsHitTesting(!currentBackdropCover.covers(0.8) && router.activityCenterFocus == nil && profileFlow == nil)
                     .accessibilityHidden(router.activityCenterFocus != nil || profileFlow != nil)
+                    .environment(\.seleneHintsCovered, hintsCovered)
                     .transition(overlayTransition)
                     .zIndex(0.8)
             }

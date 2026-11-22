@@ -161,6 +161,10 @@ private struct SeleneShowButtonHintsKey: EnvironmentKey {
     static let defaultValue = true
 }
 
+private struct SeleneHintsCoveredKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
 private struct SeleneButtonNamesKey: EnvironmentKey {
     static let defaultValue = ButtonNameStyle.automatic
 }
@@ -169,6 +173,11 @@ extension EnvironmentValues {
     var seleneShowButtonHints: Bool {
         get { self[SeleneShowButtonHintsKey.self] }
         set { self[SeleneShowButtonHintsKey.self] = newValue }
+    }
+    /// An overlay with its own hints is up over this screen: its hints step aside.
+    var seleneHintsCovered: Bool {
+        get { self[SeleneHintsCoveredKey.self] }
+        set { self[SeleneHintsCoveredKey.self] = newValue }
     }
     var seleneButtonNames: ButtonNameStyle {
         get { self[SeleneButtonNamesKey.self] }

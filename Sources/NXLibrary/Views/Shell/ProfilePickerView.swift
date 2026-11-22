@@ -66,6 +66,7 @@ struct ProfilePickerView: View {
     @AccessibilityFocusState(for: .voiceOver) private var accessibilityFocus: Tile?
     private enum Tile: Hashable { case profile(UUID), add }
     private var selection: UUID? { appeared ? selected : initialSelection }
+    private var layers: ProfileLayers { .init(editing: draft != nil, removing: removing != nil) }
 
     var body: some View {
         ZStack {
@@ -74,13 +75,16 @@ struct ProfilePickerView: View {
             } else {
                 SeleneBackdrop().still(true).environment(\.seleneSharesBackdrop, false)
             }
-            selector.accessibilityHidden(draft != nil || removing != nil)
-                .allowsHitTesting(draft == nil && removing == nil)
+            // The wizard replaces the selector: it fades out, with its hints, and comes back when the wizard closes.
+            selector.opacity(layers.showsSelector ? 1 : 0)
+                .accessibilityHidden(!layers.isTop(.selector))
+                .allowsHitTesting(layers.isTop(.selector))
             if let draft {
                 ProfileEditorView(profile: draft, games: games,
                                   avatarGames: avatarGames, artwork: artwork,
                                   isNew: !profiles.profiles.contains { $0.id == draft.id },
                                   onCancel: editorClosed, onSave: save)
+                    .transition(.opacity)
             }
             if let removing {
                 SeleneTheme.scrim.opacity(0.72).ignoresSafeArea()
@@ -91,6 +95,7 @@ struct ProfilePickerView: View {
                                     onCancel: { self.removing = nil }, onConfirm: remove)
             }
         }
+        .animation(reduceMotion ? .easeOut(duration: 0.15) : SeleneTheme.quick, value: draft != nil)
         .onAppear {
             guard !appeared else { return }
             appeared = true
@@ -99,7 +104,7 @@ struct ProfilePickerView: View {
             if initialEdit { edit() }
         }
         .onReceive(NotificationCenter.default.publisher(for: .nxProfileInput)) { note in
-            guard draft == nil, let action = note.object as? GamepadAction else { return }
+            guard layers.top != .editor, let action = note.object as? GamepadAction else { return }
             handle(action)
         }
         .accessibilityAddTraits(.isModal)
@@ -135,6 +140,7 @@ struct ProfilePickerView: View {
         }
         .overlay(alignment: .bottom) {
             SeleneHintsBar(left: leftHints, right: [HintItem(.a, "Select", action: accept)])
+                .seleneOverlaidHints(!layers.isTop(.selector))
         }
     }
 

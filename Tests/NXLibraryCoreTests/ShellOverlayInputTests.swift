@@ -23,3 +23,27 @@ final class ShellOverlayInputTests: XCTestCase {
         XCTAssertEqual(missing.sorted(), [])
     }
 }
+
+/// The screens under the control center or the profile screen step aside from their hints: the shell marks each
+/// full-page layer (screen, Add game, console) covered, and every `SeleneHintsBar` honours the mark.
+final class ShellOverlayHintsTests: XCTestCase {
+    private var views: URL {
+        URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Sources/NXLibrary/Views")
+    }
+
+    private func source(_ path: String) throws -> String { try String(contentsOf: views.appendingPathComponent(path), encoding: .utf8) }
+
+    func testEveryFullPageLayerUnderAnOverlayIsMarkedCovered() throws {
+        let layers = try source("Shell/AppShellView+Layers.swift")
+        XCTAssertEqual(layers.components(separatedBy: ".environment(\\.seleneHintsCovered, hintsCovered)").count - 1, 3)
+        XCTAssertTrue(try source("Components/SeleneHintsBar.swift").contains(".seleneOverlaidHints(covered)"))
+    }
+
+    func testTheProfilePickerHidesItsSelectorAndHintsUnderTheWizard() throws {
+        let picker = try source("Shell/ProfilePickerView.swift")
+        XCTAssertTrue(picker.contains(".opacity(layers.showsSelector ? 1 : 0)"))
+        XCTAssertTrue(picker.contains(".seleneOverlaidHints(!layers.isTop(.selector))"))
+        XCTAssertTrue(picker.contains("layers.top != .editor"))
+    }
+}

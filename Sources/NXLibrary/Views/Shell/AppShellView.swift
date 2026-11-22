@@ -176,6 +176,9 @@ struct AppShellView: View {
                  themePicker: router.isMenuPresented && router.isThemePickerOpen)
     }
 
+    /// The control center or the profile screen draws its own hints over the screen and the full-page overlays.
+    var hintsCovered: Bool { router.isMenuPresented || profileFlow != nil }
+
     var fullScreenCover: Bool { currentBackdropCover.covers(0) }
 
     func opacityBelowCover(_ priority: Double) -> Double {

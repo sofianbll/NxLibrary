@@ -40,6 +40,7 @@ struct SeleneHintsBar: View {
     @Environment(\.nxAppLocale) private var localization
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneShowButtonHints) private var showHints
+    @Environment(\.seleneHintsCovered) private var covered
     @ObservedObject private var controller = GameControllerService.shared
 
     var left: [HintItem] = []
@@ -76,6 +77,7 @@ struct SeleneHintsBar: View {
             .frame(maxWidth: .infinity)
             // A soft shadow lifts the prompts off whatever art is behind them.
             .shadow(color: .black.opacity(0.5), radius: canvas.u(6), y: canvas.u(1))
+            .seleneOverlaidHints(covered)
         }
     }
 

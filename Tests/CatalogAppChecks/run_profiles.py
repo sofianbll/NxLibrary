@@ -66,10 +66,10 @@ import ArcanePorting
         let cachedPortraits = ProfileEditorView.loadAvatars(avatarGames, artwork: art)
         precondition(cachedPortraits.count == avatarGames.count)
         try checkGIF(in: data)
-        func picker(selected: UUID?, removing: LocalProfile? = nil, overlay: Bool = false) -> some View {
+        func picker(selected: UUID?, removing: LocalProfile? = nil, editing: LocalProfile? = nil, overlay: Bool = false) -> some View {
             ProfilePickerView(profiles: profiles, initialSelection: selected, initialEdit: false, canClose: overlay, isOverlay: overlay,
-                              games: [game], onChoose: { _ in }, onClose: {}, onActiveEdited: {},
-                              selected: selected, removing: removing)
+                              games: [game], avatarGames: avatarGames, artwork: art, onChoose: { _ in }, onClose: {}, onActiveEdited: {},
+                              selected: selected, draft: editing, removing: removing)
         }
         try render("01-who", picker(selected: alex.id), in: out, refs, "web/reddit-showcase-who-05s.png", reduced: false)
         try render("02-add-focus", picker(selected: nil), in: out, refs, "web/182-10.png", reduced: false)
@@ -149,6 +149,10 @@ import ArcanePorting
         settings.settings.profileStartup = .ask
         L10n.setContext(.init(language: .english, region: "US"))
         try render("11-remove", picker(selected: sam.id, removing: sam), in: out, refs, "web/182-15.png")
+        // Y on a profile: the wizard replaces the selector, with one bar of hints; closing it brings the selector back.
+        try render("21-picker-y-wizard", picker(selected: sam.id, editing: sam, overlay: true), in: out, refs,
+                   "web/182-12.png")
+        try render("22-picker-back", picker(selected: sam.id, overlay: true), in: out, refs, "web/reddit-showcase-who-05s.png")
         try render("16-switch-profile", picker(selected: sam.id), in: out, refs, "web/reddit-showcase-who-05s.png", reduced: false)
         try render("17-second-profile-collection", stage(SpotlightTopBar(filter: .recentlyPlayed, sort: current), player: sam),
                    in: out, refs, "screenshots/library.png")
@@ -366,6 +370,9 @@ def main():
         replace(app / "Views/Shell/ProfilePickerView.swift",
                 r"                ScrollViewReader .*?\n                        (HStack\(spacing: canvas.u\(56\)\).*?)\n                    }\n                    \.scrollIndicators.*?\n                }\n                if profiles.failed",
                 lambda m: "                " + m[1] + "\n                if profiles.failed")
+        # The wizard opens on the avatar step, with the game portraits the real flow loads in a task.
+        replace(app / "Views/Shell/ProfilePickerView.swift", r"onSave: save\)",
+                "onSave: save, step: .avatar, cachedPortraits: ProfileEditorView.loadAvatars(avatarGames, artwork: artwork!))")
         editor = app / "Views/Shell/ProfileEditorView.swift"
         replace(editor, r'TextField\(L10n.text\("Name"\), text: \$profile.name\)\n                \.textFieldStyle\(\.plain\)',
                 'Text(verbatim: profile.name)')
