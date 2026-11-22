@@ -18,7 +18,7 @@ extension DetailsLink {
                       cloudGame: PortedGame? = nil) -> [DetailsLink] {
         var links: [DetailsLink] = []
         if let game = cloudGame, viewModel.showsCloudLibrary(game) {
-            links.append(DetailsLink(id: "cloud", title: L10n.text("Manage game")) { openCloud(for: game, viewModel: viewModel) })
+            links.append(DetailsLink(id: "cloud", title: L10n.text("Cloud library")) { openCloud(for: game, viewModel: viewModel) })
         }
         if let app {
             links.append(DetailsLink(id: "app", title: L10n.text("Reveal in Finder")) { viewModel.revealInFinder(url: app) })

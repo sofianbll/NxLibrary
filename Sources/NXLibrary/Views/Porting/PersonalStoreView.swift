@@ -161,12 +161,12 @@ struct PersonalStoreView: View {
                      HintItem(.x, L10n.text("Filter"), action: cycleFilter)]),
                     right: item.map { item in
                         if detailOpen && item.action.isTransfer && !needsBudget(item) {
-                            return [HintItem(.a, L10n.text("Manage game"), action: { manage(item) })]
+                            return [HintItem(.a, L10n.text("Cloud library"), action: { manage(item) })]
                         }
                         let primary = !detailOpen || canRun(item, budget: budget)
                             ? [HintItem(.a, detailOpen ? item.action.label : L10n.text("Details"))] : []
                         return primary + (detailOpen
-                            ? [HintItem(.x, L10n.text("Manage game"), action: { manage(item) })] : [])
+                            ? [HintItem(.x, L10n.text("Cloud library"), action: { manage(item) })] : [])
                     } ?? [])
             }
         }
@@ -224,7 +224,8 @@ struct PersonalStoreView: View {
                 if !item.action.isTransfer || needsBudget(item) {
                     SelenePillButton(title: item.action.key, focused: true, enabled: canRun(item, budget: budget)) { run(item) }
                 }
-                SelenePillButton(title: "Manage game", focused: item.action.isTransfer && !needsBudget(item)) { manage(item) }
+                CloudLibraryPill(indicator: .init(state: cloud.states[item.id] ?? .init()),
+                                 focused: item.action.isTransfer && !needsBudget(item)) { manage(item) }
             }
         }
         .seleneFont(.panelBody)

@@ -1465,28 +1465,6 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "云端连接更改结束后可用。"}}
       }
     },
-    "Manage game": {
-      "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "Manage game"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Gestisci gioco"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Gérer le jeu"}},
-        "de": {"stringUnit": {"state": "translated", "value": "Spiel verwalten"}},
-        "es": {"stringUnit": {"state": "translated", "value": "Gestionar juego"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Gerenciar jogo"}},
-        "zh-Hans": {"stringUnit": {"state": "translated", "value": "管理游戏"}}
-      }
-    },
-    "Manage game next to Play": {
-      "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "Manage game next to Play"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Gestisci gioco accanto a Gioca"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Gérer le jeu à côté de Jouer"}},
-        "de": {"stringUnit": {"state": "translated", "value": "Spiel verwalten neben Spielen"}},
-        "es": {"stringUnit": {"state": "translated", "value": "Gestionar juego junto a Jugar"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Gerenciar jogo ao lado de Jogar"}},
-        "zh-Hans": {"stringUnit": {"state": "translated", "value": "在「游玩」旁显示「管理游戏」"}}
-      }
-    },
     "Folders and connection tools": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Folders and connection tools"}},

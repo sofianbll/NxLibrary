@@ -11,7 +11,7 @@ Come si aggiorna:
 
 | Parte | Stato | Prove ancora da fare |
 |---|---|---|
-| My library (Apps e ROM collegate) | in attesa | Da Spotlight e Library, provare mouse, tastiera, controller, VoiceOver, Riduci movimento e ritorno alla tessera. Su dati di prova, verificare filtri, conferma col budget, sei stati e riempimento condivisi, Manage game e Retry, un'offerta cambiata mentre è in coda, Attività e revisione Add Game senza build automatica. |
+| My library (Apps e ROM collegate) | in attesa | Da Spotlight e Library, provare mouse, tastiera, controller, VoiceOver, Riduci movimento e ritorno alla tessera. Su dati di prova, verificare filtri, conferma col budget, sei stati e riempimento condivisi, apertura di Cloud library e Retry, un'offerta cambiata mentre è in coda, Attività e revisione Add Game senza build automatica. |
 | Inbox per i file Switch | in attesa | Con un profilo separato, aprire da Libreria e Spotlight, navigare con la tastiera e il controller, provare deposito e rilascio, correzione esplicita, conferma singola e in gruppo, duplicato e file ambiguo. Con copie autorizzate, controllare riconoscimento nxnative, percorso, Cestino e visibilità da Add Game. |
 | Presenza e aggiornamento degli amici Nextendo | in attesa | Con due conti di prova verificare online, passaggio a In gioco, cambio profilo, Mostrati online disattivato, Aggiorna e orario relativo. Le verifiche automatiche usano un trasporto finto. |
 | Snapshot del profilo nell'overlay Switch | in attesa | Aprire l’overlay con un host compatibile e due profili di prova: nome, ritratto, anello, durate e ultimi amici del solo profilo attivo. Verificare tab senza dati nascosti e file rimosso all’uscita; ripetere con un host precedente senza snapshot. |
@@ -61,6 +61,8 @@ Come si aggiorna:
 
 ## Pubblicato fino alla 0.2.0
 
+Bouton cloud rond, avec son icône d'état, sur la fiche : **validé**. "Gérer le jeu" refusé par Sofian le 22 nov.
+
 | Parte | Stato | Prove ancora da fare |
 |---|---|---|
 | Pausa Home e ritorno ad Arcane | in attesa | Con una build compatibile, scegliere Home → Back to console mode. Provare ritorno senza dialogo, Resume dalla libreria con audio e fullscreen, Close Game e uscita esterna. Riprovare Resume dopo il riavvio di Arcane e con un gioco non in pausa. |
@@ -83,7 +85,7 @@ Come si aggiorna:
 | Tema e dati dell'overlay al Play | in attesa | Con una build compatibile, provare una palette chiara e una scura, tempo totale, copertina locale e Back to console mode. Avviare dal Finder o con una build precedente: nessuna palette Arcane. Verificare che il lancio non aggiunga chiavi overlay a `env.txt`. |
 | Aspetto della libreria cloud | in attesa | Verificare punti senza badge nel pannello e nel centro attività, badge sulle tessere e vicino a Play, colori di punti e barre e alone solo in trasferimento con finestra attiva e senza Riduci movimento. Provare Download prima del ripristino e Play dopo; Reset group non cambia la connessione. Usare mouse, tastiera, controller e VoiceOver. `run_cloud_screens.py` rende le viste con dati sintetici, ma non prova l'input o il movimento. |
 | Riempimento di Download | in attesa | Verificare contorno a riposo, testo bianco e nero separato dal bordo mobile e pieno a fine trasferimento. Niente barra con totale noto quando si riempie la pillola; in Spotlight, se la copertina è visibile, si colora solo quella. Provare Riduci movimento, Annulla e ritorno a Play. `run_cloud_screens.py` rende 0/40/100% e totale ignoto senza finestre. |
-| Manage game e progressi condivisi | in attesa | Su fixture: provare i sei stati in copertina, scheda, pannello e attività con e senza Riduci movimento. Con mouse, tastiera e controller verificare un solo ingresso a Manage game, Avanzate, migrazione esplicita, Retry uguale in entrambi i pannelli e Rebuild dopo ripristino verificato di cache o file; nessuna build dopo annullamento o errore. |
+| Cloud library e progressi condivisi | in attesa | Su fixture: provare i sei stati in copertina, scheda, pannello e attività con e senza Riduci movimento. Con mouse, tastiera e controller verificare apertura dal pulsante tondo, Avanzate, migrazione esplicita, Retry uguale in entrambi i pannelli e Rebuild dopo ripristino verificato di cache o file; nessuna build dopo annullamento o errore. |
 | App cloud durante una partita | in attesa | Con giochi sintetici, provare Send app, Download personale e aggiornamento dal riferimento con gioco aperto anche dal Finder. Controllare «Pronta» e la riga grigia in Cloud e nel centro attività; chiudere il gioco per applicare, ripetere uscendo prima da Arcane, poi provare Play durante lo scambio. Cache, Rebuild e Free up space non partono con il gioco aperto. `run_cloud_screens.py` usa un remote locale, un elenco processi sintetico e rende due PNG senza finestre. |
 | Pubblicazione separata di app e cache | in attesa | Nel primo invio di prova, verificare da un secondo Mac che l'app sia scaricabile durante l'invio cache e dopo Cancel. Ripetere con una cache remota incompatibile e verificare che Rebuild non la usi. |
 | Bundle cloud su un altro Mac | in attesa | Con una build privata e un account di prova, verificare l'accesso senza rclone di sistema e la precedenza di un eseguibile scelto in Advanced. Non condividere ZIP o DMG con il client Google incorporato. |

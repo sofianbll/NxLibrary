@@ -125,7 +125,7 @@ final class SettingsCatalogTests: XCTestCase {
         let ids = ["showsCloudPlayIcon", "showsCloudDetailsLink", "cloudTileBadges"]
         let changed = SettingsCatalog.changed(in: settings)
         XCTAssertEqual(changed.filter { $0.group == .cloudLibrary }.map(\.id), ids)
-        for (title, id) in zip(["Manage game next to Play", "Link in Details", "Tile badges"], ids) {
+        for (title, id) in zip(["Icon next to Play", "Link in Details", "Tile badges"], ids) {
             XCTAssertEqual(SettingsCatalog.search(title).first { $0.id == id }?.group, .cloudLibrary)
             XCTAssertFalse(SettingsCatalog.opensCloudAdvanced(id))
         }

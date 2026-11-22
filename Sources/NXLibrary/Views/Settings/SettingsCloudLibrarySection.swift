@@ -145,7 +145,7 @@ struct SettingsCloudLibrarySection: View {
             if model.importTask != nil { SeleneProgressBar(progress: nil, color: CloudLibraryStatus.pending.color) }
 
             SettingsSubheading("Appearance")
-            SeleneToggleRow("Manage game next to Play", isOn: $settings.settings.showsCloudPlayIcon)
+            SeleneToggleRow("Icon next to Play", isOn: $settings.settings.showsCloudPlayIcon)
             SeleneToggleRow("Link in Details", isOn: $settings.settings.showsCloudDetailsLink)
             SeleneCycleRow("Tile badges", value: settings.settings.cloudTileBadges.titleKey, cycle: stepBadges)
 
@@ -236,7 +236,7 @@ struct SettingsCloudLibrarySection: View {
             actions = [.init(id: "cloudLibrarySetup", title: "Configure cloud library", isEnabled: editable, activate: onEdit)]
         }
         actions += [
-            .init(id: "showsCloudPlayIcon", title: "Manage game next to Play") { settings.settings.showsCloudPlayIcon.toggle() },
+            .init(id: "showsCloudPlayIcon", title: "Icon next to Play") { settings.settings.showsCloudPlayIcon.toggle() },
             .init(id: "showsCloudDetailsLink", title: "Link in Details") { settings.settings.showsCloudDetailsLink.toggle() },
             .value("cloudTileBadges", "Tile badges", cycle: stepBadges),
             .init(id: "cloudLibraryAdvanced", title: "Folders and connection tools", activate: toggleAdvanced),

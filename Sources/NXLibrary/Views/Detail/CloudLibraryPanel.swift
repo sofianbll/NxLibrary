@@ -68,7 +68,7 @@ struct CloudLibraryPanel: View {
     private var card: some View {
         VStack(alignment: .leading, spacing: canvas.u(14)) {
             VStack(alignment: .leading, spacing: canvas.u(3)) {
-                Text(text("Manage game")).seleneFont(.panelTitle, .semibold)
+                Text(text("Cloud library")).seleneFont(.panelTitle, .semibold)
                     .foregroundColor(SeleneTheme.ink).accessibilityAddTraits(.isHeader)
                 Text(game.name).seleneFont(.body).foregroundColor(SeleneTheme.ink75)
                     .lineLimit(1)
@@ -598,6 +598,23 @@ struct CloudLibraryIndicator {
     var queued: Bool { showsAction && state.queued }
     var copy: CloudArtifactStatus.State { state.copy(item ?? .app) ?? .unknown }
 
+    // Keep the cloud glyph on the round action; the shared status line describes the transfer phase.
+    var pillIcon: MaterialIcon {
+        if queued { return .cloudQueue }
+        if progress {
+            switch state.action {
+            case .upload, .uploadSources: return .cloudUpload
+            default: return .cloudDownload
+            }
+        }
+        switch copy {
+        case .synchronized: return .cloudDone
+        case .cloudOnly: return .cloudDownload
+        case .newerOnThisMac: return .cloudUpload
+        case .notInCloud, .unknown: return .cloud
+        }
+    }
+
     var isTransferring: Bool {
         showsAction && !state.queued && (state.progress?.phase == .uploading || state.progress?.phase == .downloading)
     }
@@ -739,9 +756,15 @@ struct CloudLibraryPill: View {
     let action: () -> Void
 
     var body: some View {
-        SelenePillButton(title: "Manage game", minWidth: SeleneTokens.Space.group,
-                         height: SeleneTokens.Space.group, horizontalPadding: SeleneTokens.Space.medium,
-                         focused: focused, action: action)
+        SelenePillButton(title: nil, icon: indicator.pillIcon, iconSize: SeleneTokens.Space.panel,
+                         minWidth: 52, height: 52, horizontalPadding: 0, focused: focused, action: action)
+            .overlay(alignment: .bottomTrailing) {
+                if indicator.isTransferring {
+                    SeleneStatusMark(color: indicator.status.color, pulses: true)
+                        .padding(SeleneTokens.Space.hairline)
+                }
+            }
+            .accessibilityLabel(L10n.text("Cloud library", context: localization))
             .accessibilityValue(indicator.label(context: localization))
     }
 }

@@ -282,6 +282,38 @@ TRANSFER_STATES = r'''
         vm.clearActivityForProbe(queuedRequest.token)
 '''
 
+CLOUD_BUTTON = r'''
+        var local = game
+        local.status = .builtSourcesMissing
+        for (name, copy, sending, expected): (String, CloudArtifactStatus.State, Bool, MaterialIcon) in [
+            ("synchronized", .synchronized, false, .cloudDone), ("remote-only", .cloudOnly, false, .cloudDownload),
+            ("newer-here", .newerOnThisMac, false, .cloudUpload), ("not-in-cloud", .notInCloud, false, .cloud),
+            ("unknown", .unknown, false, .cloud), ("sending", .notInCloud, true, .cloudUpload)
+        ] {
+            model.update(game.id) {
+                $0 = .init()
+                $0.copies = [.app: .screenFixture(copy, hasLocalCopy: copy != .cloudOnly)]
+                if sending {
+                    $0.action = .upload(.app)
+                    $0.progress = .init(.uploading, kind: .app,
+                        transfer: .init(bytesTransferred: 42_000_000, totalBytes: 100_000_000))
+                }
+            }
+            let indicator = CloudLibraryIndicator(state: model.states[game.id]!)
+            precondition(indicator.pillIcon == expected && indicator.isTransferring == sending)
+            let displayedGame = copy == .cloudOnly ? game : local
+            try render("cloud-button-\(name)-details", output,
+                DetailsTopBlock(game: displayedGame, logo: nil,
+                    presentation: .init(game: displayedGame, metadata: nil, totalPlaytime: 0, lastPlayed: nil),
+                    isRunning: false, focusedPill: 2, primaryEnabled: true, expanded: .constant(false),
+                    onPrimary: {}, onSecondary: {}, onFavorite: {}, onHoverPill: { _ in }, pillSet: .normal,
+                    cloud: model, showsCloudPill: true, downloadEnabled: true).environment(\.nxAppLocale, fr),
+                size: .init(width: 1120, height: 520))
+        }
+        model.update(game.id) { $0 = .init() }
+        // STORE_DETAIL
+'''
+
 PLAY_TRANSFER = r'''
 extension CloudScreenProbe {
     @MainActor static func checkPlayDuringTransfer(in root: URL) async throws {
@@ -661,6 +693,15 @@ extension CloudDriveFolders.Listing {
         host = HOST.replace("/* NOTICE_LAYOUT */", "vertical: notice.vertical," if before else "cancelIndex: notice.cancelIndex,")
         unified = (package / "Sources/ArcanePorting/Library/CloudTransferPresentation.swift").exists()
         host = host.replace("CACHE_DOWNLOAD_CHOICE", "Download cache and rebuild" if unified else "Download the cloud cache")
+        if not before:
+            header = (app / "Views/Detail/DetailsTopBlock.swift").read_text()
+            panel = (app / "Views/Detail/CloudLibraryPanel.swift").read_text()
+            assert re.search(r"onHoverPill\(1\).*?if showsCloudPill \{ cloudPill \}.*?let favorite", header, re.S)
+            assert "CloudLibraryPill(indicator:" in header and "{ onPill(index) }" in header
+            assert "SelenePillButton(title: nil, icon: indicator.pillIcon" in panel
+            for path in ("Detail/CloudLibraryPanel", "Detail/DetailsPanel", "Shell/ActivityCenterView", "Porting/PersonalStoreView"):
+                view_file = app / f"Views/{path}.swift"
+                assert not view_file.exists() or '"Manage game"' not in view_file.read_text(), path
         if before:
             host = re.sub(r'// REFERENCE_START.*?// REFERENCE_END', '', host, flags=re.S)
         if not before:
@@ -722,7 +763,19 @@ extension CloudLibraryPanel {
         let advanced = CloudLibraryPanel(viewModel: vm, model: model, game: game).advancedForProbe()
         try render("panel-advanced-migration", output, advanced.environment(\.nxAppLocale, fr))
 '''
-            host = host.replace("// TRANSFER_STATES", "do {\n" + gallery + "\n        }")
+            buttons = CLOUD_BUTTON
+            if (app / "Views/Porting/PersonalStoreView.swift").exists():
+                buttons = buttons.replace("// STORE_DETAIL", r'''
+        let store = PersonalStoreView(app: vm, cloud: model, router: AppRouter(),
+                                      artwork: ArtworkStore(), showsHints: true, review: { _ in })
+        let item = PersonalStoreView.Item(game: local, action: .play)
+        let storeCanvas = SeleneCanvas(size: .init(width: 1920, height: 1080))
+        try render("store-detail", output,
+            store.scene(rows: [[item]], activeRow: 0, item: item, image: nil, tab: .apps, filter: .all,
+                        detailOpen: true, budget: nil, canvas: storeCanvas).environment(\.nxAppLocale, fr),
+            size: storeCanvas.size)
+''')
+            host = host.replace("// TRANSFER_STATES", "do {\n" + gallery + buttons + "\n        }")
             # Capture Spotlight after its entrance, without running the reveal in ImageRenderer.
             change(app / "Views/Spotlight/SpotlightInfoView.swift",
                    r'        \.onAppear \{ reveal\(\) \}\n        \.onChange\(of: game.id\) \{ reveal\(\) \}\n', "")
