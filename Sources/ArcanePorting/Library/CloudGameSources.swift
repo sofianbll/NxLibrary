@@ -19,6 +19,11 @@ public struct CloudSourcesStatus: Equatable, Sendable {
 
 public final class CloudGameSources: @unchecked Sendable {
     public typealias Progress = @Sendable (StorageProgress) -> Void
+    package struct OfferFile: Codable, Equatable, Sendable {
+        let name: String
+        let bytes: Int64
+        let md5: String
+    }
     public struct ArchivedSelection: Codable, Equatable, Sendable {
         private struct Source: Codable, Equatable, Sendable {
             let filename: String
@@ -218,11 +223,12 @@ public final class CloudGameSources: @unchecked Sendable {
     }
 
     package func download(folderName: String, files: [URL], replacingBefore: Date?, replacing: Set<URL>,
+                          expected: [OfferFile]? = nil,
                           progress: Progress?) async throws {
         let selection = try Selection(folderName, files)
         guard let lease = backend.leases.begin(selection.title) else { throw CloudArchiveError.busy }
         defer { backend.leases.end(selection.title, token: lease) }
-        let pending = try await downloads(selection, replacingBefore: replacingBefore, replacing: replacing)
+        let pending = try await downloads(selection, replacingBefore: replacingBefore, replacing: replacing, expected: expected)
         let bytes = try total(pending.map { $0.1.size })
         var reservations: [dev_t: Int64] = [:]
         for (destination, item, _) in pending {
@@ -299,14 +305,37 @@ public final class CloudGameSources: @unchecked Sendable {
         try await total(downloads(Selection(folderName, files)).map { $0.1.size })
     }
 
-    private func downloads(_ selection: Selection, replacingBefore: Date? = nil,
-                           replacing: Set<URL> = []) async throws -> [(URL, StorageObject, Stamp?)] {
+    package func downloadOffer(folderName: String, files: [URL], reference: Bool,
+                               replacingBefore: Date? = nil, replacing: Set<URL> = []) async throws -> PersonalStore.Offer {
+        let selection = try Selection(folderName, files)
         let remote = try await remoteFiles(selection)
+        let pending = try await downloads(selection, replacingBefore: replacingBefore, replacing: replacing,
+                                          snapshot: remote)
+        let bytes = try total(pending.map { $0.1.size })
+        guard !pending.isEmpty, let required = CloudGameArchive.requiredBytes(bytes: bytes, entries: 0)
+        else { throw CloudArchiveError.noRemoteCopy }
+        return .rom(reference: reference, folder: folderName, files: try offerFiles(selection, remote: remote),
+                    bytes: bytes, required: required)
+    }
+
+    private func offerFiles(_ selection: Selection, remote: [String: StorageObject]) throws -> [OfferFile] {
+        try selection.files.map { url in
+            guard let item = remote[url.lastPathComponent], let md5 = item.md5 else { throw CloudArchiveError.invalidArchive }
+            return OfferFile(name: url.lastPathComponent, bytes: item.size, md5: md5)
+        }.sorted { $0.name < $1.name }
+    }
+
+    private func downloads(_ selection: Selection, replacingBefore: Date? = nil,
+                           replacing: Set<URL> = [], expected: [OfferFile]? = nil,
+                           snapshot: [String: StorageObject]? = nil) async throws -> [(URL, StorageObject, Stamp?)] {
+        let remote: [String: StorageObject]
+        if let snapshot { remote = snapshot } else { remote = try await remoteFiles(selection) }
+        if let expected, try offerFiles(selection, remote: remote) != expected { throw CloudArchiveError.localChanged }
         var pending: [(URL, StorageObject, Stamp?)] = []
         for source in selection.files {
             try Task.checkCancellation()
             let local = try stamp(at: source)
-            if local != nil && replacingBefore == nil { continue }
+            if local != nil && replacingBefore == nil && expected == nil && snapshot == nil { continue }
             guard let item = remote[source.lastPathComponent] else { throw CloudArchiveError.noRemoteCopy }
             guard let digest = item.md5 else { throw CloudArchiveError.invalidArchive }
             if let local {

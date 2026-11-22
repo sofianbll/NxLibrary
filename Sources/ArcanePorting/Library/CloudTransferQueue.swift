@@ -53,16 +53,19 @@ public final class CloudTransferQueue: Sendable {
         public let action: CloudLibraryAction
         package let token: UUID?
         package let storage: String?
+        package let offer: PersonalStore.Offer?
 
         public init(id: UUID, action: CloudLibraryAction) {
             self.init(id: id, action: action, token: nil, storage: nil)
         }
 
-        package init(id: UUID, action: CloudLibraryAction, token: UUID?, storage: String?) {
+        package init(id: UUID, action: CloudLibraryAction, token: UUID?, storage: String?,
+                     offer: PersonalStore.Offer? = nil) {
             self.id = id
             self.action = action
             self.token = token
             self.storage = storage
+            self.offer = offer
         }
     }
 

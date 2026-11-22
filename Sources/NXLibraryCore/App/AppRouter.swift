@@ -10,6 +10,7 @@ public enum AppRoute: Equatable {
     case settings(SettingsSection)
     case addGame
     case gameInbox
+    case personalStore
     case console
 
     /// Drawn over the screen it was opened from, which stays behind, blurred.

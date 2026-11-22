@@ -267,8 +267,8 @@ struct AppShellView: View {
                 // SettingsView handles its own Esc.
             } else if case .addGame = router.route {
                 // AddGameView handles its own Esc.
-            } else if case .gameInbox = router.route {
-                // The Inbox handles Esc with its own input route.
+            } else if router.route == .gameInbox || router.route == .personalStore {
+                // The page handles Esc with its own input route.
             } else if case .console = router.route {
                 // ConsoleView handles its own Esc.
             } else {
@@ -348,6 +348,10 @@ struct AppShellView: View {
                          artwork: artwork)
         case .gameInbox:
             GameInboxView(model: viewModel.gameInbox, router: router, showsHints: !showsSettingsNotice)
+        case .personalStore:
+            PersonalStoreView(app: viewModel, cloud: viewModel.cloudLibrary, router: router, artwork: artwork,
+                              showsHints: !isCloseGameOpen && !router.isMenuPresented && !viewModel.profileOwnsInput,
+                              review: openPersonalStoreReview)
         case .addGame:
             // Never the underlying route; Add game is drawn over `content`.
             Color.clear

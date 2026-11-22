@@ -200,15 +200,22 @@ extension PortingModel {
 
     @discardableResult
     func selectGameFiles(startingNewGameWith defaults: GameRuntimeConfig? = nil) -> Bool {
-        guard let urls = chooseGameFiles(), let first = urls.first else { return false }
+        guard let urls = chooseGameFiles() else { return false }
+        return prepareAddGameFiles(urls, defaults: defaults)
+    }
+
+    /// Prepare a draft and rescan the selected files; the review still owns Build.
+    func prepareAddGameFiles(_ urls: [URL], defaults: GameRuntimeConfig? = nil) -> Bool {
+        guard let first = urls.first else { return false }
+        let extracted = urls.count == 1 && ExtractedSourceCatalog.recognizes(first)
         if let defaults { startNewAddGame(defaults: defaults) }
-        let folder = first.deletingLastPathComponent()
+        let folder = extracted ? first : first.deletingLastPathComponent()
         restoringGameFolder = true
         keepsRememberedGameFolder = true
         selectedGameFolder = folder
         keepsRememberedGameFolder = false
         restoringGameFolder = false
-        selectedPackageURLs = urls
+        selectedPackageURLs = extracted ? nil : urls
         scanGameFolder(folder)
         return true
     }
