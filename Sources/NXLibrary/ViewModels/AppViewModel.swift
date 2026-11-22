@@ -192,6 +192,7 @@ final class AppViewModel: ObservableObject {
     // MARK: - Build State
     /// What Add Game and its Porting step show of a build; the home reads only the three values here.
     private(set) lazy var porting = PortingModel(app: self)
+    @MainActor private(set) lazy var gameInbox = GameInboxModel(app: self)
     /// The Switch Setup: engine, keys, environment and the Metal gate (`SetupModel`), observed on its own.
     private(set) lazy var setup = SetupModel(app: self)
     /// A built game's saved choices for its next launch (`RuntimeSettingsModel`).

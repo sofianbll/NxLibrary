@@ -25,6 +25,7 @@ struct SpotlightView: View {
     @ObservedObject var setup: SetupModel
     /// The Nintendo store's data (`StoreMetadataModel`): descriptions, screenshots and names shown here.
     @ObservedObject var store: StoreMetadataModel
+    @ObservedObject var gameInbox: GameInboxModel
     @ObservedObject var router: AppRouter
     @ObservedObject var settings: AppSettingsStore
     @ObservedObject var playSessions: PlaySessionStore
@@ -121,6 +122,7 @@ struct SpotlightView: View {
         self.viewModel = viewModel
         self.setup = viewModel.setup
         self.store = viewModel.store
+        self.gameInbox = viewModel.gameInbox
         self.router = router
         self.settings = settings
         self.playSessions = playSessions
@@ -151,7 +153,8 @@ struct SpotlightView: View {
     private func rowItems(for games: [CatalogGame]) -> [SpotlightItem] {
         let ids = games.map(\.id)
         return SpotlightRow.build(gameIDs: ids,
-                                  enabledCards: settings.settings.visibleSpotlightCards,
+                                  enabledCards: settings.settings.visibleSpotlightCards.filter { $0 != .inbox }
+                                    + (gameInbox.hasWaitingFiles ? [.inbox] : []),
                                   order: viewModel.spotlight.lift?.order ?? settings.settings.spotlightOrder,
                                   front: SpotlightRow.leaders(porting: viewModel.frontGameID,
                                                               downloads: viewModel.sessionDownloads.ids, row: ids),
@@ -321,6 +324,13 @@ struct SpotlightView: View {
         .onChange(of: viewModel.catalogSourceConfigurations) { gamesChanged() }
         .onChange(of: filter) { reconcile() }
         .onChange(of: settings.settings.visibleSpotlightCards) { reconcile() }
+        .onChange(of: gameInbox.hasWaitingFiles) { reconcile() }
+        .task {
+            while !Task.isCancelled {
+                await gameInbox.updateAvailability()
+                try? await Task.sleep(for: .seconds(10))
+            }
+        }
         .onChange(of: settings.settings.spotlightOrder) { reconcile() }
         .onChange(of: settings.settings.librarySort) { reconcile() }
         .onChange(of: viewModel.spotlight.selectedKey) {

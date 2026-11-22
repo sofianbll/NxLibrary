@@ -95,7 +95,7 @@ extension SpotlightView {
             }
             if let game = selectedGame {
                 viewModel.openGameOptions(game, from: .spotlight)
-            } else if case .card(let card) = selectedItem {
+            } else if case .card(let card) = selectedItem, card != .inbox {
                 cardMenu = CardMenuState(card: card)
                 SoundEffectService.shared.play(.click)
             }
@@ -351,6 +351,9 @@ extension SpotlightView {
         case .card(.addGame):
             SoundEffectService.shared.play(.click)
             NotificationCenter.default.post(name: .nxLibraryOpenAddGame, object: nil)
+        case .card(.inbox):
+            SoundEffectService.shared.play(.click)
+            router.openGameInbox()
         }
     }
 

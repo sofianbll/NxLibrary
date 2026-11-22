@@ -9,6 +9,7 @@ public enum AppRoute: Equatable {
     case detail(UUID)
     case settings(SettingsSection)
     case addGame
+    case gameInbox
     case console
 
     /// Drawn over the screen it was opened from, which stays behind, blurred.
@@ -173,6 +174,7 @@ public final class AppRouter: ObservableObject {
     public func showDetail(_ id: UUID) { navigate(to: .detail(id)) }
     public func openSettings(_ section: SettingsSection = .startUp) { navigate(to: .settings(section)) }
     public func openAddGame() { navigate(to: .addGame) }
+    public func openGameInbox() { navigate(to: .gameInbox) }
     public func openConsole() { navigate(to: .console) }
     public func openCollection() { navigate(to: .collection) }
 

@@ -30,7 +30,7 @@ public enum MenuAction: String, CaseIterable, Identifiable, Equatable {
     public var entries: [MenuEntry] {
         switch self {
         case .profile: return [.switchProfile, .editProfile, .theme]
-        case .library: return [.addGame, .manageSources, .refreshLibrary]
+        case .library: return [.addGame, .manageSources, .refreshLibrary, .gameInbox]
         default: return []
         }
     }
@@ -38,7 +38,7 @@ public enum MenuAction: String, CaseIterable, Identifiable, Equatable {
 
 /// One line of the Profile or Library card.
 public enum MenuEntry: String, CaseIterable, Identifiable, Equatable {
-    case switchProfile, editProfile, theme, addGame, manageSources, refreshLibrary
+    case switchProfile, editProfile, theme, addGame, manageSources, refreshLibrary, gameInbox
     public var id: String { rawValue }
 
     public var title: String {
@@ -49,6 +49,7 @@ public enum MenuEntry: String, CaseIterable, Identifiable, Equatable {
         case .addGame: return L10n.text("Add Game")
         case .manageSources: return L10n.text("Manage sources")
         case .refreshLibrary: return L10n.text("Library refresh")
+        case .gameInbox: return L10n.text("Sort incoming files")
         }
     }
 
@@ -60,6 +61,7 @@ public enum MenuEntry: String, CaseIterable, Identifiable, Equatable {
         case .addGame: return .add
         case .manageSources: return .collections
         case .refreshLibrary: return .sync
+        case .gameInbox: return .folder
         }
     }
 }

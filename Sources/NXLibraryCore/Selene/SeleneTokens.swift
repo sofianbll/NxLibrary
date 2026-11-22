@@ -20,6 +20,8 @@ public enum SeleneTokens {
         case menuCaption = 18
         case compactCaption = 15
         case heroTitle = 62
+        case inboxTitle = 48
+        case emptyStateTitle = 25
     }
 
     public enum Space {
@@ -43,6 +45,9 @@ public enum SeleneTokens {
         public static let settingsInfoClearance: CGFloat = 60
         public static let stageGutter: CGFloat = 120
         public static let stageHeader: CGFloat = 110
+        public static let inboxHintsClearance: CGFloat = 95
+        public static let inboxPageInset: CGFloat = 62
+        public static let emptyStateInset: CGFloat = 25
     }
 
     public enum Radius {
