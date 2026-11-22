@@ -3,6 +3,27 @@ import XCTest
 @testable import ArcanePorting
 
 final class CloudTransferQueueTests: XCTestCase {
+    func testLoadsPersistedEntriesWithRemovedOffer() async throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: file) }
+        let data = Data(#"""
+        {"version":1,"entries":[
+          {"id":"00000000-0000-0000-0000-000000000001","action":{"restore":{"_0":"app"}},
+           "token":"00000000-0000-0000-0000-000000000002","storage":"fixture:Games",
+           "offer":{"app":{"reference":true,"fingerprint":"fixture","bytes":1024,"required":2048,"update":false}}},
+          {"id":"00000000-0000-0000-0000-000000000003","action":{"downloadSources":{}},
+           "offer":{"rom":{"reference":false,"folder":"fixture","files":[],"bytes":1024,"required":2048}}}
+        ]}
+        """#.utf8)
+        try data.write(to: file)
+        let loaded = await CloudTransferQueue(file: file).load()
+        XCTAssertEqual(loaded, [
+            .init(id: try XCTUnwrap(UUID(uuidString: "00000000-0000-0000-0000-000000000001")), action: .restore(.app),
+                  token: UUID(uuidString: "00000000-0000-0000-0000-000000000002"), storage: "fixture:Games"),
+            .init(id: try XCTUnwrap(UUID(uuidString: "00000000-0000-0000-0000-000000000003")), action: .downloadSources)
+        ])
+    }
+
     func testNetworkFailureDefersButInvalidContentDoesNot() {
         XCTAssertTrue(CloudTransferQueue.waitsForConnection(after: URLError(.notConnectedToInternet)))
         XCTAssertTrue(CloudTransferQueue.waitsForConnection(after: StorageBackendError.backendUnavailable))

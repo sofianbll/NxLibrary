@@ -176,10 +176,6 @@ extension AppShellView {
                 if action == .menu { router.isMenuPresented = true }
                 else if action == .menuHold { router.openSettings(.startUp) }
                 else { NotificationCenter.default.post(name: .nxGameInboxAction, object: action) }
-            case .personalStore:
-                if action == .menu { router.isMenuPresented = true }
-                else if action == .menuHold { router.openSettings(.startUp) }
-                else { NotificationCenter.default.post(name: .nxPersonalStoreAction, object: action) }
             case .console:
                 if action == .menu {
                     router.isMenuPresented = true
@@ -228,15 +224,5 @@ extension AppShellView {
         } else {
             router.openAddGame()
         }
-    }
-
-    func openPersonalStoreReview(_ game: PortedGame) {
-        guard router.route == .personalStore, !viewModel.isBuilding,
-              viewModel.libraryGames.contains(where: { $0.id == game.id && $0.sources == game.sources }),
-              GameResourceState.sourcesAvailable(for: game),
-              viewModel.porting.prepareAddGameFiles(Array(Set(game.sources.map(\.url))).sorted { $0.path < $1.path },
-                                                    defaults: settings.settings.gameDefaults) else { return }
-        setupSourceEntryID = UUID()
-        router.openAddGame()
     }
 }

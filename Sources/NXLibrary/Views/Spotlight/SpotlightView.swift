@@ -153,8 +153,7 @@ struct SpotlightView: View {
     private func rowItems(for games: [CatalogGame]) -> [SpotlightItem] {
         let ids = games.map(\.id)
         return SpotlightRow.build(gameIDs: ids,
-                                  enabledCards: settings.settings.visibleSpotlightCards.filter { $0 != .inbox && $0 != .personalStore }
-                                    + [.personalStore]
+                                  enabledCards: settings.settings.visibleSpotlightCards.filter { $0 != .inbox }
                                     + (gameInbox.hasWaitingFiles ? [.inbox] : []),
                                   order: viewModel.spotlight.lift?.order ?? settings.settings.spotlightOrder,
                                   front: SpotlightRow.leaders(porting: viewModel.frontGameID,
@@ -213,7 +212,7 @@ struct SpotlightView: View {
     }
 
     func downloadsCloudApp(_ game: PortedGame) -> Bool {
-        return cloud.archive != nil && cloud.states[game.id]?.appIsCloudOnly == true && !runningGames.isRunning(game)
+        cloud.downloadsCloudApp(game) && !runningGames.isRunning(game)
     }
 
     var screenshotCount: Int {

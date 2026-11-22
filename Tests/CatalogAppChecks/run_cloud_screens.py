@@ -350,7 +350,6 @@ CLOUD_BUTTON = r'''
                 size: .init(width: 1120, height: 520))
         }
         model.update(game.id) { $0 = .init() }
-        // STORE_DETAIL
 '''
 
 PLAY_TRANSFER = r'''
@@ -743,7 +742,7 @@ extension CloudDriveFolders.Listing {
             assert re.search(r"onHoverPill\(1\).*?if showsCloudPill \{ cloudPill \}.*?let favorite", header, re.S)
             assert "CloudLibraryPill(indicator:" in header and "{ onPill(index) }" in header
             assert "SelenePillButton(title: nil, icon: indicator.pillIcon" in panel
-            for path in ("Detail/CloudLibraryPanel", "Detail/DetailsPanel", "Shell/ActivityCenterView", "Porting/PersonalStoreView"):
+            for path in ("Detail/CloudLibraryPanel", "Detail/DetailsPanel", "Shell/ActivityCenterView"):
                 view_file = app / f"Views/{path}.swift"
                 assert not view_file.exists() or '"Manage game"' not in view_file.read_text(), path
         if before:
@@ -807,19 +806,7 @@ extension CloudLibraryPanel {
         let advanced = CloudLibraryPanel(viewModel: vm, model: model, game: game).advancedForProbe()
         try render("panel-advanced-migration", output, advanced.environment(\.nxAppLocale, fr))
 '''
-            buttons = CLOUD_BUTTON
-            if (app / "Views/Porting/PersonalStoreView.swift").exists():
-                buttons = buttons.replace("// STORE_DETAIL", r'''
-        let store = PersonalStoreView(app: vm, cloud: model, router: AppRouter(),
-                                      artwork: ArtworkStore(), showsHints: true, review: { _ in })
-        let item = PersonalStoreView.Item(game: local, action: .play)
-        let storeCanvas = SeleneCanvas(size: .init(width: 1920, height: 1080))
-        try render("store-detail", output,
-            store.scene(rows: [[item]], activeRow: 0, item: item, image: nil, tab: .apps, filter: .all,
-                        detailOpen: true, budget: nil, canvas: storeCanvas).environment(\.nxAppLocale, fr),
-            size: storeCanvas.size)
-''')
-            host = host.replace("// TRANSFER_STATES", "do {\n" + gallery + buttons + "\n        }")
+            host = host.replace("// TRANSFER_STATES", "do {\n" + gallery + CLOUD_BUTTON + "\n        }")
             # Capture Spotlight after its entrance, without running the reveal in ImageRenderer.
             change(app / "Views/Spotlight/SpotlightInfoView.swift",
                    r'        \.onAppear \{ reveal\(\) \}\n        \.onChange\(of: game.id\) \{ reveal\(\) \}\n', "")

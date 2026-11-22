@@ -35,7 +35,7 @@ struct SettingsSpotlightSection: View {
     var body: some View {
         VStack(spacing: canvas.u(8)) {
             SettingsSubheading(L10n.text("Cards"))
-            ForEach(SpotlightCard.allCases.filter { $0 != .inbox && $0 != .personalStore }, id: \.self) { card in
+            ForEach(SpotlightCard.allCases.filter { $0 != .inbox }, id: \.self) { card in
                 SeleneToggleRow(card.title, isOn: cardBinding(card))
             }
 
@@ -56,7 +56,7 @@ struct SettingsSpotlightSection: View {
     }
 
     private func publishActions() {
-        var actions: [SettingsRowAction] = SpotlightCard.allCases.filter { $0 != .inbox && $0 != .personalStore }.map { card in
+        var actions: [SettingsRowAction] = SpotlightCard.allCases.filter { $0 != .inbox }.map { card in
             .init(id: "card-\(card.rawValue)", title: card.title) { toggle(card) }
         }
         actions.append(.value("startingTab", "Starting tab") { stepTab($0) })

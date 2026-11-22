@@ -95,7 +95,7 @@ extension SpotlightView {
             }
             if let game = selectedGame {
                 viewModel.openGameOptions(game, from: .spotlight)
-            } else if case .card(let card) = selectedItem, card != .inbox, card != .personalStore {
+            } else if case .card(let card) = selectedItem, card != .inbox {
                 cardMenu = CardMenuState(card: card)
                 SoundEffectService.shared.play(.click)
             }
@@ -355,9 +355,6 @@ extension SpotlightView {
         case .card(.inbox):
             SoundEffectService.shared.play(.click)
             router.openGameInbox()
-        case .card(.personalStore):
-            SoundEffectService.shared.play(.click)
-            router.navigate(to: .personalStore)
         }
     }
 

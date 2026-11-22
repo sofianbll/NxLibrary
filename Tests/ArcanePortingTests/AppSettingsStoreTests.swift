@@ -4,6 +4,17 @@ import Combine
 @testable import ArcanePorting
 
 final class AppSettingsStoreTests: XCTestCase {
+    func testRemovedStoreCardKeepsOtherSpotlightPreferences() throws {
+        let data = Data(#"""
+        {"spotlightCards":["collection","personalStore","addGame"],"showsModsCard":false,
+         "spotlightOrder":["card:personalStore","card:addGame","card:collection"]}
+        """#.utf8)
+        let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+        XCTAssertEqual(settings.spotlightCards, [.collection, .addGame])
+        XCTAssertEqual(SpotlightRow.build(gameIDs: [], enabledCards: settings.visibleSpotlightCards,
+                                          order: settings.spotlightOrder), [.card(.addGame), .card(.collection)])
+    }
+
     func testCloudAppearanceDefaultsForOldFilesAndRoundTrips() throws {
         let decoder = JSONDecoder()
         var settings = try decoder.decode(AppSettings.self, from: Data("{}".utf8))
