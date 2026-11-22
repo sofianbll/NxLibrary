@@ -90,21 +90,39 @@ enum ProfileAvatar {
 struct AnimatedProfilePortrait: NSViewRepresentable {
     let data: Data
 
-    func makeNSView(context: Context) -> NSImageView {
-        let view = NSImageView()
-        view.imageScaling = .scaleProportionallyUpOrDown
-        view.animates = true
-        return view
+    func makeNSView(context: Context) -> Frame { Frame() }
+
+    func updateNSView(_ view: Frame, context: Context) {
+        guard view.data != data else { return }
+        view.imageView.image = NSImage(data: data)
+        view.data = data
+        view.needsLayout = true
     }
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
-    final class Coordinator { var data: Data? }
+    static func dismantleNSView(_ view: Frame, coordinator: ()) { view.imageView.animates = false }
 
-    func updateNSView(_ view: NSImageView, context: Context) {
-        guard context.coordinator.data != data else { return }
-        view.image = NSImage(data: data)
-        context.coordinator.data = data
+    final class Frame: NSView {
+        let imageView = NSImageView()
+        var data: Data?
+
+        init() {
+            super.init(frame: .zero)
+            wantsLayer = true
+            layer?.masksToBounds = true
+            imageView.imageScaling = .scaleProportionallyUpOrDown
+            imageView.animates = true
+            addSubview(imageView)
+        }
+
+        required init?(coder: NSCoder) { nil }
+
+        override func layout() {
+            super.layout()
+            layer?.cornerRadius = min(bounds.width, bounds.height) / 2
+            guard let size = imageView.image?.size, size.width > 0, size.height > 0 else { return }
+            let scale = max(bounds.width / size.width, bounds.height / size.height)
+            let width = size.width * scale, height = size.height * scale
+            imageView.frame = CGRect(x: bounds.midX - width / 2, y: bounds.midY - height / 2, width: width, height: height)
+        }
     }
-
-    static func dismantleNSView(_ view: NSImageView, coordinator: Coordinator) { view.animates = false }
 }

@@ -69,7 +69,17 @@ import ArcanePorting
         let cachedPortraits = ProfileEditorView.loadAvatars(avatarGames, artwork: art)
         precondition(cachedPortraits.count == avatarGames.count)
         precondition(ProfilePortrait.symbols.count == LocalProfile.avatarCount)
-        try checkGIF(in: data)
+        let gif = try checkGIF(in: data)
+        let square = try personalPortrait(width: 512, height: 512, in: data)
+        let wide = try personalPortrait(width: 768, height: 256, in: data)
+        var squareProfile = alex
+        squareProfile.portrait = square
+        var wideProfile = alex
+        wideProfile.portrait = wide
+        try checkPortraitFrames([squareProfile, wideProfile], in: out)
+        wideProfile.portrait = gif
+        checkAnimatedPortraitFrame(wideProfile)
+        wideProfile.portrait = wide
         func picker(selected: UUID?, removing: LocalProfile? = nil, editing: LocalProfile? = nil, overlay: Bool = false) -> some View {
             ProfilePickerView(profiles: profiles, initialSelection: selected, canClose: overlay, isOverlay: overlay,
                               games: [game], avatarGames: avatarGames, artwork: art, onChoose: { _ in }, onClose: {}, onActiveEdited: {},
@@ -135,6 +145,7 @@ import ArcanePorting
                                                 personalizations: vm.personalizations)
         }
         var pageProfile = alex
+        pageProfile.portrait = wide
         pageProfile.appearsOnline = true
         linked.setScreenFixture(.connected)
         linked.setPresenceFixture()
@@ -216,6 +227,7 @@ import ArcanePorting
             precondition(settingsRouter.route == .profile)
         }
         var settingsProfile = profiles.active!
+        settingsProfile.portrait = square
         settingsProfile.avatar = 7
         settingsProfile.createdAt = Date(timeIntervalSince1970: 1_795_344_000)
         settingsProfile.appearsOnline = true
@@ -292,13 +304,15 @@ import ArcanePorting
                         .frame(maxHeight: .infinity, alignment: .bottom)
                 }
             }
-            .environment(\.profilePortrait, showsSort ? player ?? alex : nil)
+            .environment(\.profilePortrait, showsSort ? player ?? pageProfile : nil)
             .environment(\.onlinePlayersByTitle, [game.titleId!.lowercased(): 12])
         }
         let online = fakeAccount(data.appendingPathComponent("fixture-online"))
         online.setPresenceFixture()
         let after = stage(SpotlightTopBar(filter: .all, sort: current, nextendo: online))
         try render("07-top-bar", after, in: out, refs, "screenshots/library.png")
+        try render("07-top-bar-square", stage(SpotlightTopBar(filter: .all, sort: current), player: squareProfile),
+                   in: out, refs, "none")
         try checkTopBar(in: out, profile: alex, accent: Color(hex: SelenePaletteCatalog.resolve(alex.look.theme, in: ThemeStore.shared.palettes).glyph))
         func menu(_ name: String, _ prepare: (AppRouter) -> Void, lang: AppLocale? = nil, names: ButtonNameStyle = .xbox) throws {
             let router = AppRouter()
@@ -758,7 +772,54 @@ import ArcanePorting
         }
     }
 
-    @MainActor static func checkGIF(in root: URL) throws {
+    @MainActor static func personalPortrait(width: CGFloat, height: CGFloat, in root: URL) throws -> Data {
+        let url = root.appendingPathComponent("personal-\(Int(width)).png")
+        let picture = HStack(spacing: 0) {
+            Color.red
+            Color.white
+            Color.blue
+        }.frame(width: width, height: height)
+        try save(bitmap(picture), to: url)
+        return try Data(contentsOf: url)
+    }
+
+    @MainActor static func checkPortraitFrames(_ profiles: [LocalProfile], in out: URL) throws {
+        for (profile, name) in zip(profiles, ["square", "wide"]) {
+            let image = try bitmap(ProfilePortrait(profile: profile, size: 120)
+                .environment(\.seleneCanvas, SeleneCanvas(size: .init(width: 1920, height: 1080)))
+                .padding(10).background(.black))
+            let rep = NSBitmapImageRep(cgImage: image)
+            func white(_ x: Int, _ y: Int) -> Bool {
+                let color = rep.colorAt(x: x, y: y)!.usingColorSpace(.sRGB)!
+                return min(color.redComponent, color.greenComponent, color.blueComponent) > 0.9
+            }
+            precondition(white(70, 70) && white(70, 14) && !white(14, 14),
+                         "\(name) portrait must fill the circle without drawing in its corners")
+            if name == "wide" {
+                precondition(white(14, 70) && white(125, 70), "wide portrait must show its centered crop")
+            }
+            try save(image, to: out.appendingPathComponent("portrait-\(name).png"))
+        }
+    }
+
+    @MainActor static func checkAnimatedPortraitFrame(_ profile: LocalProfile) {
+        let host = NSHostingView(rootView: ProfilePortrait(profile: profile, size: 120)
+            .environment(\.seleneCanvas, SeleneCanvas(size: .init(width: 1920, height: 1080))))
+        host.frame.size = .init(width: 120, height: 120)
+        _ = host.fittingSize
+        host.layoutSubtreeIfNeeded()
+        func imageView(in view: NSView) -> NSImageView? {
+            (view as? NSImageView) ?? view.subviews.lazy.compactMap { imageView(in: $0) }.first
+        }
+        guard let image = imageView(in: host), let mask = image.superview?.layer else {
+            preconditionFailure("the animated portrait must mount")
+        }
+        precondition(image.animates && image.frame.width == 200 && image.frame.height == 120 && image.frame.minX == -40
+                     && mask.masksToBounds && mask.cornerRadius == 60,
+                     "the animated image must cover its circular AppKit frame without distortion")
+    }
+
+    @MainActor static func checkGIF(in root: URL) throws -> Data {
         let url = root.appendingPathComponent("fixture.gif")
         let out = root.appendingPathComponent("cropped.gif")
         let encoder = CGImageDestinationCreateWithURL(url as CFURL, UTType.gif.identifier as CFString, 2, nil)!
@@ -778,6 +839,7 @@ import ArcanePorting
         let values = CGImageSourceCopyPropertiesAtIndex(source, 1, nil) as? [CFString: Any]
         let timing = values?[kCGImagePropertyGIFDictionary] as? [CFString: Any]
         precondition(timing?[kCGImagePropertyGIFDelayTime] as? Double == 0.2)
+        return try Data(contentsOf: url)
     }
 
     struct BeforeSortTopBar: View {
