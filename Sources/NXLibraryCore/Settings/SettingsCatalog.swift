@@ -47,6 +47,12 @@ public enum SettingsCatalog {
 
     /// The rows of every section outside the Porting group, in screen order.
     public static let baseRows: [SettingDescriptor] = [
+        action("profileName", .profileIdentity, "Name", "Shown on your profile and to your friends."),
+        action("profileAvatar", .profileIdentity, "Avatar", "One of Arcane’s 28 illustrations."),
+        action("profilePortrait", .profileIdentity, "Personal image", "PNG, JPEG or animated GIF, up to 4 MB."),
+        action("profileLock", .profileSecurity, "Profile lock", "Use four digits."),
+        action("appearsOnline", .profileNextendo, "Appear online", "Share your Nextendo presence."),
+        action("showsCurrentGame", .profileNextendo, "Show current game", "Applies the next time you start a game."),
         // Start-up
         row("appLanguage", .startUp, "App language", "Menus, genres and available game descriptions. The games’ own language stays separate.") { $0.appLanguage },
         row("appRegion", .startUp, "Regional formats", "Dates, numbers and sizes only. Game descriptions follow the app language.") { $0.appRegion },
@@ -60,7 +66,7 @@ public enum SettingsCatalog {
             "Looks for a newer Arcane release at launch, at most once a day.") { $0.checkAppUpdatesAtLaunch },
         row("introAnimation", .startUp, "Entrance animation",
             "The library's tiles fly in with the boot sound when the app opens.") { $0.introAnimation },
-        row("showProfilePicker", .profiles, "At startup",
+        row("showProfilePicker", .startUp, "At startup",
             "Choose who plays when Arcane opens.") { $0.profileStartup },
 
         // Navigation
@@ -90,13 +96,13 @@ public enum SettingsCatalog {
                "Copies optional sounds and wallpapers from a local Selene folder you own."),
 
         // Look
-        row("colorThemeID", .look, "Color theme",
+        row("colorThemeID", .profileLook, "Color theme",
             "The palette for focus, text and backgrounds.") { $0.colorThemeID },
-        row("wallpaperID", .look, "Wallpaper",
+        row("wallpaperID", .profileLook, "Wallpaper",
             "The picture behind the base gradient, per theme or none.") { $0.wallpaperID },
-        row("settingsWallpaperID", .look, "Settings wallpaper",
+        row("settingsWallpaperID", .profileLook, "Settings wallpaper",
             "The picture behind Settings: the same as the app's, or one of its own.") { $0.settingsWallpaperID },
-        row("backgroundSizing", .look, "Wallpaper sizing",
+        row("backgroundSizing", .profileLook, "Wallpaper sizing",
             "Fill crops the picture to cover the screen, Fit shows all of it, Stretch distorts it to fit.") { $0.backgroundSizing },
         row("wallpaperBrightness", .look, "Wallpaper brightness",
             "How dark a wallpaper or live background is: dim evenly, bright on the right away from the text, or bright everywhere.") { $0.wallpaperBrightness },
@@ -165,7 +171,27 @@ public enum SettingsCatalog {
         action("diagnostics", .about, "Copy diagnostics", "Copy a scrubbed support report."),
         action("appUpdates", .about, "App updates", "Check now, update or read release notes."),
         action("projectDocs", .about, "Open project docs", "Open the project documentation."),
-    ]
+    ] + ProfilePageCard.allCases.map {
+        action("profile-card-\($0.rawValue)", .profileCards, $0.title, "Profile page cards")
+    }
+
+    public static func profileChanges(_ profile: LocalProfile?) -> Set<String> {
+        guard let profile else { return [] }
+        var changed: Set<String> = []
+        if profile.name != profile.defaultName { changed.insert("profileName") }
+        if profile.avatar != 0 { changed.insert("profileAvatar") }
+        if profile.portrait != nil { changed.insert("profilePortrait") }
+        if profile.isLocked { changed.insert("profileLock") }
+        if profile.sharesPresence { changed.insert("appearsOnline") }
+        if profile.showsCurrentGame == true { changed.insert("showsCurrentGame") }
+        let cards = profile.pageCards ?? .init()
+        let defaults = ProfilePageCards()
+        for (index, card) in cards.ordered.enumerated()
+            where card != defaults.ordered[index] || cards.isEnabled(card) != defaults.isEnabled(card) {
+            changed.insert("profile-card-\(card.rawValue)")
+        }
+        return changed
+    }
 
     public static func changed(in settings: AppSettings, externalChanges: Set<String> = [],
                                rows: [SettingDescriptor]) -> [SettingDescriptor] {
@@ -182,6 +208,7 @@ public enum SettingsCatalog {
                 || L10n.text($0.title).range(of: needle, options: options) != nil
                 || L10n.text($0.about).range(of: needle, options: options) != nil
                 || $0.about.range(of: needle, options: options) != nil
+                || $0.group.place.range(of: needle, options: options) != nil
         }
     }
 }

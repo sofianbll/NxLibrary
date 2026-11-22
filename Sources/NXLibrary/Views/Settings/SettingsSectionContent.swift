@@ -7,6 +7,10 @@ struct SettingsSectionContent: View {
     @ObservedObject var settings: AppSettingsStore
     @ObservedObject var artwork: ArtworkStore
     let supportsNextendo: Bool
+    let activeProfile: LocalProfile?
+    let profileNextendo: NextendoSettings?
+    let onEditProfileName: () -> Void
+    let onProfilePIN: () -> Void
     let onViewControls: () -> Void
     let onChooseLanguage: () -> Void
     let onChooseRegion: () -> Void
@@ -25,19 +29,53 @@ struct SettingsSectionContent: View {
     var body: some View {
         switch section {
         case .search:
-            SettingsSearchSection(cloudLibrary: viewModel.cloudLibrary, supportsNextendo: supportsNextendo, onOpenGroup: onOpenGroup,
+            SettingsSearchSection(cloudLibrary: viewModel.cloudLibrary, supportsNextendo: supportsNextendo,
+                                  hasProfileAccount: profileNextendo != nil, onOpenGroup: onOpenGroup,
                                   onSubmit: onSearchSubmit, fieldRequest: searchFieldRequest, onActions: onActions)
         case .changed:
-            SettingsChangedSection(settings: settings, viewModel: viewModel, setup: viewModel.setup,
-                                   cloudLibrary: viewModel.cloudLibrary,
-                                   supportsNextendo: supportsNextendo,
-                                   onOpenGroup: onOpenGroup, onActions: onActions)
-        case .startUp:
-            SettingsStartUpSection(settings: settings, onActions: onActions, onChooseLanguage: onChooseLanguage, onChooseRegion: onChooseRegion)
-        case .profiles:
             if let profiles = viewModel.localProfiles {
-                SettingsProfilesSection(settings: settings, profiles: profiles, onActions: onActions)
+                SettingsChangedSection(settings: settings, viewModel: viewModel, setup: viewModel.setup,
+                                       cloudLibrary: viewModel.cloudLibrary, profiles: profiles,
+                                       supportsNextendo: supportsNextendo, hasProfileAccount: profileNextendo != nil,
+                                       onOpenGroup: onOpenGroup, onActions: onActions)
             }
+        case .startUp:
+            if let profiles = viewModel.localProfiles {
+                SettingsStartUpSection(settings: settings, onActions: onActions, onChooseLanguage: onChooseLanguage,
+                                       onChooseRegion: onChooseRegion, profiles: profiles)
+            }
+        case .profileIdentity:
+            if let profiles = viewModel.localProfiles {
+                SettingsProfileIdentitySection(profiles: profiles, viewModel: viewModel,
+                                               onEditName: onEditProfileName, onActions: onActions)
+            }
+        case .profileSecurity:
+            if let profile = activeProfile, viewModel.localProfiles?.guest == nil {
+                SeleneButtonRow("Profile lock", subtitle: "Use four digits.",
+                                buttonTitle: profile.isLocked ? "Remove code" : "Set code", action: onProfilePIN)
+                    .onAppear {
+                        onActions([.init(id: "profileLock", title: "Profile lock", rowID: "Profile lock", activate: onProfilePIN)])
+                    }
+            }
+        case .profileNextendo:
+            if let profiles = viewModel.localProfiles, let profile = activeProfile, let profileNextendo {
+                SettingsAPISection(viewModel: viewModel, settings: settings, showsMultiplayer: true,
+                                   supportsNextendo: true, accountOnly: true, profile: profile,
+                                   onProfilePreference: { key, value in
+                    guard var active = profiles.active, active.id == profile.id else { return }
+                    active[keyPath: key] = value
+                    saveProfileSetting(active, in: profiles, notifying: viewModel)
+                }, advanced: .constant(false), onActions: onActions, nextendo: profileNextendo)
+                .id(profile.id)
+            } else {
+                Text(L10n.text("No account linked")).seleneFont(.caption).foregroundStyle(SeleneTheme.ink60)
+            }
+        case .profileCards:
+            if let profiles = viewModel.localProfiles {
+                SettingsProfileCardsSection(profiles: profiles, onActions: onActions)
+            }
+        case .profileLook:
+            SettingsLookSection(viewModel: viewModel, settings: settings, profileLook: true, onActions: onActions)
         case .navigation:
             SettingsNavigationSection(settings: settings, onActions: onActions)
         case .spotlight:

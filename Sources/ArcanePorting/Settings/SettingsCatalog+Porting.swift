@@ -4,18 +4,17 @@ import NXLibraryCore
 /// The rows of the Porting group (Engine, Keys, Library, New games, Cloud saves, Porting storage), and the whole
 /// Settings list: the base rows and these, in screen order.
 extension SettingsCatalog {
-    /// Every Settings row (spec §5.7), in screen order.
-    public static let all: [SettingDescriptor] = ordered(baseRows + portingRows)
-
     public static func changed(in settings: AppSettings, externalChanges: Set<String> = [],
-                               supportsNextendo: Bool = false, cloudConfigured: Bool = false) -> [SettingDescriptor] {
+                               supportsNextendo: Bool = false, hasProfileAccount: Bool = false,
+                               cloudConfigured: Bool = false) -> [SettingDescriptor] {
         changed(in: settings, externalChanges: externalChanges,
-                rows: visible(supportsNextendo: supportsNextendo, cloudConfigured: cloudConfigured))
+                rows: visible(supportsNextendo: supportsNextendo, hasProfileAccount: hasProfileAccount, cloudConfigured: cloudConfigured))
     }
 
     /// Case- and diacritic-insensitive match over title and about.
-    public static func search(_ query: String, supportsNextendo: Bool = false, cloudConfigured: Bool = false) -> [SettingDescriptor] {
-        search(query, in: visible(supportsNextendo: supportsNextendo, cloudConfigured: cloudConfigured))
+    public static func search(_ query: String, supportsNextendo: Bool = false, hasProfileAccount: Bool = false,
+                              cloudConfigured: Bool = false) -> [SettingDescriptor] {
+        search(query, in: visible(supportsNextendo: supportsNextendo, hasProfileAccount: hasProfileAccount, cloudConfigured: cloudConfigured))
     }
 
     public static func opensCloudAdvanced(_ id: String) -> Bool {
@@ -23,8 +22,10 @@ extension SettingsCatalog {
          "cloudLibraryTool", "cloudLibraryTest", "cloudLibraryDisconnect"].contains(id)
     }
 
-    private static func visible(supportsNextendo: Bool, cloudConfigured: Bool) -> [SettingDescriptor] {
-        (supportsNextendo ? includingNextendo : all).filter { row in
+    private static func visible(supportsNextendo: Bool, hasProfileAccount: Bool, cloudConfigured: Bool) -> [SettingDescriptor] {
+        all.filter { row in
+            if row.id == "nextendoClientID" && !supportsNextendo { return false }
+            if row.group == .profileNextendo && !hasProfileAccount { return false }
             guard row.group == .cloudLibrary else { return true }
             switch row.id {
             case "cloudLibrarySetup": return !cloudConfigured
@@ -34,8 +35,10 @@ extension SettingsCatalog {
         }
     }
 
-    private static let includingNextendo = ordered(baseRows + portingRows + [
-        action("nextendo", .multiplayer, "Nextendo", "Free community online play for compatible nxnative games. Requires a Nextendo account."),
+    public static let all = ordered(baseRows + portingRows + [
+        action("nextendo", .profileNextendo, "Nextendo", "Free community online play for compatible nxnative games. Requires a Nextendo account."),
+        action("nextendoFriends", .profileNextendo, "Friends", "Refresh friends"),
+        action("nextendoAddFriend", .profileNextendo, "Add a friend", "Friend code"),
         row("nextendoClientID", .multiplayer, "Nextendo client ID",
             "Public OAuth client ID for sign-in and online play. Clear the field to use the build default.") { $0.nextendoClientID },
     ])

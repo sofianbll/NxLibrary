@@ -6,7 +6,8 @@ import Foundation
 public enum SettingsReset {
     public static func canReset(_ section: SettingsSection) -> Bool {
         switch section {
-        case .startUp, .profiles, .navigation, .spotlight, .soundMusic, .look, .controllers, .libraryGames, .library, .games, .cloudLibrary,
+        case .startUp, .profileIdentity, .profileLook, .profileSecurity, .profileNextendo, .profileCards,
+             .navigation, .spotlight, .soundMusic, .look, .controllers, .libraryGames, .library, .games, .cloudLibrary,
              .multiplayer:
             return true
         case .search, .changed, .sources, .storage, .engine, .keys, .cloudSaves, .portingStorage,
@@ -29,7 +30,6 @@ public enum SettingsReset {
             next.startInFullscreen = defaults.startInFullscreen
             next.checkAppUpdatesAtLaunch = defaults.checkAppUpdatesAtLaunch
             next.introAnimation = defaults.introAnimation
-        case .profiles:
             next.profileStartup = defaults.profileStartup
         case .navigation:
             next.showButtonHints = defaults.showButtonHints
@@ -45,12 +45,13 @@ public enum SettingsReset {
             next.interfaceSounds = defaults.interfaceSounds
             next.soundVolume = defaults.soundVolume
             next.quietLaunch = defaults.quietLaunch
-        case .look:
+        case .profileLook:
             next.colorThemeID = defaults.colorThemeID
             next.wallpaperID = defaults.wallpaperID
             next.settingsWallpaperID = defaults.settingsWallpaperID
-            next.keepWallpaperOnGames = defaults.keepWallpaperOnGames
             next.backgroundSizing = defaults.backgroundSizing
+        case .look:
+            next.keepWallpaperOnGames = defaults.keepWallpaperOnGames
             next.wallpaperBrightness = defaults.wallpaperBrightness
             next.backgroundShade = defaults.backgroundShade
             next.readableText = defaults.readableText
@@ -77,7 +78,8 @@ public enum SettingsReset {
             next.multiplayerDefault = defaults.multiplayerDefault
             next.multiplayerLocalMode = defaults.multiplayerLocalMode
             next.multiplayerAdapter = defaults.multiplayerAdapter
-        case .games, .search, .changed, .sources, .storage, .engine, .keys, .cloudSaves,
+        case .profileIdentity, .profileSecurity, .profileNextendo, .profileCards,
+             .games, .search, .changed, .sources, .storage, .engine, .keys, .cloudSaves,
              .portingStorage, .about, .console, .apiServices:
             break
         }

@@ -11,6 +11,8 @@ struct SettingsAPISection: View {
     let supportsNextendo: Bool
     var accountOnly = false
     var accountOffline = false
+    var profile: LocalProfile? = nil
+    var onProfilePreference: (WritableKeyPath<LocalProfile, Bool?>, Bool) -> Void = { _, _ in }
     @Binding var advanced: Bool
     let onActions: ([SettingsRowAction]) -> Void
     @Environment(\.seleneCanvas) private var canvas
@@ -87,13 +89,24 @@ struct SettingsAPISection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: canvas.u(8)) {
-            if accountOnly { nextendoRows }
+            if accountOnly {
+                if let profile {
+                    Text(L10n.format("Arcane works without an account. These settings only apply to %@.", [profile.name]))
+                        .seleneFont(.caption).foregroundStyle(SeleneTheme.ink60)
+                    SettingsSubheading("Presence")
+                    SeleneToggleRow("Appear online", isOn: preference(\.appearsOnline))
+                    SeleneToggleRow("Show current game", subtitle: "Applies the next time you start a game.",
+                                    isOn: preference(\.showsCurrentGame))
+                    SettingsSubheading("Account")
+                }
+                nextendoRows
+            }
             else if showsMultiplayer { multiplayerRows } else { serviceRows }
         }
         .onAppear {
             refreshRemotePlay()
             publishActions()
-            if supportsNextendo { nextendo.check(clientID: clientID) }
+            if supportsNextendo && accountOnly { nextendo.check(clientID: clientID) }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             refreshRemotePlay()
@@ -106,8 +119,8 @@ struct SettingsAPISection: View {
         .onChange(of: advanced) { if showsMultiplayer { publishActions() } }
         .onChange(of: igdb.revision) { publishActions() }
         .onChange(of: supportsNextendo) { _, supported in
-            if supported { nextendo.check(clientID: clientID) }
-            else { endNextendoVisit() }
+            if supported && accountOnly { nextendo.check(clientID: clientID) }
+            else if accountOnly { endNextendoVisit() }
             publishActions()
         }
         .onChange(of: clientID) {
@@ -137,7 +150,9 @@ struct SettingsAPISection: View {
         }
         .onChange(of: nextendo.isBusy) { if supportsNextendo { publishActions() } }
         .onChange(of: nextendo.isWaitingForBrowser) { if supportsNextendo { publishActions() } }
-        .onDisappear { if supportsNextendo { endNextendoVisit() } }
+        .onChange(of: profile?.appearsOnline) { if accountOnly { publishActions() } }
+        .onChange(of: profile?.showsCurrentGame) { if accountOnly { publishActions() } }
+        .onDisappear { if accountOnly { endNextendoVisit() } }
         .task(id: friendsRefreshClient) {
             guard let clientID = friendsRefreshClient else { return }
             if let date = nextendo.friendsUpdatedAt, Date.now.timeIntervalSince(date) >= 60 {
@@ -172,7 +187,6 @@ struct SettingsAPISection: View {
                     .foregroundColor(SeleneTheme.glyph)
             }
         }
-        if supportsNextendo { nextendoRows }
         SeleneCycleRow("Default for games", value: settings.settings.multiplayerDefault.label, cycle: stepDefault)
         SeleneButtonRow("Advanced", id: "multiplayerAdvanced", buttonTitle: advanced ? "Hide" : "Show") { advanced.toggle() }
             .accessibilityValue(text(advanced ? "Expanded" : "Collapsed"))
@@ -583,6 +597,11 @@ struct SettingsAPISection: View {
         if viewModel.hasSteamGridDBKey { viewModel.removeSteamGridDBKey() }
         else { viewModel.isEditingSteamGridDBKey = true }
     }
+
+    private func preference(_ key: WritableKeyPath<LocalProfile, Bool?>) -> Binding<Bool> {
+        Binding(get: { profile?[keyPath: key] == true }, set: { onProfilePreference(key, $0) })
+    }
+
     private func publishActions() {
         if !showsMultiplayer {
             onActions([
@@ -598,7 +617,15 @@ struct SettingsAPISection: View {
         if !accountOnly && vpn != .none {
             actions.append(.init(id: "multiplayerVPNStatus", title: vpnActionTitle, rowID: "multiplayerVPNStatus", activate: openVPN))
         }
-        if supportsNextendo {
+        if accountOnly {
+            if profile != nil {
+                let online = preference(\.appearsOnline)
+                let game = preference(\.showsCurrentGame)
+                actions += [
+                    .init(id: "appearsOnline", title: "Appear online", rowID: "Appear online") { online.wrappedValue.toggle() },
+                    .init(id: "showsCurrentGame", title: "Show current game", rowID: "Show current game") { game.wrappedValue.toggle() },
+                ]
+            }
             let buttons = accountButtons
             actions.append(.init(id: "nextendo", title: "Nextendo", rowID: accountRowID, isEnabled: canActivateNextendo,
                                  secondary: buttons.dropFirst().first.map { ($0.title, $0.action) },

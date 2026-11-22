@@ -290,7 +290,9 @@ extension AppShellView {
         switch entry {
         case .myProfile: router.closeMenu(); openProfilePage()
         case .switchProfile: openProfile(.picker, fromMenu: true)
-        case .editProfile: openProfile(.editor, fromMenu: true)
+        case .editProfile:
+            router.closeMenu()
+            router.openSettings(.profileIdentity)
         case .theme:
             // The menu's own screen: the theme's colors, then the background.
             router.isThemePickerOpen = true

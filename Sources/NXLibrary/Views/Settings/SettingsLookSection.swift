@@ -5,6 +5,7 @@ import NXLibraryCore
 struct SettingsLookSection: View {
     @ObservedObject var viewModel: AppViewModel
     @ObservedObject var settings: AppSettingsStore
+    var profileLook = false
     let onActions: ([SettingsRowAction]) -> Void
     @Environment(\.seleneCanvas) private var canvas
     @ObservedObject private var theme = ThemeStore.shared
@@ -54,6 +55,13 @@ struct SettingsLookSection: View {
 
     var body: some View {
         VStack(spacing: canvas.u(8)) {
+            if profileLook { profileRows } else { generalRows }
+        }
+        .onAppear(perform: publishActions)
+    }
+
+    private var profileRows: some View {
+        Group {
             SettingsSubheading(L10n.text("Theme"))
 
             SeleneCycleRow("Color theme",
@@ -74,6 +82,11 @@ struct SettingsLookSection: View {
                            subtitle: "Image fit",
                            info: "Fill crops to cover, Fit shows all of it, Stretch distorts it to fit. Applies to wallpapers.",
                            value: settings.settings.backgroundSizing.title) { stepSizing($0) }
+        }
+    }
+
+    private var generalRows: some View {
+        Group {
 
             SeleneCycleRow("Wallpaper brightness",
                            subtitle: "Wallpaper light",
@@ -113,17 +126,16 @@ struct SettingsLookSection: View {
             SeleneCycleRow("App icon",
                            subtitle: "Dock & app",
                            value: viewModel.iconAppearanceMode.label) { stepIcon($0) }
-
         }
-        .onAppear(perform: publishActions)
     }
 
     private func publishActions() {
-        onActions([
+        onActions(profileLook ? [
             .value("theme", "Color theme") { stepTheme($0) },
             .value("wallpaper", "Wallpaper") { stepWallpaper($0) },
             .value("settingsWallpaper", "Settings wallpaper") { stepSettingsWallpaper($0) },
             .value("sizing", "Wallpaper sizing") { stepSizing($0) },
+        ] : [
             .value("brightness", "Wallpaper brightness") { stepBrightness($0) },
             .init(id: "animated", title: "Background motion") {
                 settings.settings.animatedBackground.toggle()

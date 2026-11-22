@@ -244,7 +244,7 @@ def main():
                 }
 """, "")
         change(app / "Views/Settings/SettingsAPISection.swift",
-               "            if supportsNextendo { nextendo.check(clientID: clientID) }\n", "")
+               "            if supportsNextendo && accountOnly { nextendo.check(clientID: clientID) }\n", "")
         # ImageRenderer needs a still SwiftUI image rather than the hosted Metal view.
         change(app / "Views/Theme/SeleneBackdrop.swift", "tint: modsTint ? 1 : 0, moving: moving,\n",
                "tint: modsTint ? 1 : 0, moving: false, asImage: true,\n")

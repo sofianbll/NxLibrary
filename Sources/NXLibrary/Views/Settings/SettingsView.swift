@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 import NXLibraryCore
 import ArcanePorting
+import Combine
 import os
 
 enum SettingsFocusArea { case sidebar, rows }
@@ -25,6 +26,10 @@ struct SettingsView: View {
     @State private var cloudAdvanced = false
     @State private var multiplayerAdvanced = false
     @State private var localePicker: LocalePickerMode?
+    @State private var pinProfileID: UUID?
+    @State private var firstPIN: String?
+    @State private var editingProfileName = false
+    private var profileDialogOpen: Bool { editingProfileName || pinProfileID != nil }
     @State private var focusArea: SettingsFocusArea = .sidebar
     @State private var rowFocus = FocusIndex()
     /// The button in focus inside the focused row: 0 its own, 1 a second one (Back to tested beside Update).
@@ -46,7 +51,10 @@ struct SettingsView: View {
     /// A palette change redraws the whole screen; selection and focus live here and survive it.
     @ObservedObject private var theme = ThemeStore.shared
     @ObservedObject private var igdb = IGDBSettings.shared
-    @ObservedObject private var nextendo = NextendoSettings.shared
+    @ObservedObject private var nextendo: NextendoSettings
+    private let hasProfileAccount: Bool
+    private let profiles: LocalProfileStore?
+    @State private var profileRevision = false
     @State private var nextendoRemovalFocus: SeleneConfirmButton = .cancel
     @State private var nextendoEngine: EngineSelection?
     private struct EngineSelection: Equatable {
@@ -64,18 +72,24 @@ struct SettingsView: View {
                 viewModel: AppViewModel,
                 settings: AppSettingsStore,
                 router: AppRouter,
-                artwork: ArtworkStore) {
+                artwork: ArtworkStore,
+                profileAccount: NextendoSettings? = nil) {
         self.initialSection = initialSection
         self.viewModel = viewModel
         self.setup = viewModel.setup
         self.settings = settings
         self.router = router
         self.artwork = artwork
+        let account = profileAccount ?? viewModel.profileNextendo
+        self.hasProfileAccount = account != nil
+        _nextendo = ObservedObject(wrappedValue: account ?? .shared)
+        profiles = viewModel.localProfiles
         _section = State(initialValue: initialSection)
     }
 
-    var body: some View {
-        VStack(spacing: 0) {
+    private var layout: some View {
+        let _ = profileRevision
+        return VStack(spacing: 0) {
             HStack(alignment: .top, spacing: canvas.u(24)) {
                 SettingsSidebar(selection: $section, isFocused: focusArea == .sidebar, context: localization)
                     .frame(width: canvas.u(400))
@@ -87,11 +101,18 @@ struct SettingsView: View {
             SeleneHintsBar(left: [HintItem(.b, L10n.text("Back")) { handleBack() }], right: commandHints)
                 .seleneOverlaidHints(showingControls || localePicker != nil || showingCloudAssistant
                     || viewModel.isEditingSteamGridDBKey || igdb.isEditing
-                    || (supportsNextendo && (nextendo.isEditingClient || nextendo.friendToRemove != nil)))
+                    || profileDialogOpen || nextendo.isEditingClient || nextendo.friendToRemove != nil)
         }
         .id(theme.palette.id)
         .background(SeleneBackdrop().environment(\.seleneBackdropStyle, settingsBackdropStyle))
+    }
+
+    private var observedLayout: some View {
+        layout
         .onAppear(perform: installKeyMonitor)
+        .onReceive(profiles?.objectWillChange.eraseToAnyPublisher() ?? Empty().eraseToAnyPublisher()) { _ in
+            profileRevision.toggle()
+        }
         .onAppear {
             if AppData.profile.isDevelopment {
                 Logger(subsystem: "local.nxlibrary.development", category: "backdrop-transition")
@@ -124,7 +145,7 @@ struct SettingsView: View {
             nextendoEngine = supported ? selected : nil
         }
         .onChange(of: supportsNextendo) { _, supported in
-            if !supported { nextendo.isEditingClient = false; nextendo.cancelBrowser() }
+            if !supported, section == .multiplayer { nextendo.isEditingClient = false }
         }
         .onChange(of: section) { _, section in
             if section != .cloudLibrary { cloudAdvanced = false }
@@ -141,6 +162,10 @@ struct SettingsView: View {
             guard let action = note.object as? GamepadAction else { return }
             handleGamepad(action)
         }
+    }
+
+    var body: some View {
+        observedLayout
         .overlay {
             if viewModel.isEditingSteamGridDBKey {
                 SteamGridDBKeyDialog(viewModel: viewModel, gamepad: .nxSettingsGamepadAction) { _ in
@@ -153,8 +178,10 @@ struct SettingsView: View {
                 IGDBCredentialsDialog(model: igdb) { igdb.isEditing = false }
             }
         }
+        .disabled(nextendo.isEditingClient)
+        .accessibilityHidden(nextendo.isEditingClient)
         .overlay {
-            if supportsNextendo && nextendo.isEditingClient {
+            if nextendo.isEditingClient {
                 NextendoClientDialog(settings: settings) { nextendo.isEditingClient = false }
             }
         }
@@ -170,22 +197,11 @@ struct SettingsView: View {
                 CloudReferenceDialog(viewModel: viewModel) { editingCloudReference = false }
             }
         }
-        .disabled(nextendo.friendToRemove != nil)
-        .accessibilityHidden(nextendo.friendToRemove != nil)
-        .overlay {
-            if supportsNextendo, let friend = nextendo.friendToRemove {
-                ZStack {
-                    SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle())
-                        .onTapGesture { nextendo.friendToRemove = nil }
-                    SeleneConfirmDialog(title: L10n.text("Remove this friend?", context: localization), message: friend.name,
-                                        confirmTitle: L10n.text("Remove friend", context: localization),
-                                        cancelTitle: L10n.text("Cancel", context: localization), focus: $nextendoRemovalFocus,
-                                        onCancel: { nextendo.friendToRemove = nil },
-                                        onConfirm: confirmNextendoRemoval)
-                }
-                .onAppear { nextendoRemovalFocus = .cancel }
-            }
-        }
+        .disabled(nextendo.friendToRemove != nil || profileDialogOpen)
+        .accessibilityHidden(nextendo.friendToRemove != nil || profileDialogOpen)
+        .overlay { profilePINOverlay }
+        .overlay { profileNameOverlay }
+        .overlay { nextendoRemovalOverlay }
         .opacity(showingControls ? 0.001 : 1)
         .allowsHitTesting(!showingControls)
         .overlay {
@@ -209,6 +225,45 @@ struct SettingsView: View {
         .environment(\.seleneMinimumFont, 12)
     }
 
+    @ViewBuilder private var profilePINOverlay: some View {
+        if let profile = profiles?.active, pinProfileID == profile.id {
+            let title = profile.isLocked ? "Remove profile code" : firstPIN == nil ? "Set profile code" : "Confirm profile code"
+            SeleneOverlay(style: .profileRemoval, onOutside: cancelPIN) {
+                ProfilePINDialog(title: title, allowsTouchID: profile.isLocked, onCancel: cancelPIN,
+                                 onTouchID: { _ = savePIN(nil) }, onPIN: enterPIN)
+                    .id(firstPIN != nil)
+            }
+        }
+    }
+
+    @ViewBuilder private var profileNameOverlay: some View {
+        if editingProfileName, let profiles, let profile = profiles.active {
+            ProfileEditorView(profile: profile, games: [], isNew: false, nameOnly: true,
+                              onCancel: { editingProfileName = false }) { draft in
+                guard var active = profiles.active, active.id == draft.id else { return false }
+                active.rename(to: draft.name)
+                guard profiles.update(active) else { return false }
+                editingProfileName = false
+                return true
+            }
+            .accessibilityAddTraits(.isModal)
+        }
+    }
+
+    @ViewBuilder private var nextendoRemovalOverlay: some View {
+        if hasProfileAccount, let friend = nextendo.friendToRemove {
+            ZStack {
+                SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle())
+                    .onTapGesture { nextendo.friendToRemove = nil }
+                SeleneConfirmDialog(title: L10n.text("Remove this friend?", context: localization), message: friend.name,
+                                    confirmTitle: L10n.text("Remove friend", context: localization),
+                                    cancelTitle: L10n.text("Cancel", context: localization), focus: $nextendoRemovalFocus,
+                                    onCancel: { nextendo.friendToRemove = nil }, onConfirm: confirmNextendoRemoval)
+            }
+            .onAppear { nextendoRemovalFocus = .cancel }
+        }
+    }
+
     private var content: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -223,6 +278,10 @@ struct SettingsView: View {
                         settings: settings,
                         artwork: artwork,
                         supportsNextendo: supportsNextendo,
+                        activeProfile: profiles?.active,
+                        profileNextendo: hasProfileAccount ? nextendo : nil,
+                        onEditProfileName: { editingProfileName = true },
+                        onProfilePIN: openPIN,
                         onViewControls: { showingControls = true },
                         onChooseLanguage: { localePicker = .language },
                         onChooseRegion: { localePicker = .region },
@@ -325,7 +384,11 @@ struct SettingsView: View {
         SoundEffectService.shared.play(.focus)
     }
 
-    private var canResetSection: Bool { SettingsReset.canReset(section) }
+    private var canResetSection: Bool {
+        if section == .profileSecurity { return profiles?.active?.isLocked == true && profiles?.guest == nil }
+        if section == .profileNextendo { return hasProfileAccount }
+        return SettingsReset.canReset(section)
+    }
 
     /// `SettingsReset` puts the section's `AppSettings` back in one assignment; the preferences
     /// kept outside it are reset here.
@@ -333,9 +396,30 @@ struct SettingsView: View {
         guard canResetSection else { return }
         let defaults = AppSettings()
         switch section {
-        case .look:
+        case .profileLook:
             ThemeStore.shared.apply(id: defaults.colorThemeID)
+        case .look:
             viewModel.iconAppearanceMode = .auto
+        case .profileIdentity:
+            if let profiles, var profile = profiles.active {
+                profile.name = profile.defaultName
+                profile.avatar = 0
+                profile.portrait = nil
+                saveProfileSetting(profile, in: profiles, notifying: viewModel)
+            }
+        case .profileSecurity:
+            openPIN()
+        case .profileNextendo:
+            if let profiles, var profile = profiles.active {
+                profile.appearsOnline = nil
+                profile.showsCurrentGame = nil
+                saveProfileSetting(profile, in: profiles, notifying: viewModel)
+            }
+        case .profileCards:
+            if let profiles, var profile = profiles.active {
+                profile.pageCards = nil
+                saveProfileSetting(profile, in: profiles, notifying: viewModel)
+            }
         case .controllers:
             GameControllerService.shared.deadzone = 0.35
         default:
@@ -412,7 +496,27 @@ struct SettingsView: View {
                   NSApp.modalWindow == nil else { return event }
             let modifiers = event.modifierFlags.intersection([.command, .control, .option])
             guard modifiers.isEmpty else { return event }
+            if pinProfileID != nil {
+                if let key = event.charactersIgnoringModifiers, key.utf8.count == 1, let digit = Int(key) {
+                    if !event.isARepeat { NotificationCenter.default.post(name: .nxProfileInput, object: digit) }
+                    return nil
+                }
+                if event.keyCode == 51 || event.keyCode == 16 {
+                    handleGamepad(event.keyCode == 51 ? .secondaryAction : .contextAction)
+                    return nil
+                }
+            }
             let typing = window.firstResponder is NSText
+            if editingProfileName {
+                if typing && event.keyCode != 53 { return event }
+                let key = event.charactersIgnoringModifiers?.lowercased()
+                switch (event.keyCode, key) {
+                case (51, _), (_, "x"): handleGamepad(.secondaryAction); return nil
+                case (_, "y"): handleGamepad(.contextAction); return nil
+                case (_, "+"), (_, "="): handleGamepad(.menu); return nil
+                default: break
+                }
+            }
             let action: GamepadAction
             switch event.keyCode {
             case 126: action = .navigateUp
@@ -458,6 +562,10 @@ struct SettingsView: View {
     }
 
     private func handleGamepad(_ action: GamepadAction) {
+        if profileDialogOpen {
+            NotificationCenter.default.post(name: .nxProfileInput, object: action)
+            return
+        }
         // The key dialog takes the controller while it is open.
         if viewModel.isEditingSteamGridDBKey || igdb.isEditing || nextendo.isEditingClient || showingCloudAssistant { return }
         if nextendo.friendToRemove != nil {
@@ -509,11 +617,35 @@ struct SettingsView: View {
         nextendo.updateFriend(.remove(pid: friend.id), clientID: settings.settings.nextendoClientID ?? NextendoLaunch.buildClientID)
     }
 
+    private func openPIN() {
+        guard let profiles, profiles.guest == nil else { return }
+        pinProfileID = profiles.active?.id
+    }
+
+    private func cancelPIN() { pinProfileID = nil; firstPIN = nil }
+
+    private func enterPIN(_ pin: String) -> String? {
+        guard let profile = profiles?.active, profile.id == pinProfileID else { cancelPIN(); return nil }
+        if profile.isLocked { return profile.matchesPIN(pin) ? savePIN(nil) : "Incorrect code." }
+        guard let firstPIN else { self.firstPIN = pin; return nil }
+        guard firstPIN == pin else { return "The codes do not match." }
+        return savePIN(pin)
+    }
+
+    private func savePIN(_ pin: String?) -> String? {
+        guard let profiles, var profile = profiles.active, profile.id == pinProfileID else { cancelPIN(); return nil }
+        guard profile.setPIN(pin), profiles.update(profile) else { return "Your changes could not be saved. Try again." }
+        cancelPIN()
+        return nil
+    }
+
     /// B or Esc: steps back one level. Typing in Search, it closes the field and stays on Search.
     private func handleBack() {
         if let window = NSApp.keyWindow, window.firstResponder is NSText {
             window.makeFirstResponder(nil)
             SoundEffectService.shared.play(.focus)
+        } else if router.previousRoute == .profile {
+            router.back()
         } else if focusArea == .rows {
             leaveRows()
         } else {

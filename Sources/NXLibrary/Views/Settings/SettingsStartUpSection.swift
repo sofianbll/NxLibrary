@@ -6,6 +6,7 @@ struct SettingsStartUpSection: View {
     let onActions: ([SettingsRowAction]) -> Void
     let onChooseLanguage: () -> Void
     let onChooseRegion: () -> Void
+    @ObservedObject var profiles: LocalProfileStore
     @Environment(\.seleneCanvas) private var canvas
 
     private var startOnTitle: String {
@@ -33,6 +34,8 @@ struct SettingsStartUpSection: View {
                            value: startOnTitle) { step in
                 settings.settings.startOn = settings.settings.startOn.stepped(step)
             }
+            SeleneCycleRow("At startup", subtitle: "Choose who plays when Arcane opens.", value: profileValue,
+                           verbatimValue: true, cycle: cycleProfile)
 
             SeleneToggleRow("Restore last selected game",
                             subtitle: "Reopen the game that was selected when you quit.",
@@ -62,6 +65,7 @@ struct SettingsStartUpSection: View {
             .value("startOn", "Start on") { step in
                 settings.settings.startOn = settings.settings.startOn.stepped(step)
             },
+            .value("showProfilePicker", "At startup", cycle: cycleProfile),
             .init(id: "restore", title: "Restore last selected game") {
                 settings.settings.restoreLastGame.toggle()
             },
@@ -76,10 +80,23 @@ struct SettingsStartUpSection: View {
             }
         ])
     }
+
+    private var profileValue: String {
+        switch settings.settings.profileStartup.available(in: profiles.profiles) {
+        case .ask: return L10n.text("Who's playing?")
+        case .last: return L10n.text("Last profile")
+        case .profile(let id): return profiles.profiles.first { $0.id == id }?.name ?? ""
+        }
+    }
+
+    func cycleProfile(_ step: Int) {
+        let choices: [ProfileStartup] = [.ask, .last] + profiles.profiles.map { .profile($0.id) }
+        let current = settings.settings.profileStartup.available(in: profiles.profiles)
+        settings.settings.profileStartup = choices.stepped(from: current, step) ?? .ask
+    }
 }
 
-struct SettingsProfilesSection: View {
-    @ObservedObject var settings: AppSettingsStore
+struct SettingsProfileCardsSection: View {
     @ObservedObject var profiles: LocalProfileStore
     let onActions: ([SettingsRowAction]) -> Void
     @Environment(\.nxAppLocale) private var localization
@@ -87,18 +104,8 @@ struct SettingsProfilesSection: View {
 
     private var cards: ProfilePageCards { profiles.active?.pageCards ?? .init() }
 
-    private var value: String {
-        switch settings.settings.profileStartup.available(in: profiles.profiles) {
-        case .ask: return L10n.text("Who's playing?", context: localization)
-        case .last: return L10n.text("Last profile", context: localization)
-        case .profile(let id): return profiles.profiles.first { $0.id == id }?.name ?? ""
-        }
-    }
-
     var body: some View {
         VStack(spacing: canvas.u(SeleneTokens.Space.compact)) {
-            SeleneCycleRow("At startup", subtitle: "Choose who plays when Arcane opens.", value: value,
-                           verbatimValue: true, cycle: cycle)
             if profiles.active != nil {
                 SettingsSubheading(L10n.text("Profile page cards"))
                 ForEach(cards.ordered) { card in
@@ -144,12 +151,6 @@ struct SettingsProfilesSection: View {
         let actions: [SettingsRowAction] = profiles.active == nil ? [] : cards.ordered.map { card in
             .init(id: "profile-card-\(card.rawValue)", title: card.title, cycle: { move(card, by: $0) }) { toggle(card) }
         }
-        onActions([.value("showProfilePicker", "At startup", cycle: cycle)] + actions)
-    }
-
-    func cycle(_ step: Int) {
-        let choices: [ProfileStartup] = [.ask, .last] + profiles.profiles.map { .profile($0.id) }
-        let current = settings.settings.profileStartup.available(in: profiles.profiles)
-        settings.settings.profileStartup = choices.stepped(from: current, step) ?? .ask
+        onActions(actions)
     }
 }

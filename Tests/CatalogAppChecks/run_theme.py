@@ -155,7 +155,7 @@ final class BackdropViewModel {
         backdropHost.viewModel.isGameOptionsOpen = false
         backdropHost.profileFlow = .init(page: .picker); precondition(backdropHost.blur == 40)
         backdropHost.profileFlow = .init(page: .picker, atStartup: true); precondition(backdropHost.blur == 0)
-        backdropHost.profileFlow = .init(page: .account); precondition(backdropHost.blur == 0)
+        backdropHost.profileFlow = nil; precondition(backdropHost.blur == 0)
         backdropHost.profileFlow = nil
         let originalBackdrop = backdropHost.snapshot
         let homeRequest = SeleneBackdropRequest(style: originalBackdrop)

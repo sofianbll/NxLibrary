@@ -15,6 +15,8 @@ public struct LocalProfile: Codable, Equatable, Identifiable {
     public static let avatarCount = 28
     public let id: UUID
     public var name: String
+    private var initialName: String? = nil
+    public var defaultName: String { initialName ?? name }
     public var avatar: Int
     public var portrait: Data?
     public var look: Look
@@ -38,6 +40,11 @@ public struct LocalProfile: Codable, Equatable, Identifiable {
     }
 
     public static let pinLength = 4
+
+    public mutating func rename(to name: String) {
+        if initialName == nil { initialName = self.name }
+        self.name = name
+    }
 
     public mutating func setPIN(_ pin: String?) -> Bool {
         if let pin, pin.utf8.count != Self.pinLength || !pin.utf8.allSatisfy({ (48...57).contains($0) }) { return false }

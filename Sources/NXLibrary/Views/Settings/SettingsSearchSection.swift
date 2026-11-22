@@ -6,6 +6,7 @@ import ArcanePorting
 struct SettingsSearchSection: View {
     @ObservedObject var cloudLibrary: CloudLibraryModel
     let supportsNextendo: Bool
+    let hasProfileAccount: Bool
     let onOpenGroup: (SettingDescriptor) -> Void
     let onSubmit: () -> Void
     /// Bumped when the player opens the field (A or Right from the sidebar). Selecting Search never
@@ -18,7 +19,8 @@ struct SettingsSearchSection: View {
     @FocusState private var fieldFocused: Bool
 
     private var results: [SettingDescriptor] {
-        SettingsCatalog.search(query, supportsNextendo: supportsNextendo, cloudConfigured: cloudLibrary.preference.remote != nil)
+        SettingsCatalog.search(query, supportsNextendo: supportsNextendo, hasProfileAccount: hasProfileAccount,
+                               cloudConfigured: cloudLibrary.preference.remote != nil)
     }
 
     var body: some View {
@@ -67,14 +69,17 @@ struct SettingsChangedSection: View {
     /// The engine folder (`SetupModel`), so the Changed list follows it.
     @ObservedObject var setup: SetupModel
     @ObservedObject var cloudLibrary: CloudLibraryModel
+    @ObservedObject var profiles: LocalProfileStore
     @ObservedObject private var controller = GameControllerService.shared
     let supportsNextendo: Bool
+    let hasProfileAccount: Bool
     let onOpenGroup: (SettingDescriptor) -> Void
     let onActions: ([SettingsRowAction]) -> Void
     @Environment(\.seleneCanvas) private var canvas
 
     private var rows: [SettingDescriptor] {
-        var external = Set<String>()
+        var external = SettingsCatalog.profileChanges(profiles.active)
+        if viewModel.profileNextendo?.status == .signedIn { external.insert("nextendo") }
         if viewModel.iconAppearanceMode != .auto { external.insert("iconAppearance") }
         if abs(controller.deadzone - 0.35) > 0.001 { external.insert("controllerDeadzone") }
         if viewModel.porting.gameFilesFolder != nil { external.insert("gameFolder") }
@@ -92,6 +97,7 @@ struct SettingsChangedSection: View {
             external.insert("engineFolder")
         }
         return SettingsCatalog.changed(in: settings.settings, externalChanges: external, supportsNextendo: supportsNextendo,
+                                       hasProfileAccount: hasProfileAccount,
                                        cloudConfigured: cloudLibrary.preference.remote != nil)
     }
 

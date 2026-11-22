@@ -47,7 +47,6 @@ struct ProfilePortrait: View {
 struct ProfilePickerView: View {
     @ObservedObject var profiles: LocalProfileStore
     let initialSelection: UUID?
-    let initialEdit: Bool
     let canClose: Bool
     var isOverlay = false
     let games: [PortedGame]
@@ -59,7 +58,7 @@ struct ProfilePickerView: View {
     var onRemoved: (UUID) -> Void = { _ in }
     var onGuest: ((LocalProfile) -> Void)?
     var canRemove: (LocalProfile) -> Bool = { _ in true }
-    var canEdit: (LocalProfile) -> Bool = { _ in true }
+    var onEditActive: (() -> Void)?
     var dialogOwnsInput = false
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneReduceMotion) private var reduceMotion
@@ -97,7 +96,6 @@ struct ProfilePickerView: View {
             appeared = true
             selected = initialSelection
             accessibilityFocus = initialSelection.map(Tile.profile) ?? .add
-            if initialEdit { edit() }
         }
         .onReceive(NotificationCenter.default.publisher(for: .nxProfileInput)) { note in
             guard !dialogOwnsInput, layers.top != .editor, let action = note.object as? GamepadAction else { return }
@@ -114,7 +112,7 @@ struct ProfilePickerView: View {
             if let draft {
                 ProfileEditorView(profile: draft, games: games,
                                   avatarGames: avatarGames, artwork: artwork,
-                                  isNew: !profiles.profiles.contains { $0.id == draft.id },
+                                  isNew: true,
                                   onCancel: editorClosed, onSave: save)
                     .seleneOverlayOwnership(layers.isTop(.editor))
                     .transition(.opacity)
@@ -167,10 +165,15 @@ struct ProfilePickerView: View {
     }
 
     private var leftHints: [HintItem] {
-        (canClose ? [HintItem(.b, "Back", action: onClose)] : [])
-        + [HintItem(.menu, "Add", keyboard: .text("+"), action: add)]
-        + (selectedProfile.map(canEdit) == true ? [HintItem(.y, "Edit profile", action: edit)] : [])
-        + (selectedProfile.map(canRemoveProfile) == true ? [HintItem(.x, "Remove", action: askRemoval)] : [])
+        var hints = canClose ? [HintItem(.b, "Back", action: onClose)] : []
+        hints.append(HintItem(.menu, "Add", keyboard: .text("+"), action: add))
+        if selectedProfile?.id == profiles.active?.id, onEditActive != nil {
+            hints.append(HintItem(.y, "Edit profile", action: edit))
+        }
+        if selectedProfile.map(canRemoveProfile) == true {
+            hints.append(HintItem(.x, "Remove", action: askRemoval))
+        }
+        return hints
     }
 
     private func tile(_ profile: LocalProfile?) -> some View {
@@ -247,12 +250,11 @@ struct ProfilePickerView: View {
 
     private func add() { draft = LocalProfile(name: "", look: .init(AppSettings())) }
 
-    private func edit() { if let selectedProfile, canEdit(selectedProfile) { draft = selectedProfile } }
+    private func edit() { if let selectedProfile, selectedProfile.id == profiles.active?.id { onEditActive?() } }
 
     private func editorClosed() {
         draft = nil
         accessibilityFocus = selected.map(Tile.profile) ?? .add
-        if initialEdit { onClose() }
     }
 
     private func save(_ profile: LocalProfile) -> Bool {

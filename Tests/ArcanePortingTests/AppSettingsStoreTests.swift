@@ -380,7 +380,8 @@ private final class ObserveSettingsWrite: FileManager, @unchecked Sendable {
 final class SettingsSectionTests: XCTestCase {
     func testAllSectionsArePresent() {
         XCTAssertEqual(SettingsSection.allCases.map(\.title), [
-            "Search", "Changed", "Start-up", "Profiles", "Navigation", "Spotlight", "Sound & music", "Look", "Controllers",
+            "Search", "Changed", "Identity", "Theme and background", "Security", "Nextendo", "Profile page",
+            "Start-up", "Navigation", "Spotlight", "Sound & music", "Look", "Controllers",
             "Play together", "Online services", "Sources", "Games", "Storage", "Setup and engine", "Keys", "Game folders", "New games",
             "Cloud saves", "Cloud library", "Porting storage", "About", "Console"
         ])
@@ -388,7 +389,7 @@ final class SettingsSectionTests: XCTestCase {
     }
 
     func testSidebarGroupsInScreenOrder() {
-        XCTAssertEqual(SettingsSidebarGroup.all.map(\.title), [nil, "General", "Library", "Porting", "System"])
+        XCTAssertEqual(SettingsSidebarGroup.all.map(\.title), [nil, "Profile", "General", "Library", "Porting", "System"])
         // The sidebar's Up/Down follows the groups as drawn, and every section is in exactly one group.
         XCTAssertEqual(SettingsSidebarGroup.all.flatMap(\.sections), SettingsSection.allCases)
         XCTAssertEqual(SettingsSection.sources.group.title, "Library")

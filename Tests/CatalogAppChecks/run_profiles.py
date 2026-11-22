@@ -24,6 +24,7 @@ import ArcanePorting
         let out = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
         let font = URL(fileURLWithPath: CommandLine.arguments[2])
         let refs = URL(fileURLWithPath: CommandLine.arguments[3], isDirectory: true)
+        NSApplication.shared.setActivationPolicy(.prohibited)
         precondition(CTFontManagerRegisterFontsForURL(font as CFURL, .process, nil))
         let data = AppData.supportRoot
         let settings = AppSettingsStore(fileURL: data.appendingPathComponent("settings.json"))
@@ -70,7 +71,7 @@ import ArcanePorting
         precondition(ProfilePortrait.symbols.count == LocalProfile.avatarCount)
         try checkGIF(in: data)
         func picker(selected: UUID?, removing: LocalProfile? = nil, editing: LocalProfile? = nil, overlay: Bool = false) -> some View {
-            ProfilePickerView(profiles: profiles, initialSelection: selected, initialEdit: false, canClose: overlay, isOverlay: overlay,
+            ProfilePickerView(profiles: profiles, initialSelection: selected, canClose: overlay, isOverlay: overlay,
                               games: [game], avatarGames: avatarGames, artwork: art, onChoose: { _ in }, onClose: {}, onActiveEdited: {},
                               onGuest: { _ in },
                               selected: selected, draft: editing, removing: removing)
@@ -88,7 +89,7 @@ import ArcanePorting
         L10n.setContext(french)
         try render("03-wizard-edit-name", ZStack {
             SeleneBackdrop().still(true)
-            ProfileEditorView(profile: sam, games: [game], isNew: false, onCancel: {}, onSave: { _ in true })
+            ProfileEditorView(profile: sam, games: [], isNew: false, nameOnly: true, onCancel: {}, onSave: { _ in true })
         }.environment(\.nxAppLocale, french), in: out, refs, "none")
         try render("04-wizard-avatar", ZStack {
             SeleneBackdrop().still(true)
@@ -191,13 +192,50 @@ import ArcanePorting
         ] {
             let page = ProfilePage(profile: pageProfile, viewModel: vm, history: pageHistory, artwork: art,
                                    nextendo: account, router: pageRouter, focus: .constant(.game(.recent, profileGames[1].id)),
-                                   onEdit: {}, onSwitch: {}, onAccount: {})
+                                   onSwitch: {})
             try render("profile-page-\(name)", page.environment(\.nxAppLocale, french), in: out, refs,
                        "profile-page.png", size: size)
         }
-        try render("profile-page-cards-settings", SettingsView(initialSection: .profiles, viewModel: vm, settings: settings,
-                   router: pageRouter, artwork: art).environment(\.nxAppLocale, french),
+        let settingsRouter = AppRouter()
+        settingsRouter.navigate(to: .profile)
+        let entry = ProfilePage(profile: alex, viewModel: vm, history: pageHistory, artwork: art,
+                                nextendo: linked, router: settingsRouter, focus: .constant(.edit), onSwitch: {})
+        for (action, section) in [(ProfilePage.Focus.edit, SettingsSection.profileIdentity),
+                                  (.account, .profileNextendo), (.lock, .profileSecurity)] {
+            entry.openSettingsFixture(action)
+            precondition(settingsRouter.route == .settings(section))
+            SettingsView(initialSection: section, viewModel: vm, settings: settings, router: settingsRouter, artwork: art)
+                .pressScreenFixtureBack()
+            precondition(settingsRouter.route == .profile)
+        }
+        var settingsProfile = profiles.active!
+        settingsProfile.avatar = 7
+        settingsProfile.createdAt = Date(timeIntervalSince1970: 1_795_344_000)
+        settingsProfile.appearsOnline = true
+        settingsProfile.showsCurrentGame = false
+        precondition(profiles.update(settingsProfile))
+        vm.playSessionStore = pageHistory
+        for (section, reference) in [(SettingsSection.profileIdentity, "profile-settings.png"),
+                                     (.profileLook, "profile-settings-arbre.png"), (.profileSecurity, "profile-settings-arbre.png"),
+                                     (.profileNextendo, "profile-settings-nextendo.png"), (.profileCards, "profile-settings-arbre.png"),
+                                     (.startUp, "profile-settings-arbre.png"), (.look, "profile-settings-arbre.png"),
+                                     (.multiplayer, "profile-settings-arbre.png")] {
+            try render("settings-\(section.rawValue)",
+                       SettingsView(initialSection: section, viewModel: vm, settings: settings, router: settingsRouter,
+                                    artwork: art, profileAccount: linked)
+                           .environment(\.nxAppLocale, french),
+                       in: out, refs, reference, size: .init(width: 1600, height: 900))
+        }
+        try render("settings-profile-pin", SettingsView(initialSection: .profileSecurity, viewModel: vm, settings: settings,
+                   router: settingsRouter, artwork: art, fixturePIN: true).environment(\.nxAppLocale, french),
                    in: out, refs, "none")
+        for section: SettingsSection in [.profileIdentity, .profileNextendo, .profileCards] {
+            SettingsView(initialSection: section, viewModel: vm, settings: settings, router: settingsRouter, artwork: art)
+                .pressScreenFixtureReset()
+        }
+        let resetProfile = profiles.active!
+        precondition(resetProfile.avatar == 0 && resetProfile.portrait == nil && resetProfile.name == settingsProfile.name)
+        precondition(resetProfile.appearsOnline == nil && resetProfile.showsCurrentGame == nil && resetProfile.pageCards == nil)
         for choice in InGameHomeButton.allCases {
             settings.settings.inGameHomeButton = choice
             try render("settings-home-\(choice)", SettingsView(initialSection: .controllers, viewModel: vm, settings: settings,
@@ -327,16 +365,17 @@ import ArcanePorting
         try render("10-online-tile", after, in: out, refs, "screenshots/library.png")
         precondition(profiles.update(sam))
         L10n.setContext(french)
-        let profileSection = SettingsProfilesSection(settings: settings, profiles: profiles, onActions: { _ in })
+        let profileSection = SettingsStartUpSection(settings: settings, onActions: { _ in }, onChooseLanguage: {},
+                                                   onChooseRegion: {}, profiles: profiles)
         for choice: ProfileStartup in [.last, .profile(alex.id), .profile(sam.id), .ask] {
-            profileSection.cycle(1)
+            profileSection.cycleProfile(1)
             precondition(settings.settings.profileStartup == choice)
         }
-        profileSection.cycle(-1)
+        profileSection.cycleProfile(-1)
         precondition(settings.settings.profileStartup == .profile(sam.id))
         try render("19-profiles-at-startup", ZStack {
             SeleneBackdrop().still(true)
-            SettingsView(initialSection: .profiles, viewModel: vm, settings: settings, router: AppRouter(), artwork: art)
+            SettingsView(initialSection: .startUp, viewModel: vm, settings: settings, router: AppRouter(), artwork: art)
         }.environment(\.nxAppLocale, french), in: out, refs, "screenshots/game-options.png")
         settings.settings.profileStartup = .ask
         let appsFolder = data.appendingPathComponent("Fixture game apps", isDirectory: true)
@@ -971,13 +1010,16 @@ def main():
                 "tint: modsTint ? 1 : 0, moving: false, asImage: true,\n")
         # ImageRenderer does not draw the AppKit scroll host. Keep the real SwiftUI layout and clip it
         # to the same viewport for screenshots; scroll/input are not verified by the PNGs.
-        replace(app / "Views/Shell/ProfilePage.swift",
+        profile_page = app / "Views/Shell/ProfilePage.swift"
+        replace(profile_page,
                 r"                ScrollViewReader \{ proxy in\n                    ScrollView \{(.*?)"
                 r"                    \}\n                    \.onChange\(of: focus, initial: true\).*?"
                 r"\n                \}\n            \}\n            if ownsPage",
                 lambda m: "                Color.clear.overlay(alignment: .top) {" + m[1] +
                 "                        .fixedSize(horizontal: false, vertical: true)\n"
                 "                    }.clipped()\n            }\n            if ownsPage")
+        with profile_page.open("a") as swift:
+            swift.write("\nextension ProfilePage {\n    func openSettingsFixture(_ focus: Focus) { activate(focus, data: pageData) }\n}\n")
         # ImageRenderer paints any AppKit-backed view as a full-screen yellow "no entry" placeholder: the game-art
         # layer is one. Arcane itself shows the Selene backdrop there when a game has no art.
         replace(app / "Views/Spotlight/SeleneArtBackground.swift",
@@ -992,11 +1034,25 @@ def main():
         # Real Settings views, with only the AppKit-backed scroll containers flattened.
         replace(app / "Views/Settings/SettingsView.swift",
                 r"        ScrollViewReader \{ proxy in\n            ScrollView \{(.*?)\n            }\n            \.scrollIndicators\(\.hidden\).*?\n        }\n    }\n\n    private var reduceMotion",
-                lambda m: "        Group {" + m[1] + "\n        }\n    }\n\n    private var reduceMotion")
+                lambda m: "        Color.clear.overlay(alignment: .top) {" + m[1] +
+                "\n                .fixedSize(horizontal: false, vertical: true)\n        }.clipped()\n    }\n\n    private var reduceMotion")
+        settings_view = app / "Views/Settings/SettingsView.swift"
+        replace(settings_view, r"profileAccount: NextendoSettings\? = nil\) \{",
+                "profileAccount: NextendoSettings? = nil, fixturePIN: Bool = false) {")
+        replace(settings_view, r"profiles = viewModel.localProfiles",
+                "profiles = viewModel.localProfiles\n"
+                "        _pinProfileID = State(initialValue: fixturePIN ? profiles?.active?.id : nil)")
+        replace(settings_view, r"@State private var focusArea: SettingsFocusArea = \.sidebar", "@State private var focusArea: SettingsFocusArea")
+        replace(settings_view, r"_section = State\(initialValue: initialSection\)",
+                "_section = State(initialValue: initialSection)\n"
+                "        _focusArea = State(initialValue: initialSection == .profileIdentity ? .rows : .sidebar)")
+        replace(settings_view, r"focusArea == \.rows \? focusedRow\?\.rowID : nil",
+                'initialSection == .profileIdentity ? "Avatar" : focusArea == .rows ? focusedRow?.rowID : nil')
         replace(app / "Views/Settings/SettingsSidebar.swift", r"            ScrollViewReader \{ proxy in\n.*?\n            }",
                 "            GeometryReader { _ in groups }.clipped()")
         with (app / "Views/Settings/SettingsView.swift").open("a") as swift:
-            swift.write("\nextension SettingsView {\n    func pressScreenFixtureReset() { handleGamepad(.secondaryAction) }\n}\n")
+            swift.write("\nextension SettingsView {\n    func pressScreenFixtureReset() { handleGamepad(.secondaryAction) }\n"
+                        "    func pressScreenFixtureBack() { handleBack() }\n}\n")
         with (app / "Views/Settings/SettingsPortingStorageSection.swift").open("a") as swift:
             swift.write("\nextension SettingsPortingStorageSection {\n    func publishScreenFixtureActions() { publishActions() }\n}\n")
         replace(app / "Views/Shell/ProfilePickerView.swift",
@@ -1020,7 +1076,7 @@ def main():
         replace(page, r'                \.onChange\(of: row\) \{ _, value in\n.*?\n                }', '')
         replace(page, r"\.padding\(\.bottom, canvas.u\(134\)\)", ".padding(.bottom, canvas.u(70))")
         api = app / "Views/Settings/SettingsAPISection.swift"
-        replace(api, r"            if supportsNextendo \{ nextendo.check\(clientID: clientID\) \}", "")
+        replace(api, r"            if supportsNextendo && accountOnly \{ nextendo.check\(clientID: clientID\) \}", "")
         replace(api, r"@State private var friendsExpanded = false",
                 "@State private var friendsExpanded = true")
         replace(api, r'            TextField\(text\("Friend code"\).*?\n                \.onSubmit\(sendFriendCode\)',
@@ -1029,12 +1085,10 @@ def main():
             swift.write(r'''
 extension NextendoAccountSnapshot {
     package static func screenFixture(second: Bool) -> Self {
-        .init(name: second ? "Solar Pilot" : "Lunar Pilot", username: second ? "fixture2" : "fixture", countryCode: nil, friendCode: nil, avatar: nil,
+        .init(name: second ? "Solar Pilot" : "Lunar Pilot", username: second ? "fixture2" : "fixture", countryCode: "FR", friendCode: "SW-4821-7305-1196", avatar: nil,
               avatarPID: nil, friends: [
                   .init(id: 2, name: "Nova", favorite: false, presence: .playing, game: "Observatory 1", gameID: "0100000000000001"),
-                  .init(id: 1, name: "Sol", favorite: false, presence: .online, game: nil, gameID: nil),
-                  .init(id: 3, name: "Vega", favorite: false, presence: .playing, game: "Observatory 3", gameID: "0100000000000003"),
-                  .init(id: 4, name: "Lyra", favorite: false, presence: .online, game: nil, gameID: nil)
+                  .init(id: 1, name: "Sol", favorite: false, presence: .online, game: nil, gameID: nil)
               ],
               requests: [], sent: [], recentPlayers: [], failure: nil)
     }
