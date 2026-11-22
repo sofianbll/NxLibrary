@@ -213,7 +213,10 @@ Router e pannelli continuano a gestire gli stessi comandi e identità di focus;
 `SeleneConfirmDialog` condivide l'ordine dei pulsanti con la navigazione:
 conferma a sinistra, annullamento a destra. Il chiamante conserva il focus
 iniziale sulla scelta sicura. `SeleneDialogCard` mostra i suggerimenti del
-dialogo attivo, anche per le scelte multiple e per l'assistente cloud.
+dialogo attivo, anche per le scelte multiple e per l'assistente cloud. A indica
+la selezione del pulsante attivo, anche se è la scelta sicura. Nei dialoghi a
+scelta il testo ha una larghezza definita prima di misurare l'altezza, per
+contenere anche i titoli e i messaggi su più righe.
 
 - `AppRouter` gestisce schermata corrente, cronologia di ritorno e richieste di selezione. `SpotlightState`, `LibrarySelectionState`, `DetailsFocus`, `MenuSelectionModel` e `FocusIndex` descrivono il focus indipendentemente dal disegno SwiftUI. `LibraryQuery` applica ricerca, filtri e ordinamento a qualunque gioco che dia `LibraryQueryRecord` (id, nome, preferito, nascosto, installato, termini di ricerca); le entrate per `PortedGame` di filtro, selezione e Surprise me sono estensioni in `ArcanePorting/Library/`.
 - Le viste principali sono Spotlight, Collection e Details. Ricerca, Add Game, Console, Game Options e Settings si raggiungono dalla shell e dalle azioni del router. Le estensioni `…+Input.swift` traducono tastiera, mouse e controller in modifiche ai modelli di focus.

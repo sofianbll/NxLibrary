@@ -185,7 +185,7 @@ struct CloudSetupAssistant: View {
                 }
                 .modifier(SeleneDialogCard(
                     cancelHint: move?.isCancelling == true ? nil : HintItem(.b, "Cancel"),
-                    confirmHint: focusRows.joined().isEmpty ? nil : HintItem(.a, "Confirm")))
+                    confirmHint: focusRows.joined().isEmpty ? nil : HintItem(.a, "Select")))
             }
         }
         .onAppear { inspect(); installAssistantKeys() }

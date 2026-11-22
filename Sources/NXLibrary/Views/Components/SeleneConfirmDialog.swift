@@ -68,7 +68,7 @@ struct SeleneConfirmDialog<Detail: View>: View {
             .padding(.top, canvas.u(34))
         }
         .modifier(SeleneDialogCard(cancelHint: cancelTitle.map { _ in HintItem(.b, "Cancel") },
-                                   confirmHint: confirmEnabled || cancelTitle != nil ? HintItem(.a, "Confirm") : nil))
+                                   confirmHint: confirmEnabled || cancelTitle != nil ? HintItem(.a, "Select") : nil))
     }
 }
 
@@ -239,16 +239,17 @@ struct SeleneChoiceDialog: View {
     let onChoose: (Int) -> Void
 
     var body: some View {
+        let textWidth = canvas.u(560)
         VStack(spacing: 0) {
             Text(L10n.text(title))
                 .seleneFont(.dialogTitle, .semibold)
                 .foregroundColor(SeleneTheme.ink)
-                .frame(maxWidth: canvas.u(560))
+                .frame(width: textWidth)
                 .fixedSize(horizontal: false, vertical: true)
             Text(message)
                 .seleneFont(.panelBody)
                 .foregroundColor(SeleneTheme.ink75)
-                .frame(maxWidth: canvas.u(560))
+                .frame(width: textWidth)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, canvas.u(14))
             HStack(alignment: .top, spacing: canvas.u(18)) {
@@ -273,11 +274,10 @@ struct SeleneChoiceDialog: View {
             .fixedSize(horizontal: true, vertical: false)
             .padding(.top, canvas.u(34))
         }
-        .frame(minWidth: canvas.u(560))
         .fixedSize(horizontal: true, vertical: false)
         .modifier(SeleneDialogCard(width: nil,
             cancelHint: onCancel.map { HintItem(.b, "Cancel", action: $0) },
             confirmHint: choices.indices.contains { $0 != cancelIndex }
-                ? HintItem(.a, "Confirm", action: { onChoose(focus) }) : nil))
+                ? HintItem(.a, "Select", action: { onChoose(focus) }) : nil))
     }
 }

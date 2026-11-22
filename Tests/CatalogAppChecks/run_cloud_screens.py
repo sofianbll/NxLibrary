@@ -166,22 +166,16 @@ import ArcanePorting
             precondition(before.pixelsWide == after.pixelsWide && before.pixelsHigh == after.pixelsHigh
                 && before.bitsPerPixel == after.bitsPerPixel, "\(name): bitmap format differs")
             let pixelSize = before.bitsPerPixel / 8
-            var haloPixels = 0
+            var differentPixels = 0
             for y in 0..<before.pixelsHigh {
                 for x in 0..<before.pixelsWide {
                     let a = before.bitmapData! + y * before.bytesPerRow + x * pixelSize
                     let b = after.bitmapData! + y * after.bytesPerRow + x * pixelSize
-                    if memcmp(a, b, pixelSize) == 0 { continue }
-                    // Allow only a small difference around the transfer halo, never around the text or gauge.
-                    let centerY = name == "cloud-button-sending-details.png" ? 314
-                        : name == "state-running-details.png" ? 320 : -20
-                    precondition(abs(x - 502) <= 11 && abs(y - centerY) <= 11,
-                                 "\(name): unexpected pixel difference at (\(x), \(y))")
-                    haloPixels += 1
+                    if memcmp(a, b, pixelSize) != 0 { differentPixels += 1 }
                 }
             }
-            precondition(haloPixels <= 64, "\(name): transfer halo changed more than 64 pixels")
-            print("\(name): identical outside the transfer mark (\(haloPixels) pixels)")
+            precondition(differentPixels == 0, "\(name): \(differentPixels) different pixels with motion reduced")
+            print("\(name): 0 different pixels")
         }
     }
 
@@ -261,7 +255,7 @@ DOWNLOAD_FILL = r'''
         checkDownloadFill(1)
         let waiting = CloudLibraryIndicator(state: model.states[game.id]!, item: .app)
         precondition(waiting.status == .queued && !waiting.isTransferring)
-        precondition(waiting.label(context: fr) == "Mise à jour prête · appliquée à la fermeture du jeu")
+        precondition(waiting.label(context: fr) == "WAITING_LABEL_FR")
         try render("panel-update-ready", output,
             CloudLibraryPanel(viewModel: vm, model: model, game: game).environment(\.nxAppLocale, fr))
         model.active = (queuedRequest, Task {})
@@ -815,7 +809,10 @@ extension CloudLibraryPanel {
             # Capture Spotlight after its entrance, without running the reveal in ImageRenderer.
             change(app / "Views/Spotlight/SpotlightInfoView.swift",
                    r'        \.onAppear \{ reveal\(\) \}\n        \.onChange\(of: game.id\) \{ reveal\(\) \}\n', "")
-            host = host.replace("// DOWNLOAD_FILL_CHECK", "do {\n" + DOWNLOAD_FILL + "\n        }")
+            waiting_label = ("Mise à jour prête · appliquée quand tu quittes le jeu"
+                             if baseline == "5047557" else "Mise à jour prête · appliquée à la fermeture du jeu")
+            host = host.replace("// DOWNLOAD_FILL_CHECK",
+                                "do {\n" + DOWNLOAD_FILL.replace("WAITING_LABEL_FR", waiting_label) + "\n        }")
             host = host.replace("// PLAY_TRANSFER_CHECK", "try await checkPlayDuringTransfer(in: data)") + PLAY_TRANSFER
             monitor = app / "Services/RunningGameMonitor.swift"
             change(monitor, r'import AppKit', "import AppKit\nimport os")
