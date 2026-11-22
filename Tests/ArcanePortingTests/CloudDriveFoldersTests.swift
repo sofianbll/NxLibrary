@@ -152,7 +152,7 @@ final class CloudDriveFoldersTests: XCTestCase {
             let checksum = try XCTUnwrap(CloudArchiveInventory.hashes(at: staged)["sha256"])
             let manifestPath = "\(title)/manifests/0000000000000001-\(checksum).json"
             try fm.moveItem(at: staged, to: old.appendingPathComponent(manifestPath))
-            let keys = artifacts.map { $0.object(titleID: title).key.value }.sorted()
+            let keys = artifacts.flatMap { $0.objects(titleID: title) }.map(\.key.value).sorted()
             for key in keys {
                 let target = old.appendingPathComponent(key)
                 try fm.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)

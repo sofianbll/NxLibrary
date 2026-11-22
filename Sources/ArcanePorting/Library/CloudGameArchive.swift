@@ -21,21 +21,34 @@ public struct CloudArtifactStatus: Equatable, Sendable {
     public let bytes: Int64?
     public let uploadedAt: Date?
     public let skippedRoots: [SkippedRoot]
+    public let remoteFolder: String?
+    public var canMigrateArchive: Bool { state == .synchronized && uploadedAt != nil && remoteFolder == nil }
+
+    public init(state: State, hasLocalCopy: Bool, bytes: Int64?, uploadedAt: Date?, skippedRoots: [SkippedRoot],
+                remoteFolder: String? = nil) {
+        self.state = state
+        self.hasLocalCopy = hasLocalCopy
+        self.bytes = bytes
+        self.uploadedAt = uploadedAt
+        self.skippedRoots = skippedRoots
+        self.remoteFolder = remoteFolder
+    }
 
     /// Presence alone cannot tell whether two copies have the same contents.
     static func availability(local: Bool?, artifact: CloudGameManifest.Artifact?, uploadedAt: Date?) -> Self {
         .init(state: artifact == nil ? .notInCloud : local == false ? .cloudOnly : .unknown,
               hasLocalCopy: local == true, bytes: artifact?.unpackedSize,
-              uploadedAt: artifact == nil ? nil : uploadedAt, skippedRoots: [])
+              uploadedAt: artifact == nil ? nil : uploadedAt, skippedRoots: [], remoteFolder: artifact?.files?.folder)
     }
 
     public static func needsUpload(_ statuses: [CloudArtifactKind: Self]) -> Bool {
         CloudArtifactKind.allCases.allSatisfy { statuses[$0]?.hasLocalCopy == true }
-            && statuses.values.contains { $0.state == .notInCloud || $0.state == .newerOnThisMac }
+            && statuses.values.contains { $0.state == .notInCloud || $0.state == .newerOnThisMac || $0.canMigrateArchive }
     }
 
     public static func canUploadAlone(_ kind: CloudArtifactKind, statuses: [CloudArtifactKind: Self]) -> Bool {
         guard let copy = statuses[kind], copy.hasLocalCopy else { return false }
+        if copy.canMigrateArchive { return true }
         let other = statuses[kind == .app ? .cache : .app]
         if kind == .app, other?.state == .notInCloud {
             return copy.state == .newerOnThisMac || (copy.state == .notInCloud && other?.hasLocalCopy == false)
@@ -46,7 +59,7 @@ public struct CloudArtifactStatus: Equatable, Sendable {
 }
 
 public struct CloudArchiveProgress: Equatable, Sendable {
-    public enum Phase: Equatable, Sendable { case archiving, uploading, verifying, downloading, restoring }
+    public enum Phase: Equatable, Sendable { case preparing, uploading, verifying, downloading, restoring }
     public let phase: Phase
     public let kind: CloudArtifactKind?
     public let transfer: StorageProgress?
@@ -78,23 +91,45 @@ public struct CloudArchiveGame: Sendable {
 public struct CloudGameManifest: Codable, Equatable, Sendable {
     public struct Artifact: Codable, Equatable, Sendable {
         public let kind: CloudArtifactKind
-        public let size: Int64
-        public let sha256: String
-        public let md5: String
+        let size: Int64?
+        let sha256: String?
+        let md5: String?
         public let unpackedSize: Int64
         public let entryCount: Int
         public let inventorySHA256: String
         public let engineCommit: String?
         public let shaderChain: String?
         public let options: [String: String]
+        let files: CloudArtifactFiles.Tree?
 
-        public func object(titleID: String) -> StorageObject {
-            StorageObject(key: StorageObjectKey("\(titleID)/\(kind.rawValue)/\(sha256).aar"),
-                          size: size, hashes: ["sha256": sha256, "md5": md5])
+        init(kind: CloudArtifactKind, size: Int64? = nil, sha256: String? = nil, md5: String? = nil, unpackedSize: Int64,
+             entryCount: Int, inventorySHA256: String, engineCommit: String?, shaderChain: String?,
+             options: [String: String], files: CloudArtifactFiles.Tree? = nil) {
+            self.kind = kind
+            self.size = size
+            self.sha256 = sha256
+            self.md5 = md5
+            self.unpackedSize = unpackedSize
+            self.entryCount = entryCount
+            self.inventorySHA256 = inventorySHA256
+            self.engineCommit = engineCommit
+            self.shaderChain = shaderChain
+            self.options = options
+            self.files = files
+        }
+
+        func legacyObject(titleID: String) -> StorageObject? {
+            guard files == nil, let size, let sha256, let md5 else { return nil }
+            return StorageObject(key: StorageObjectKey("\(titleID)/\(kind.rawValue)/\(sha256).aar"),
+                                 size: size, hashes: ["sha256": sha256, "md5": md5])
+        }
+
+        func objects(titleID: String) -> [StorageObject] {
+            files?.objects ?? [legacyObject(titleID: titleID)].compactMap { $0 }
         }
 
         enum CodingKeys: String, CodingKey {
-            case kind, size, sha256, md5, options
+            case kind, size, sha256, md5, options, files
             case unpackedSize = "unpacked_size", entryCount = "entry_count", inventorySHA256 = "inventory_sha256"
             case engineCommit = "engine_commit", shaderChain = "shader_chain"
         }
@@ -110,7 +145,8 @@ public struct CloudGameManifest: Codable, Equatable, Sendable {
     public var gameVersion: String? { artifacts.first { $0.kind == .app }?.options["CFBundleShortVersionString"] }
     public var cloudOnlyApp: CloudArtifactStatus? {
         artifacts.first { $0.kind == .app }.map {
-            .init(state: .cloudOnly, hasLocalCopy: false, bytes: $0.unpackedSize, uploadedAt: createdAt, skippedRoots: [])
+            .init(state: .cloudOnly, hasLocalCopy: false, bytes: $0.unpackedSize, uploadedAt: createdAt,
+                  skippedRoots: [], remoteFolder: $0.files?.folder)
         }
     }
 
@@ -193,8 +229,9 @@ public actor CloudGameArchive {
     public typealias Progress = @Sendable (CloudArchiveProgress) -> Void
     private typealias Artifact = CloudGameManifest.Artifact
     private typealias Fingerprint = CloudArchiveFingerprintCache.Fingerprint
-    private static let manifestLimit = 64 * 1024
-    private let backend: any StorageBackend
+    private static let legacyManifestLimit = 64 * 1024
+    private static let manifestLimit = 32 * 1024 * 1024
+    let backend: any StorageBackend
     private let capacity: @Sendable (URL) -> Int64?
     private let trash: @Sendable (URL) throws -> Void
     private let leases: CloudTitleLeases
@@ -248,7 +285,8 @@ public actor CloudGameArchive {
                             let missing: CloudArtifactStatus.State = artifact == nil ? .notInCloud : .cloudOnly
                             statuses[kind] = .init(state: readable && confirmed ? missing : .unknown,
                                                    hasLocalCopy: false, bytes: bytes,
-                                                   uploadedAt: artifact == nil ? nil : manifest?.createdAt, skippedRoots: [])
+                                                   uploadedAt: artifact == nil ? nil : manifest?.createdAt, skippedRoots: [],
+                                                   remoteFolder: artifact?.files?.folder)
                             continue
                         }
                         let signature = try CloudArchiveInventory.signature(url, kind: kind)
@@ -261,24 +299,33 @@ public actor CloudGameArchive {
                             bytes = signature.bytes
                             local = true
                             if let artifact {
-                                if signature.bytes != artifact.unpackedSize || signature.entries.count != artifact.entryCount {
+                                if artifact.files == nil && (signature.bytes != artifact.unpackedSize || signature.entries.count != artifact.entryCount) {
                                     state = .newerOnThisMac
                                 } else {
-                                    let key = CloudArchiveInventory.fingerprintKey(url, kind: kind)
+                                    let key = CloudArchiveInventory.fingerprintKey(url, kind: kind, portable: artifact.files != nil)
                                     let fingerprint: Fingerprint
                                     if let previous = cached[key], previous.signature == signature.sha256 {
                                         fingerprint = previous
                                     } else {
-                                        let snapshot = try CloudArchiveInventory.scan(url, kind: kind)
+                                        let snapshot = artifact.files == nil ? try CloudArchiveInventory.scan(url, kind: kind) : signature
+                                        let digest = try artifact.files == nil ? snapshot.sha256
+                                            : CloudArtifactFiles.digest(CloudArtifactFiles.entries(at: url, snapshot: signature))
                                         let after = try CloudArchiveInventory.signature(url, kind: kind)
                                         guard !snapshot.hasExcludedFiles, !after.hasExcludedFiles, signature.sha256 == after.sha256 else {
                                             throw CloudArchiveError.localChanged
                                         }
-                                        fingerprint = .init(signature: signature.sha256, sha256: snapshot.sha256,
+                                        fingerprint = .init(signature: signature.sha256, sha256: digest,
                                                             withoutRootMtime: snapshot.withoutRootMtime)
                                         fingerprints[key] = fingerprint
                                     }
                                     state = fingerprint.matches(artifact) ? .synchronized : .newerOnThisMac
+                                    if kind == .cache, state == .newerOnThisMac, let tree = artifact.files,
+                                       let files = try self.localFiles(at: url, kind: kind, snapshot: signature),
+                                       files.count < tree.entries.count, CloudArtifactFiles.isUsableSubset(files, of: tree) {
+                                        state = .cloudOnly
+                                        local = false
+                                        bytes = artifact.unpackedSize
+                                    }
                                 }
                             } else if readable {
                                 state = .notInCloud
@@ -291,7 +338,8 @@ public actor CloudGameArchive {
                     }
                 }
                 statuses[kind] = .init(state: state, hasLocalCopy: local, bytes: bytes,
-                                       uploadedAt: artifact == nil ? nil : manifest?.createdAt, skippedRoots: skippedRoots)
+                                       uploadedAt: artifact == nil ? nil : manifest?.createdAt, skippedRoots: skippedRoots,
+                                       remoteFolder: artifact?.files?.folder)
             }
             return (statuses, fingerprints)
         }
@@ -329,7 +377,7 @@ public actor CloudGameArchive {
         try Task.checkCancellation()
         guard let artifact = manifest.artifacts.first(where: { $0.kind == .cache }) else { return (.fullRebuild, nil, false) }
         guard let cache = try? location(.cache, for: game) else { return (.downloadCache, nil, false) }
-        let key = CloudArchiveInventory.fingerprintKey(cache, kind: .cache)
+        let key = CloudArchiveInventory.fingerprintKey(cache, kind: .cache, portable: artifact.files != nil)
         let cached = await fingerprints.entries()[key]
         let worker = Task.detached(priority: .utility) { () throws -> (CloudRebuildDecision, Bool, Fingerprint?) in
             do {
@@ -341,6 +389,23 @@ public actor CloudGameArchive {
                     $0 > manifest.createdAt && lastSuccessfulBuild?.contains($0) == true
                 } ?? false
                 if usable && newer { return (.allowed, true, nil) }
+                if let tree = artifact.files {
+                    let hasFile = signature.entries.contains { $0.type == "F" }
+                    let couldBePartial = hasFile && signature.entries.lazy.filter { $0.type != "D" }.count < tree.entries.count
+                    if let cached, cached.signature == signature.sha256 {
+                        if usable && preferLocalCache || (hasFile || tree.entries.isEmpty) && cached.matches(artifact) {
+                            return (.allowed, usable, nil)
+                        }
+                        if !couldBePartial { return (.downloadCache, usable, nil) }
+                    }
+                    guard let files = try self.localFiles(at: cache, kind: .cache, snapshot: signature) else {
+                        return (.downloadCache, false, nil)
+                    }
+                    let fresh = Fingerprint(signature: signature.sha256, sha256: try CloudArtifactFiles.digest(files),
+                                            withoutRootMtime: nil)
+                    let allowed = CloudArtifactFiles.isUsableSubset(files, of: tree) || usable && preferLocalCache
+                    return (allowed ? .allowed : .downloadCache, usable, fresh)
+                }
                 if let cached, cached.signature == signature.sha256 {
                     return (cached.matches(artifact) || usable && preferLocalCache ? .allowed : .downloadCache, usable, nil)
                 }
@@ -393,9 +458,9 @@ public actor CloudGameArchive {
             _ = try await backend.rootDirectories()
             return nil
         }
-        guard let newest = entries
-            .filter({ $0.key.value.hasPrefix(directory.value + "/") && $0.key.value.hasSuffix(".json") })
+        guard let newest = entries.filter({ $0.key.value.hasPrefix(directory.value + "/") && $0.key.value.hasSuffix(".json") })
             .max(by: { $0.key.value < $1.key.value }) else { return nil }
+        guard entries.filter({ $0.key == newest.key }).count == 1 else { throw CloudArchiveError.invalidManifest }
         return try await readManifest(newest, titleID: title)
     }
 
@@ -436,13 +501,25 @@ public actor CloudGameArchive {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         guard let manifest = try? decoder.decode(CloudGameManifest.self, from: data),
-              manifest.version == 1, manifest.titleID == title,
+              [1, 2].contains(manifest.version), manifest.titleID == title,
               [[.app], CloudArtifactKind.allCases].contains(manifest.artifacts.map(\.kind)),
-              manifest.artifacts.allSatisfy({
-                  $0.size > 0 && $0.unpackedSize >= 0 && (1...CloudArchiveInventory.maximumEntries).contains($0.entryCount)
-                      && Self.isHex($0.sha256, count: 64) && Self.isHex($0.inventorySHA256, count: 64)
-                      && Self.isHex($0.md5, count: 32)
-              }) else { throw CloudArchiveError.invalidManifest }
+              manifest.version != 1 || data.count <= Self.legacyManifestLimit else { throw CloudArchiveError.invalidManifest }
+        for artifact in manifest.artifacts {
+            if let tree = artifact.files {
+                guard manifest.version == 2, artifact.size == nil, artifact.sha256 == nil, artifact.md5 == nil,
+                      artifact.unpackedSize >= 0, artifact.kind != .app || !tree.entries.isEmpty,
+                      artifact.entryCount == tree.entries.count else { throw CloudArchiveError.invalidManifest }
+                try tree.validate(titleID: title, kind: artifact.kind, digest: artifact.inventorySHA256,
+                                  bytes: artifact.unpackedSize)
+            } else {
+                guard let object = artifact.legacyObject(titleID: title), object.size > 0, artifact.unpackedSize >= 0,
+                      (1...CloudArchiveInventory.maximumEntries).contains(artifact.entryCount),
+                      Self.isHex(object.hashes["sha256"] ?? "", count: 64), Self.isHex(artifact.inventorySHA256, count: 64),
+                      Self.isHex(object.hashes["md5"] ?? "", count: 32) else { throw CloudArchiveError.invalidManifest }
+            }
+        }
+        guard manifest.version != 2 || manifest.artifacts.contains(where: { $0.files != nil })
+        else { throw CloudArchiveError.invalidManifest }
         return manifest
     }
 
@@ -459,12 +536,15 @@ public actor CloudGameArchive {
         var artifacts: [Artifact] = []
         var gameName: String?, bundleName: String?
         var sourceSelection = game.sourceSelection
+        let previous: CloudGameManifest?
+        do { previous = try await latest(titleID: game.titleID) }
+        catch CloudArchiveError.invalidManifest where selected.count == 1 { throw CloudArchiveError.needsFullUpload }
+        catch CloudArchiveError.invalidManifest { previous = nil }
         if selected.count == 1 {
             do {
-                let previous = try await latest(titleID: game.titleID)
                 if let retained = previous?.artifacts.first(where: { !kinds.contains($0.kind) }) {
                     progress?(.init(.verifying))
-                    try await backend.verify(retained.object(titleID: game.titleID))
+                    try await verify(retained, titleID: game.titleID)
                     artifacts.append(retained)
                     gameName = previous?.gameName
                     bundleName = previous?.bundleName
@@ -479,71 +559,50 @@ public actor CloudGameArchive {
             }
         }
         let snapshots = try selected.map { kind in
-            progress?(.init(.archiving, kind: kind))
+            progress?(.init(.preparing, kind: kind))
             let source = try location(kind, for: game)
             let parent = try CloudArchiveInventory.node(at: source.deletingLastPathComponent())
-            let signature = try CloudArchiveInventory.signature(source, kind: kind)
-            let snapshot = try CloudArchiveInventory.scan(source, kind: kind)
-            guard !snapshot.hasExcludedFiles, !signature.hasExcludedFiles else { throw CloudArchiveError.excludedFiles }
+            let snapshot = try CloudArchiveInventory.signature(source, kind: kind)
+            guard !snapshot.hasExcludedFiles else { throw CloudArchiveError.excludedFiles }
             guard !snapshot.isSkippedOnly else { throw CloudArchiveError.localMissing }
-            return (source, parent, snapshot, signature.sha256)
+            return (source, parent, snapshot, try CloudArtifactFiles.entries(at: source, snapshot: snapshot))
         }
-        var staged: [(RcloneStorageBackend.ArchiveUpload, Artifact)] = []
-        var pending: [RcloneStorageBackend.ArchiveUpload] = []
-        do {
-            for (index, kind) in selected.enumerated() {
-                progress?(.init(.archiving, kind: kind))
-                let (source, parent, initial, signature) = snapshots[index]
-                let temporary = try uploader.archiveUpload()
-                pending.append(temporary)
-                let update = transfer(progress, phase: .uploading, kind: kind, total: initial.bytes)
-                // Omit -o: aa treats a literal "-" as a filename, not stdout.
-                let stream = try await CloudArchiveStream.send(
-                    ["archive", "-d", source.path, "-a", "lzfse", "-t", "2", "-x", "-include-field", "siz"]
-                        + CloudArchiveInventory.archiveExclusions(kind),
-                    to: uploader.archiveUploadProcess(to: temporary), kind: kind, estimatedBytes: initial.bytes, progress: update)
-                progress?(.init(.verifying, kind: kind))
-                if let (path, reason) = firstDifference(from: initial.entries, to: stream.entries) {
-                    throw CloudArchiveError.uploadMismatch(kind, path: path.isEmpty ? "." : path, reason: reason)
-                }
-                guard (try? sameDirectory(parent, at: source.deletingLastPathComponent())) == true else {
-                    throw CloudArchiveError.uploadMismatch(kind, path: "..", reason: .parentDirectory)
-                }
-                guard stream.fingerprint == initial.sha256 else { throw CloudArchiveError.localChanged }
-                let info = kind == .app ? try await verifiedApp(source, titleID: game.titleID) : [:]
-                let chain = shaderChain(at: source, kind: kind)
-                try Task.checkCancellation()
-                guard try CloudArchiveInventory.signature(source, kind: kind).sha256 == signature else {
-                    throw CloudArchiveError.localChanged
-                }
-                if kind == .app {
-                    gameName = info["CFBundleDisplayName"] ?? info["CFBundleName"]
-                        ?? source.deletingPathExtension().lastPathComponent
-                    bundleName = source.lastPathComponent
-                }
-                var options = info.filter { ["DMLanguage", "CFBundleShortVersionString"].contains($0.key) }
-                // A skipped directory can change the cache root mtime without changing the archived files.
-                options[CloudArchiveInventory.cacheFingerprintOption] = initial.withoutRootMtime
-                let artifact = Artifact(kind: kind, size: stream.bytes, sha256: stream.sha256, md5: stream.md5,
-                                        unpackedSize: initial.bytes, entryCount: initial.entries.count,
-                                        inventorySHA256: initial.sha256, engineCommit: info["DMCommit"] ?? game.engineCommit,
-                                        shaderChain: chain, options: options)
-                try await uploader.verifyArchive(artifact.object(titleID: game.titleID), staged: temporary)
-                staged.append((temporary, artifact))
-                artifacts.append(artifact)
+        var gameFolder = previous?.artifacts.compactMap { $0.files?.folder.components(separatedBy: "/").first }.first
+        for (kind, (source, parent, snapshot, files)) in zip(selected, snapshots) {
+            try checkUpload(source, parent: parent, snapshot: snapshot, kind: kind)
+            let info = kind == .app ? try await verifiedApp(source, titleID: game.titleID) : [:]
+            if kind == .app {
+                gameName = info["CFBundleDisplayName"] ?? info["CFBundleName"] ?? source.deletingPathExtension().lastPathComponent
+                bundleName = source.lastPathComponent
             }
-            for (temporary, artifact) in staged {
-                try await uploader.publishArchive(artifact.object(titleID: game.titleID), staged: temporary)
+            gameFolder = gameFolder ?? CloudGameSources.folderName(local: "", title: gameName ?? "Game", titleID: game.titleID)
+            guard let gameFolder else { throw CloudArchiveError.unsafePath }
+            let digest = try CloudArtifactFiles.digest(files)
+            let folder = "\(gameFolder)/\(kind.rawValue)/\(digest)" + (kind == .app ? "/" + source.lastPathComponent : "")
+            let tree = CloudArtifactFiles.Tree(folder: folder, entries: files)
+            let bytes = try CloudArtifactFiles.validate(files, kind: kind)
+            try tree.validate(titleID: game.titleID, kind: kind, digest: digest, bytes: bytes)
+            let old = previous?.artifacts.first { $0.kind == kind }?.files.flatMap { $0.entries.isEmpty ? nil : $0.key }
+            let update = transfer(progress, phase: .uploading, kind: kind, total: bytes)
+            try checkUpload(source, parent: parent, snapshot: snapshot, kind: kind)
+            do {
+                try await uploader.copyFiles(files.map(\.path), from: source, to: tree.key,
+                                             reusing: old == tree.key ? nil : old, progress: update)
+            } catch {
+                try checkUpload(source, parent: parent, snapshot: snapshot, kind: kind)
+                throw error
             }
-        } catch {
-            await uploader.discardArchives(pending)
-            if error as? StorageBackendError == .publicationFailed { throw CloudArchiveError.installFailed }
-            throw error
+            progress?(.init(.verifying, kind: kind))
+            try checkUpload(source, parent: parent, snapshot: snapshot, kind: kind)
+            try await tree.verify(on: uploader)
+            artifacts.append(Artifact(kind: kind, unpackedSize: bytes, entryCount: files.count, inventorySHA256: digest,
+                engineCommit: info["DMCommit"] ?? game.engineCommit, shaderChain: shaderChain(at: source, kind: kind),
+                options: info.filter { ["DMLanguage", "CFBundleShortVersionString"].contains($0.key) }, files: tree))
         }
         if artifacts.first?.kind == .cache { artifacts.swapAt(0, 1) }
         progress?(.init(.verifying))
         let now = Date()
-        let manifest = CloudGameManifest(version: 1, titleID: game.titleID,
+        let manifest = CloudGameManifest(version: 2, titleID: game.titleID,
                                          createdAt: Date(timeIntervalSince1970: now.timeIntervalSince1970.rounded(.down)),
                                          artifacts: artifacts, gameName: gameName, bundleName: bundleName,
                                          sourceSelection: sourceSelection)
@@ -557,6 +616,9 @@ public actor CloudGameArchive {
         guard data.count <= Self.manifestLimit else { throw CloudArchiveError.invalidManifest }
         try data.write(to: file)
         let hashes = try CloudArchiveInventory.hashes(at: file)
+        for (kind, (source, parent, snapshot, _)) in zip(selected, snapshots) {
+            try checkUpload(source, parent: parent, snapshot: snapshot, kind: kind)
+        }
         let timestamp = String(format: "%016lld", Int64(now.timeIntervalSince1970 * 1000))
         let key = StorageObjectKey("\(game.titleID)/manifests/\(timestamp)-\(hashes["sha256"]!).json")
         try await put(file, object: StorageObject(key: key, size: Int64(data.count), hashes: hashes), progress: nil)
@@ -573,15 +635,20 @@ public actor CloudGameArchive {
         let volume = try CloudArchiveInventory.node(at: parent)
         let before = try CloudArchiveInventory.node(at: target)
         let artifact = try await remoteArtifact(kind, game)
-        let object = artifact.object(titleID: game.titleID)
-        try await backend.verify(StorageObject(key: object.key, size: object.size, hashes: ["sha256": artifact.sha256]))
-        let snapshot = try CloudArchiveInventory.scan(target, kind: kind)
+        try await verify(artifact, titleID: game.titleID)
+        let snapshot = try artifact.files == nil ? CloudArchiveInventory.scan(target, kind: kind)
+            : CloudArchiveInventory.signature(target, kind: kind)
         guard !snapshot.hasExcludedFiles else { throw CloudArchiveError.excludedFiles }
         guard !snapshot.isSkippedOnly else { throw CloudArchiveError.localMissing }
-        guard Fingerprint(signature: "", sha256: snapshot.sha256, withoutRootMtime: snapshot.withoutRootMtime).matches(artifact),
+        let digest = try artifact.files == nil ? snapshot.sha256
+            : CloudArtifactFiles.digest(CloudArtifactFiles.entries(at: target, snapshot: snapshot))
+        guard Fingerprint(signature: "", sha256: digest, withoutRootMtime: snapshot.withoutRootMtime).matches(artifact),
               try sameDirectory(volume, at: parent),
               try sameNode(before, at: target) else { throw CloudArchiveError.localChanged }
         try beforeMutation()
+        if artifact.files != nil, try CloudArchiveInventory.signature(target, kind: kind).sha256 != snapshot.sha256 {
+            throw CloudArchiveError.localChanged
+        }
         try Task.checkCancellation()
         if snapshot.skippedRoots.isEmpty {
             try trash(target)
@@ -624,30 +691,51 @@ public actor CloudGameArchive {
         let existing = kind == .cache && previous != nil ? try CloudArchiveInventory.signature(destination, kind: .cache) : nil
         guard existing?.hasExcludedFiles != true else { throw CloudArchiveError.excludedFiles }
         let skippedOnly = existing?.isSkippedOnly == true
-        guard previous == nil || !onlyIfMissing || skippedOnly else {
+        let artifact = try await remoteArtifact(kind, game)
+        let partial = try kind == .cache && !skippedOnly && existing != nil
+            && artifact.files.map { tree in
+                guard let entries = try localFiles(at: destination, kind: .cache, snapshot: existing),
+                      entries.count < tree.entries.count else { return false }
+                return CloudArtifactFiles.isUsableSubset(entries, of: tree)
+            } == true
+        guard previous == nil || !onlyIfMissing || skippedOnly || partial else {
             throw CloudArchiveError.unsafePath
         }
-        let artifact = try await remoteArtifact(kind, game)
-        try requireSpace(in: parent, bytes: artifact.unpackedSize, entries: artifact.entryCount, archive: artifact.size)
+        if let legacy = artifact.legacyObject(titleID: game.titleID) {
+            try requireSpace(in: parent, bytes: artifact.unpackedSize, entries: artifact.entryCount, archive: legacy.size)
+        }
         let stage = try staging(in: parent)
         var keepStage = false
         defer { if !keepStage { try? FileManager.default.removeItem(at: stage) } }
         let archive = stage.appendingPathComponent("item.aar")
-        try await backend.get(artifact.object(titleID: game.titleID).key, to: archive,
-                              progress: transfer(progress, phase: .downloading, kind: kind, total: artifact.size))
-        progress?(.init(.verifying, kind: kind))
-        guard try CloudArchiveInventory.node(at: archive).st_size == artifact.size,
-              try CloudArchiveInventory.hashes(at: archive, includeMD5: false)["sha256"] == artifact.sha256
-        else { throw StorageBackendError.hashMismatch }
-        let entries = try await inventory(in: archive, kind: kind)
-        guard entries.count == artifact.entryCount,
-              try CloudArchiveInventory.validate(entries, kind: kind) == artifact.unpackedSize
-        else { throw CloudArchiveError.invalidArchive }
-        try requireSpace(in: parent, bytes: artifact.unpackedSize, entries: artifact.entryCount)
         let incoming = stage.appendingPathComponent(destination.lastPathComponent, isDirectory: true)
-        progress?(.init(.restoring, kind: kind))
-        _ = try await unpack(archive, to: incoming, kind: kind, titleID: game.titleID,
-                             listed: entries, fingerprint: artifact.inventorySHA256)
+        let resume: URL?
+        if let files = artifact.files {
+            resume = try await restoreFiles(files, kind: kind, titleID: game.titleID, destination: destination,
+                                            incoming: incoming, progress: progress, partialCache: previous == nil || partial || skippedOnly,
+                                            beforePartial: {
+                try beforeMutation()
+                guard try self.sameDirectory(volume, at: parent), try self.sameNode(previous, at: destination)
+                else { throw CloudArchiveError.localChanged }
+            })
+        } else {
+            resume = nil
+            guard let legacy = artifact.legacyObject(titleID: game.titleID) else { throw CloudArchiveError.invalidManifest }
+            try await backend.get(legacy.key, to: archive,
+                                  progress: transfer(progress, phase: .downloading, kind: kind, total: legacy.size))
+            progress?(.init(.verifying, kind: kind))
+            guard try CloudArchiveInventory.node(at: archive).st_size == legacy.size,
+                  try CloudArchiveInventory.hashes(at: archive, includeMD5: false)["sha256"] == legacy.hashes["sha256"]
+            else { throw StorageBackendError.hashMismatch }
+            let entries = try await inventory(in: archive, kind: kind)
+            guard entries.count == artifact.entryCount,
+                  try CloudArchiveInventory.validate(entries, kind: kind) == artifact.unpackedSize
+            else { throw CloudArchiveError.invalidArchive }
+            try requireSpace(in: parent, bytes: artifact.unpackedSize, entries: artifact.entryCount)
+            progress?(.init(.restoring, kind: kind))
+            _ = try await unpack(archive, to: incoming, kind: kind, titleID: game.titleID,
+                                 listed: entries, fingerprint: artifact.inventorySHA256)
+        }
         try beforeMutation()
         guard try sameDirectory(volume, at: parent),
               try sameNode(previous, at: destination) else { throw CloudArchiveError.localChanged }
@@ -656,6 +744,7 @@ public actor CloudGameArchive {
         try moving(existing?.skippedRoots ?? [], from: destination, to: incoming, keepStage: &keepStage) {
             guard renamex_np(incoming.path, destination.path, UInt32(flags)) == 0 else { throw CloudArchiveError.installFailed }
         }
+        if let resume { try? FileManager.default.removeItem(at: resume) }
         // An external writer may have added data while the old directory was still live.
         if previous != nil, !skippedOnly || rmdir(incoming.path) != 0 {
             keepStage = true
@@ -663,6 +752,29 @@ public actor CloudGameArchive {
             return incoming
         }
         return nil
+    }
+
+    nonisolated func localFiles(at url: URL, kind: CloudArtifactKind, snapshot: CloudArchiveInventory.Snapshot? = nil)
+        throws -> [CloudArtifactFiles.Entry]? {
+        do {
+            let snapshot = try snapshot ?? CloudArchiveInventory.signature(url, kind: kind)
+            guard !snapshot.hasExcludedFiles, !snapshot.isSkippedOnly else { return nil }
+            let entries = try CloudArtifactFiles.entries(at: url, snapshot: snapshot)
+            guard try CloudArchiveInventory.signature(url, kind: kind).sha256 == snapshot.sha256 else { return nil }
+            return entries
+        } catch is CancellationError { throw CancellationError() }
+        catch { return nil }
+    }
+
+    private func verify(_ artifact: Artifact, titleID: String) async throws {
+        if let files = artifact.files {
+            guard let uploader = backend as? RcloneStorageBackend else { throw StorageBackendError.backendUnavailable }
+            try await files.verify(on: uploader)
+        } else if let object = artifact.legacyObject(titleID: titleID) {
+            try await backend.verify(object)
+        } else {
+            throw CloudArchiveError.invalidManifest
+        }
     }
 
     private func moving(_ names: [String], from source: URL, to target: URL, keepStage: inout Bool,
@@ -714,7 +826,7 @@ public actor CloudGameArchive {
         return parent.appendingPathComponent(original.lastPathComponent, isDirectory: true)
     }
 
-    private nonisolated func existingNode(at url: URL) throws -> stat? {
+    nonisolated func existingNode(at url: URL) throws -> stat? {
         do { return try CloudArchiveInventory.node(at: url) }
         catch CloudArchiveError.localMissing { return nil }
     }
@@ -739,7 +851,7 @@ public actor CloudGameArchive {
         return directory
     }
 
-    private func requireSpace(in directory: URL, bytes: Int64, entries: Int, archive: Int64 = 0) throws {
+    func requireSpace(in directory: URL, bytes: Int64, entries: Int, archive: Int64 = 0) throws {
         let overhead = Int64(entries) * 16_384 + 1_048_576
         guard bytes <= Int64.max - overhead, archive <= Int64.max - overhead - bytes,
               let free = capacity(directory), free >= bytes + overhead + archive else {
@@ -789,7 +901,19 @@ public actor CloudGameArchive {
         return nil
     }
 
-    private func verifiedApp(_ app: URL, titleID: String) async throws -> [String: String] {
+    private func checkUpload(_ source: URL, parent: stat, snapshot: CloudArchiveInventory.Snapshot,
+                             kind: CloudArtifactKind) throws {
+        guard (try? sameDirectory(parent, at: source.deletingLastPathComponent())) == true else {
+            throw CloudArchiveError.uploadMismatch(kind, path: "..", reason: .parentDirectory)
+        }
+        let current = try CloudArchiveInventory.signature(source, kind: kind)
+        if let (path, reason) = firstDifference(from: snapshot.entries, to: current.entries) {
+            throw CloudArchiveError.uploadMismatch(kind, path: path.isEmpty ? "." : path, reason: reason)
+        }
+        guard current.sha256 == snapshot.sha256, !current.hasExcludedFiles else { throw CloudArchiveError.localChanged }
+    }
+
+    func verifiedApp(_ app: URL, titleID: String) async throws -> [String: String] {
         let info = try ImportService.verifiedIdentity(of: app, titleID: titleID)
         _ = try await command("codesign", ImportService.signatureArguments(for: app), failure: .invalidApp)
         return info.compactMapValues { $0 as? String }
@@ -821,7 +945,7 @@ public actor CloudGameArchive {
         try await backend.verify(object)
     }
 
-    private func transfer(_ progress: Progress?, phase: CloudArchiveProgress.Phase, kind: CloudArtifactKind,
+    func transfer(_ progress: Progress?, phase: CloudArchiveProgress.Phase, kind: CloudArtifactKind,
                           total: Int64) -> (@Sendable (StorageProgress) -> Void)? {
         guard let progress else { return nil }
         progress(.init(phase, kind: kind, transfer: StorageProgress(bytesTransferred: 0, totalBytes: total)))

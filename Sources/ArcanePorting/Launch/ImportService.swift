@@ -272,7 +272,7 @@ public final class ImportService {
                   try CloudArchiveInventory.signature(source, kind: .app).sha256 == initial.sha256 else {
                 throw CloudArchiveError.localChanged
             }
-            try repairAdoptionCopy(incoming, entries: copied.entries)
+            try Self.repairAdoptionCopy(incoming, entries: copied.entries)
             let info = try Self.verifiedIdentity(of: incoming, titleID: plan.app.titleId)
             try verifySignature(incoming)
             let bytes = try CloudArchiveInventory.signature(incoming, kind: .app).bytes
@@ -286,10 +286,23 @@ public final class ImportService {
         }
     }
 
-    private func repairAdoptionCopy(_ app: URL, entries: [CloudArchiveInventory.Entry]) throws {
+    static func repairAdoptionCopy(_ app: URL, entries: [CloudArchiveInventory.Entry]) throws {
+        let fm = FileManager.default
         let types = Dictionary(uniqueKeysWithValues: entries.map { ($0.path, $0.type) })
+        let names = Set(types.keys.map { $0.precomposedStringWithCanonicalMapping.lowercased() })
+        for entry in entries where entry.type == "F" && entry.path.hasSuffix(CloudArtifactFiles.linkSuffix) {
+            let relative = String(entry.path.dropLast(CloudArtifactFiles.linkSuffix.count))
+            guard SaveFiles.validRelative(relative), !CloudArchiveInventory.isExcluded(relative, .app),
+                  !names.contains(relative.precomposedStringWithCanonicalMapping.lowercased()) else {
+                throw CloudArchiveError.unsafePath
+            }
+            let sidecar = app.appendingPathComponent(entry.path)
+            try CloudArtifactFiles.restoreLink(sidecar, to: app.appendingPathComponent(relative), relative: relative, kind: .app)
+            try fm.removeItem(at: sidecar)
+        }
         for entry in entries {
             try Task.checkCancellation()
+            if entry.type == "F", entry.path.hasSuffix(CloudArtifactFiles.linkSuffix) { continue }
             let url = entry.path.isEmpty ? app : app.appendingPathComponent(entry.path)
             if removexattr(url.path, "com.apple.quarantine", XATTR_NOFOLLOW) != 0, errno != ENOATTR && errno != ENOTSUP {
                 throw CloudArchiveError.invalidApp
@@ -326,7 +339,8 @@ public final class ImportService {
             let depth = path.split(separator: "/").count - 1
             let parts = link.split(separator: "/")
             guard parts.count > depth + 1, parts[depth] == "PlugIns", parts[depth + 1].hasSuffix(".bundle"),
-                  types[parent] == "D", types[relative] != "L" else { continue }
+                  types[parent] == "D", types[relative] != "L", types[relative + CloudArtifactFiles.linkSuffix] != "F"
+            else { continue }
             let target = "PlugIns/\(parts[depth + 1])/Contents/" + path
             guard link == String(repeating: "../", count: depth) + target,
                   let targetType = types["Contents/" + target], targetType == "F" || targetType == "D" else { continue }

@@ -181,7 +181,7 @@ struct CloudLibraryPanel: View {
         if let kind = item.artifact {
             guard let storage = model.preference.storage, let title = game.titleId else { return nil }
             base = storage
-            folder = "\(title.uppercased())/\(kind.rawValue)"
+            folder = (state.copies[kind] ?? state.availability[kind])?.remoteFolder ?? "\(title.uppercased())/\(kind.rawValue)"
         } else {
             guard let storage = model.preference.sourcesStorage, let files = CloudSourceFiles(game) else { return nil }
             base = storage
@@ -432,8 +432,7 @@ struct CloudLibraryProgressView: View {
 
     static func phaseKey(_ progress: CloudArchiveProgress) -> String {
         switch (progress.phase, progress.kind) {
-        case (.archiving, .app): return "Archiving app"
-        case (.archiving, _): return "Archiving build cache"
+        case (.preparing, _): return "Preparing cloud operation…"
         case (.uploading, .app): return "Sending app"
         case (.uploading, .cache): return "Sending build cache"
         case (.uploading, nil): return "Sending game files"

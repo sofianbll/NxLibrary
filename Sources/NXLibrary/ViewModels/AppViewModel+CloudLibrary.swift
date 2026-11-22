@@ -97,8 +97,9 @@ struct CloudLibraryState {
     func canUpload(_ kind: CloudArtifactKind) -> Bool {
         guard !mustResendBoth, let copy = copies[kind], copy.hasLocalCopy else { return false }
         switch copy.state {
-        case .notInCloud, .newerOnThisMac, .unknown: return CloudArtifactStatus.canUploadAlone(kind, statuses: copies)
-        case .cloudOnly, .synchronized: return false
+        case .notInCloud, .newerOnThisMac, .unknown, .synchronized:
+            return CloudArtifactStatus.canUploadAlone(kind, statuses: copies)
+        case .cloudOnly: return false
         }
     }
     var needsCombinedUpload: Bool {
@@ -108,7 +109,7 @@ struct CloudLibraryState {
     }
     var canUploadBoth: Bool {
         needsCombinedUpload || CloudArtifactKind.allCases.allSatisfy {
-            copies[$0]?.state == .newerOnThisMac && canUpload($0)
+            (copies[$0]?.state == .newerOnThisMac || copies[$0]?.canMigrateArchive == true) && canUpload($0)
         }
     }
 }
