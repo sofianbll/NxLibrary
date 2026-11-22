@@ -21,6 +21,17 @@ extension AppSettings {
         set { setModuleValue(newValue, forKey: "gameDefaults") }
     }
 
+    /// Empty uses the display of Arcane's window at play time.
+    public var gameDisplay: String {
+        get { moduleValues["gameDisplay"]?.stringValue ?? "" }
+        set { moduleValues["gameDisplay"] = newValue.isEmpty ? nil : .string(newValue) }
+    }
+
+    public var gameDisplayOverrides: [String: String] {
+        get { moduleValue("gameDisplayOverrides", as: [String: String].self) ?? [:] }
+        set { setModuleValue(newValue, forKey: "gameDisplayOverrides") }
+    }
+
     /// The library's cloud saves folder, written into each game's preferences.
     public var cloudSaves: CloudSaves {
         get { moduleValue("cloudSaves", as: CloudSaves.self) ?? .off }

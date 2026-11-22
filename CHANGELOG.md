@@ -1,11 +1,14 @@
 # Changelog
 
-User-visible changes to Arcane (formerly NX Library) are recorded here. Entries are grouped by release, with the newest first. Engine changes also have their own [upgrade notes](docs/history/engine-upgrades/README.md).
+User-visible changes to Oort NX and its Arcane base (formerly NX Library) are recorded here. Entries are grouped by release, with the newest first. Engine changes also have their own [upgrade notes](docs/history/engine-upgrades/README.md).
 
-## Unreleased
+## 0.3.0
+
+Based on Arcane 0.2.1. This is the first release in the fork's own `MAJOR.MINOR.PATCH` series.
 
 ### Added
 
+- Choose a global display in **Settings → New games** and override it in **Game Options → Next launch**. Only compatible game builds use the setting. A disconnected display falls back to the launcher's display; `env.txt` takes precedence.
 - **Cloud library** on a ported game's Details page, opt-in through a private rclone remote: verify app and build-cache backups, free a verified local copy via the Trash, or download a missing copy.
 - Navigate Arcane with a PowerA **Lic Pro Controller** through HID when macOS does not list it in GameController. Automatic prompts use Nintendo button names; in-game input is unchanged.
 - **Nextendo sign-in** in **Settings → General → Online services** when the selected nxnative checkout supports it. Compatible game apps expose their own **Network** choice in **Game Options → More settings**. Offline and local play do not require an account.
@@ -14,7 +17,8 @@ User-visible changes to Arcane (formerly NX Library) are recorded here. Entries 
 
 ### Changed
 
-- The fork displays **Oort NX**, with new particle and halftone icons and the **Oort** palette as the default. Saved themes and launcher data stay in place.
+- The fork displays **Oort NX**. The halftone and particles icons carry over from the previous release; **Oort** is the default palette when no choice is saved. Installed `Arcane.app` copies keep their path and update in place.
+- In games rebuilt with the new engine, holding controller **+** no longer opens the overlay by default. Set `DM_OVERLAY_MENU_HOLD=1` in the game's `env.txt` to restore the gesture.
 - **Cloud library** puts the last real connection check and its recovery action first, opens both folder choices in one assistant, and uses the same Selene badges and progress across the library and Activity center. Cloud-only apps offer **Download**; R3 changes the sort in both Spotlight and Collection.
 - **Rebuild** checks the original sources and verifies any cloud-backed cache before preparing the workspace. Download the cache or explicitly confirm rebuilding without it.
 - **Game Options → Mods** separates file mods from code mods, with separate ordering and notes on when each takes effect.

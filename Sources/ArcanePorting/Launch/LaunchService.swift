@@ -19,7 +19,7 @@ public final class NSWorkspaceLauncher: AppLaunching {
         var merged = ProcessInfo.processInfo.environment
         // Arcane's host handoff is per launch, never inherited from the launcher environment.
         for key in GameOverlayLaunch.keys + [HomeMenu.launcherKey, HomeMenu.bundleIDKey, NextendoLaunch.loginDirectoryKey,
-                                            LaunchService.overlayHomeSwapKey] {
+                                            LaunchService.overlayHomeSwapKey, GameDisplay.key] {
             merged[key] = nil
         }
         for (key, value) in environment { merged[key] = value }

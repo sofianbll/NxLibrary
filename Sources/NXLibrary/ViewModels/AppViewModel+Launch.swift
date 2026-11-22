@@ -230,13 +230,23 @@ extension AppViewModel {
                 cover = ArtworkPicks.shared.url(titleID: key, slot: .cover)
                     ?? ArtworkStore().cachedURL(titleID: key, kind: .boxart)
             }
-            let overrides = (gameSettings == nil ? config.toEnvironmentDict() : [:])
+            var overrides = (gameSettings == nil ? config.toEnvironmentDict() : [:])
                 .merging(environment) { _, prepared in prepared }
                 .merging(homeMenu) { _, launcher in launcher }
                 .merging(codeMods) { _, mods in mods }
                 .merging(overlay.environment(palette: ThemeStore.shared.palette,
                                              playtime: playSessionStore?.totalDuration(for: game.id),
                                              cover: cover, profilePlaytime: overlayData.total)) { _, session in session }
+            if await InstalledEngineCapabilities.shared.supportsGameDisplay(in: appURL),
+               GameDisplay.fileOverride(for: game) == nil {
+                let settings = settingsStore?.settings
+                let choice = settings?.gameDisplayOverrides[titleId.uppercased()] ?? settings?.gameDisplay ?? ""
+                let connected = NSScreen.screens.compactMap(GameDisplay.init(screen:))
+                let arcane = (LibraryWindow.mainWindow?.screen ?? NSScreen.main).flatMap(GameDisplay.init(screen:))?.id
+                overrides[GameDisplay.key] = GameDisplay.resolve(choice, connected: connected, arcane: arcane).id?.uuidString
+            } else {
+                overrides[GameDisplay.key] = nil
+            }
             openGame(game, titleId: titleId, token: saveLaunchToken, environment: overrides,
                      overlay: overlay, snapshot: overlayData.snapshot)
         }

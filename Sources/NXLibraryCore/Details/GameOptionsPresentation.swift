@@ -17,6 +17,7 @@ public enum GameOptionsLevel: Equatable, Sendable {
 public enum GameOptionsRow: String, CaseIterable, Sendable {
     case play, multiplayer, disableOnlineRiskMods, move, favorite, hidden
     case fullscreen, fps60, frameRate, metalFX, gameUpscaler, metalHUD, consoleMode, language, rumble, rumbleStrength
+    case gameDisplay
     case renderScale, moreSettings, restoreDefaults
     case cheats, mods, rebuild, showInFinder, openSaves, editDetails, removeGame
     case changeArtwork, changeMetadata, storePage, searchStore, attachSources, openLog, removeSources
@@ -30,6 +31,7 @@ public enum GameOptionsRow: String, CaseIterable, Sendable {
         case .favorite: return L10n.text("Favorite")
         case .hidden: return L10n.text("Hidden")
         case .fullscreen: return L10n.text("Fullscreen")
+        case .gameDisplay: return L10n.text("Game display")
         case .fps60: return L10n.text("60 FPS")
         case .frameRate: return L10n.text("Frame rate")
         case .gameUpscaler: return L10n.text("Game's upscaler")
@@ -67,7 +69,7 @@ public enum GameOptionsRow: String, CaseIterable, Sendable {
         case .move: return .swap
         case .favorite: return .star
         case .hidden: return .hidden
-        case .fullscreen: return .monitor
+        case .fullscreen, .gameDisplay: return .monitor
         case .fps60, .frameRate: return .sync
         case .gameUpscaler: return .tune
         case .moreSettings: return .settings
@@ -105,7 +107,7 @@ public enum GameOptionsRow: String, CaseIterable, Sendable {
     /// A value chip on the trailing edge: Left/Right cycle it, A cycles forward.
     public var isChoice: Bool {
         switch self {
-        case .multiplayer, .consoleMode, .language, .rumbleStrength, .renderScale, .frameRate, .gameUpscaler: return true
+        case .multiplayer, .consoleMode, .language, .rumbleStrength, .renderScale, .frameRate, .gameUpscaler, .gameDisplay: return true
         default: return false
         }
     }
@@ -201,6 +203,7 @@ public struct GameOptionsPresentation: Equatable {
     /// The Mods row's value (ModStore.rowValue).
     public let modsValue: String
     public let onlineRiskMods: Bool
+    public let supportsGameDisplay: Bool
     /// What the build's settings decide about the rows, for a build with saved choices; nil keeps the fixed rows
     /// of older builds.
     public let buildSettings: GameOptionsBuildSettings?
@@ -210,10 +213,11 @@ public struct GameOptionsPresentation: Equatable {
                 offersStoreSearch: Bool = false,
                 gameName: String = "", appPath: String = "", canDeleteBundle: Bool = false,
                 cheatsValue: String = "None", modsValue: String = "None", buildSettings: GameOptionsBuildSettings? = nil,
-                onlineRiskMods: Bool = false) {
+                onlineRiskMods: Bool = false, supportsGameDisplay: Bool = false) {
         self.cheatsValue = cheatsValue
         self.modsValue = modsValue
         self.onlineRiskMods = onlineRiskMods
+        self.supportsGameDisplay = supportsGameDisplay
         self.buildSettings = buildSettings
         self.showRenderScale = supportsRenderScale
         self.canPlay = isPlayable
@@ -292,6 +296,7 @@ public struct GameOptionsPresentation: Equatable {
         case .favorite: return L10n.text("On your Favorites tab.")
         case .hidden: return L10n.text("Hidden games stay out of your lists.")
         case .fullscreen: return L10n.text("Launch mode")
+        case .gameDisplay: return L10n.text("Screen used to open ported games.")
         case .fps60, .frameRate: return L10n.text("Frame-rate target")
         case .gameUpscaler: return L10n.text("The game's own 3D upscaler, or MetalFX instead")
         case .moreSettings: return L10n.text("Other settings this build offers.")
@@ -369,6 +374,10 @@ public struct GameOptionsPresentation: Equatable {
                 } else {
                     entries.append(.note(title: L10n.text("Internal resolution"), text: resolutionNote))
                 }
+            }
+            if supportsGameDisplay,
+               let anchor = entries.firstIndex(of: .row(.fullscreen)) ?? entries.firstIndex(of: .heading("Next launch")) {
+                entries.insert(.row(.gameDisplay), at: anchor + 1)
             }
             entries += [.row(.restoreDefaults), .row(.rebuild), .row(.showInFinder),
                         .gap, .row(.removeGame)]

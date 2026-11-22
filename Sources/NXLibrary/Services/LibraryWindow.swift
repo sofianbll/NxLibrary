@@ -20,7 +20,7 @@ enum LibraryWindow {
     }
 
     /// Arcane's main window: the visible one that can be main (not a panel or the menu bar's).
-    private static var mainWindow: NSWindow? {
+    static var mainWindow: NSWindow? {
         NSApp.mainWindow ?? NSApp.windows.first { $0.isVisible && $0.canBecomeMain }
     }
 

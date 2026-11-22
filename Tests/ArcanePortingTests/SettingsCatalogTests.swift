@@ -37,7 +37,7 @@ final class SettingsCatalogTests: XCTestCase {
         "cloudLibraryEnabled", "cloudLibraryService", "cloudLibraryConnect", "cloudLibraryFolder", "cloudLibraryImport",
         "showsCloudPlayIcon", "showsCloudDetailsLink", "cloudTileBadges",
         "cloudLibrarySetup", "cloudLibraryAdvanced", "cloudSourcesRoot", "cloudReferenceFolder", "cloudLibraryTest", "cloudLibraryTool", "cloudLibraryDisconnect",
-        "hiddenGames", "gameDefaults.fullscreen", "gameDefaults.enable60FPS", "gameDefaults.isDockedMode",
+        "hiddenGames", "gameDefaults.fullscreen", "gameDisplay", "gameDefaults.enable60FPS", "gameDefaults.isDockedMode",
         "gameDefaults.enableMetalFXUpscale", "gameDefaults.enableMetalHUD", "gameDefaults.language",
         "gameDefaults.renderScale", "controllerStatus", "buttonLayout", "controllerDeadzone", "inGameHomeButton", "gameDefaults.rumble",
         "gameDefaults.rumbleGain", "gameFolder", "libraryFolder", "gameInboxEnabled", "libraryRefresh", "notifyPortingEnds",
@@ -113,6 +113,8 @@ final class SettingsCatalogTests: XCTestCase {
         settings.showsSessionCard.toggle()
         settings.gameDefaults.rumble.toggle()
         settings.gameDefaults.fullscreen.toggle()
+        settings.gameDisplay = UUID().uuidString
+        settings.gameDisplayOverrides = ["0100000000000001": ""]
         settings.cloudSavesPickedFolder = "/Volumes/Saves"
 
         let library = SettingsReset.reset(.libraryGames, in: settings)
@@ -125,6 +127,8 @@ final class SettingsCatalogTests: XCTestCase {
 
         let games = SettingsReset.reset(.games, in: settings)
         XCTAssertEqual(games.gameDefaults, AppSettings().gameDefaults)
+        XCTAssertEqual(games.gameDisplay, "")
+        XCTAssertEqual(games.gameDisplayOverrides, settings.gameDisplayOverrides)
         XCTAssertEqual(games.launchMotion, settings.launchMotion)
 
         XCTAssertFalse(SettingsReset.canReset(.cloudSaves))
@@ -181,7 +185,7 @@ final class SettingsCatalogTests: XCTestCase {
         "surprisePool", "showsSessionCard", "hiddenGames", "storageUsage", "logs", "metadataCache", "artworkCache",
         "saveBackups", "checkEngineAtLaunch", "engineFolder", "engineStatus", "toolchainOverride", "upstream",
         "newestEngine", "compare", "setup", "keys", "refreshLibraryAtLaunch", "boxCovers", "gameFolder",
-        "libraryFolder", "gameInboxEnabled", "libraryRefresh", "notifyPortingEnds", "gameDefaults.fullscreen",
+        "libraryFolder", "gameInboxEnabled", "libraryRefresh", "notifyPortingEnds", "gameDefaults.fullscreen", "gameDisplay",
         "gameDefaults.enable60FPS", "gameDefaults.isDockedMode", "gameDefaults.enableMetalFXUpscale",
         "gameDefaults.enableMetalHUD", "gameDefaults.language", "gameDefaults.renderScale", "gameDefaults.rumble",
         "gameDefaults.rumbleGain", "cloudSaves", "cloudSavesPickedFolder", "cloudLibrarySetup", "cloudLibraryEnabled",

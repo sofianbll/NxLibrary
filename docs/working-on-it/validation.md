@@ -33,6 +33,7 @@ Come si aggiorna:
 | Compilati di recente su Spotlight | in attesa | Selezionare la carta Attività e controllare copertine e date sotto i più giocati, anche dopo una ricompilazione. Provare X da tastiera e controller e il clic sul suggerimento; la scelta resta al riavvio. Y apre ancora il menu della carta; il centro attività resta separato. |
 | Impostazioni del profilo | in attesa | Provare i tre ingressi dalla pagina profilo, B, Search, Changed e X; verificare due profili, modifica del nome, immagine personale, PIN, presenza e carte. Nel gruppo General controllare Start-up, Look e Play together. |
 | Pin del motore nel bundle e aggiornamento perso | in attesa | Dal Mac del giocatore controllare l'offerta, le note e il riavvio; in Setup provare Clone su una cartella nuova e Update o Switch su un checkout pulito con `origin` upstream. Verificare SHA raggiunto, `origin` invariato, checkout sporco intatto e un gioco esistente ancora giocabile. |
+| Schermo dei giochi | in attesa | Con due display e un gioco ricostruito con `DM_SCREEN`, provare il ciclo con mouse, tastiera e controller, «Come Oort NX» dopo lo spostamento della finestra, scelta globale e per gioco, schermo scollegato e ricollegato, `env.txt` e apertura sia in finestra sia in fullscreen. Con un vecchio bundle, verificare che la riga per gioco non compaia e che Play resti disponibile. |
 
 ## 0.2.1 (pubblicata il 20 nov 2026)
 

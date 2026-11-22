@@ -35,6 +35,10 @@ extension GameOptionsView {
 
     /// Left/Right on a choice row: step backwards or forwards.
     func adjust(_ row: GameOptionsRow, by delta: Int) {
+        if row == .gameDisplay, !canChooseGameDisplay {
+            SoundEffectService.shared.play(.error)
+            return
+        }
         if row == .multiplayer {
             guard !presentation.isFixed(row),
                   let mode = snapshot?.multiplayerModes.stepped(from: multiplayerMode, delta) else {
@@ -53,6 +57,12 @@ extension GameOptionsView {
         }
         SoundEffectService.shared.play(.click)
         switch row {
+        case .gameDisplay:
+            let choices: [String?] = [nil, ""] + gameDisplays.map { $0.id.uuidString }
+            let current = gameDisplayOverride
+            if let next = choices.stepped(from: choices.contains(current) ? current : "", delta) {
+                setGameDisplay(next)
+            }
         case .consoleMode:
             config.isDockedMode.toggle()
         case .language:
@@ -115,7 +125,7 @@ extension GameOptionsView {
         case .metalHUD:
             SoundEffectService.shared.play(.click)
             config.enableMetalHUD.toggle()
-        case .multiplayer, .consoleMode, .language, .rumbleStrength, .renderScale, .frameRate, .gameUpscaler:
+        case .multiplayer, .consoleMode, .language, .rumbleStrength, .renderScale, .frameRate, .gameUpscaler, .gameDisplay:
             adjust(row, by: 1)
         case .disableOnlineRiskMods:
             guard let store = viewModel.modStore(for: current) else { return }
@@ -133,6 +143,7 @@ extension GameOptionsView {
             config.rumble.toggle()
         case .restoreDefaults:
             SoundEffectService.shared.play(.click)
+            setGameDisplay(nil)
             if snapshot != nil {
                 viewModel.runtimeSettings.restoreGameDefaults(for: current)
                 snapshot = viewModel.runtimeSettings.settingsSnapshot(for: current)

@@ -28,6 +28,12 @@ public actor InstalledEngineCapabilities {
         GameOverlayLaunch(app: app)
     }
 
+    public func supportsGameDisplay(in app: URL) -> Bool {
+        // Read the installed host, so a backport or an imported app needs no Git history.
+        let host = try? Data(contentsOf: HomeMenu.hostExecutable(in: app), options: [.mappedIfSafe])
+        return host?.range(of: Data("\(GameDisplay.key)\0".utf8)) != nil
+    }
+
     public func mergesTrpfd(in app: URL, engineFolder: String, gameData: URL,
                             environment: [String: String] = ProcessInfo.processInfo.environment) async -> Bool {
         // Only the Z-A profile is supported. Unknown metadata must not hide warnings.

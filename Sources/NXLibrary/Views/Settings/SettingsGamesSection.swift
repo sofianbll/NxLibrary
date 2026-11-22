@@ -1,5 +1,6 @@
 import SwiftUI
 import NXLibraryCore
+import ArcanePorting
 
 /// Porting → New games: the defaults copied into each new ported game, rumble included.
 struct SettingsGamesSection: View {
@@ -7,6 +8,8 @@ struct SettingsGamesSection: View {
     @ObservedObject var settings: AppSettingsStore
     let onActions: ([SettingsRowAction]) -> Void
     @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.nxAppLocale) private var localization
+    @State private var displays = NSScreen.screens.compactMap(GameDisplay.init(screen:))
 
     private var languageOptions: [(code: String, label: String)] {
         var options = viewModel.availableLanguages
@@ -18,11 +21,16 @@ struct SettingsGamesSection: View {
     }
 
     var body: some View {
+        let display = GameDisplay.resolve(settings.settings.gameDisplay, connected: displays, arcane: nil)
         VStack(spacing: canvas.u(8)) {
             SeleneToggleRow("Fullscreen",
                             subtitle: "Launch mode",
                             isOn: $settings.settings.gameDefaults.fullscreen)
 
+            SeleneCycleRow(GameDisplay.title, subtitle: display.missing ? GameDisplay.disconnected : "Screen used to open ported games.",
+                           value: displays.first { $0.id == display.id }?.name
+                               ?? L10n.text(GameDisplay.likeArcane, context: localization),
+                           verbatimValue: true, cycle: stepDisplay)
             SeleneToggleRow("60 FPS",
                             subtitle: "Frame-rate target",
                             info: "Some games tie their physics, animation speeds, or game loops to 30 FPS. If gameplay runs twice as fast or audio desyncs, keep this at 30.",
@@ -87,6 +95,17 @@ struct SettingsGamesSection: View {
             }
         }
         .onAppear(perform: publishActions)
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)) { _ in
+            displays = NSScreen.screens.compactMap(GameDisplay.init(screen:))
+        }
+    }
+
+    private func stepDisplay(_ step: Int) {
+        let choices = [""] + NSScreen.screens.compactMap(GameDisplay.init(screen:)).map { $0.id.uuidString }
+        let current = settings.settings.gameDisplay
+        if let next = choices.stepped(from: choices.contains(current) ? current : "", step) {
+            settings.settings.gameDisplay = next
+        }
     }
 
     private func publishActions() {
@@ -106,6 +125,7 @@ struct SettingsGamesSection: View {
             .init(id: "fullscreen", title: L10n.text("Fullscreen"), rowID: "Fullscreen") {
                 settings.settings.gameDefaults.fullscreen.toggle()
             },
+            .value("gameDisplay", GameDisplay.title, cycle: stepDisplay),
             .init(id: "fps", title: L10n.text("60 FPS"), rowID: "60 FPS") {
                 settings.settings.gameDefaults.enable60FPS.toggle()
             },

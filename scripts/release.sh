@@ -34,7 +34,7 @@ done
 
 fail() { echo "error: $*" >&2; exit 1; }
 
-[[ "$VERSION" =~ ^[0-9]+(\.[0-9]+){1,3}$ ]] || fail "the version must be dotted numbers, like 0.2.0"
+[[ "$VERSION" =~ ^(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*)){2}$ ]] || fail "use MAJOR.MINOR.PATCH, like 0.3.0"
 TAG="v$VERSION"
 
 # Private Google client: published builds never receive these variables.

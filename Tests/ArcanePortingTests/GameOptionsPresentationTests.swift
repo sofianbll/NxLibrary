@@ -147,6 +147,12 @@ final class GameOptionsPresentationTests: XCTestCase {
         }
         XCTAssertLessThan(hidden, heading)
         XCTAssertEqual(heading + 1, fullscreen)
+        XCTAssertFalse(entries.contains(.row(.gameDisplay)))
+
+        let supported = GameOptionsPresentation(supportsRenderScale: false, isPlayable: true,
+                                                sourcesDetached: false, supportsGameDisplay: true)
+        let supportedEntries = supported.entries(level: .main, origin: .spotlight)
+        XCTAssertEqual(supportedEntries[fullscreen + 1], .row(.gameDisplay))
     }
 
     func testEditDetailsStorePageOnlyWhenKnown() {
@@ -320,9 +326,9 @@ final class GameOptionsPresentationTests: XCTestCase {
         let build = GameOptionsBuildSettings(fixed: ["DM_RUMBLE"], visible: ["DM_FULLSCREEN", "DM_RUMBLE"],
                                              offersRenderScale: false, hasMoreSettings: true)
         let presentation = GameOptionsPresentation(supportsRenderScale: false, isPlayable: true, sourcesDetached: false,
-                                                   buildSettings: build)
+                                                   buildSettings: build, supportsGameDisplay: true)
         let rows = presentation.focusableRows(level: .main, origin: .collection)
-        for present: GameOptionsRow in [.fullscreen, .rumble, .moreSettings] { XCTAssertTrue(rows.contains(present), "\(present)") }
+        for present: GameOptionsRow in [.fullscreen, .gameDisplay, .rumble, .moreSettings] { XCTAssertTrue(rows.contains(present), "\(present)") }
         for absent: GameOptionsRow in [.metalFX, .renderScale, .fps60] { XCTAssertFalse(rows.contains(absent), "\(absent)") }
         XCTAssertTrue(presentation.entries(level: .main, origin: .collection).contains {
             if case .note(let title, _) = $0 { return title == L10n.text("Internal resolution") }

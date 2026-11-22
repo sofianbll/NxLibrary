@@ -21,6 +21,8 @@ final class GameOptionsFiles: ObservableObject {
     @Published var config: GameRuntimeConfig
     /// The build's settings and their values, for a build with saved choices; nil for an older build (`config`).
     @Published var snapshot: GameSettingsSnapshot?
+    @Published var gameDisplayOverride: String?
+    @Published var fileGameDisplay: String?
     /// The Cheats row's value: read when Game options opens and when the panel closes, not on every draw. Nil (no chip)
     /// until the engine's answer is kept: the view's task asks for it off the main thread.
     @Published var cheatsValue: String?
@@ -30,6 +32,7 @@ final class GameOptionsFiles: ObservableObject {
         supportsRenderScale = viewModel.runtimeSettings.supportsSetting("DM_RENDER_SCALE", for: game)
         config = viewModel.runtimeSettings.loadRuntimeConfig(for: game)
         snapshot = viewModel.runtimeSettings.settingsSnapshot(for: game)
+        gameDisplayOverride = game.titleId.flatMap { viewModel.settingsStore?.settings.gameDisplayOverrides[$0.uppercased()] }
         cheatsValue = viewModel.cheats.cheatRowValue(for: game)
         modsValue = viewModel.modsRowValue(for: game)
     }
@@ -47,6 +50,11 @@ struct GameOptionsView: View {
     let onShowBuild: () -> Void
     let onMove: () -> Void
     @StateObject private var files: GameOptionsFiles
+    @State var gameDisplays = NSScreen.screens.compactMap(GameDisplay.init(screen:))
+    @State private var supportsGameDisplay = false
+    var gameDisplayOverride: String? { files.gameDisplayOverride }
+    var fileGameDisplay: String? { files.fileGameDisplay }
+    var canChooseGameDisplay: Bool { supportsGameDisplay && fileGameDisplay == nil && current.titleId?.isEmpty == false }
     private var supportsRenderScale: Bool { files.supportsRenderScale }
     var config: GameRuntimeConfig {
         get { files.config }
@@ -149,12 +157,19 @@ struct GameOptionsView: View {
             cheatsValue: cheatsValue ?? "",
             modsValue: modsValue,
             settings: snapshot,
-            onlineRiskMods: multiplayerMode == .online && !onlineRiskMods.isEmpty
+            onlineRiskMods: multiplayerMode == .online && !onlineRiskMods.isEmpty,
+            supportsGameDisplay: supportsGameDisplay
         )
     }
 
     var rows: [GameOptionsRow] {
         presentation.focusableRows(level: level, origin: origin)
+    }
+
+    func setGameDisplay(_ choice: String?) {
+        guard let key = current.titleId?.uppercased(), let settings = viewModel.settingsStore else { return }
+        settings.settings.gameDisplayOverrides[key] = choice
+        files.gameDisplayOverride = choice
     }
 
     /// The focused row, re-resolved against the rows of this draw so that rows
@@ -259,6 +274,12 @@ struct GameOptionsView: View {
             if !Task.isCancelled { onlineRiskMods = result }
         }
         .onDisappear(perform: removeKeyMonitor)
+        .task(id: current.url) {
+            let supported = await InstalledEngineCapabilities.shared.supportsGameDisplay(in: current.url)
+            guard !Task.isCancelled else { return }
+            files.fileGameDisplay = supported ? GameDisplay.fileOverride(for: current) : nil
+            supportsGameDisplay = supported
+        }
         .task {
             guard cheatsValue == nil else { return }
             await viewModel.cheats.prepare(for: current)
@@ -267,6 +288,9 @@ struct GameOptionsView: View {
         .onReceive(NotificationCenter.default.publisher(for: .nxGameOptionsGamepadAction)) { note in
             guard let action = note.object as? GamepadAction else { return }
             handleGamepad(action)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)) { _ in
+            gameDisplays = NSScreen.screens.compactMap(GameDisplay.init(screen:))
         }
         .onChange(of: config) { _, newValue in
             viewModel.runtimeSettings.saveRuntimeConfig(newValue, for: game)

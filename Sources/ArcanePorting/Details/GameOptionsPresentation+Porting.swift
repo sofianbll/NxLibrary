@@ -25,11 +25,12 @@ extension GameOptionsPresentation {
                 offersStoreSearch: Bool = false,
                 gameName: String = "", appPath: String = "", canDeleteBundle: Bool = false,
                 cheatsValue: String = "None", modsValue: String = "None", settings: GameSettingsSnapshot?,
-                onlineRiskMods: Bool = false) {
+                onlineRiskMods: Bool = false, supportsGameDisplay: Bool = false) {
         self.init(supportsRenderScale: supportsRenderScale, isPlayable: isPlayable, sourcesDetached: sourcesDetached,
                   toolchainBlocked: toolchainBlocked, toolchainHint: toolchainHint, hasStorePage: hasStorePage,
                   offersStoreSearch: offersStoreSearch, gameName: gameName, appPath: appPath,
                   canDeleteBundle: canDeleteBundle, cheatsValue: cheatsValue, modsValue: modsValue,
-                  buildSettings: settings.map(GameOptionsBuildSettings.init), onlineRiskMods: onlineRiskMods)
+                  buildSettings: settings.map(GameOptionsBuildSettings.init), onlineRiskMods: onlineRiskMods,
+                  supportsGameDisplay: supportsGameDisplay)
     }
 }

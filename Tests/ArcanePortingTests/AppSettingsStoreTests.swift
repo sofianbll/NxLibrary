@@ -230,6 +230,7 @@ final class AppSettingsStoreTests: XCTestCase {
         let kept = #"""
         {"gameDefaults":{"fullscreen":true,"language":"it","renderScale":0.75,"rumbleGain":2},
          "cloudSaves":{"folder":{"_0":"/x"}},"cloudSavesPickedFolder":"/x",
+         "gameDisplay":"00000000-0000-0000-0000-000000000001","gameDisplayOverrides":{"0100000000000001":""},
          "nextendoClientID":"sample-client","future":{"n":1},"showClock":false}
         """#
         let settings = try JSONDecoder().decode(AppSettings.self, from: Data(kept.utf8))
@@ -244,6 +245,8 @@ final class AppSettingsStoreTests: XCTestCase {
         XCTAssertEqual(settings.cloudSaves, .folder("/x"))
         XCTAssertEqual(settings.gameDefaults.renderScale, 0.75)
         XCTAssertEqual(settings.nextendoClientID, "sample-client")
+        XCTAssertEqual(settings.gameDisplay, "00000000-0000-0000-0000-000000000001")
+        XCTAssertEqual(settings.gameDisplayOverrides["0100000000000001"], "")
     }
 
     func testEveryBaseKeyIsWritten() throws {

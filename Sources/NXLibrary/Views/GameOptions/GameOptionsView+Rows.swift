@@ -101,6 +101,7 @@ extension GameOptionsView {
         let title = checking ? L10n.text("Checking the build cache…") : row.title
         let about = row == .multiplayer && !p.isFixed(row) ? multiplayerRoute
             : row == .mods && multiplayerMode == .online ? L10n.text("Code mods off")
+            : row == .gameDisplay ? gameDisplayNote ?? p.about(row)
             : checking ? nil : downloadsSources && !p.toolchainBlocked
             ? L10n.text("Arcane checks the cloud for missing game files.") : p.about(row)
         return SeleneOptionRow(icon: row == .multiplayer ? nil : row.icon,
@@ -108,7 +109,8 @@ extension GameOptionsView {
                         about: about,
                         focused: focused == row,
                         destructive: row.isDestructive,
-                        enabled: checking || (downloadsSources ? !p.toolchainBlocked : !p.isDimmed(row)),
+                        enabled: checking || (downloadsSources ? !p.toolchainBlocked : !p.isDimmed(row))
+                            && (row != .gameDisplay || canChooseGameDisplay),
                         leading: row == .multiplayer ? AnyView(
                             Image(systemName: "person.2.fill")
                                 .seleneFont(20)
@@ -167,6 +169,21 @@ extension GameOptionsView {
             if case .connected = connection { return L10n.format("Via %@", [vpn.label]) }
             return L10n.text("VPN unavailable · same Wi-Fi")
         }
+    }
+
+    private var gameDisplayNote: String? {
+        if fileGameDisplay != nil { return L10n.text("Set in env.txt") }
+        guard let gameDisplayOverride else { return nil }
+        return GameDisplay.resolve(gameDisplayOverride, connected: gameDisplays, arcane: nil).missing
+            ? L10n.text(GameDisplay.disconnected) : nil
+    }
+
+    private var gameDisplayLabel: String {
+        guard let choice = fileGameDisplay ?? gameDisplayOverride else { return L10n.text(GameDisplay.useGlobal) }
+        let display = GameDisplay.resolve(choice, connected: gameDisplays, arcane: nil)
+        if let name = gameDisplays.first(where: { $0.id == display.id })?.name { return name }
+        if let fileGameDisplay { return fileGameDisplay.isEmpty ? "—" : fileGameDisplay }
+        return L10n.text(GameDisplay.likeArcane)
     }
 
     /// Y opens the focused row's explanation, when it has one.
@@ -236,6 +253,8 @@ extension GameOptionsView {
         if row == .multiplayer { return L10n.text(multiplayerMode.label) }
         if let (setting, value) = settingValue(row) { return L10n.text(GameSettingValues.label(setting, value)) }
         switch row {
+        case .gameDisplay:
+            return gameDisplayLabel
         case .consoleMode:
             return GameOptionsValues.consoleModeLabel(docked: config.isDockedMode)
         case .language:

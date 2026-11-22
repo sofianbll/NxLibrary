@@ -259,4 +259,48 @@ final class LaunchServiceTests: XCTestCase {
                                                   environment: ["DM_MODS_OFF": ""]) { _, _ in }
         XCTAssertEqual(launcher.environment["DM_MODS_OFF"], "")
     }
+
+    func testGameDisplayResolvesExplicitConnectedAndFallbackChoices() {
+        let arcane = UUID(), external = UUID()
+        let connected = [GameDisplay(id: arcane, name: "Built-in"), GameDisplay(id: external, name: "External")]
+        XCTAssertEqual(GameDisplay.resolve("", connected: connected, arcane: arcane).id, arcane)
+        let chosen = GameDisplay.resolve(external.uuidString.lowercased(), connected: connected, arcane: arcane)
+        XCTAssertEqual(chosen.id, external)
+        XCTAssertFalse(chosen.missing)
+        let missing = GameDisplay.resolve(external.uuidString, connected: [connected[0]], arcane: arcane)
+        XCTAssertEqual(missing.id, arcane)
+        XCTAssertTrue(missing.missing)
+        XCTAssertNil(GameDisplay.resolve("", connected: [], arcane: nil).id)
+    }
+
+    func testGameDisplayChecksTheExactInstalledHostMarker() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("NXDisplay-\(UUID())")
+        let host = HomeMenu.hostExecutable(in: root)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: host.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let capabilities = InstalledEngineCapabilities()
+        for (markers, expected) in [("", false), ("DM_SCREEN_MATCH\0DM_SCREEN_ASPECT\0", false), ("DM_SCREEN\0", true)] {
+            try Data(markers.utf8).write(to: host)
+            let supported = await capabilities.supportsGameDisplay(in: root)
+            XCTAssertEqual(supported, expected)
+        }
+    }
+
+    func testGameDisplayRespectsEvenAnEmptyPlayerOverride() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("NXDisplay-\(UUID())")
+        let title = "0100000000000001"
+        let game = PortedGame(name: "Fixture", url: root.appendingPathComponent("Fixture.app"), platform: .macApp,
+                              sizeBytes: 0, modificationDate: .now, titleId: title)
+        let bundle = game.url.appendingPathComponent("Contents/Resources/dm")
+        let player = root.appendingPathComponent(title)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: bundle, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: player, withIntermediateDirectories: true)
+        let uuid = UUID().uuidString
+        try "DM_SCREEN=\(uuid)\n".write(to: bundle.appendingPathComponent("env.txt"), atomically: true, encoding: .utf8)
+        XCTAssertEqual(GameDisplay.fileOverride(for: game, support: root), uuid)
+        try "# DM_SCREEN=comment\r\n DM_SCREEN = \r\nDM_SCREEN=second\r\n".write(
+            to: player.appendingPathComponent("env.txt"), atomically: true, encoding: .utf8)
+        XCTAssertEqual(GameDisplay.fileOverride(for: game, support: root), "")
+    }
 }

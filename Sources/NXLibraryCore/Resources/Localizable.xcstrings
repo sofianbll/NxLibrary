@@ -961,6 +961,73 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "关闭后在线游玩"}}
       }
     },
+    "Game display": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Game display"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Schermo dei giochi"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Écran des jeux"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Bildschirm für Spiele"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Pantalla de los juegos"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Tela dos jogos"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "游戏显示器"}}
+      }
+    },
+    "Based on %@ %@": {
+      "comment": "The upstream project name and its version in the About panel.",
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Based on %1$@ %2$@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Basato su %1$@ %2$@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Basé sur %1$@ %2$@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Basiert auf %1$@ %2$@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Basado en %1$@ %2$@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Baseado em %1$@ %2$@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "基于 %1$@ %2$@"}}
+      }
+    },
+    "Screen used to open ported games.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Screen used to open ported games."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Schermo su cui si aprono i giochi convertiti."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Écran sur lequel s’ouvrent les jeux portés."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Bildschirm, auf dem portierte Spiele geöffnet werden."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Pantalla en la que se abren los juegos portados."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Tela em que os jogos portados são abertos."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "移植游戏打开时使用的显示器。"}}
+      }
+    },
+    "Like Arcane": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Like Arcane"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Come Arcane"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Comme Arcane"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wie Arcane"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Como Arcane"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Como o Arcane"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "与 Arcane 相同"}}
+      }
+    },
+    "Use global setting": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Use global setting"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Come nelle impostazioni"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Réglage global"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Globale Einstellung"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ajuste global"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Configuração global"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "使用全局设置"}}
+      }
+    },
+    "Display not connected": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Display not connected"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Schermo non collegato"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Écran non connecté"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Bildschirm nicht verbunden"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Pantalla no conectada"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Tela desconectada"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "显示器未连接"}}
+      }
+    },
     "Status": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Status"}},

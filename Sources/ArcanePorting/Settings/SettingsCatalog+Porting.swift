@@ -74,6 +74,8 @@ extension SettingsCatalog {
         // New games
         row("gameDefaults.fullscreen", .games, "Fullscreen",
             "New games: start in fullscreen or a window.") { $0.gameDefaults.fullscreen },
+        row("gameDisplay", .games, GameDisplay.title,
+            "Screen used to open ported games.") { $0.gameDisplay },
         row("gameDefaults.enable60FPS", .games, "60 FPS",
             "New games: frame-rate target of 30 or 60 FPS.") { $0.gameDefaults.enable60FPS },
         row("gameDefaults.isDockedMode", .games, "Docked mode",

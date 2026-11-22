@@ -130,30 +130,32 @@ Publishing requires an explicit maintainer decision and the script's `--publish 
 
 ### Publication perso (Sofian)
 
-1. Choisir un commit **testé** du fork moteur et le laisser accessible sur une branche publique. Le tag moteur sert de repère stable ; Arcane utilise le SHA, pas le tag. Pour cette version :
+Oort NX utilise son propre `MAJOR.MINOR.PATCH` : **PATCH** pour les correctifs seuls, **MINOR** pour les nouveautés compatibles et **MAJOR** pour les changements incompatibles. La base amont (« basé sur Arcane 0.2.1 ») figure dans les notes et dans À propos, jamais dans le numéro. Les anciennes releases `0.2.1.2026112x` conservent leurs versions et leurs tags ; l’updater les reconnaît toujours.
+
+1. Choisir un commit **testé** du fork moteur, accessible depuis une branche publique. Après accord, poser le tag moteur `oort-vX.Y.Z` sur ce SHA exact ; Oort NX épingle le SHA, pas le tag. Pour `0.3.0` :
 
    ~~~sh
-   git -C ~/Games/Switch/Engine tag perso-2026.11.21 a35babea
-   git -C ~/Games/Switch/Engine push https://github.com/sofianbll/nxnative refs/tags/perso-2026.11.21
+   git -C ~/Games/Switch/Engine tag oort-v0.3.0 6b7af7934ae2916a0e8e31baed5f47fa283f09f4
+   git -C ~/Games/Switch/Engine push https://github.com/sofianbll/nxnative refs/tags/oort-v0.3.0
    ~~~
 
-2. Depuis le dépôt Arcane, inscrire `0.2.1.20261121` dans `VERSION`, préparer les notes à partir du [modèle FR](perso-release-notes.md), valider et commiter sur un arbre propre. Le schéma `base.AAAAMMJJ` réserve le quatrième champ à la date côté perso : `0.2.1 < 0.2.1.20261121 < 0.2.2`, sans réutiliser les petits indices de correctif de Bium23. Une publication perso par date et par base. Préparer `work/Runtime` avec `scripts/bundle_runtime.sh`, puis vérifier ZIP, DMG et plist sans publier :
+2. Dans le dépôt du lanceur, inscrire `0.3.0` dans `VERSION`, préparer les notes à partir du [modèle FR](perso-release-notes.md), valider et commiter sur un arbre propre. Préparer `work/Runtime` avec `scripts/bundle_runtime.sh`, puis vérifier ZIP, DMG et plist sans publier :
 
    ~~~sh
-   DM_NEXTENDO_CLIENT_ID=nxc_G33XSxgJwhk9 bash scripts/release.sh 0.2.1.20261121 \
+   DM_NEXTENDO_CLIENT_ID=nxc_G33XSxgJwhk9 bash scripts/release.sh 0.3.0 \
      --engine-repo https://github.com/sofianbll/nxnative \
-     --engine-commit a35babeade0c34b3f928e0b32310ba66eb98bc86
+     --engine-commit 6b7af7934ae2916a0e8e31baed5f47fa283f09f4
    ~~~
 
    Pour la publication perso, passer `DM_NEXTENDO_CLIENT_ID=nxc_G33XSxgJwhk9` aux deux commandes : le build inscrit cet identifiant public dans `DMNextendoClientID` dans le plist de l’app. Ne pas fournir de secret Nextendo. Le script refuse un SHA qui n'est pas accessible depuis une branche du dépôt. Sans les deux options moteur, la build conserve le dépôt et le pin amont.
 
-3. Après validation, placer le commit de release sur `origin/main` du fork Arcane et refaire la même build avec les notes approuvées. Vérifier que `origin` pointe bien vers `sofianbll/NxLibrary`. Les notes peuvent être hors du dépôt pour garder l'arbre propre ; le script y ajoute le dépôt et le SHA réellement embarqués, ainsi que les métadonnées Xcode/moteur.
+3. Après validation et accord de publication, placer le commit de release sur `origin/main` et refaire la même build avec les notes approuvées. Le script publie le tag app `vX.Y.Z`. Vérifier que `origin` pointe bien vers `sofianbll/NxLibrary`. Les notes peuvent rester hors du dépôt ; le script y ajoute le dépôt et le SHA embarqués et les métadonnées Xcode/moteur.
 
    ~~~sh
-   DM_NEXTENDO_CLIENT_ID=nxc_G33XSxgJwhk9 bash scripts/release.sh 0.2.1.20261121 \
+   DM_NEXTENDO_CLIENT_ID=nxc_G33XSxgJwhk9 bash scripts/release.sh 0.3.0 \
      --engine-repo https://github.com/sofianbll/nxnative \
-     --engine-commit a35babeade0c34b3f928e0b32310ba66eb98bc86 \
-     --publish --notes "$HOME/arcane-perso-0.2.1.20261121.md"
+     --engine-commit 6b7af7934ae2916a0e8e31baed5f47fa283f09f4 \
+     --publish --notes "$HOME/oort-nx-0.3.0.md"
    ~~~
 
 4. Le pote qui utilise déjà une **release du fork** voit la version et ses notes dans **Settings → About → Check now** (ou à l'ouverture si le contrôle automatique est dû). Une copie Dev ou une release Bium23 ne bascule pas sur le fork : première installation depuis le DMG du fork. Après le redémarrage, **Setup** propose de cloner, mettre à jour ou basculer vers le moteur épinglé. Les jeux existants restent jouables ; recompiler les titres indiqués dans les notes pour appliquer les changements moteur. Le bouton **Upstream** compare toujours à `seedds/nxnative` `main`.

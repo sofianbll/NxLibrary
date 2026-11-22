@@ -279,7 +279,7 @@ Regole della barra:
 
 | Punto dell'interfaccia | Autorità |
 |---|---|
-| Settings → Porting → New games | Valori iniziali copiati nei nuovi titoli, vibrazione compresa. |
+| Settings → Porting → New games | Valori iniziali copiati nei nuovi titoli, vibrazione compresa; scelta globale dello schermo al prossimo avvio dei giochi portati. |
 | Game Options → Next launch | Configurazione di quel titolo, applicata al prossimo avvio. |
 | Use new game defaults | Copia una volta i default correnti nel gioco selezionato. |
 | Add Game → Review | Nuovo titolo: parte dai default. Titolo esistente: `GameRuntimeConfig.forReview` legge le sue opzioni effettive. La conferma salva i valori mostrati. |
@@ -288,6 +288,7 @@ Regole della barra:
 
 - Options e Play passano da `RuntimeSettingsModel`. Un build con le scelte salvate usa `NXNativeGameSettings`; uno più vecchio ripiega su `GameRuntimeConfig.load`: prima le preferenze per titolo in UserDefaults, poi `env.txt` del titolo, poi quello nel bundle, infine i valori del modello.
 - Il rebuild ricava `languageForBuild` dalla configurazione del titolo e non tiene una lingua separata dal wizard. I default globali cambiati non aggiornano da soli i giochi già aggiunti. Search e Changed attribuiscono la vibrazione a Porting · New games.
+- Settings → Porting → New games salva lo schermo globale; non lo copia nei giochi. In Next launch, Game Options può seguire il valore globale, la finestra di Oort NX o un display scelto. L'UUID di Core Graphics resta salvato quando il display si scollega. `InstalledEngineCapabilities` cerca il valore esatto `DM_SCREEN` nel `dmhost` installato: senza il marcatore la riga per gioco è nascosta e il lanciatore non passa la variabile. `env.txt` ha la precedenza.
 
 **Catalogo e salvataggio.**
 - `SettingsCatalog` descrive i singoli controlli: la base tiene le righe delle sezioni fuori dal gruppo Porting, `SettingsCatalog+Porting.swift` quelle del gruppo Porting e compone l'elenco completo `all`, ordinato per sidebar. *Perché:* ogni sezione viene da un solo elenco, così l'ordine resta quello dichiarato. Changed riceve anche le differenze delle preferenze esterne ad `AppSettings`. Le azioni del controller si aggiornano con lo stato dei pannelli e mantengono il focus per identità. About pubblica azioni selezionabili.

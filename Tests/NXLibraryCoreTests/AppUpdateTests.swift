@@ -48,7 +48,7 @@ final class AppUpdateTests: XCTestCase {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let version = try String(contentsOf: root.appendingPathComponent("VERSION"), encoding: .utf8)
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        XCTAssertNotNil(version.range(of: #"^[0-9]+(\.[0-9]+){1,3}$"#, options: .regularExpression))
+        XCTAssertNotNil(version.range(of: #"^(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*)){2}$"#, options: .regularExpression))
     }
 
     func testVersionCompareIsNumeric() {
@@ -88,6 +88,16 @@ final class AppUpdateTests: XCTestCase {
         XCTAssertTrue(AppUpdate.isNewer(release.version, than: "0.2.1.2"))
         XCTAssertTrue(AppUpdate.isNewer("0.2.1.20261122", than: release.version))
         XCTAssertTrue(AppUpdate.isNewer("0.2.2", than: release.version))
+    }
+
+    func testForkSemverFollowsDatedRelease() throws {
+        let repo = try XCTUnwrap(AppUpdate.defaultRepository)
+        let json = releaseJSON.replacingOccurrences(of: "Bium23/NxLibrary", with: repo)
+        let release = try XCTUnwrap(AppUpdate.parseRelease(Data(json.utf8), repository: repo))
+        XCTAssertEqual(release.zipURL.lastPathComponent, "NXLibrary-0.3.0.zip")
+        XCTAssertTrue(AppUpdate.mayInstall(release, runningVersion: "0.2.1.20261129", installation: .ok))
+        XCTAssertFalse(AppUpdate.isNewer("0.2.1.20261129", than: release.version))
+        XCTAssertEqual(AppUpdate.versionLabel(["CFBundleShortVersionString": release.version, AppUpdate.releaseMarker: true]), "0.3.0")
     }
 
     private func changingAsset(_ change: (inout [String: Any]) -> Void) throws -> Data {

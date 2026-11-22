@@ -256,7 +256,8 @@ public struct AppSettings: Codable, Equatable {
     public var moduleValues: [String: CatalogJSON] = [:]
     /// The top-level keys the base keeps for the modules. Any other key it does not read is dropped, as a retired key
     /// may hold a secret (the old SteamGridDB key).
-    public static let moduleKeys: Set<String> = ["gameDefaults", "cloudSaves", "cloudSavesPickedFolder", "nextendoClientID"]
+    public static let moduleKeys: Set<String> = ["gameDefaults", "cloudSaves", "cloudSavesPickedFolder", "nextendoClientID",
+                                                 "gameDisplay", "gameDisplayOverrides"]
 
     public init(backgroundShade: BackgroundShade = .balanced,
                 readableText: Bool = true,

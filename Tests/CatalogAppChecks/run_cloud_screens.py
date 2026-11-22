@@ -35,6 +35,7 @@ import ArcanePorting
         }
         // CONNECTION_FIXTURE
         try render("panel", output, CloudLibraryPanel(viewModel: vm, model: model, game: game))
+        // DISPLAY_FIXTURE
         for (name, locale) in [("rebuild", AppLocale(language: .french, region: "FR")),
                                ("rebuild-de", AppLocale(language: .german, region: "DE"))] {
             L10n.setContext(locale)
@@ -497,6 +498,41 @@ extension CloudScreenProbe {
 }
 '''
 
+DISPLAY_FIXTURE = r'''
+        let displayLocale = AppLocale(language: .french, region: "FR")
+        L10n.setContext(displayLocale)
+        func displaySettings() -> some View {
+            SettingsGamesSection(viewModel: vm, settings: settings, onActions: { _ in })
+                .environment(\.nxAppLocale, displayLocale)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(12).frame(height: 200, alignment: .top).clipped()
+        }
+        try render("game-display-default", output, displaySettings(), size: .init(width: 960, height: 200))
+        var displayGame = game
+        displayGame.status = .built
+        func displayOptions() -> some View {
+            GameOptionsView(viewModel: vm, game: displayGame, origin: .details,
+                            onClose: {}, onShowBuild: {}, onMove: {})
+                .environment(\.nxAppLocale, displayLocale)
+        }
+        try render("game-display-old-host", output, displayOptions(), size: .init(width: 1920, height: 1080))
+        // DISPLAY_CAPABLE
+'''
+
+DISPLAY_CAPABLE = r'''
+        let displayHost = HomeMenu.hostExecutable(in: displayGame.url)
+        try FileManager.default.createDirectory(at: displayHost.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("DM_SCREEN\0".utf8).write(to: displayHost)
+        let capable = await InstalledEngineCapabilities.shared.supportsGameDisplay(in: displayGame.url)
+        precondition(capable)
+        DisplayScreenProbe.capable = capable // ImageRenderer doesn't run .task.
+        try render("game-display-options", output, displayOptions(), size: .init(width: 1920, height: 1080))
+        settings.settings.gameDisplay = "00000000-0000-0000-0000-000000000000"
+        try render("game-display-disconnected", output, displaySettings(), size: .init(width: 960, height: 200))
+        settings.settings.gameDisplay = ""
+        DisplayScreenProbe.capable = false
+'''
+
 MULTIPLAYER = r'''
         let frLocale = AppLocale(language: .french, region: "FR")
         L10n.setContext(frLocale)
@@ -730,6 +766,15 @@ extension CloudDriveFolders.Listing {
         change(activity, r'                    }\n                    \.padding\(EdgeInsets.*?\.onChange\(of: focused\)[^\n]*\n                }\n', "")
         change(activity, r'        LazyVStack\(', '        VStack(')
         host = HOST.replace("/* NOTICE_LAYOUT */", "vertical: notice.vertical," if before else "cancelIndex: notice.cancelIndex,")
+        has_display = (package / "Sources/ArcanePorting/Launch/GameDisplay.swift").is_file()
+        if not before:
+            host = host.replace("// DISPLAY_FIXTURE", DISPLAY_FIXTURE)
+        if has_display:
+            change(app / "Views/GameOptions/GameOptionsView.swift",
+                   r"@State private var supportsGameDisplay = false",
+                   "@State private var supportsGameDisplay = DisplayScreenProbe.capable")
+            host = host.replace("// DISPLAY_CAPABLE", DISPLAY_CAPABLE)
+            host += "\n@MainActor enum DisplayScreenProbe { static var capable = false }\n"
         host = host.replace("/* ACTIVITY_DISMISS */",
                             "onBack: {}, onOutside: {}" if "let onBack:" in view
                             else "onClose: {}")
