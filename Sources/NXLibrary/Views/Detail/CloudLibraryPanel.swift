@@ -455,7 +455,7 @@ struct CloudLibraryPanel: View {
     private func text(_ key: String) -> String { L10n.text(key, context: localization) }
 }
 
-/// Same labelled progress and semantic color in Details and in the transfer panel.
+/// Shared status for Spotlight, where a visible cover can carry the progress.
 struct CloudGameStatus: View {
     @Environment(\.nxAppLocale) private var localization
     @Environment(\.seleneCanvas) private var canvas
@@ -487,7 +487,24 @@ struct CloudGameStatus: View {
     }
 }
 
-enum CloudLibraryProgressView {
+struct CloudLibraryProgressView: View {
+    @Environment(\.nxAppLocale) private var localization
+    @Environment(\.seleneCanvas) private var canvas
+    let progress: CloudArchiveProgress?
+    let showsBar: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: canvas.u(5)) {
+            Text(showsBar ? Self.summary(progress, context: localization)
+                 : Self.downloadSummary(progress, context: localization))
+                .seleneFont(.compactCaption).monospacedDigit()
+                .foregroundColor(showsBar ? SeleneTheme.ink90 : SeleneTheme.ink75)
+            if showsBar {
+                SeleneProgressBar(progress: Self.fraction(progress), height: 6, color: CloudLibraryStatus.pending.color)
+            }
+        }
+    }
+
     static func fraction(_ progress: CloudArchiveProgress?) -> Double? {
         CloudTransferPresentation.fraction(progress)
     }
@@ -751,6 +768,8 @@ struct CloudLibraryBadge: View {
 
 struct CloudLibraryPill: View {
     @Environment(\.nxAppLocale) private var localization
+    @Environment(\.seleneReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     let indicator: CloudLibraryIndicator
     let focused: Bool
     let action: () -> Void
@@ -759,7 +778,7 @@ struct CloudLibraryPill: View {
         SelenePillButton(title: nil, icon: indicator.pillIcon, iconSize: SeleneTokens.Space.panel,
                          minWidth: 52, height: 52, horizontalPadding: 0, focused: focused, action: action)
             .overlay(alignment: .bottomTrailing) {
-                if indicator.isTransferring {
+                if indicator.isTransferring && !reduceMotion && !systemReduceMotion {
                     SeleneStatusMark(color: indicator.status.color, pulses: true)
                         .padding(SeleneTokens.Space.hairline)
                 }

@@ -73,9 +73,14 @@ struct DetailsTopBlock: View {
                 NextendoOnlineBadge(titleID: game.titleId)
             }
                 .padding(.top, canvas.u(pillSet.isFailed ? 10 : 26))
-            if let state = cloud.states[game.id] {
-                CloudGameStatus(state: state, playable: presentation.canPlay || isRunning,
-                    hasDownloadPill: showsDownloadPill && state.activeItem == .app)
+            if let state = cloud.states[game.id], let active = state.activeItem, active != .sources, !state.queued {
+                CloudLibraryProgressView(progress: state.progress,
+                    showsBar: !showsDownloadPill || CloudLibraryProgressView.downloadFill(state, item: .app) == nil)
+                    .frame(maxWidth: canvas.u(SeleneTokens.Space.transferMeasure), alignment: .leading)
+                    .padding(.top, canvas.u(SeleneTokens.Space.small))
+            } else if let issue = cloud.states[game.id]?.issue, issue.item != .sources {
+                Text(issue.message).seleneFont(.compactCaption)
+                    .foregroundColor((issue.failed ? CloudLibraryStatus.failed : .unknown).color)
                     .padding(.top, canvas.u(SeleneTokens.Space.small))
             }
             portingNote
