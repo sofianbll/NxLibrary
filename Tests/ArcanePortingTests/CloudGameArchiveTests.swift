@@ -7,6 +7,17 @@ import XCTest
 final class CloudGameArchiveTests: XCTestCase {
     private let title = "0100E65002BB8000"
 
+    func testUnreadableCacheIsNotTreatedAsMissing() async throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        _ = try await f.service.upload(f.game)
+        try Data([1]).write(to: f.cache.appendingPathComponent("shader"))
+        do {
+            _ = try await f.service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false)
+            XCTFail("An invalid parent for the cache inventory must not offer Download")
+        } catch is CacheVerificationError {}
+    }
+
     func testFirstSendPublishesBrowsableAppFiles() async throws {
         let f = try fixture()
         defer { try? FileManager.default.removeItem(at: f.root) }
@@ -153,7 +164,7 @@ final class CloudGameArchiveTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: f.root) }
         let shaders = f.cache.appendingPathComponent("shader/cache")
         try FileManager.default.createDirectory(at: shaders, withIntermediateDirectories: true)
-        try Data().write(to: shaders.appendingPathComponent("b-1234567890ab.img"))
+        try Data([1]).write(to: shaders.appendingPathComponent("b-1234567890ab.img"))
         let game = CloudArchiveGame(titleID: title, locations: f.game.locations, engineCommit: "72d43ff6")
         let old = try await f.service.upload(game)
         let compatible = try await f.service.checkRebuild(game, sourcesAvailable: true, withoutCache: false)

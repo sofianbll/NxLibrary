@@ -694,11 +694,15 @@ extension AppViewModel {
                     try Task.checkCancellation()
                 } catch is CancellationError {
                     throw CancellationError()
+                } catch let error as CacheVerificationError {
+                    throw error
                 } catch {
                     try Task.checkCancellation()
                     // The cloud can't be checked (or its cache didn't come): a valid cache on this Mac serves, an empty
                     // work folder never replaces it.
-                    if !cloudLibrary.isQuitting, !withoutCache, let cache = LocalBuildCache.usable(atPath: target.buildCachePath),
+                    if !cloudLibrary.isQuitting, !withoutCache, let path = target.buildCachePath,
+                       let cache = locations.locations[.cache], cache.standardizedFileURL.path == URL(fileURLWithPath: path).standardizedFileURL.path,
+                       try LocalBuildCache.matchesInstalledApp(cache, app: locations.locations[.app]),
                        canStart?(target) != false {
                         try porting.beginBuild(for: target, extraArguments: extraArguments, verifiedCache: cache,
                                                releaseCloudBuild: release)
@@ -1493,6 +1497,7 @@ extension AppViewModel {
 
     private func cloudMessage(for error: Error) -> String {
         if let failure = cloudFailure(for: error) { return L10n.text(failure.messageKey) }
+        if let error = error as? CacheVerificationError { return error.localizedDescription }
         if let error = error as? CloudArchiveError { return error.localizedDescription }
         if let error = error as? NXLibraryError { return error.localizedDescription }
         if let error = error as? BuildInstallError { return error.localizedDescription }

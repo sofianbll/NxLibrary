@@ -548,6 +548,9 @@ extension PortingModel {
         buildPreviousStatus = target.status
 
         let workspace: Workspace
+        if !withoutCache, verifiedCache == nil, let path = target.buildCachePath {
+            _ = try LocalBuildCache.readChain(ofCache: URL(fileURLWithPath: path))
+        }
         let existingDirectory = target.workspacePath.map { URL(fileURLWithPath: $0) }
         let existingNames = Set(existingDirectory.flatMap {
             (try? FileManager.default.contentsOfDirectory(atPath: $0.path)) ?? []

@@ -237,6 +237,11 @@ public enum CloudArchiveError: LocalizedError, Equatable {
     }
 }
 
+public struct CacheVerificationError: LocalizedError {
+    public let cause: Error
+    public var errorDescription: String? { cause.localizedDescription }
+}
+
 public enum CloudRebuildDecision: Equatable, Sendable {
     case allowed, fullRebuild, missingSources, downloadCache
 
@@ -397,24 +402,36 @@ public actor CloudGameArchive {
                              lastSuccessfulBuild: ClosedRange<Date>? = nil, preferLocalCache: Bool = false,
                              appManifest: CloudGameManifest? = nil)
         async throws -> (decision: CloudRebuildDecision, verifiedCache: URL?, hasUsableLocalCache: Bool) {
-        let local = withoutCache ? nil : (try? location(.cache, for: game)).flatMap { cache in
-            LocalBuildCache.chain(ofCache: cache).map { (cache, $0) }
-        }
+        let local: (URL, String)?
+        do {
+            if !withoutCache, sourcesAvailable, game.cacheIsRegistered, game.locations[.cache] == nil {
+                throw CloudArchiveError.unsafePath
+            }
+            if !withoutCache, sourcesAvailable, let cache = game.locations[.cache] {
+                local = try LocalBuildCache.readChain(ofCache: cache).map { (cache, $0) }
+            } else { local = nil }
+        } catch { throw CacheVerificationError(cause: error) }
         let result: (decision: CloudRebuildDecision, verifiedCache: URL?, hasUsableLocalCache: Bool)
         do {
             result = try await decideRebuild(game, sourcesAvailable: sourcesAvailable, withoutCache: withoutCache,
                                              lastSuccessfulBuild: lastSuccessfulBuild, preferLocalCache: preferLocalCache,
                                              appManifest: appManifest)
-        } catch where !(error is CancellationError) && sourcesAvailable && local != nil {
-            // The cloud can't be read: this Mac's cache still serves.
-            return (.allowed, local?.0, true)
+        } catch where !(error is CancellationError) && !(error is CacheVerificationError) && sourcesAvailable && local != nil {
+            // An offline rebuild only falls back to the chain in the installed app.
+            if let (cache, _) = local, try LocalBuildCache.matchesInstalledApp(cache, app: game.locations[.app]) {
+                return (.allowed, cache, true)
+            }
+            throw error
         }
         guard let (cache, chain) = local, result.verifiedCache == nil,
               result.decision == .fullRebuild || result.decision == .downloadCache else { return result }
         let manifest = try? await latest(titleID: game.titleID)
         let reference = (appManifest ?? manifest)?.artifacts.first { $0.kind == .app }?.shaderChain
             ?? manifest?.artifacts.first { $0.kind == .cache }?.shaderChain
-        return reference == nil || reference == chain ? (.allowed, cache, true) : result
+        if reference == chain || (reference == nil && (try? LocalBuildCache.matchesInstalledApp(cache, app: game.locations[.app])) == true) {
+            return (.allowed, cache, true)
+        }
+        return result
     }
 
     private func decideRebuild(_ game: CloudArchiveGame, sourcesAvailable: Bool, withoutCache: Bool,
@@ -441,6 +458,7 @@ public actor CloudGameArchive {
         let cached = await fingerprints.entries()[key]
         let worker = Task.detached(priority: .utility) { () throws -> (CloudRebuildDecision, Bool, Fingerprint?) in
             do {
+                guard try self.existingNode(at: cache) != nil else { return (.downloadCache, false, nil) }
                 let signature = try CloudArchiveInventory.signature(cache, kind: .cache)
                 guard !signature.hasExcludedFiles, !signature.isSkippedOnly else { return (.downloadCache, false, nil) }
                 let usable = signature.entries.count > 1
@@ -458,7 +476,7 @@ public actor CloudGameArchive {
                         }
                         if !couldBePartial { return (.downloadCache, usable, nil) }
                     }
-                    guard let files = try self.localFiles(at: cache, kind: .cache, snapshot: signature) else {
+                    guard let files = try self.localFiles(at: cache, kind: .cache, snapshot: signature, strict: true) else {
                         return (.downloadCache, false, nil)
                     }
                     let fresh = Fingerprint(signature: signature.sha256, sha256: try CloudArtifactFiles.digest(files),
@@ -480,7 +498,7 @@ public actor CloudGameArchive {
             } catch is CancellationError {
                 throw CancellationError()
             } catch {
-                return (.downloadCache, false, nil)
+                throw CacheVerificationError(cause: error)
             }
         }
         let (decision, usable, fresh) = try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
@@ -955,16 +973,22 @@ public actor CloudGameArchive {
         return try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
     }
 
-    nonisolated func localFiles(at url: URL, kind: CloudArtifactKind, snapshot: CloudArchiveInventory.Snapshot? = nil)
+    nonisolated func localFiles(at url: URL, kind: CloudArtifactKind, snapshot: CloudArchiveInventory.Snapshot? = nil,
+                                strict: Bool = false)
         throws -> [CloudArtifactFiles.Entry]? {
         do {
             let snapshot = try snapshot ?? CloudArchiveInventory.signature(url, kind: kind)
             guard !snapshot.hasExcludedFiles, !snapshot.isSkippedOnly else { return nil }
             let entries = try CloudArtifactFiles.entries(at: url, snapshot: snapshot)
-            guard try CloudArchiveInventory.signature(url, kind: kind).sha256 == snapshot.sha256 else { return nil }
+            guard try CloudArchiveInventory.signature(url, kind: kind).sha256 == snapshot.sha256 else {
+                throw CloudArchiveError.localChanged
+            }
             return entries
         } catch is CancellationError { throw CancellationError() }
-        catch { return nil }
+        catch {
+            if strict { throw CloudArchiveError.localChanged }
+            return nil
+        }
     }
 
     private func verify(_ artifact: Artifact, titleID: String) async throws {
