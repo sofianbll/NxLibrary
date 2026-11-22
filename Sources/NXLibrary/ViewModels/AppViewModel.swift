@@ -401,16 +401,14 @@ final class AppViewModel: ObservableObject {
 
     // MARK: - Dynamic Dock Icon
     func updateDockIcon() {
-        let isDark = NSApp?.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        let resName: String
-        switch iconAppearanceMode {
-        case .light: resName = "AppIcon-Light"
-        case .dark: resName = "AppIcon-Dark"
-        case .mono: resName = "AppIcon-Mono"
-        case .auto: resName = isDark ? "AppIcon-Dark" : "AppIcon-Light"
+        // The system draws the bundle icon in light, dark and tinted appearances.
+        guard iconAppearanceMode == .mono else {
+            NSApplication.shared.applicationIconImage = nil
+            return
         }
-
-        if let url = Bundle.main.url(forResource: resName, withExtension: "png"),
+        let isDark = NSApp?.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        if let url = Bundle.main.url(forResource: isDark ? "AppIcon-Particles-Dark" : "AppIcon-Particles-Light",
+                                     withExtension: "png"),
            let img = NSImage(contentsOf: url) {
             NSApplication.shared.applicationIconImage = img
         }

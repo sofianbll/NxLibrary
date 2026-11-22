@@ -1,28 +1,34 @@
-# App icon artwork
+# Oort NX app icon artwork
 
-The owner created the original artwork with AI and provided it on
-2026-11-18 as a WebP image, converted here to PNG without resizing.
-`IconArtwork.png` is that full-bleed 1254 × 1254 square master: a violet,
-rose and blue crystal inside a clear glass sphere, framed by a navy and a
-plum ink brush stroke on light paper, with a plum ink wave inside the
-sphere. The source is opaque and has
-no pre-rendered icon frame, transparent padding, rounded corners, rim or
-external shadow.
-
-Regenerate the Finder icon and Dock appearance resources on macOS:
+`scripts/brand_icons.py` draws a cross-section of the Oort cloud in SVG.
+Regenerate the icons on macOS with Xcode 26 or later (`actool`, `ictool`):
 
 ```sh
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift scripts/make_icons.swift
+out="$PWD/work/oort/icons"
+ictool="$(dirname "$(xcode-select -p)")/Applications/Icon Composer.app/Contents/Executables/ictool"
+python3 scripts/brand_icons.py "$out"
+rm -rf Resources/AppIcon.icon Resources/AppIconParticles.icon
+cp -R "$out/AppIcon.icon" "$out/AppIconParticles.icon" Resources/
+for look in Default:Light Dark:Dark; do
+  "$ictool" Resources/AppIconParticles.icon --export-image --output-file "$out/p.png" \
+    --platform macOS --rendition "${look%%:*}" --width 824 --height 824 --scale 1
+  sips --padToHeightWidth 1024 1024 "$out/p.png" --out "Resources/AppIcon-Particles-${look##*:}.png"
+done
+xcrun actool Resources/AppIcon.icon --compile "$out" --platform macosx --minimum-deployment-target 13.0 \
+  --app-icon AppIcon --include-all-app-icons --output-partial-info-plist "$out/partial.plist"
+cp "$out/AppIcon.icns" Resources/AppIcon.icns
+"$ictool" Resources/AppIcon.icon --export-image --output-file Resources/AppIcon-Light.png \
+  --platform macOS --rendition Default --width 512 --height 512 --scale 2  # README
 ```
 
-The generator applies the macOS silhouette to the full-bleed source: an
-824 × 824 rounded tile centered on a transparent 1024 × 1024 canvas, with a
-restrained shadow. It downsamples this master into all ten standard iconset
-representations (16–1024 pixels), packages `AppIcon.icns`, and writes the
-1024-pixel Light, Dark and Monochrome Dock resources. Light and Dark share
-the same tile. Monochrome preserves the geometry and alpha with a
-grayscale color-space conversion. The committed resources are exactly what
-this command produces from the master.
+`AppIcon.icon` is the bundle icon: `build_app.sh` compiles it into `Assets.car`
+and sets `CFBundleIconName`, so macOS 26+ draws it natively (light, dark, tinted,
+clear) instead of placing the `.icns` inside a grey squircle. The 824-point
+particle renders keep the 100-point margin of the macOS icon grid.
 
 Inspect the installed app in Finder and the Dock after quitting and reopening
 it; the running app can retain its previous icon until it restarts.
+
+`IconArtwork.png` preserves the original upstream Arcane crystal artwork
+(created with AI by the owner on 2026-11-18). The upstream `make_icons.swift`
+replaces the same output files with the legacy crystal, not the Oort NX icons.

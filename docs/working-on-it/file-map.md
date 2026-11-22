@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 22 novembre 2026. Copertura di **909 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 22 novembre 2026. Copertura di **916 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -139,7 +139,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 
 | File | Responsabilità |
 |---|---|
-| [Sources/NXLibrary/Models/AppIconAppearanceMode.swift](../../Sources/NXLibrary/Models/AppIconAppearanceMode.swift) | Enumera le varianti dell’icona dell’app selezionabili dall’utente. |
+| [Sources/NXLibrary/Models/AppIconAppearanceMode.swift](../../Sources/NXLibrary/Models/AppIconAppearanceMode.swift) | Espone trama nativa e particelle, conservando i valori salvati. |
 | [Sources/NXLibrary/Models/BuildStageItem.swift](../../Sources/NXLibrary/Models/BuildStageItem.swift) | Rappresenta una fase del porting nella lista di avanzamento. |
 | [Sources/NXLibrary/Models/BuildState.swift](../../Sources/NXLibrary/Models/BuildState.swift) | Enumera gli esiti e lo stato operativo del porting nella UI. |
 | [Sources/NXLibrary/Models/GameDetailsInfo.swift](../../Sources/NXLibrary/Models/GameDetailsInfo.swift) | Ispeziona DLC e salvataggi del bundle e prepara dimensioni localizzate e dettagli del gioco. |
@@ -1112,7 +1112,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 
 | File | Responsabilità |
 |---|---|
-| [scripts/build_app.sh](../../scripts/build_app.sh) | Compila in staging; prepara plist (ID Nextendo e pin motore facoltativi), runtime, risorse e, in release, rclone verificato; firma e pubblica il bundle con sostituzione atomica. |
+| [scripts/build_app.sh](../../scripts/build_app.sh) | Compila in staging, anche l’icona in `Assets.car`; prepara plist, runtime, risorse e, in release, rclone verificato; firma e pubblica il bundle con sostituzione atomica. |
 | [scripts/inject_google_client.py](../../scripts/inject_google_client.py) | Scrive la coppia OAuth Google nel plist della build privata solo se completa, senza argomenti con credenziali. |
 | [scripts/install_built_app.swift](../../scripts/install_built_app.swift) | Ingresso CLI che riusa BuildOutputInstaller per firmare, verificare e installare Arcane dopo il packaging. |
 | [scripts/check_publication.py](../../scripts/check_publication.py) | Rifiuta contenuti personali o di gioco versionati e formati di segreto riconoscibili; verifica il runtime rispetto al lock prima del packaging. |
@@ -1121,7 +1121,8 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [scripts/release.sh](../../scripts/release.sh) | Controlla prerequisiti, pin remoto facoltativo, suite Swift e regressioni headless; produce ZIP e DMG. In pubblicazione aggiunge il pin alle note e rifiuta variabili e chiavi plist del client Google privato. |
 | [scripts/validate_update.py](../../scripts/validate_update.py) | Verifica struttura, percorsi e limiti degli archivi prima dell'estrazione, sia nel bundle sia durante il packaging delle release. |
 | [scripts/relink_macho.py](../../scripts/relink_macho.py) | Riscrive riferimenti Mach-O dei binari e delle librerie affinché il runtime incluso sia rilocabile. |
-| [scripts/make_icons.swift](../../scripts/make_icons.swift) | Genera le risorse dell’icona dell’app nelle varianti usate dal bundle. |
+| [scripts/make_icons.swift](../../scripts/make_icons.swift) | Rigenera il cristallo dell’icona originale. |
+| [scripts/brand_icons.py](../../scripts/brand_icons.py) | Genera le varianti a trama e a particelle, con i loro progetti Icon Composer. |
 | [scripts/import_selene_palettes.py](../../scripts/import_selene_palettes.py) | Converte le palette Selene nel catalogo JSON usato dall’app. |
 | [scripts/check_localizations.py](../../scripts/check_localizations.py) | Verifica copertura, placeholder, plurali e risorse nel bundle installato. |
 | [scripts/check_selene_tokens.py](../../scripts/check_selene_tokens.py) | Blocca nuovi valori letterali di testo, padding e raggi fuori dai token. |
@@ -1135,7 +1136,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | File | Responsabilità aggiuntiva |
 |---|---|
 | [Resources/IconArtwork.png](../../Resources/IconArtwork.png) | Master quadrato originale dell’icona (cristallo nella sfera di vetro), fornito dall’utente e creato con AI. |
-| [Resources/IconArtwork.md](../../Resources/IconArtwork.md) | Provenienza dichiarata, brief e riproduzione delle varianti tramite il generatore. |
+| [Resources/IconArtwork.md](../../Resources/IconArtwork.md) | Riproduzione delle icone native e Dock, e provenienza del cristallo originale. |
 | [crystal-arcane.png](../../Sources/NXLibraryCore/Resources/crystal-arcane.png) | Immagine ferma del trofeo Arcane, anche come ripiego del video. |
 | [crystal-arcane.mov](../../Sources/NXLibraryCore/Resources/crystal-arcane.mov) | Animazione con alpha del trofeo Arcane. |
 | [achievements-01006BB00C6F0000.json](../../Sources/NXLibraryCore/Resources/achievements-01006BB00C6F0000.json) | Pack degli obiettivi locali di Link’s Awakening in sette lingue. |
@@ -1145,10 +1146,16 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 
 | File | Responsabilità |
 |---|---|
-| [Resources/AppIcon.icns](../../Resources/AppIcon.icns) | Icona macOS del bundle Arcane. |
-| [Resources/AppIcon-Dark.png](../../Resources/AppIcon-Dark.png) | Variante scura dell’icona dell’app. |
-| [Resources/AppIcon-Light.png](../../Resources/AppIcon-Light.png) | Variante chiara dell’icona dell’app. |
-| [Resources/AppIcon-Mono.png](../../Resources/AppIcon-Mono.png) | Variante monocromatica dell’icona dell’app. |
+| [Resources/AppIcon.icon/icon.json](../../Resources/AppIcon.icon/icon.json) | Icona Icon Composer a trama: sfondo, livelli e colori. |
+| [Resources/AppIcon.icon/Assets/glyph.svg](../../Resources/AppIcon.icon/Assets/glyph.svg) | Livello vettoriale della trama. |
+| [Resources/AppIcon.icon/Assets/sun.svg](../../Resources/AppIcon.icon/Assets/sun.svg) | Livello vettoriale del Sole. |
+| [Resources/AppIconParticles.icon/icon.json](../../Resources/AppIconParticles.icon/icon.json) | Sorgente Icon Composer per le immagini del Dock a particelle. |
+| [Resources/AppIconParticles.icon/Assets/glyph.svg](../../Resources/AppIconParticles.icon/Assets/glyph.svg) | Livello vettoriale delle particelle. |
+| [Resources/AppIconParticles.icon/Assets/sun.svg](../../Resources/AppIconParticles.icon/Assets/sun.svg) | Livello vettoriale del Sole nella variante a particelle. |
+| [Resources/AppIcon.icns](../../Resources/AppIcon.icns) | Ripiego `.icns` della trama. |
+| [Resources/AppIcon-Light.png](../../Resources/AppIcon-Light.png) | Anteprima chiara della trama nel README. |
+| [Resources/AppIcon-Particles-Dark.png](../../Resources/AppIcon-Particles-Dark.png) | Icona Dock a particelle scura. |
+| [Resources/AppIcon-Particles-Light.png](../../Resources/AppIcon-Particles-Light.png) | Icona Dock a particelle chiara. |
 | [Resources/Selene/palettes.json](../../Resources/Selene/palettes.json) | Catalogo delle 25 palette: blu classico predefinito, Arcane Crystal e Arcane Flow come superfici opzionali. |
 | [Resources/Selene/Fonts/MaterialIcons-Regular.ttf](../../Resources/Selene/Fonts/MaterialIcons-Regular.ttf) | Font dei glifi Material Icons disegnati dalla UI. |
 | [Resources/Selene/Fonts/MaterialIcons-LICENSE.txt](../../Resources/Selene/Fonts/MaterialIcons-LICENSE.txt) | Licenza del font Material Icons incluso. |

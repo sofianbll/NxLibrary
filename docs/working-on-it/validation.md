@@ -11,6 +11,7 @@ Come si aggiorna:
 
 | Parte | Stato | Prove ancora da fare |
 |---|---|---|
+| Nuova icona di Arcane | Trama nativa senza riquadro grigio confermata da Sofian sulla base precedente | Sulla build integrata controllare Finder, Dock e Look → App icon: trama chiara, scura e tinta, particelle e ritorno alla trama. |
 | Menu Library e Spotlight dopo la rimozione di My library | in attesa | Con un profilo di prova, verificare che non ci siano voci o tessere residue e che il focus torni al punto di partenza. Da Collection scaricare un titolo cloud; in Details aprire il pannello dal pulsante tondo e provare Retry. Verificare anche Inbox e Add Game. |
 | Ordine e aiuto dei dialoghi Selene | in attesa | Nei dialoghi di rimozione profilo, copia salvataggi e assistente cloud, verificare con tastiera, controller e VoiceOver l'ordine, il focus iniziale sicuro, A/B e l'aiuto del solo strato attivo. |
 | Ritorno da Attività e clic su Profili in Spotlight | in attesa | Con dati di prova, B/Esc o un clic sul suggerimento di chiusura del centro attività torna alla campanella anche col puntatore fermo sopra un'altra icona; il secondo B chiude il menu, un clic fuori chiude tutto subito. In Spotlight, cliccare Profili nella barra dei comandi e confrontare con Home: si apre lo stesso selettore e la chiusura lascia il focus precedente. |

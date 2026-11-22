@@ -8,8 +8,7 @@ enum AppIconAppearanceMode: String, CaseIterable, Identifiable, Hashable {
     case mono = "Monochrome"
 
     var id: String { rawValue }
-    /// Light and Dark remain readable for existing preferences; today's artwork
-    /// has one colour variant and one monochrome variant.
+    /// Keep legacy preference values: Auto uses the system icon; Monochrome now selects particles.
     static let selectable: [Self] = [.auto, .mono]
-    var label: String { self == .mono ? L10n.text("Monochrome") : L10n.text("Color") }
+    var label: String { self == .mono ? L10n.text("Particles") : L10n.text("Halftone") }
 }

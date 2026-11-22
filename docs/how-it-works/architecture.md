@@ -841,6 +841,7 @@ Prove e misure di queste scelte: [docs/history/reviews/2026-11-16-ratings-metada
 - Il menu resta proprietario dell'input. `ActivityCenterFocus` distingue riga attiva, in coda, esito e Clear all: se una riga scompare, non assegna la sua azione a un altro lavoro. A o Invio apre Porting, ritenta l'esito fallito o attiva Clear all; X o Canc annulla la richiesta attiva/in coda o cancella l'esito. B o Esc chiude.
 
 **Canvas, temi e componenti.**
+- `build_app.sh` compila `AppIcon.icon` in `Assets.car` e registra `CFBundleIconName`; macOS disegna la trama nativa in aspetto chiaro, scuro e tinto. In Look, Particles applica al Dock l’immagine chiara o scura. I valori salvati `Auto (System)` e `Monochrome` non cambiano.
 - `SeleneCanvas` scala il canvas 1920×1080 nello spazio disponibile, e `seleneCanvas` (in `SeleneCanvasEnvironment.swift`) espone unità e font alle viste. `SeleneTheme` ricava colori e curve di animazione dalla palette. `MaterialIcon` elenca i glifi; `SeleneFonts` registra il font e li rende in SwiftUI.
 - I componenti condivisi in `Views/Components` disegnano righe, switch, pill, focus, suggerimenti dei tasti, dialoghi e conferme. Quando usarli è in [conventions.md](../working-on-it/conventions.md#3-una-schermata-o-un-pannello-selene).
 

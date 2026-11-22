@@ -68,9 +68,17 @@ cp -R "$LOCALIZATION_BUNDLE" "$APP/Contents/Resources/"
 if [ -f "$ROOT/Resources/AppIcon.icns" ]; then
   cp "$ROOT/Resources/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 fi
-for icon in "$ROOT"/Resources/AppIcon-*.png; do
-  [ -f "$icon" ] && cp "$icon" "$APP/Contents/Resources/"
+for icon in "$ROOT"/Resources/AppIcon-Particles-*.png; do
+  cp "$icon" "$APP/Contents/Resources/"
 done
+# macOS draws the Icon Composer icon natively instead of framing the ICNS fallback.
+ICON_BUILD="$STAGE/icon"
+mkdir -p "$ICON_BUILD"
+xcrun actool "$ROOT/Resources/AppIcon.icon" --compile "$ICON_BUILD" \
+  --platform macosx --minimum-deployment-target 26.0 --app-icon AppIcon --include-all-app-icons \
+  --output-partial-info-plist "$STAGE/icon.plist"
+test -s "$ICON_BUILD/Assets.car"
+cp "$ICON_BUILD/Assets.car" "$APP/Contents/Resources/"
 [ -f "$ROOT/LICENSE" ] && cp "$ROOT/LICENSE" "$APP/Contents/Resources/LICENSE"
 [ -f "$ROOT/NOTICE" ] && cp "$ROOT/NOTICE" "$APP/Contents/Resources/NOTICE"
 if [ "${NX_RELEASE:-0}" = "1" ]; then
@@ -129,6 +137,7 @@ $RELEASE_KEY
 </dict>
 </plist>
 PLIST
+/usr/bin/plutil -insert CFBundleIconName -string AppIcon "$APP/Contents/Info.plist"
 if [[ -n "$NEXTENDO_CLIENT_ID" ]]; then
   /usr/bin/plutil -insert DMNextendoClientID -string "$NEXTENDO_CLIENT_ID" "$APP/Contents/Info.plist"
 fi

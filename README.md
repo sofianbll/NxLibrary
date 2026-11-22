@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Resources/AppIcon-Light.png" alt="Arcane's crystal-in-glass app icon" width="96" height="96">
+  <img src="Resources/AppIcon-Light.png" alt="Arcane app icon" width="96" height="96">
 </p>
 
 <h1 align="center">Arcane</h1>
@@ -284,7 +284,7 @@ GameBanana archives can contain RomFS, ExeFS, or both side by side under one roo
 
 - **Game Options → Edit details** changes one game's artwork or metadata. Manual artwork choices take priority over automatic images. After choosing an Icon in **Change artwork**, choose **Only here** to keep it inside Arcane or **Use on the Mac** to show it in Finder and the Dock too. This choice is available for every game, including apps with no original icon, and survives restarts and rebuilds. **Only here** restores the original app icon (or its absence) if a custom one was already applied. **Automatic** removes the personal image and uses the game's own icon, then available online artwork, while keeping your location choice. On the Icon tab, **Icon location** changes **Only here** / **Use on the Mac** at any time, including with Automatic selected. If no image is found, the app keeps the standard macOS icon and remains playable; Change artwork explains that no icon is available. The finished build log records the separate icon result.
 - **Menu → Theme** opens colors first, then backgrounds. **Arcane** keeps the original blue moonlight as the default. Optional **Arcane Crystal** and **Arcane Flow** offer fine moving light threads, with barely visible ambient light. Background choices include local images, muted looping videos and optional online sources; source credits appear in the picker.
-- **Settings → Look** controls wallpaper placement, sizing, brightness, game backgrounds, Reduce Motion and the Color/Monochrome app icon.
+- **Settings → Look** controls wallpaper placement, sizing, brightness, game backgrounds, Reduce Motion and the Halftone/Particles app icon.
 - **Settings → Sound & music** controls interface cues and volume. Four interface sounds are bundled; additional sounds and wallpapers can be imported from a Selene theme folder you own.
 
 Online artwork and wallpapers require their providers to be available. Their content and service terms remain those of the respective owners.
