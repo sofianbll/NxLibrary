@@ -82,7 +82,8 @@ print("NUP probe → real UI converters → persisted sources → rebuild progra
     methods = '\n'.join((declaration('    static func selectableGame(from game:', porting_source),
                           declaration('    static func detectedSource(from file:', source=porting_source)))
     main = scratch / 'main.swift'
-    main.write_text(host.replace('// CONVERTERS', methods))
+    format_bytes = declaration('func seleneBytes(', (ROOT / 'Sources/NXLibrary/Views/Settings/SettingsSectionContent.swift').read_text())
+    main.write_text(host.replace('// CONVERTERS', methods) + '\n' + format_bytes)
     library = ROOT / '.build/debug'
     executable = scratch / 'nup-check'
     subprocess.run(['xcrun', 'swiftc', '-I', str(library), str(main),

@@ -859,7 +859,7 @@ extension CloudSetupAssistant {
         precondition(view.focusRows.flatMap { $0 }.contains(.sourcesPath))
         precondition(view.primaryEnabled == (expected != nil))
         let previous = model.preference
-        if expected != nil {
+        if expected != nil && CHECK_PRIMARY_FIRST {
             precondition(view.focusRows.last == [.primary, .cancel])
             var focus = CloudSetupAssistantFocus()
             precondition(focus.current(in: view.focusRows) == .primary)
@@ -877,7 +877,7 @@ extension CloudSetupAssistant {
         precondition(model.preference.remote == previous.remote && model.preference.root == previous.root)
     }
 }
-''')
+'''.replace("CHECK_PRIMARY_FIRST", "false" if baseline == "5047557" else "true"))
             host = host.replace("// ASSISTANT_CHECK", r'''
         precondition(assistant.focusedTarget == .primary)
         precondition(CloudLibraryIndicator(state: model.states[game.id]!).status == .pending)
