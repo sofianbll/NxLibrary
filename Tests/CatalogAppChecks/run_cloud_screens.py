@@ -96,6 +96,7 @@ import ArcanePorting
         // DOWNLOAD_FILL_CHECK
         // TYPED_PATH_CHECK
         // MULTIPLAYER_CHECK
+        // REFERENCE_START
         model.active = nil
         model.queue = []
         L10n.setContext(.init(language: .french, region: "FR"))
@@ -115,13 +116,28 @@ import ArcanePorting
         try render("reference-editor", output, CloudReferenceDialog(viewModel: vm, onClose: {})
             .environment(\.nxAppLocale, L10n.context))
         model.update(game.id) {
-            $0.copies = [.app: .screenFixture(.newerOnThisMac, hasLocalCopy: true)]
+            $0.action = nil; $0.queued = false; $0.progress = nil
+            $0.copies = [.app: .screenFixture(.newerOnThisMac, hasLocalCopy: true),
+                         .cache: .screenFixture(.notInCloud, hasLocalCopy: false)]
             $0.referenceKinds = [.app]
             $0.referenceCopies = [.app: .init(downloadBytes: 45_000_000, totalBytes: 600_000_000,
                                              legacy: false, updatesLocal: true)]
         }
         try render("reference-update", output, CloudLibraryPanel(viewModel: vm, model: model, game: game)
             .environment(\.nxAppLocale, L10n.context))
+        precondition(model.states[game.id]?.personalCopyIsOlder(.app) == false)
+        model.update(game.id) {
+            $0.referenceCopies = [:]
+            $0.referenceAvailability[.app] = .screenFixture(.synchronized)
+            precondition($0.personalCopyIsOlder(.app) && $0.canUpload(.app))
+            precondition(!$0.personalCopyIsOlder(.cache))
+        }
+        try render("reference-personal-older", output, CloudLibraryPanel(viewModel: vm, model: model, game: game)
+            .environment(\.nxAppLocale, L10n.context))
+        vm.showSettingsNotice(title: L10n.format("Added %@ to the library.", [game.name]),
+                              message: L10n.text("Content not verified"), cancelTitle: L10n.text("Close"))
+        try renderNotice("adoption-unverified", output, vm.settingsNotice!, width: 1280)
+        // REFERENCE_END
     }
 
     @MainActor static func renderNotice(_ name: String, _ output: URL, _ notice: SettingsNotice, width: CGFloat) throws {
@@ -379,10 +395,11 @@ def main():
                r'        \.task\(id: Inspection.*?\n        }\n', "")
         change(app / "Views/Detail/CloudLibraryPanel.swift",
                r'        \.task\(id: ReadRequest.*?\n', "")
-        change(app / "Views/Settings/CloudReferenceDialog.swift",
-               r'                TextField\(.*?\.onExitCommand\(perform: onClose\)',
-               '                Text(text("Google Drive folder link or ID"))\n'
-               '                    .frame(maxWidth: .infinity, alignment: .leading)')
+        if not before:
+            change(app / "Views/Settings/CloudReferenceDialog.swift",
+                   r'                TextField\(.*?\.onExitCommand\(perform: onClose\)',
+                   '                Text(text("Google Drive folder link or ID"))\n'
+                   '                    .frame(maxWidth: .infinity, alignment: .leading)')
         assistant = app / "Views/Settings/CloudSetupAssistant.swift"
         change(assistant, r'        \.onAppear \{\s*.*?installAssistantKeys\(\)(?: \}|\n        })\n', "")
         change(assistant, r'@State private var remotes: \[RcloneRemote\]\?', '@State private var remotes: [RcloneRemote]? = []')
@@ -421,6 +438,8 @@ extension CloudDriveFolders.Listing {
         change(activity, r'                    }\n                    \.padding\(EdgeInsets.*?\.onChange\(of: focused\)[^\n]*\n                }\n', "")
         change(activity, r'        LazyVStack\(', '        VStack(')
         host = HOST.replace("/* NOTICE_LAYOUT */", "vertical: notice.vertical," if before else "cancelIndex: notice.cancelIndex,")
+        if before:
+            host = re.sub(r'// REFERENCE_START.*?// REFERENCE_END', '', host, flags=re.S)
         if not before:
             # Capture Spotlight after its entrance, without running the reveal in ImageRenderer.
             change(app / "Views/Spotlight/SpotlightInfoView.swift",
@@ -513,7 +532,7 @@ extension RemotePlayAdapters {
 ''')
         (app / "CloudScreenProbe.swift").write_text(host)
         with (app / "ViewModels/AppViewModel+CloudLibrary.swift").open("a") as swift:
-            swift.write('''
+            probe = '''
 extension AppViewModel {
     @MainActor func checkReferenceScreen(access: Bool) async throws {
         let backend = RcloneStorageBackend(remote: "fixture", root: "Games") { _, args, _ in
@@ -542,7 +561,11 @@ extension CloudLibraryModel {
         referenceArchive = CloudGameArchive(backend: reference)
     }
 }
-''')
+'''
+            if before:
+                probe = re.sub(r'    @MainActor func checkReferenceScreen.*?(?=    @MainActor func screenRebuildNotice)',
+                               '', probe, flags=re.S).split('extension CloudLibraryModel')[0]
+            swift.write(probe)
         with (package / "Sources/ArcanePorting/Library/CloudGameArchive.swift").open("a") as swift:
             swift.write('''
 extension CloudArtifactStatus {

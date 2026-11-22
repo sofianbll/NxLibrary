@@ -76,7 +76,7 @@ extension CloudGameArchive {
             }
             throw error
         }
-        progress?(.init(.restoring, kind: kind, downloadComplete: true))
+        progress?(.init(.verifying, kind: kind, downloadComplete: true))
         try fm.createDirectory(at: incoming, withIntermediateDirectories: false)
         for entry in tree.entries {
             try Task.checkCancellation()
@@ -112,6 +112,7 @@ extension CloudGameArchive {
             try ImportService.repairAdoptionCopy(incoming, entries: entries)
             _ = try await verifiedApp(incoming, titleID: titleID)
         }
+        progress?(.init(.restoring, kind: kind, downloadComplete: true))
         return resume
     }
 }

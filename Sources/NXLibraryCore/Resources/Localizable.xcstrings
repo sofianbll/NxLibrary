@@ -90813,15 +90813,26 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "来源：参考游戏库"}}
       }
     },
-    "Update from reference · %@ of %@": {
+    "Update this Mac from the reference · %@ of %@": {
       "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "Update from reference · %@ of %@"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Aggiornamento dal riferimento · %@ di %@"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Mise à jour depuis la référence · %@ sur %@"}},
-        "de": {"stringUnit": {"state": "translated", "value": "Update aus der Referenz · %@ von %@"}},
-        "es": {"stringUnit": {"state": "translated", "value": "Actualización desde la referencia · %@ de %@"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Atualização da referência · %@ de %@"}},
-        "zh-Hans": {"stringUnit": {"state": "translated", "value": "从参考库更新 · %@ / %@"}}
+        "en": {"stringUnit": {"state": "translated", "value": "Update this Mac from the reference · %@ of %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Aggiorna questo Mac dal riferimento · %@ di %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mettre à jour ce Mac depuis la référence · %@ sur %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Diesen Mac aus der Referenz aktualisieren · %@ von %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Actualizar este Mac desde la referencia · %@ de %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Atualizar este Mac a partir da referência · %@ de %@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "从参考库更新此 Mac · %@ / %@"}}
+      }
+    },
+    "Your cloud copy is older": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Your cloud copy is older"}},
+        "it": {"stringUnit": {"state": "translated", "value": "La tua copia cloud è meno recente"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ta copie cloud est plus ancienne"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Deine Cloud-Kopie ist älter"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Tu copia en la nube es más antigua"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Sua cópia na nuvem é mais antiga"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "你的云端副本较旧"}}
       }
     },
     "Reference archive · Full download (%@ of %@)": {

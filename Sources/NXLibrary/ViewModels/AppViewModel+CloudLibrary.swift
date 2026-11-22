@@ -110,6 +110,10 @@ struct CloudLibraryState {
         case .cloudOnly: return false
         }
     }
+    func personalCopyIsOlder(_ kind: CloudArtifactKind) -> Bool {
+        referenceKinds.contains(kind) && referenceAvailability[kind]?.state == .synchronized
+            && copies[kind]?.state == .newerOnThisMac && copies[kind]?.uploadedAt != nil
+    }
     var needsCombinedUpload: Bool {
         CloudArtifactKind.allCases.allSatisfy {
             copies[$0]?.hasLocalCopy == true && (mustResendBoth || copies[$0]?.state == .notInCloud)

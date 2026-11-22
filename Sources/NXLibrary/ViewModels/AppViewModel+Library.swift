@@ -142,8 +142,13 @@ extension AppViewModel {
                         router?.back()
                         router?.requestSpotlightSelect(installed.id)
                     }
-                    logs.append(LogEntry(level: .success, message: L10n.format("Added %@ to the library.", [installed.name])))
-                    if staged.contentUnverified { logs.append(LogEntry(message: L10n.text("Content not verified"))) }
+                    let result = L10n.format("Added %@ to the library.", [installed.name])
+                    logs.append(LogEntry(level: .success, message: result))
+                    if staged.contentUnverified {
+                        let warning = L10n.text("Content not verified")
+                        logs.append(LogEntry(message: warning))
+                        showSettingsNotice(title: result, message: warning, cancelTitle: L10n.text("Close"))
+                    }
                     appIcon.reconcileAppIcons()
                     Task { await refreshCloudLibrary(installed) }
                 }

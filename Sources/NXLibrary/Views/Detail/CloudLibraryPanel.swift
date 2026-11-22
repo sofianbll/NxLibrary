@@ -116,16 +116,18 @@ struct CloudLibraryPanel: View {
                         context: localization)
         }
         let control = artifactControl(item)
+        let personalCopyIsOlder = !live && !state.queued && item.artifact.map(state.personalCopyIsOlder) == true
         let downloadFill = CloudLibraryProgressView.downloadFill(state, item: item)
         let downloading = CloudLibraryProgressView.isDownloading(state, item: item)
         let downloadBytes = downloadFill == nil ? nil
             : CloudLibraryProgressView.bytesSummary(state.progress, context: localization)
+        let statusText = personalCopyIsOlder ? text("Your cloud copy is older") : indicator.label(context: localization)
         return VStack(alignment: .leading, spacing: canvas.u(8)) {
             HStack(spacing: canvas.u(12)) {
                 VStack(alignment: .leading, spacing: canvas.u(5)) {
                     Text(title).seleneFont(17, .semibold).foregroundColor(SeleneTheme.ink90)
                         .accessibilityAddTraits(.isHeader)
-                    SeleneStatusDot(text: downloadBytes ?? reference ?? indicator.label(context: localization), color: indicator.status.color,
+                    SeleneStatusDot(text: downloadBytes ?? reference ?? statusText, color: indicator.status.color,
                                     labelColor: indicator.status == .failed ? PortingPillCopy.softRed : SeleneTheme.ink90,
                                     accessibilityTitle: title,
                                     pulses: indicator.isTransferring)
@@ -156,6 +158,7 @@ struct CloudLibraryPanel: View {
                     if let control {
                         switch control {
                         case .cancel: artifactButton(control, "Cancel", icon: .close)
+                        case .upload where personalCopyIsOlder: button(control, "Send")
                         case .upload, .uploadSources: artifactButton(control, "Send", icon: .cloudUpload)
                         default: downloadButton(control, fill: 0)
                         }
@@ -208,16 +211,17 @@ struct CloudLibraryPanel: View {
     }
 
     private func referenceLine(_ item: CloudLibraryItem) -> String? {
-        let bytes: Int64, total: Int64, legacy: Bool
+        let bytes: Int64, total: Int64, fullArchiveDownload: Bool
         if let kind = item.artifact, let copy = state.referenceCopies[kind] {
             if !copy.updatesLocal && !copy.legacy { return nil }
-            (bytes, total, legacy) = (copy.downloadBytes, copy.totalBytes, copy.legacy)
+            (bytes, total, fullArchiveDownload) = (copy.downloadBytes, copy.totalBytes, copy.legacy && !copy.updatesLocal)
         } else if item == .sources, let status = state.referenceSources, let changed = state.referenceSourceBytes,
                   status.files.contains(where: { $0.localBytes != nil }) {
-            (bytes, total, legacy) = (changed, status.remoteBytes, false)
+            (bytes, total, fullArchiveDownload) = (changed, status.remoteBytes, false)
         } else { return nil }
-        return L10n.format(legacy ? "Reference archive · Full download (%@ of %@)"
-                                 : "Update from reference · %@ of %@",
+        return L10n.format(fullArchiveDownload
+                           ? "Reference archive · Full download (%@ of %@)"
+                           : "Update this Mac from the reference · %@ of %@",
                            [formattedBytes(bytes), formattedBytes(total)], context: localization)
     }
 
