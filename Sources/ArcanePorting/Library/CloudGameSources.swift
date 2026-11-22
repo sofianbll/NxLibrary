@@ -33,6 +33,9 @@ public final class CloudGameSources: @unchecked Sendable {
 
         private let folder: String
         private let sources: [Source]
+        package var publishedAt: Date? = nil
+
+        func sameFiles(as other: Self) -> Bool { folder == other.folder && sources == other.sources }
 
         public init?(folder: String, files: [GameFileItem], titleID: String) {
             self.folder = folder
@@ -44,7 +47,7 @@ public final class CloudGameSources: @unchecked Sendable {
             guard adopted(in: URL(fileURLWithPath: "/"), titleID: titleID) != nil else { return nil }
         }
 
-        func adopted(in root: URL, titleID: String) -> [GameFileItem]? {
+        package func adopted(in root: URL, titleID: String) -> [GameFileItem]? {
             guard SaveLocation.validID(titleID), Selection.safeName(folder), folder.uppercased().hasSuffix("[\(titleID)]"),
                   !sources.isEmpty, sources.count <= 512 else { return nil }
             let parent = root.appendingPathComponent(folder, isDirectory: true)
@@ -71,6 +74,8 @@ public final class CloudGameSources: @unchecked Sendable {
                   files.filter({ $0.kind == .base }).allSatisfy({ $0.titleId?.uppercased() == titleID }) else { return nil }
             return files
         }
+
+        package var folderName: String { folder }
     }
 
     private let backend: RcloneStorageBackend
@@ -165,6 +170,7 @@ public final class CloudGameSources: @unchecked Sendable {
     }
 
     public func upload(folderName: String, files: [URL], progress: Progress?) async throws {
+        guard !backend.isReference else { throw StorageBackendError.invalidConfiguration }
         let selection = try Selection(folderName, files)
         guard let lease = backend.leases.begin(selection.title) else { throw CloudArchiveError.busy }
         defer { backend.leases.end(selection.title, token: lease) }
@@ -208,13 +214,18 @@ public final class CloudGameSources: @unchecked Sendable {
     }
 
     public func download(folderName: String, files: [URL], progress: Progress?) async throws {
+        try await download(folderName: folderName, files: files, replacingBefore: nil, replacing: [], progress: progress)
+    }
+
+    package func download(folderName: String, files: [URL], replacingBefore: Date?, replacing: Set<URL>,
+                          progress: Progress?) async throws {
         let selection = try Selection(folderName, files)
         guard let lease = backend.leases.begin(selection.title) else { throw CloudArchiveError.busy }
         defer { backend.leases.end(selection.title, token: lease) }
-        let pending = try await downloads(selection)
+        let pending = try await downloads(selection, replacingBefore: replacingBefore, replacing: replacing)
         let bytes = try total(pending.map { $0.1.size })
         var reservations: [dev_t: Int64] = [:]
-        for (destination, item) in pending {
+        for (destination, item, _) in pending {
             let parent = destination.deletingLastPathComponent()
             let (device, _) = try Stamp.directory(parent)
             let (reserved, overflow) = (reservations[device] ?? 1_048_576).addingReportingOverflow(item.size)
@@ -222,14 +233,15 @@ public final class CloudGameSources: @unchecked Sendable {
             reservations[device] = reserved
         }
         var received: Int64 = 0
-        for (destination, item) in pending {
+        for (destination, item, previous) in pending {
             try Task.checkCancellation()
             let parent = destination.deletingLastPathComponent()
             let directory = try Stamp.directory(parent)
             let staging = parent.appendingPathComponent(".arcane-sources-\(UUID())", isDirectory: true)
             try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: false,
                                                     attributes: [.posixPermissions: 0o700])
-            defer { try? FileManager.default.removeItem(at: staging) }
+            var keepPrevious = false
+            defer { if !keepPrevious { try? FileManager.default.removeItem(at: staging) } }
             let candidate = staging.appendingPathComponent("file")
             // Use the cancellable CLI for every payload, not an RC job that can outlive its caller.
             try await backend.get(item.key, to: candidate,
@@ -239,12 +251,15 @@ public final class CloudGameSources: @unchecked Sendable {
                   try await hash(candidate, stamp: snapshot, fresh: true) == item.md5 else {
                 throw CloudArchiveError.invalidArchive
             }
-            guard try Stamp.directory(parent) == directory else { throw CloudArchiveError.localChanged }
+            guard try Stamp.directory(parent) == directory, try stamp(at: destination) == previous else {
+                throw CloudArchiveError.localChanged
+            }
             try Task.checkCancellation()
-            if renamex_np(candidate.path, destination.path, UInt32(RENAME_EXCL)) != 0 {
+            if renamex_np(candidate.path, destination.path, UInt32(previous == nil ? RENAME_EXCL : RENAME_SWAP)) != 0 {
                 if errno == EEXIST { throw CloudArchiveError.localChanged }
                 throw CloudArchiveError.installFailed
             }
+            keepPrevious = previous != nil
             received += item.size
             progress?(.init(bytesTransferred: received, totalBytes: bytes))
         }
@@ -252,6 +267,7 @@ public final class CloudGameSources: @unchecked Sendable {
     }
 
     public func free(folderName: String, files: [URL], confirmed: Bool) async throws -> Int64 {
+        guard !backend.isReference else { throw StorageBackendError.invalidConfiguration }
         guard confirmed else { throw CloudArchiveError.confirmationRequired }
         let selection = try Selection(folderName, files)
         guard let lease = backend.leases.begin(selection.title) else { throw CloudArchiveError.busy }
@@ -283,15 +299,24 @@ public final class CloudGameSources: @unchecked Sendable {
         try await total(downloads(Selection(folderName, files)).map { $0.1.size })
     }
 
-    private func downloads(_ selection: Selection) async throws -> [(URL, StorageObject)] {
+    private func downloads(_ selection: Selection, replacingBefore: Date? = nil,
+                           replacing: Set<URL> = []) async throws -> [(URL, StorageObject, Stamp?)] {
         let remote = try await remoteFiles(selection)
-        return try selection.files.compactMap { source in
+        var pending: [(URL, StorageObject, Stamp?)] = []
+        for source in selection.files {
             try Task.checkCancellation()
-            guard try stamp(at: source) == nil else { return nil }
+            let local = try stamp(at: source)
+            if local != nil && replacingBefore == nil { continue }
             guard let item = remote[source.lastPathComponent] else { throw CloudArchiveError.noRemoteCopy }
-            guard item.md5 != nil else { throw CloudArchiveError.invalidArchive }
-            return (source, item)
+            guard let digest = item.md5 else { throw CloudArchiveError.invalidArchive }
+            if let local {
+                if local.bytes == item.size, try await hash(source, stamp: local) == digest { continue }
+                guard replacing.contains(source), let replacingBefore, Date(timeIntervalSince1970: Double(local.mtimeSeconds)
+                    + Double(local.mtimeNanos) / 1e9) < replacingBefore else { throw CloudArchiveError.localChanged }
+            }
+            pending.append((source, item, local))
         }
+        return pending
     }
 
     private func remoteFiles(_ selection: Selection, withHashes: Bool = true,

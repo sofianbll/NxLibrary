@@ -20,7 +20,8 @@ struct SettingsView: View {
     @State private var section: SettingsSection
     @State private var showingControls = false
     @State private var cloudAssistant: CloudSetupAssistant.Entry?
-    private var showingCloudAssistant: Bool { cloudAssistant != nil }
+    @State private var editingCloudReference = false
+    private var showingCloudAssistant: Bool { cloudAssistant != nil || editingCloudReference }
     @State private var cloudAdvanced = false
     @State private var multiplayerAdvanced = false
     @State private var localePicker: LocalePickerMode?
@@ -109,7 +110,7 @@ struct SettingsView: View {
         }
         .onDisappear(perform: removeKeyMonitor)
         .onDisappear { igdb.isEditing = false }
-        .onDisappear { cloudAssistant = nil }
+        .onDisappear { cloudAssistant = nil; editingCloudReference = false }
         .onReceive(viewModel.cloudLibrary.$recovery) { action in
             guard let action, router.route == .settings(.cloudLibrary) else { return }
             switch action {
@@ -174,6 +175,9 @@ struct SettingsView: View {
                 CloudSetupAssistant(viewModel: viewModel, model: viewModel.cloudLibrary, entry: cloudAssistant) {
                     self.cloudAssistant = nil
                 }
+            }
+            if editingCloudReference {
+                CloudReferenceDialog(viewModel: viewModel) { editingCloudReference = false }
             }
         }
         .disabled(nextendo.friendToRemove != nil)
@@ -241,6 +245,7 @@ struct SettingsView: View {
                         onEditCloud: { cloudAssistant = viewModel.cloudLibrary.preference.remote == nil ? .account : .credentials },
                         onEditCloudLibraryFolder: { cloudAssistant = .library },
                         onEditCloudSources: { cloudAssistant = .sources },
+                        onEditCloudReference: { editingCloudReference = true },
                         onActions: updateActions
                     )
                 }

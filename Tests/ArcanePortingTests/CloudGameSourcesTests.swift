@@ -4,6 +4,30 @@ import XCTest
 @testable import ArcanePorting
 
 final class CloudGameSourcesTests: XCTestCase {
+    func testExplicitSourceUpdateKeepsUnchangedAndPreviousPackages() async throws {
+        let f = try Fixture()
+        let base = try f.local("Base.nsp", "base")
+        let update = try f.local("Update.nsz", "local")
+        let dlc = f.localFolder.appendingPathComponent("DLC.nup")
+        _ = try f.remote("Base.nsp", "base")
+        _ = try f.remote("Update.nsz", "reference")
+        _ = try f.remote("DLC.nup", "new")
+        let newer = Date(timeIntervalSinceNow: 60)
+        await assertError(.localChanged) {
+            try await f.service.download(folderName: f.folder, files: [base, update, dlc],
+                                         replacingBefore: newer, replacing: [], progress: nil)
+        }
+        let inode = try CloudArchiveInventory.node(at: base).st_ino
+        try await f.service.download(folderName: f.folder, files: [base, update, dlc],
+                                     replacingBefore: newer, replacing: [update], progress: nil)
+        XCTAssertEqual(try CloudArchiveInventory.node(at: base).st_ino, inode)
+        XCTAssertEqual(try String(contentsOf: update, encoding: .utf8), "reference")
+        XCTAssertEqual(try String(contentsOf: dlc, encoding: .utf8), "new")
+        let backup = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: f.localFolder,
+            includingPropertiesForKeys: nil).first { $0.lastPathComponent.hasPrefix(".arcane-sources-") })
+        XCTAssertEqual(try String(contentsOf: backup.appendingPathComponent("file"), encoding: .utf8), "local")
+    }
+
     func testDownloadRefusesInsufficientSpaceBeforeAnyPayloadOrStaging() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

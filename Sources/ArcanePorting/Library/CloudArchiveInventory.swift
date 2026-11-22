@@ -117,7 +117,7 @@ enum CloudArchiveInventory {
         return bytes
     }
 
-    private static func safeLink(_ target: String, at path: String, kind: CloudArtifactKind) -> Bool {
+    static func safeLink(_ target: String, at path: String, kind: CloudArtifactKind) -> Bool {
         guard !target.isEmpty, !target.hasPrefix("/"), !target.contains("\0") else { return false }
         var parts = Array(path.split(separator: "/").dropLast())
         var descended = false
@@ -143,8 +143,8 @@ enum CloudArchiveInventory {
         try scan(root, kind: kind, includeContents: false)
     }
 
-    static func fingerprintKey(_ root: URL, kind: CloudArtifactKind) -> String {
-        hex(SHA256.hash(data: Data("\(kind.rawValue):\(root.path)".utf8)))
+    static func fingerprintKey(_ root: URL, kind: CloudArtifactKind, portable: Bool = false) -> String {
+        hex(SHA256.hash(data: Data("\(portable ? "files:" : "")\(kind.rawValue):\(root.path)".utf8)))
     }
 
     private static func scan(_ root: URL, kind: CloudArtifactKind, includeContents: Bool) throws -> Snapshot {
@@ -216,7 +216,7 @@ enum CloudArchiveInventory {
         return st
     }
 
-    static func hashes(at url: URL, includeMD5: Bool = true) throws -> [String: String] {
+    static func hashes(at url: URL, includeMD5: Bool = true, includeSHA256: Bool = true) throws -> [String: String] {
         let fd = open(url.path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK)
         guard fd >= 0 else { throw CloudArchiveError.unsafePath }
         let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
@@ -224,10 +224,10 @@ enum CloudArchiveInventory {
         guard fstat(fd, &st) == 0, st.st_mode & S_IFMT == S_IFREG else { throw CloudArchiveError.unsafePath }
         try handle.forEachChunk { chunk in
             try Task.checkCancellation()
-            sha.update(data: chunk)
+            if includeSHA256 { sha.update(data: chunk) }
             if includeMD5 { md5.update(data: chunk) }
         }
-        var hashes = ["sha256": hex(sha.finalize())]
+        var hashes = includeSHA256 ? ["sha256": hex(sha.finalize())] : [:]
         if includeMD5 { hashes["md5"] = hex(md5.finalize()) }
         return hashes
     }

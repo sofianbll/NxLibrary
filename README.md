@@ -149,6 +149,8 @@ On first setup, Arcane looks for an existing library in `Games` and its immediat
 
 Choose **Cloud** beside **Options** on a ported game's Details page to manage the app and its build cache. For a newly imported game, **Download** restores the app to your **Game apps** folder and becomes **Play** once it is ready, without the original game files or a rebuild. Transfer progress remains visible in Details when you close the Cloud panel. **Disconnect** removes only the local rclone connection, which may also be used by other tools. It does not remove cloud files or affect game saves.
 
+To follow a library from another Google account you own, share its Drive folder with your second account as **Viewer** in Google Drive. On the other Mac, paste the folder link or ID under **Cloud library → Reference library**. Arcane uses the account already connected, never changes sharing permissions and sends only to your own library. The Cloud panel identifies reference copies and shows how much a newer copy needs to download. File-based copies reuse matching local files; a legacy archive downloads in full. **Unfollow** leaves all files in place.
+
 ### Your library
 
 **Spotlight** places your games in a row of square tiles, with Play, Options and Favourite beside the selected title. **Collection** offers a cover-based view. Both use the same library and support a controller, keyboard or mouse.

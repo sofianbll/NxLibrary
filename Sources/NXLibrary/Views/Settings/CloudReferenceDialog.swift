@@ -1,0 +1,62 @@
+import SwiftUI
+import NXLibraryCore
+
+struct CloudReferenceDialog: View {
+    let viewModel: AppViewModel
+    let onClose: () -> Void
+    @State private var draft = ""
+    @State private var focus: SeleneConfirmButton = .confirm
+    @FocusState private var fieldFocused: Bool
+    @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.nxAppLocale) private var localization
+
+    private var folder: String? { CloudLibraryPreference.referenceFolderID(draft) }
+
+    var body: some View {
+        ZStack {
+            SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle()).onTapGesture(perform: onClose)
+            SeleneConfirmDialog(title: text("Reference library"),
+                message: text("Follow a shared Google Drive folder in read-only mode."),
+                confirmTitle: "Save", confirmEnabled: folder != nil, focus: $focus,
+                onCancel: onClose, onConfirm: save) {
+                TextField(text("Google Drive folder link or ID"), text: $draft)
+                    .textFieldStyle(.plain)
+                    .focused($fieldFocused)
+                    .onSubmit(save)
+                    .onExitCommand(perform: onClose)
+                    .seleneFont(17)
+                    .foregroundColor(SeleneTheme.ink)
+                    .padding(canvas.u(16))
+                    .background(RoundedRectangle(cornerRadius: canvas.u(12)).fill(SeleneTheme.glassLight))
+                    .padding(.top, canvas.u(24))
+                if !draft.isEmpty, folder == nil {
+                    Text(text("Enter a Google Drive folder link or a valid folder ID."))
+                        .foregroundColor(SeleneTheme.danger)
+                        .seleneFont(15)
+                }
+            }
+        }
+        .onAppear {
+            draft = viewModel.cloudLibrary.preference.referenceFolder ?? ""
+            fieldFocused = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .nxSettingsGamepadAction)) { note in
+            guard let action = note.object as? GamepadAction else { return }
+            switch action {
+            case .navigateLeft: focus = .cancel
+            case .navigateRight: focus = .confirm
+            case .confirm: focus == .confirm ? save() : onClose()
+            case .cancel: onClose()
+            default: break
+            }
+        }
+    }
+
+    private func save() {
+        guard let folder, viewModel.canConfigureCloudLibrary else { return }
+        viewModel.followCloudReference(folder)
+        if folder == viewModel.cloudLibrary.preference.referenceFolder { onClose() }
+    }
+
+    private func text(_ key: String) -> String { L10n.text(key, context: localization) }
+}

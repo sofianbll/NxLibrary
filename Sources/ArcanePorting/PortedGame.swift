@@ -36,6 +36,7 @@ public struct PortedGame: Identifiable, Codable, Equatable {
     public var appIconPending = false
     /// Only the remote app is registered. Resolve the download destination using the current Game apps folder.
     public var cloudImportPending: Bool? = nil
+    package var cloudReferenceFolder: String? = nil
 
     public init(id: UUID = UUID(), name: String, url: URL,
                 platform: TargetPlatform, sizeBytes: Int64,
@@ -86,6 +87,7 @@ public struct PortedGame: Identifiable, Codable, Equatable {
         appIconOnMac = try c.decodeIfPresent(Bool.self, forKey: .appIconOnMac)
         appIconPending = try c.decodeIfPresent(Bool.self, forKey: .appIconPending) ?? false
         cloudImportPending = try c.decodeIfPresent(Bool.self, forKey: .cloudImportPending)
+        cloudReferenceFolder = try c.decodeIfPresent(String.self, forKey: .cloudReferenceFolder)
     }
 
     /// Shared by reconciliation and the icon writer, so an explicit launcher-only choice survives scans and builds.

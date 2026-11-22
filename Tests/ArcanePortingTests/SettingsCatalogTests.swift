@@ -36,7 +36,7 @@ final class SettingsCatalogTests: XCTestCase {
         "launchMotion", "launchShade", "surprisePool", "cloudSaves", "cloudSavesPickedFolder", "showsSessionCard",
         "cloudLibraryEnabled", "cloudLibraryService", "cloudLibraryConnect", "cloudLibraryFolder", "cloudLibraryImport",
         "showsCloudPlayIcon", "showsCloudDetailsLink", "cloudTileBadges",
-        "cloudLibrarySetup", "cloudLibraryAdvanced", "cloudSourcesRoot", "cloudLibraryTest", "cloudLibraryTool", "cloudLibraryDisconnect",
+        "cloudLibrarySetup", "cloudLibraryAdvanced", "cloudSourcesRoot", "cloudReferenceFolder", "cloudLibraryTest", "cloudLibraryTool", "cloudLibraryDisconnect",
         "hiddenGames", "gameDefaults.fullscreen", "gameDefaults.enable60FPS", "gameDefaults.isDockedMode",
         "gameDefaults.enableMetalFXUpscale", "gameDefaults.enableMetalHUD", "gameDefaults.language",
         "gameDefaults.renderScale", "controllerStatus", "buttonLayout", "controllerDeadzone", "gameDefaults.rumble",
@@ -166,7 +166,7 @@ final class SettingsCatalogTests: XCTestCase {
         "gameDefaults.enable60FPS", "gameDefaults.isDockedMode", "gameDefaults.enableMetalFXUpscale",
         "gameDefaults.enableMetalHUD", "gameDefaults.language", "gameDefaults.renderScale", "gameDefaults.rumble",
         "gameDefaults.rumbleGain", "cloudSaves", "cloudSavesPickedFolder", "cloudLibrarySetup", "cloudLibraryEnabled",
-        "cloudLibraryService", "cloudLibraryFolder", "cloudSourcesRoot", "cloudLibraryImport",
+        "cloudLibraryService", "cloudLibraryFolder", "cloudSourcesRoot", "cloudReferenceFolder", "cloudLibraryImport",
         "showsCloudPlayIcon", "showsCloudDetailsLink", "cloudTileBadges", "cloudLibraryAdvanced",
         "cloudLibraryConnect", "cloudLibraryTool", "cloudLibraryTest", "cloudLibraryDisconnect", "buildCaches", "diagnostics",
         "appUpdates", "projectDocs", "console"

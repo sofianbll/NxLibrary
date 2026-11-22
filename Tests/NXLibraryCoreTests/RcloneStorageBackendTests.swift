@@ -3,6 +3,42 @@ import XCTest
 @testable import NXLibraryCore
 
 final class RcloneStorageBackendTests: XCTestCase {
+    func testDriveReferenceValidatesLinksAndRejectsRemoteWrites() async throws {
+        let id = "1Reference_0123-456"
+        XCTAssertEqual(CloudLibraryPreference.referenceFolderID(" \(id)\n"), id)
+        XCTAssertEqual(CloudLibraryPreference.referenceFolderID("https://drive.google.com/drive/folders/\(id)/?usp=sharing"), id)
+        for invalid in ["root", "appDataFolder", "-flag", "a/b", "https://drive.google.com/file/d/\(id)",
+                        "https://drive.google.com.evil.test/drive/folders/\(id)",
+                        "https://someone@drive.google.com/drive/folders/\(id)",
+                        "https://drive.google.com/drive/folders/\(id)%2Fother"] {
+            XCTAssertNil(CloudLibraryPreference.referenceFolderID(invalid), invalid)
+        }
+        let personal = RcloneStorageBackend(remote: "fixture", root: "Games") { _, args, _ in
+            if let flag = args.firstIndex(of: "--drive-root-folder-id") {
+                XCTAssertEqual(args[flag + 1], id)
+                XCTAssertEqual(args[1], args[0] == "copy" ? "fixture:Title" : "fixture:")
+                XCTAssertTrue(["copy", "lsjson"].contains(args[0]), "Reference command: \(args[0])")
+                if args[0] == "copy" { XCTAssertTrue(args[2].hasPrefix(":local,links=true:/")) }
+            } else { XCTAssertEqual(Array(args.prefix(2)), ["deletefile", "fixture:Games/test"]) }
+            return .init(status: 0, stdout: #"[{"Name":"Games","Path":"Games","Size":0}]"#, stderr: "")
+        }
+        let reference = try XCTUnwrap(personal.reference(folderID: id))
+        let folders = try await reference.rootDirectories()
+        XCTAssertEqual(folders, ["Games"])
+        let local = URL(fileURLWithPath: "/fixture")
+        let key = StorageObjectKey("test")
+        try await reference.downloadFiles(["one"], from: .init("Title"), to: local, decodeLinks: true, progress: nil)
+        for send: () async throws -> Void in [
+            { try await reference.delete(key) },
+            { try await reference.atRoot("GameFiles").copyFiles(["one"], from: local, to: key, reusing: nil, progress: nil) },
+            { try await reference.putSource(local, as: .init(key: key, size: 1, hashes: ["md5": String(repeating: "a", count: 32)]), progress: nil) },
+        ] {
+            do { try await send(); XCTFail("Reference accepted a mutation") }
+            catch { XCTAssertEqual(error as? StorageBackendError, .invalidConfiguration) }
+        }
+        try await personal.delete(key)
+    }
+
     func testPrefixListingDistinguishesMissingFromEmptyDirectoryWithoutLaunchingRclone() async throws {
         let empty = RcloneStorageBackend(remote: "fixture", root: "Games") { _, args, _ in
             .init(status: 0, stdout: args.contains("--stat") ? #"{"IsDir":true}"# : "[]", stderr: "")

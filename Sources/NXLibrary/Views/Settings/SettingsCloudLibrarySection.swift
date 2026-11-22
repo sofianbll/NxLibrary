@@ -11,6 +11,7 @@ struct SettingsCloudLibrarySection: View {
     let onEdit: () -> Void
     let onEditLibrary: () -> Void
     let onEditSources: () -> Void
+    var onEditReference: () -> Void = {}
     let onActions: ([SettingsRowAction]) -> Void
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.nxAppLocale) private var localization
@@ -48,6 +49,23 @@ struct SettingsCloudLibrarySection: View {
         recoveryFailure?.action == .retry ? (model.connectionCheck?.explicit == true ? canTest : canImport) : editable
     }
     private var focusedToolButton: Int? { focusedRowID == "rclone" ? focusedButton : nil }
+    private var canFollow: Bool { editable && model.archive != nil && (connected == nil || connected?.type == "drive") }
+
+    private var referenceStatus: String {
+        guard let result = model.referenceCheck else {
+            return text(model.archive == nil ? "The cloud library is turned off." : "Checking…")
+        }
+        if let failure = result.failure {
+            if failure == .folderMissing {
+                return text("No access. Share this folder as Viewer with the Google account connected here.")
+            }
+            return text(failure.messageKey)
+        }
+        return L10n.format("Games: %@ · Checked %@", [
+            (result.count ?? 0).formatted(.number.locale(localization.formatLocale)),
+            result.date.formatted(.dateTime.month().day().hour().minute().locale(localization.formatLocale)),
+        ], context: localization)
+    }
 
     private var serviceStatus: String {
         if testTask != nil { return text("Checking…") }
@@ -108,6 +126,27 @@ struct SettingsCloudLibrarySection: View {
             }
             .disabled(!editable || selection.remote == nil)
 
+            if selection.remote != nil {
+                SeleneButtonRow("Reference library", id: "cloudReferenceFolder",
+                                subtitle: "Follow a shared Google Drive folder in read-only mode.",
+                                buttonTitle: selection.referenceFolder == nil ? "Follow" : "Edit", action: onEditReference)
+                    .disabled(!canFollow)
+            }
+            if let folder = selection.referenceFolder, selection.remote != nil {
+                SeleneRow(model.referenceCheck?.name ?? folder, id: "cloudReferenceStatus",
+                          subtitle: referenceStatus, verbatimTitle: true, verbatimSubtitle: true) {
+                    SeleneStatusDot(text: text("Read only"), color: model.referenceCheck?.failure != nil
+                        ? CloudLibraryStatus.failed.color : model.referenceCheck == nil
+                        ? CloudLibraryStatus.pending.color : CloudLibraryStatus.synchronized.color)
+                    Button(text("Unfollow"), action: unfollow)
+                        .buttonStyle(.plain)
+                        .seleneFont(15, .semibold)
+                        .foregroundColor(SeleneTheme.glyph)
+                        .disabled(!editable)
+                        .help(text("Files on this Mac and in Drive stay in place."))
+                }
+            }
+
             SettingsSubheading("Import")
             SeleneButtonRow("Import games from the cloud", id: "cloudLibraryImport",
                             subtitle: model.importTask == nil ? nil : "Checking…", buttonTitle: "Import", action: importGames)
@@ -128,7 +167,8 @@ struct SettingsCloudLibrarySection: View {
             if !model.isChangingConnection { await inspect() }
         }
         .onAppear(perform: publishActions)
-        .onChange(of: [editable, canTest, canImport, model.chosenExecutable != nil, inspecting, selection.remote != nil, advanced]) {
+        .onChange(of: [editable, canTest, canImport, canFollow, selection.referenceFolder != nil,
+                      model.chosenExecutable != nil, inspecting, selection.remote != nil, advanced]) {
             publishActions()
         }
         .onChange(of: recoveryFailure) { publishActions() }
@@ -186,8 +226,15 @@ struct SettingsCloudLibrarySection: View {
                       isEnabled: editable, activate: onEditLibrary),
                 .init(id: "cloudSourcesRoot", title: "Game files folder", rowID: "cloudSourcesRoot",
                       isEnabled: editable, activate: onEditSources),
+                .init(id: "cloudReferenceFolder", title: "Reference library", rowID: "cloudReferenceFolder",
+                      isEnabled: canFollow, activate: onEditReference),
                 .init(id: "cloudLibraryImport", title: "Import games from the cloud", isEnabled: canImport, activate: importGames),
             ]
+            if selection.referenceFolder != nil {
+                actions.insert(.init(id: "cloudReferenceUnfollow", title: "Unfollow", rowID: "cloudReferenceStatus",
+                                     isEnabled: editable, activate: unfollow),
+                               at: actions.count - 1)
+            }
             if let failure = recoveryFailure {
                 actions.insert(.init(id: "cloudRecovery", title: failure.messageKey, isEnabled: canRecover, activate: recover), at: 0)
             }
@@ -226,6 +273,8 @@ struct SettingsCloudLibrarySection: View {
         guard canImport else { return }
         viewModel.importCloudGames(manually: true)
     }
+
+    private func unfollow() { viewModel.followCloudReference(nil) }
 
     private func recover() {
         guard canRecover, let failure = recoveryFailure else { return }
