@@ -49,6 +49,9 @@ final class AppViewModel: ObservableObject {
     @Published var cloudLibraryGameID: UUID?
     @Published var isCheckingCloudBuild = false
     let saveQueue = DispatchQueue(label: "local.nxlibrary.saves", qos: .userInitiated)
+    let localAchievementStore = LocalAchievementStore(defaults: AppData.preferences)
+    @Published var localAchievementRevision = 0
+    let localAchievementUnlocks = PassthroughSubject<(profile: UUID, names: [String]), Never>()
     @Published var settingsNotice: SettingsNotice? {
         didSet {
             if let waitingGame = appIcon.iconLaunchWait.gameID, settingsNotice?.id != appIcon.iconLaunchWait.noticeID {

@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 22 novembre 2026. Copertura di **898 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 22 novembre 2026. Copertura di **903 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -338,6 +338,7 @@ Cartella `Sources/NXLibraryCore/Achievements/`.
 | [Sources/NXLibraryCore/Achievements/AchievementSummary.swift](../../Sources/NXLibraryCore/Achievements/AchievementSummary.swift) | Riepilogo puro per la tile e la schermata: conteggi, percentuale, gioco completato (`isComplete`), righe recenti con icona, conteggi per tier, sbloccati di recente, ultimo sblocco, filtri e ordini; maschera i nascosti ancora bloccati. |
 | [Sources/NXLibraryCore/Achievements/AchievementTier.swift](../../Sources/NXLibraryCore/Achievements/AchievementTier.swift) | Tier a cristallo come i trofei PS5: Arcano (viola, al posto del Platino) per il gioco completato, Oro / Argento / Bronzo per rarità Steam (<10%, <30%, il resto); nomi tradotti e PNG nelle risorse del Core; `videoURL` dà il video in loop dell'Arcane (`crystal-arcane.mov`, HEVC con alpha a 384 px). |
 | [Sources/NXLibraryCore/Achievements/AchievementsScreenState.swift](../../Sources/NXLibraryCore/Achievements/AchievementsScreenState.swift) | Filtro e selezione della schermata Achievements: due colonne, bordi fermi, LB/RB che girano i filtri. |
+| [LocalAchievementPack.swift](../../Sources/NXLibraryCore/Achievements/LocalAchievementPack.swift) | Pack locale, metriche e regole; progressi e primi sblocchi persistenti per gioco e profilo. |
 
 ## Core · mod
 
@@ -594,6 +595,7 @@ Cartella `Sources/ArcanePorting/Saves/`.
 | File | Responsabilità |
 |---|---|
 | [Sources/ArcanePorting/Saves/SaveLocation.swift](../../Sources/ArcanePorting/Saves/SaveLocation.swift) | Percorsi e identità dei salvataggi; account/device, utenti locali aggiuntivi e file registro; cloud effettivo. |
+| [LinksAwakeningAchievements.swift](../../Sources/ArcanePorting/Saves/LinksAwakeningAchievements.swift) | Legge in sola lettura gli slot confermati, controlla versione e CRC ed estrae i progressi Zelda. |
 | [Sources/ArcanePorting/Saves/CloudSaves.swift](../../Sources/ArcanePorting/Saves/CloudSaves.swift) | Descrive scelta cloud, cartelle iCloud o personalizzate e passaggi fra le opzioni. |
 | [Sources/ArcanePorting/Saves/CloudSavesPreferences.swift](../../Sources/ArcanePorting/Saves/CloudSavesPreferences.swift) | Prepara la cartella e riapplica la scelta cloud ai domini dei giochi prima di ogni avvio, anche Off. |
 | [Sources/ArcanePorting/Saves/RyujinxSaveFolder.swift](../../Sources/ArcanePorting/Saves/RyujinxSaveFolder.swift) | Riconosce contenitori Ryujinx, controlla il title ID e seleziona l’intero albero committed 0. |
@@ -800,7 +802,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Sources/NXLibrary/Views/Components/SteamPlatformLogo.swift](../../Sources/NXLibrary/Views/Components/SteamPlatformLogo.swift) | Logo ufficiale Steam per la piattaforma dei giochi Steam: da solo, almeno 50 pixel, spazio libero della manovella. |
 | [Sources/NXLibrary/Views/Components/GameLogoArea.swift](../../Sources/NXLibrary/Views/Components/GameLogoArea.swift) | Area del logo del gioco con la geometria condivisa da Spotlight e Collection; caricamento e impostazioni restano fuori. |
 | [Sources/NXLibrary/Views/Components/GamePrimaryActions.swift](../../Sources/NXLibrary/Views/Components/GamePrimaryActions.swift) | Azioni principali con avanzamento di Download, Options, pillola Cloud e preferito con bersagli di input stabili. |
-| [Sources/NXLibrary/Views/Components/SessionCard.swift](../../Sources/NXLibrary/Views/Components/SessionCard.swift) | Card di fine sessione: aspetta che Arcane sia davanti, compare 1,8 s dopo per 8 s; una sessione più recente sostituisce quella in attesa. |
+| [Sources/NXLibrary/Views/Components/SessionCard.swift](../../Sources/NXLibrary/Views/Components/SessionCard.swift) | Card di fine sessione e toast degli obiettivi: aspettano che Arcane sia davanti, compaiono 1,8 s dopo per 8 s. |
 
 ## UI · temi, rendering e sfondi
 
@@ -1055,6 +1057,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [SteamAchievementReaderTests.swift](../../Tests/NXLibraryCoreTests/SteamAchievementReaderTests.swift) | Percorsi, account e file mancanti/non sicuri, lingue con ripiego anche su stringhe vuote duplicate, primo valore tipizzato, nascosti, icone, ordine numerico e file corrotti. |
 | [SteamAchievementRarityTests.swift](../../Tests/NXLibraryCoreTests/SteamAchievementRarityTests.swift) | Percentuali numeriche o testuali (non numeriche scartate), host e percorso ammessi, cache di un giorno, cache vecchia offline, icone in cache, coda oltre sei download con annullamento, errore recente senza attesa e file che non sono immagini. |
 | [AchievementSummaryTests.swift](../../Tests/NXLibraryCoreTests/AchievementSummaryTests.swift) | Conteggi, gioco completato, ordini dei filtri, rarità sconosciute in fondo, soglia del raro, maschera dei nascosti e icone recenti (segreti compresi). |
+| [LocalAchievementTests.swift](../../Tests/ArcanePortingTests/LocalAchievementTests.swift) | Fixture Zelda, soglie, versione e CRC, nessuna scrittura sul salvataggio, persistenza per profilo e formato overlay. |
 | [AchievementsScreenStateTests.swift](../../Tests/NXLibraryCoreTests/AchievementsScreenStateTests.swift) | Movimento in due colonne, bordi, liste vuote, cambio filtro e liste che si accorciano. |
 | [GridListLayoutTests.swift](../../Tests/NXLibraryCoreTests/GridListLayoutTests.swift) | Linee, altezza, posizione delle righe, spazio da mostrare, linee visibili e riga in vista più vicina dopo la rotella. |
 | [AchievementTierTests.swift](../../Tests/NXLibraryCoreTests/AchievementTierTests.swift) | Soglie, tier dalla percentuale mostrata, ordine dal più raro, conteggi per tier, Arcane solo al 100% e mai senza achievement, miglior tier ottenuto, rarità sconosciuta. |
@@ -1130,6 +1133,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Resources/IconArtwork.md](../../Resources/IconArtwork.md) | Provenienza dichiarata, brief e riproduzione delle varianti tramite il generatore. |
 | [crystal-arcane.png](../../Sources/NXLibraryCore/Resources/crystal-arcane.png) | Immagine ferma del trofeo Arcane, anche come ripiego del video. |
 | [crystal-arcane.mov](../../Sources/NXLibraryCore/Resources/crystal-arcane.mov) | Animazione con alpha del trofeo Arcane. |
+| [achievements-01006BB00C6F0000.json](../../Sources/NXLibraryCore/Resources/achievements-01006BB00C6F0000.json) | Pack degli obiettivi locali di Link’s Awakening in sette lingue. |
 | [crystal-gold.png](../../Sources/NXLibraryCore/Resources/crystal-gold.png) | Immagine del trofeo Oro. |
 | [crystal-silver.png](../../Sources/NXLibraryCore/Resources/crystal-silver.png) | Immagine del trofeo Argento. |
 | [crystal-bronze.png](../../Sources/NXLibraryCore/Resources/crystal-bronze.png) | Immagine del trofeo Bronzo. |
@@ -1180,6 +1184,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [docs/how-it-works/flows.md](../how-it-works/flows.md) | Schemi dei flussi completi: avvio, libreria, Play Switch e Steam, Add Game, salvataggi, mod, impostazioni, aggiornamento dell’app. |
 | [docs/how-it-works/keymap.md](../how-it-works/keymap.md) | Keymap per tasto e schermata, precedenza dei dialoghi e glifi per famiglia. |
 | [docs/how-it-works/steam.md](../how-it-works/steam.md) | Riferimento unico dell’integrazione Steam: file letti, stati, osservazione, libreria, Play, ore, achievement, scelte e limiti. |
+| [docs/how-it-works/achievements.md](../how-it-works/achievements.md) | Obiettivi locali, lettura a fine sessione e come aggiungere un gioco. |
 | [docs/working-on-it/conventions.md](conventions.md) | Dove va il codice; ricette per fonti, interfaccia Selene e conferme, impostazioni, dati, rete, testi, test e documentazione. |
 | [docs/working-on-it/development.md](development.md) | Documenta prerequisiti, runtime, build, debug, verifiche, CI e release, compreso l'ID Nextendo pubblico della release personale. |
 | [docs/working-on-it/perso-release-notes.md](perso-release-notes.md) | Modello francese delle note di release del fork: versione, pin, giochi da ricompilare e novità. |

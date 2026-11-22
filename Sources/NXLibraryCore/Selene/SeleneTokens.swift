@@ -48,6 +48,7 @@ public enum SeleneTokens {
         public static let inboxHintsClearance: CGFloat = 95
         public static let inboxPageInset: CGFloat = 62
         public static let emptyStateInset: CGFloat = 25
+        public static let toastTop: CGFloat = 112
     }
 
     public enum Radius {

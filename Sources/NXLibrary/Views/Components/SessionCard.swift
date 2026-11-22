@@ -11,6 +11,9 @@ final class SessionCardPresenter: ObservableObject {
     static let hold: UInt64 = 8_000_000_000
 
     @Published private(set) var shown: SessionSummary?
+    @Published private(set) var achievementNames: [String] = []
+    private var pendingAchievements: [String] = []
+    private var achievementTask: Task<Void, Never>?
     private var pending: SessionSummary?
     private var task: Task<Void, Never>?
 
@@ -24,6 +27,31 @@ final class SessionCardPresenter: ObservableObject {
     /// Arcane came forward: a waiting card shows.
     func becameActive() {
         if pending != nil { schedule() }
+        if !pendingAchievements.isEmpty { scheduleAchievements() }
+    }
+
+    func unlocked(_ names: [String]) {
+        pendingAchievements.append(contentsOf: names)
+        if NSApp.isActive { scheduleAchievements() }
+    }
+
+    func clearAchievements() {
+        achievementTask?.cancel()
+        pendingAchievements = []
+        achievementNames = []
+    }
+
+    private func scheduleAchievements() {
+        achievementTask?.cancel()
+        achievementTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: Self.delay)
+            guard let self, !Task.isCancelled, NSApp.isActive else { return }
+            self.achievementNames = self.pendingAchievements
+            self.pendingAchievements = []
+            try? await Task.sleep(nanoseconds: Self.hold)
+            guard !Task.isCancelled else { return }
+            self.achievementNames = []
+        }
     }
 
     /// The switch went off: nothing waiting or showing stays.
@@ -46,6 +74,37 @@ final class SessionCardPresenter: ObservableObject {
             guard !Task.isCancelled else { return }
             self.shown = nil
         }
+    }
+}
+
+struct AchievementUnlockToast: View {
+    @Environment(\.seleneCanvas) private var canvas
+    let names: [String]
+
+    var body: some View {
+        HStack(spacing: canvas.u(SeleneTokens.Space.control)) {
+            Image(systemName: "trophy.fill")
+                .font(.system(size: canvas.u(SeleneTokens.Text.panelTitle.rawValue), weight: .semibold))
+                .foregroundColor(SeleneTheme.ink)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.hairline)) {
+                Text(L10n.text("Achievement unlocked"))
+                    .seleneFont(.compactCaption, .semibold)
+                    .foregroundColor(SeleneTheme.ink60)
+                Text(names.formatted(.list(type: .and).locale(L10n.context.formatLocale)))
+                    .seleneFont(.selectionTitle, .semibold)
+                    .foregroundColor(SeleneTheme.ink)
+                    .lineLimit(3)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, canvas.u(SeleneTokens.Space.large))
+        .frame(width: canvas.u(640), height: canvas.u(128))
+        .background(Color(hex: ThemeStore.shared.palette.glass, opacity: 0.96),
+                    in: RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.badge)))
+        .overlay(RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.badge)).strokeBorder(SeleneTheme.ink15))
+        .shadow(color: .black.opacity(0.45), radius: canvas.u(SeleneTokens.Radius.anchoredCard))
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -168,19 +227,23 @@ struct SessionCardLayer: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            if let summary = presenter.shown {
+            if !presenter.achievementNames.isEmpty {
+                AchievementUnlockToast(names: presenter.achievementNames)
+                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .offset(x: canvas.u(40))))
+            } else if let summary = presenter.shown {
                 SessionCardView(summary: summary,
                                 game: game(summary.gameID),
                                 metadata: metadata[summary.gameID],
                                 artwork: artwork)
                     .id(summary.id)
-                    .padding(.top, canvas.u(112))
-                    .padding(.trailing, canvas.u(28))
                     .transition(reduceMotion ? .opacity : .opacity.combined(with: .offset(x: canvas.u(40))))
             }
         }
+        .padding(.top, canvas.u(SeleneTokens.Space.toastTop))
+        .padding(.trailing, canvas.u(SeleneTokens.Space.feature))
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         .allowsHitTesting(false)
         .animation(Motion.toast(reduceMotion), value: presenter.shown?.id)
+        .animation(Motion.toast(reduceMotion), value: presenter.achievementNames)
     }
 }

@@ -199,6 +199,7 @@ extension SpotlightView {
             achievementsScreen = nil
             return
         }
+        if selectedCatalogGame?.steamGame == nil, action == .contextAction { return }
         switch screen.handle(action, summary: summary) {
         case .moved: SoundEffectService.shared.play(.focus)
         case .filtered, .ordered: SoundEffectService.shared.play(.tabSwitch)

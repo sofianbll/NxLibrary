@@ -104,8 +104,9 @@ extension SpotlightView {
                 }
             Spacer(minLength: 0)
             VStack(alignment: .leading, spacing: canvas.u(40)) {
-                if let summary = selectedAchievements, let appID = selectedCatalogGame?.steamGame?.appID {
-                    DetailsAchievementsCard(summary: summary, appID: appID, focused: state.focus == .achievements,
+                if let summary = selectedAchievements {
+                    DetailsAchievementsCard(summary: summary, appID: selectedCatalogGame?.steamGame?.appID ?? 0,
+                                            focused: state.focus == .achievements,
                                             onOpen: {
                                                 guard !state.isLifted else { return }
                                                 mutate { $0.focus = .achievements }
@@ -121,8 +122,11 @@ extension SpotlightView {
         .spotlightBlock(.description)
     }
 
-    /// The selected Steam game's achievements, when it has some and Steam's files read.
+    /// The selected game's achievements, from its own source.
     var selectedAchievements: AchievementSummary? {
+        if let game = selectedGame, let profile = viewModel.localProfiles?.active {
+            return viewModel.localAchievementSummary(for: game, profile: profile.id)
+        }
         guard let appID = selectedCatalogGame?.steamGame?.appID,
               let summary = achievementsStore.summaries[appID], summary.total > 0 else { return nil }
         return summary

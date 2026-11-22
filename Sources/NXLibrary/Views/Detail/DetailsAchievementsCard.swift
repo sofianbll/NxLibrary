@@ -40,6 +40,11 @@ struct DetailsAchievementsCard: View {
         VStack(alignment: .leading, spacing: 0) {
             DetailsBandTitle(text: L10n.text("Achievements"))
             VStack(alignment: .leading, spacing: canvas.u(16)) {
+                if appID == 0 {
+                    Text(L10n.text("Arcane · local"))
+                        .seleneFont(.metadata)
+                        .foregroundColor(SeleneTheme.ink60)
+                }
                 HStack(alignment: .center, spacing: canvas.u(16)) {
                     if let tier = summary.bestTier { crystal(tier) }
                     VStack(alignment: .leading, spacing: canvas.u(4)) {

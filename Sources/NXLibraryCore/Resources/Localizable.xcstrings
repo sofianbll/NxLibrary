@@ -11206,6 +11206,42 @@
         }
       }
     },
+    "%d / %d": {
+      "comment": "Confirmed current and target counts on a local achievement.",
+      "localizations": {
+        "en": {"stringUnit":{"state":"translated","value":"%d / %d"}},
+        "it": {"stringUnit":{"state":"translated","value":"%d / %d"}},
+        "fr": {"stringUnit":{"state":"translated","value":"%d / %d"}},
+        "de": {"stringUnit":{"state":"translated","value":"%d / %d"}},
+        "es": {"stringUnit":{"state":"translated","value":"%d / %d"}},
+        "pt-BR": {"stringUnit":{"state":"translated","value":"%d / %d"}},
+        "zh-Hans": {"stringUnit":{"state":"translated","value":"%d / %d"}}
+      }
+    },
+    "Achievement unlocked": {
+      "comment": "Heading for the toast after confirming local achievements.",
+      "localizations": {
+        "en": {"stringUnit":{"state":"translated","value":"Achievement unlocked"}},
+        "it": {"stringUnit":{"state":"translated","value":"Obiettivo sbloccato"}},
+        "fr": {"stringUnit":{"state":"translated","value":"Succès débloqué"}},
+        "de": {"stringUnit":{"state":"translated","value":"Erfolg freigeschaltet"}},
+        "es": {"stringUnit":{"state":"translated","value":"Logro desbloqueado"}},
+        "pt-BR": {"stringUnit":{"state":"translated","value":"Conquista desbloqueada"}},
+        "zh-Hans": {"stringUnit":{"state":"translated","value":"成就已解锁"}}
+      }
+    },
+    "Arcane · local": {
+      "comment": "Source label for achievements evaluated locally by Arcane.",
+      "localizations": {
+        "en": {"stringUnit":{"state":"translated","value":"Arcane · local"}},
+        "it": {"stringUnit":{"state":"translated","value":"Arcane · locale"}},
+        "fr": {"stringUnit":{"state":"translated","value":"Arcane · local"}},
+        "de": {"stringUnit":{"state":"translated","value":"Arcane · lokal"}},
+        "es": {"stringUnit":{"state":"translated","value":"Arcane · local"}},
+        "pt-BR": {"stringUnit":{"state":"translated","value":"Arcane · local"}},
+        "zh-Hans": {"stringUnit":{"state":"translated","value":"Arcane · 本地"}}
+      }
+    },
     "Achievements": {
       "comment": "Title of a Steam game's Achievements screen.",
       "localizations": {
