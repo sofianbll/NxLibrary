@@ -15,6 +15,18 @@ final class AppSettingsStoreTests: XCTestCase {
                                           order: settings.spotlightOrder), [.card(.addGame), .card(.collection)])
     }
 
+    func testInboxDefaultsOnInOldSettingsAndResetsWithGameFolders() throws {
+        let decoder = JSONDecoder()
+        var settings = try decoder.decode(AppSettings.self, from: Data(#"{"refreshLibraryAtLaunch":false}"#.utf8))
+        XCTAssertTrue(settings.gameInboxEnabled)
+        settings.gameInboxEnabled = false
+        let restored = try decoder.decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertFalse(restored.gameInboxEnabled)
+        XCTAssertTrue(SettingsCatalog.changed(in: restored).contains { $0.id == "gameInboxEnabled" && $0.group == .library })
+        XCTAssertTrue(SettingsReset.resetShared(.library, in: restored).gameInboxEnabled)
+        XCTAssertFalse(SettingsReset.resetShared(.libraryGames, in: restored).gameInboxEnabled)
+    }
+
     func testCloudAppearanceDefaultsForOldFilesAndRoundTrips() throws {
         let decoder = JSONDecoder()
         var settings = try decoder.decode(AppSettings.self, from: Data("{}".utf8))

@@ -169,7 +169,7 @@ struct MenuOverlayView: View {
             }
         } else if model.isEntryOpen {
             action = model.selected
-            lines = action.entries.map { entry in
+            lines = model.entries.map { entry in
                 .init(id: entry.id, title: entry.title, icon: entry.icon, width: 320, focused: model.entry == entry,
                       focus: { router.menuSelection.entry = entry },
                       choose: { router.menuSelection.entry = entry; onSelectEntry(entry) })

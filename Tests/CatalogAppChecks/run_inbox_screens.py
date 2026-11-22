@@ -24,12 +24,14 @@ import SwiftUI
         let locale = AppLocale(language: .french, region: "FR")
         L10n.setContext(locale)
         let support = AppData.supportRoot
-        let app = AppViewModel(settingsStore: AppSettingsStore(fileURL: support.appendingPathComponent("settings.json")),
+        let settings = AppSettingsStore(fileURL: support.appendingPathComponent("settings.json"))
+        let app = AppViewModel(settingsStore: settings,
                                catalog: .init(), repository: .init(store: .init(directory: support)))
         let model = app.gameInbox
-        let router = AppRouter()
+        let router = AppRouter(settings: settings)
         router.openGameInbox()
-        precondition(router.route == .gameInbox && MenuAction.library.entries.contains(.gameInbox))
+        router.pressMenuIcon(.library)
+        precondition(router.route == .gameInbox && router.menuSelection.entries.contains(.gameInbox))
         let view = GameInboxView(model: model, router: router)
         let root = GameInboxModel.gamesRoot
         app.showSetupCheck = true
@@ -62,7 +64,6 @@ import SwiftUI
             $0.needsKeys && $0.destination == nil && $0.issue == "Clés manquantes : importez-les pour identifier ce fichier"
         })
         try render("07-inbox-missing-keys", page: view.page, to: output, locale: locale)
-        let settings = AppSettingsStore(fileURL: support.appendingPathComponent("settings.json"))
         let profile = LocalProfileStore(directory: support, settings: settings.settings, name: "Alex")
         try render("08-profile-no-account", page: LocalProfilePage(profile: profile.active!,
             nextendo: NextendoSettings(store: NextendoTokenStore(directory: support.appendingPathComponent("nextendo"))),
@@ -95,7 +96,38 @@ import SwiftUI
                 focus: .constant(notice.initialFocus), cancelIndex: notice.cancelIndex) { _ in }
         }, to: output, locale: locale)
         let artwork = ArtworkStore()
+        let spotlight = SpotlightView(viewModel: app, router: router, settings: settings,
+                                      playSessions: PlaySessionStore(), runningGames: RunningGameMonitor(),
+                                      artwork: artwork, storeHost: ModStoreHost())
+        let readMarker = model.folder.appendingPathComponent(".probe-read")
+        precondition(FileManager.default.fileExists(atPath: readMarker.path))
+        try FileManager.default.removeItem(at: readMarker)
         let card = SpotlightItem.card(.inbox)
+        router.openSettings(.library)
+        settings.settings.gameInboxEnabled = false
+        let coldRouter = AppRouter(settings: settings)
+        coldRouter.navigate(to: .gameInbox)
+        coldRouter.setInitialRoute(.gameInbox)
+        precondition(coldRouter.route == .library)
+        await model.updateAvailability()
+        model.refresh()
+        precondition(!model.busy && !FileManager.default.fileExists(atPath: readMarker.path))
+        precondition(!router.menuSelection.entries.contains(.gameInbox))
+        router.openGameInbox()
+        precondition(router.route == .settings(.library))
+        router.back()
+        precondition(router.route == .library, "Back must not reopen the disabled Inbox")
+        try render("06-settings-inbox-off", page: folders(app, settings), to: output, locale: locale)
+        SoundEffectService.shared.isSoundEnabled = false
+        router.openSettings(.library)
+        SettingsView(initialSection: .library, viewModel: app, settings: settings, router: router, artwork: artwork)
+            .pressInboxFixtureReset()
+        precondition(settings.settings.gameInboxEnabled)
+        precondition(app.porting.gameFilesFolder?.path == root.path)
+        await model.updateAvailability()
+        precondition(FileManager.default.fileExists(atPath: readMarker.path), "Positive control for the read marker")
+        precondition(spotlight.items.contains(card) && router.menuSelection.entries.contains(.gameInbox))
+        try render("07-settings-inbox-on", page: folders(app, settings), to: output, locale: locale)
         try render("05-spotlight-card", page: VStack(alignment: .leading, spacing: 24) {
             SpotlightRowView(items: [card, .card(.addGame)], gamesByID: [:], selectedKey: card.key,
                 isEmptyFilter: nil, artwork: artwork, cloud: app.cloudLibrary, showsCloudBadges: false,
@@ -105,7 +137,31 @@ import SwiftUI
                 activity: ActivitySummary(), topGames: [], focusedTop: nil, artwork: artwork, onTopGame: { _ in })
                 .padding(.leading, 58)
         }.padding(.top, 90), to: output, locale: locale)
-        print("Inbox, Setup and local profile: eight fixture screens rendered offscreen.")
+        settings.settings.gameInboxEnabled = false
+        precondition(model.hasWaitingFiles && !spotlight.items.contains(card), "Stale availability must not show the card")
+        try render("08-spotlight-inbox-off", page:
+            SpotlightRowView(items: spotlight.items, gamesByID: [:], selectedKey: spotlight.items.first?.key,
+                isEmptyFilter: nil, artwork: artwork, cloud: app.cloudLibrary, showsCloudBadges: false,
+                onSelect: { _ in }, onActivate: { _ in })
+                .frame(height: 190)
+                .padding(.top, 90), to: output, locale: locale)
+        router.pressMenuIcon(.library)
+        if !router.menuSelection.isEntryOpen { router.openEntryMenu() }
+        try render("09-library-menu-inbox-off", page:
+            MenuOverlayView(router: router, cloudLibrary: app.cloudLibrary, hasBuildActivity: false,
+                onSelect: { _ in }, onSelectPower: { _ in }, onTab: { _ in }), to: output, locale: locale)
+        print("Inbox: route, menu, Spotlight, disabled reads and settings verified offscreen.")
+    }
+
+    @MainActor static func folders(_ app: AppViewModel, _ settings: AppSettingsStore) -> some View {
+        VStack(alignment: .leading) {
+            Text(SettingsSection.library.place)
+                .seleneFont(.inboxTitle, .semibold)
+                .foregroundStyle(SeleneTheme.ink)
+            SettingsLibrarySection(viewModel: app, porting: app.porting, settings: settings, onActions: { _ in })
+        }
+        .frame(width: 820)
+        .padding(.top, 38)
     }
 
     @MainActor static func render(_ name: String, page: some View, to output: URL, locale: AppLocale,
@@ -118,7 +174,7 @@ import SwiftUI
             SeleneHintsBar(left: [HintItem(.b, L10n.text("Back"))],
                            right: [HintItem(.a, L10n.text("Select"))])
                 .frame(maxHeight: .infinity, alignment: .bottom)
-                .opacity(!showsHints || ["04-confirmation", "05-spotlight-card"].contains(name) ? 0 : 1)
+                .opacity(showsHints && ["01-empty", "02-three-files", "03-ambiguous"].contains(name) ? 1 : 0)
         }
         .frame(width: size.width, height: size.height)
         .environment(\.seleneCanvas, canvas)
@@ -194,6 +250,16 @@ def main():
                "tint: modsTint ? 1 : 0, moving: false, asImage: true,\n")
         change(app / "Views/Theme/MoonlightRenderer.swift", "                if let image {\n",
                "                if let image = engine.snapshot(width: max(w, 1), height: max(h, 1), colors: colors) {\n")
+        change(app / "Views/Shell/MenuOverlayView.swift", "var presented = false", "var presented = true")
+        with (app / "Views/Settings/SettingsView.swift").open("a") as swift:
+            swift.write("\nextension SettingsView {\n    func pressInboxFixtureReset() { handleGamepad(.secondaryAction) }\n}\n")
+        # Observe the actual directory reader in the copied target, not just the resulting availability.
+        change(package / "Sources/ArcanePorting/Library/GameInbox.swift",
+               "    public static func files(in folder: URL) throws -> [URL] {\n",
+               "    public static func files(in folder: URL) throws -> [URL] {\n"
+               '        if folder.lastPathComponent == "Inbox" {\n'
+               '            try Data().write(to: folder.appendingPathComponent(".probe-read"))\n'
+               "        }\n")
         # SwiftUI's AppKit-backed drop wrapper produces a placeholder in ImageRenderer.
         change(app / "Views/Porting/GameInboxView.swift",
                "            .dropDestination(for: URL.self) { urls, _ in model.accept(urls) } isTargeted: { dropTarget = $0 }\n",
@@ -206,7 +272,7 @@ def main():
         (app / "InboxProbe.swift").write_text(HOST)
         font = ROOT / "Resources/Selene/Fonts/MaterialIcons-Regular.ttf"
         subprocess.run(["swift", "run", "--package-path", str(package), "NXLibrary", str(output), str(font)],
-                       env=dict(os.environ, HOME=str(home)), check=True)
+                       env=dict(os.environ, HOME=str(home), CFFIXED_USER_HOME=str(home)), check=True)
 
 
 if __name__ == "__main__":

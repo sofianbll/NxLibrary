@@ -65,6 +65,7 @@ public enum SettingsReset {
             next.showsSessionCard = defaults.showsSessionCard
             next.surprisePool = defaults.surprisePool
         case .library:
+            next.gameInboxEnabled = defaults.gameInboxEnabled
             next.refreshLibraryAtLaunch = defaults.refreshLibraryAtLaunch
             next.notifyPortingEnds = defaults.notifyPortingEnds
         case .cloudLibrary:

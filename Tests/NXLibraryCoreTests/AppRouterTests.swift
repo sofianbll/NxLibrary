@@ -158,6 +158,18 @@ final class AppRouterTests: XCTestCase {
 }
 
 final class MenuSelectionModelTests: XCTestCase {
+    func testDisabledInboxIsSkippedByLibraryMenuFocus() {
+        var model = MenuSelectionModel(selected: .library)
+        model.openEntries()
+        model.moveEntry(by: 3)
+        XCTAssertEqual(model.entry, .gameInbox)
+        model.gameInboxEnabled = false
+        XCTAssertEqual(model.entries, [.addGame, .manageSources, .refreshLibrary])
+        XCTAssertEqual(model.entry, .refreshLibrary)
+        model.moveEntry(by: -1)
+        XCTAssertEqual(model.entry, .manageSources)
+    }
+
     func testMenuHasFiveIconsWithCards() {
         XCTAssertEqual(MenuAction.allCases, [.profile, .library, .activityCenter, .settings, .power])
         XCTAssertEqual(MenuAction.allCases.map(\.title), ["Profile", "Library", "Activity center", "Settings", "Power"])
