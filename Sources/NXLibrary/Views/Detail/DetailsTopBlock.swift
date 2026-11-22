@@ -213,7 +213,7 @@ struct DetailsTopBlock: View {
     private var cloudPill: some View {
         let index = pillSet.detailsCloudIndex
         let indicator = CloudLibraryIndicator(state: cloud.states[game.id] ?? CloudLibraryState())
-        return CloudLibraryPill(indicator: indicator, focused: focusedPill == index) { onPill(index) }
+        return CloudLibraryPill(indicator: indicator, focused: focusedPill == index, showsTransferDot: false) { onPill(index) }
             .onHover { if $0 { onHoverPill(index) } }
     }
 

@@ -773,6 +773,7 @@ struct CloudLibraryPill: View {
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     let indicator: CloudLibraryIndicator
     let focused: Bool
+    var showsTransferDot = true
     let action: () -> Void
 
     var body: some View {
@@ -780,7 +781,7 @@ struct CloudLibraryPill: View {
                          minWidth: 52, height: 52, horizontalPadding: 0, focused: focused, action: action)
             .overlay(alignment: .bottomTrailing) {
                 if indicator.isTransferring && !reduceMotion && !systemReduceMotion {
-                    SeleneStatusMark(color: indicator.status.color, pulses: true)
+                    SeleneStatusMark(color: indicator.status.color, pulses: true, showsDot: showsTransferDot)
                         .padding(SeleneTokens.Space.hairline)
                 }
             }

@@ -30,10 +30,11 @@ struct SeleneStatusMark: View {
     @Environment(\.appearsActive) private var windowActive
     let color: Color
     let pulses: Bool
+    var showsDot = true
 
     var body: some View {
         let diameter = canvas.u(7)
-        Circle().fill(color).frame(width: diameter, height: diameter)
+        Circle().fill(showsDot ? color : .clear).frame(width: diameter, height: diameter)
             .background {
                 if pulses && !reduceMotion && !systemReduceMotion && windowActive {
                     StatusHalo(color: color, diameter: diameter)
