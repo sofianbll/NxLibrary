@@ -234,6 +234,7 @@ extension AppShellView {
                    value: viewModel.optionsGameID)
         .animation(reduceMotion ? nil : SeleneTheme.quick,
                    value: router.isMenuPresented)
+        .animation(reduceMotion ? .easeOut(duration: 0.15) : SeleneTheme.quick, value: router.menuSelection.isSubmenuOpen)
         .animation(reduceMotion ? nil : SeleneTheme.screen, value: router.isThemePickerOpen)
         // The veil and the blur fade in; under Reduce Motion it is a plain short fade.
         .animation(reduceMotion ? .easeOut(duration: 0.15) : SeleneTheme.quick, value: profileFlow != nil)

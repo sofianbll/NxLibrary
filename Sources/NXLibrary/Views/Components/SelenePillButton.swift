@@ -13,6 +13,8 @@ struct SelenePillButton: View {
     var icon: MaterialIcon? = nil
     var iconSize: CGFloat = 26
     var minWidth: CGFloat = 180
+    /// Takes the width its container offers: pills stacked in a fixed-size column all take the widest one's.
+    var fillsWidth = false
     var height: CGFloat = 60
     /// Selene's Padding="36,0"; the round Favorite pill uses 0.
     var horizontalPadding: CGFloat = 36
@@ -89,7 +91,8 @@ struct SelenePillButton: View {
             }
         }
         .padding(.horizontal, canvas.u(horizontalPadding))
-        .frame(minWidth: canvas.u(minWidth), minHeight: canvas.u(height), maxHeight: canvas.u(height))
+        .frame(minWidth: canvas.u(minWidth), maxWidth: fillsWidth ? .infinity : nil,
+               minHeight: canvas.u(height), maxHeight: canvas.u(height))
         let capsule = label
             .foregroundColor(downloadFill != nil ? .white : solid ? SeleneTheme.onFocus
                              : (enabled ? tint ?? SeleneTheme.ink : SeleneTheme.ink60))

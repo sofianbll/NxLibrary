@@ -150,6 +150,40 @@ import ArcanePorting
         try menu("09-menu-power", { $0.menuSelection.selected = .power; $0.openPowerMenu() })
         try menu("09-menu-profile-card-fr", { $0.menuSelection.selected = .profile; $0.openEntryMenu() }, lang: fr)
         try menu("09-menu-library-card-fr", { $0.menuSelection.selected = .library; $0.openEntryMenu(); $0.moveEntryMenu(by: 2) }, lang: fr)
+        try checkMenuCards()
+        // Each submenu over a real Details page: the page blurs under the heavier veil, the focus walks down the pills.
+        let german = AppLocale(language: .german, region: "DE")
+        let submenus: [(String, (AppRouter) -> Void)] = [
+            ("profile", { $0.menuSelection.selected = .profile; $0.openEntryMenu() }),
+            ("library", { $0.menuSelection.selected = .library; $0.openEntryMenu() }),
+            ("power", { $0.menuSelection.selected = .power; $0.openPowerMenu() })]
+        func details(blur: CGFloat) -> some View {
+            ZStack {
+                SeleneBackdrop().still(true).blur(radius: blur)
+                GameDetailView(viewModel: vm, setup: vm.setup, store: vm.store, router: AppRouter(), settings: settings,
+                               playSessions: PlaySessionStore(), runningGames: RunningGameMonitor(), artwork: art, game: game)
+                    .blur(radius: blur)
+            }
+        }
+        L10n.setContext(fr)
+        try render("10-details-page", details(blur: 0).environment(\.nxAppLocale, fr), in: out, refs, "none")
+        for (locale, tag) in [(fr, "fr"), (german, "de")] {
+            for (submenu, open) in submenus {
+                for downs in 1...2 {
+                    let router = AppRouter()
+                    router.isMenuPresented = true
+                    open(router)
+                    for _ in 0..<downs { router.menuStep(.down) }
+                    L10n.setContext(locale)
+                    try render("10-details-\(submenu)-\(tag)-\(downs + 1)", ZStack {
+                        details(blur: AppShellView.profileOverlayBlur)
+                        MenuOverlayView(router: router, cloudLibrary: vm.cloudLibrary, activeProfile: alex,
+                                        hasBuildActivity: false, onSelect: { _ in }, onSelectPower: { _ in })
+                    }.environment(\.nxAppLocale, locale), in: out, refs, "none")
+                }
+            }
+        }
+        L10n.setContext(.init(language: .english, region: "US"))
         // The same screens under each family's button names: Switch, PS5 and the keyboard (Automatic, no pad).
         for (suffix, names) in [("switch", ButtonNameStyle.nintendo), ("ps5", .playstation), ("keyboard", .automatic)] {
             try render("07-top-bar-\(suffix)", after, in: out, refs, "none", names: names)
@@ -295,6 +329,50 @@ import ArcanePorting
             }
         }
         try save(image, to: out.appendingPathComponent("07-top-bar-position.png"))
+    }
+
+    /// Every pill of an open card is as wide as the widest, in every language, with the same left edge. Measured on the
+    /// pixels of the real card over black, with no pill focused (no glow, no scale).
+    @MainActor static func checkMenuCards() throws {
+        defer { L10n.setContext(.init(language: .english, region: "US")) }
+        func lines(_ titles: [(String, MaterialIcon)], width: CGFloat) -> [MenuCard.Line] {
+            titles.map { .init(id: $0.0, title: $0.0, icon: $0.1, width: width, focused: false, focus: {}, choose: {}) }
+        }
+        for language in AppLanguage.allCases where language != .automatic {
+            let locale = AppLocale(language: language, region: "FR")
+            L10n.setContext(locale)
+            let cards = [MenuAction.profile, .library].map { lines($0.entries.map { ($0.title, $0.icon) }, width: 320) }
+                + [lines(PowerAction.allCases.map { ($0.title, $0.icon) }, width: 240)]
+            for card in cards {
+                let size = CGSize(width: 1440, height: 810)
+                let rep = NSBitmapImageRep(cgImage: try bitmap(MenuCard(lines: card).padding(40)
+                    .environment(\.nxAppLocale, locale)
+                    .environment(\.seleneCanvas, SeleneCanvas(size: size))
+                    .environment(\.seleneReduceMotion, true)
+                    .background(Color.black)))
+                var bands: [(left: Int, right: Int)] = []
+                var current: (left: Int, right: Int)?
+                for y in 0..<rep.pixelsHigh {
+                    var span: (Int, Int)?
+                    for x in 0..<rep.pixelsWide {
+                        let c = rep.colorAt(x: x, y: y)!.usingColorSpace(.deviceRGB)!
+                        if c.redComponent + c.greenComponent + c.blueComponent > 0.06 { span = (span?.0 ?? x, x) }
+                    }
+                    if let span {
+                        current = (min(current?.left ?? span.0, span.0), max(current?.right ?? span.1, span.1))
+                    } else if let finished = current {
+                        bands.append(finished)
+                        current = nil
+                    }
+                }
+                if let current { bands.append(current) }
+                let titles = card.map(\.title)
+                precondition(bands.count == card.count, "\(language.rawValue): \(bands.count) pills drawn for \(titles)")
+                let widths = bands.map { $0.right - $0.left + 1 }
+                precondition(widths.max()! - widths.min()! <= 1, "\(language.rawValue): pill widths differ \(widths) for \(titles)")
+                precondition(bands.map(\.left).max()! - bands.map(\.left).min()! <= 1, "\(language.rawValue): pills are not aligned")
+            }
+        }
     }
 
     @MainActor static func checkGIF(in root: URL) throws {

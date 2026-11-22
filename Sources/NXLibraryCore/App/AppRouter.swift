@@ -37,6 +37,17 @@ public enum ShellBackdropCover: Equatable {
     }
 }
 
+/// A press on the control center, whatever device it came from.
+public enum MenuStep { case left, right, up, down, confirm, back }
+
+/// What the shell runs after a `confirm`: the focused icon, card entry or Power pill.
+public enum MenuOutcome: Equatable {
+    case none
+    case action(MenuAction)
+    case entry(MenuEntry)
+    case power(PowerAction)
+}
+
 public final class AppRouter: ObservableObject {
     @Published public private(set) var route: AppRoute = .library
     @Published public private(set) var isReturningFromBack = false
@@ -99,6 +110,27 @@ public final class AppRouter: ObservableObject {
 
     /// B on the Power pills: closes them and leaves the menu open.
     public func closePowerMenu() { menuSelection.closePower() }
+
+    /// One press on the open control center, from the keyboard or a controller: moves the focus or closes
+    /// the Power pills or card, and says what the shell must run, as Selene's MenuScreen does.
+    @discardableResult
+    public func menuStep(_ step: MenuStep) -> MenuOutcome {
+        switch step {
+        case .left: moveMenu(by: -1)
+        case .right: moveMenu(by: 1)
+        case .up: movePowerMenu(by: -1); moveEntryMenu(by: -1)
+        case .down: movePowerMenu(by: 1); moveEntryMenu(by: 1)
+        case .confirm:
+            if menuSelection.isPowerOpen { return .power(menuSelection.power) }
+            if menuSelection.isEntryOpen { return .entry(menuSelection.entry) }
+            return .action(menuSelection.selected)
+        case .back:
+            if menuSelection.isPowerOpen { closePowerMenu() }
+            else if menuSelection.isEntryOpen { closeEntryMenu() }
+            else { closeMenu() }
+        }
+        return .none
+    }
 
     public func navigate(to route: AppRoute) {
         guard route != self.route else { return }

@@ -230,35 +230,21 @@ extension AppShellView {
             router.openSettings(.startUp)
             return
         }
+        let step: MenuStep
         switch action {
-        case .navigateLeft:
-            router.moveMenu(by: -1)
-        case .navigateRight:
-            router.moveMenu(by: 1)
-        case .navigateUp:
-            router.movePowerMenu(by: -1)
-            router.moveEntryMenu(by: -1)
-        case .navigateDown:
-            router.movePowerMenu(by: 1)
-            router.moveEntryMenu(by: 1)
-        case .confirm:
-            if router.menuSelection.isPowerOpen {
-                runPower(router.menuSelection.power)
-            } else if router.menuSelection.isEntryOpen {
-                runMenuEntry(router.menuSelection.entry)
-            } else {
-                runMenuAction(router.menuSelection.selected)
-            }
-        case .cancel:
-            if router.menuSelection.isPowerOpen {
-                router.closePowerMenu()
-            } else if router.menuSelection.isEntryOpen {
-                router.closeEntryMenu()
-            } else {
-                router.closeMenu()
-            }
-        default:
-            break
+        case .navigateLeft: step = .left
+        case .navigateRight: step = .right
+        case .navigateUp: step = .up
+        case .navigateDown: step = .down
+        case .confirm: step = .confirm
+        case .cancel: step = .back
+        default: return
+        }
+        switch router.menuStep(step) {
+        case .none: break
+        case .action(let action): runMenuAction(action)
+        case .entry(let entry): runMenuEntry(entry)
+        case .power(let power): runPower(power)
         }
     }
 

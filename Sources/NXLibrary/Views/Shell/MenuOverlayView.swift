@@ -3,7 +3,8 @@ import NXLibraryCore
 
 /// Selene's control center (MenuScreen.cs): the screen dimmed at 0.55, one row of
 /// icon buttons along the bottom, the focused item's name above a white ring.
-/// Profile, Library and Power open a card of lines stacked above their icon.
+/// Profile, Library and Power open a card of lines stacked above their icon, all as wide as the widest;
+/// the screen then blurs under a heavier veil, as for the profile picker.
 ///
 /// Keyboard input (arrows, Return, Space, Esc) is taken by the shell's key monitor
 /// while the menu is open and sent through `menuInput`, the same path as the
@@ -26,6 +27,8 @@ struct MenuOverlayView: View {
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
 
     @State private var presented = false
+    /// Where the pointer was when a hover last focused: a hover only focuses when the pointer has moved since.
+    @State private var pointer = NSEvent.mouseLocation
 
     /// Gates scale and movement only; opacity always animates.
     private var reduceMotion: Bool {
@@ -51,7 +54,7 @@ struct MenuOverlayView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            SeleneTheme.scrim.opacity(0.55)
+            SeleneTheme.scrim.opacity(submenuOpen ? 0.65 : 0.55)
                 .ignoresSafeArea()
                 .contentShape(Rectangle())
                 .onTapGesture { router.closeMenu() }
@@ -59,11 +62,29 @@ struct MenuOverlayView: View {
             row
                 .padding(.bottom, canvas.u(rowBottom))
 
+            // A sibling of the row, not an overlay of an icon: it sits outside that icon's bounds and must take the pointer.
+            if let open = openCard {
+                MenuCard(lines: open.lines)
+                    .offset(x: canvas.u(CGFloat(open.index - MenuAction.allCases.count / 2) * cellWidth))
+                    .padding(.bottom, canvas.u(rowBottom + labelBand + labelGap + dotSize + pillsGap))
+                    .transition(.opacity)
+            }
+
             // Where the screen underneath had its hints, which step aside while this is open.
             SeleneHintsBar(left: [HintItem(.b, L10n.text("Close"))], right: [HintItem(.a, L10n.text("Select"))],
                            bottom: SeleneBottomScrim.hintsBottom, leftInset: 18)
         }
+        .animation(SeleneTheme.quick, value: submenuOpen)
         .onAppear { presented = true }
+    }
+
+    /// A hover focuses only when the pointer moved since the last one that did: a card or the row redrawing
+    /// under a resting pointer reports a new hover, which would otherwise take the focus back from the keys.
+    private func hovered(_ hovering: Bool, focus: () -> Void) {
+        let now = NSEvent.mouseLocation
+        guard hovering, now != pointer else { return }
+        pointer = now
+        focus()
     }
 
     // MARK: - Row
@@ -134,14 +155,7 @@ struct MenuOverlayView: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering in
-            if hovering, !submenuOpen { router.menuSelection.selected = action }
-        }
-        .overlay(alignment: .bottom) {
-            if let lines = lines(above: action) {
-                card(lines)
-                    .transition(.opacity)
-                    .offset(y: -canvas.u(labelBand + labelGap + dotSize + pillsGap))
-            }
+            hovered(hovering) { if !submenuOpen { router.menuSelection.selected = action } }
         }
         .accessibilityLabel(action.title)
         .accessibilityValue(hasActivity ? L10n.text("Activity in progress", context: localization) : "")
@@ -149,7 +163,6 @@ struct MenuOverlayView: View {
         .opacity(presented ? 1 : 0)
         .offset(y: presented || reduceMotion ? 0 : canvas.u(24))
         .animation(entrance(index), value: presented)
-        .animation(SeleneTheme.quick, value: lines(above: action) == nil)
     }
 
     private func entrance(_ index: Int) -> Animation {
@@ -160,44 +173,56 @@ struct MenuOverlayView: View {
 
     // MARK: - Cards
 
-    /// One line of a card above an icon: Power's pills, or the entries of Profile and Library.
-    private struct Line: Identifiable, Equatable {
+    /// The icon with a card open above it, and the card's lines: Power's pills, or the entries of Profile and Library.
+    private var openCard: (index: Int, lines: [MenuCard.Line])? {
+        let model = router.menuSelection
+        let action: MenuAction
+        let lines: [MenuCard.Line]
+        if model.isPowerOpen {
+            action = .power
+            lines = PowerAction.allCases.map { power in
+                .init(id: power.id, title: power.title, icon: power.icon, width: 240, focused: model.power == power,
+                      focus: { hovered(true) { router.menuSelection.power = power } },
+                      choose: { router.menuSelection.power = power; onSelectPower(power) })
+            }
+        } else if model.isEntryOpen {
+            action = model.selected
+            lines = action.entries.map { entry in
+                .init(id: entry.id, title: entry.title, icon: entry.icon, width: 320, focused: model.entry == entry,
+                      focus: { hovered(true) { router.menuSelection.entry = entry } },
+                      choose: { router.menuSelection.entry = entry; onSelectEntry(entry) })
+            }
+        } else {
+            return nil
+        }
+        return (MenuAction.allCases.firstIndex(of: action) ?? 0, lines)
+    }
+}
+
+/// The pills stacked above an icon. Over a 96-unit cell: the card takes the width of its widest title when that
+/// is more than its minimum, and every pill takes that width, so the icons and titles line up.
+struct MenuCard: View {
+    struct Line: Identifiable {
         let id: String
         let title: String
         let icon: MaterialIcon
         let width: CGFloat
         let focused: Bool
+        /// The pointer reached the pill.
         let focus: () -> Void
         let choose: () -> Void
-        static func == (a: Line, b: Line) -> Bool { a.id == b.id }
     }
 
-    /// The lines open above `action`'s icon, or nil when it has no card open.
-    private func lines(above action: MenuAction) -> [Line]? {
-        let model = router.menuSelection
-        if action == .power, model.isPowerOpen {
-            return PowerAction.allCases.map { power in
-                Line(id: power.id, title: power.title, icon: power.icon, width: 240, focused: model.power == power,
-                     focus: { router.menuSelection.power = power },
-                     choose: { router.menuSelection.power = power; onSelectPower(power) })
-            }
-        }
-        if action == model.selected, model.isEntryOpen {
-            return action.entries.map { entry in
-                Line(id: entry.id, title: entry.title, icon: entry.icon, width: 320, focused: model.entry == entry,
-                     focus: { router.menuSelection.entry = entry },
-                     choose: { router.menuSelection.entry = entry; onSelectEntry(entry) })
-            }
-        }
-        return nil
-    }
+    let lines: [Line]
+    @Environment(\.seleneCanvas) private var canvas
 
-    private func card(_ lines: [Line]) -> some View {
+    var body: some View {
         VStack(spacing: canvas.u(12)) {
             ForEach(lines) { line in
                 SelenePillButton(title: line.title,
                                  icon: line.icon,
                                  minWidth: line.width,
+                                 fillsWidth: true,
                                  focused: line.focused, action: line.choose)
                 .onHover { hovering in
                     if hovering { line.focus() }
@@ -205,7 +230,6 @@ struct MenuOverlayView: View {
                 .accessibilityLabel(line.title)
             }
         }
-        // Over a 96-unit cell: a pill takes the width of its title when that is wider than its minimum.
         .fixedSize()
     }
 }

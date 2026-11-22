@@ -21,6 +21,7 @@ User-visible changes to Arcane (formerly NX Library) are recorded here. Entries 
 
 ### Fixed
 
+- The control center's **Profile**, **Library** and **Power** submenus: their buttons all take the width of the widest, the pointer reaches them above the icon, a resting pointer no longer takes the focus back from the keys or the controller, and the page behind blurs under a heavier veil.
 - Automatic **Remote play via ZeroTier** can select a single ZeroTier adapter for LDN or LAN even when Tailscale is also connected. Explicit game and environment choices still take precedence.
 - Opening **Game Options** right after launch no longer crashes while checking cheat support in a custom engine checkout.
 - A PowerA **Lic Pro Controller** using the HID fallback can still navigate Arcane after a game leaves it in Nintendo full report mode. No controller reconnect is needed.

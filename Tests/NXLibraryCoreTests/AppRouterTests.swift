@@ -189,6 +189,48 @@ final class MenuSelectionModelTests: XCTestCase {
         XCTAssertEqual(router.menuSelection.selected, .profile)
     }
 
+    /// Up and Down walk a submenu's lines, A names the focused one, B closes it and leaves the focus on its icon.
+    func testEverySubmenuTakesUpDownConfirmAndBack() {
+        func check<Line: Equatable>(_ icon: MenuAction, lines: [Line], open: (AppRouter) -> Void,
+                                    focused: (AppRouter) -> Line, outcome: (Line) -> MenuOutcome,
+                                    isOpen: (AppRouter) -> Bool) {
+            let router = AppRouter()
+            router.isMenuPresented = true
+            router.menuSelection.selected = icon
+            open(router)
+            XCTAssertEqual(focused(router), lines[0], "\(icon) opens on its first line")
+            XCTAssertEqual(router.menuStep(.confirm), outcome(lines[0]))
+            for line in lines.dropFirst() {
+                router.menuStep(.down)
+                XCTAssertEqual(focused(router), line, "\(icon): Down reaches the next line")
+                XCTAssertEqual(router.menuStep(.confirm), outcome(line), "\(icon): A runs the focused line")
+            }
+            router.menuStep(.down)
+            XCTAssertEqual(focused(router), lines.last, "\(icon): Down stops on the last line")
+            for line in lines.dropLast().reversed() {
+                router.menuStep(.up)
+                XCTAssertEqual(focused(router), line, "\(icon): Up goes back")
+            }
+            // Left and Right wait while the submenu holds the focus.
+            router.menuStep(.right)
+            XCTAssertEqual(router.menuSelection.selected, icon)
+            XCTAssertEqual(router.menuStep(.back), .none)
+            XCTAssertFalse(isOpen(router), "\(icon): B closes the submenu")
+            XCTAssertTrue(router.isMenuPresented)
+            XCTAssertEqual(router.menuSelection.selected, icon, "\(icon): the focus is back on its icon")
+            // The row answers again, and a second B closes the menu.
+            XCTAssertEqual(router.menuStep(.confirm), .action(icon))
+            router.menuStep(.back)
+            XCTAssertFalse(router.isMenuPresented)
+        }
+        for icon in [MenuAction.profile, .library] {
+            check(icon, lines: icon.entries, open: { $0.openEntryMenu() }, focused: { $0.menuSelection.entry },
+                  outcome: { .entry($0) }, isOpen: { $0.menuSelection.isEntryOpen })
+        }
+        check(.power, lines: PowerAction.allCases, open: { $0.openPowerMenu() }, focused: { $0.menuSelection.power },
+              outcome: { .power($0) }, isOpen: { $0.menuSelection.isPowerOpen })
+    }
+
     func testActivityCenterUsesMenuLifetime() {
         let router = AppRouter()
         router.isMenuPresented = true
