@@ -288,7 +288,7 @@ public final class ImportService {
 
     static func repairAdoptionCopy(_ app: URL, entries: [CloudArchiveInventory.Entry]) throws {
         let fm = FileManager.default
-        let types = Dictionary(uniqueKeysWithValues: entries.map { ($0.path, $0.type) })
+        var types = Dictionary(uniqueKeysWithValues: entries.map { ($0.path, $0.type) })
         let names = Set(types.keys.map { $0.precomposedStringWithCanonicalMapping.lowercased() })
         for entry in entries where entry.type == "F" && entry.path.hasSuffix(CloudArtifactFiles.linkSuffix) {
             let relative = String(entry.path.dropLast(CloudArtifactFiles.linkSuffix.count))
@@ -302,21 +302,34 @@ public final class ImportService {
         }
         for entry in entries {
             try Task.checkCancellation()
-            if entry.type == "F", entry.path.hasSuffix(CloudArtifactFiles.linkSuffix) { continue }
-            let url = entry.path.isEmpty ? app : app.appendingPathComponent(entry.path)
+            let restoredLink = entry.type == "F" && entry.path.hasSuffix(CloudArtifactFiles.linkSuffix)
+            var path = restoredLink ? String(entry.path.dropLast(CloudArtifactFiles.linkSuffix.count)) : entry.path
+            let url = path.isEmpty ? app : app.appendingPathComponent(path)
             if removexattr(url.path, "com.apple.quarantine", XATTR_NOFOLLOW) != 0, errno != ENOATTR && errno != ENOTSUP {
                 throw CloudArchiveError.invalidApp
+            }
+            if restoredLink { continue }
+            // Drive's browser ZIP can add .xml to the outer seal as well as the nested seals.
+            if entry.type == "F", url.lastPathComponent == "CodeResources.xml",
+               url.deletingLastPathComponent().lastPathComponent == "_CodeSignature" {
+                let seal = url.deletingPathExtension()
+                if !SaveFiles.exists(seal) {
+                    try fm.moveItem(at: url, to: seal)
+                    types.removeValue(forKey: path)
+                    path = String(path.dropLast(".xml".count))
+                    types[path] = "F"
+                }
             }
             if entry.type == "F", entry.path.hasPrefix("Contents/MacOS/"),
                entry.path.split(separator: "/").count == 3, entry.mode & 0o100 == 0,
                chmod(url.path, mode_t(entry.mode | 0o111)) != 0 {
                 throw CloudArchiveError.invalidApp
             }
-            let parts = entry.path.split(separator: "/")
+            let parts = path.split(separator: "/")
             if entry.type == "F", parts.count == 6, parts[0] == "Contents", parts[1] == "PlugIns",
                parts[2].hasSuffix(".bundle"), parts[3] == "Contents", parts[4] == "_CodeSignature",
                parts[5] == "CodeResources" {
-                let signature = String(entry.path.dropLast("CodeResources".count)) + "CodeSignature"
+                let signature = String(path.dropLast("CodeResources".count)) + "CodeSignature"
                 if types[signature] == nil {
                     try Data().write(to: app.appendingPathComponent(signature), options: .withoutOverwriting)
                 }

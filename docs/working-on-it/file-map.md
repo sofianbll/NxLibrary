@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 22 novembre 2026. Copertura di **865 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 22 novembre 2026. Copertura di **866 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -518,7 +518,7 @@ Cartella `Sources/ArcanePorting/Launch/`.
 
 | File | Responsabilità |
 |---|---|
-| [Sources/ArcanePorting/Launch/ImportService.swift](../../Sources/ArcanePorting/Launch/ImportService.swift) | Identità e scansione dei bundle nxnative; adozione con spazio, firma e pubblicazione recuperabile. La riparazione in staging legge anche sidecar rclone. |
+| [Sources/ArcanePorting/Launch/ImportService.swift](../../Sources/ArcanePorting/Launch/ImportService.swift) | Identità e scansione dei bundle nxnative; adozione con spazio, firma e pubblicazione recuperabile. In staging ripristina anche sidecar rclone e sigilli rinominati e rimuove la quarantena ricorsivamente. |
 | [Sources/ArcanePorting/Launch/AppIconProgress.swift](../../Sources/ArcanePorting/Launch/AppIconProgress.swift) | Stati e testi della preparazione icona, con esito informativo aggiunto al log della build conclusa. |
 | [Sources/ArcanePorting/Launch/IconLaunchWait.swift](../../Sources/ArcanePorting/Launch/IconLaunchWait.swift) | Conserva una richiesta Play durante la firma dell'icona e la revoca su annullamento, errore o chiusura del dialogo. |
 | [Sources/ArcanePorting/Launch/LaunchService.swift](../../Sources/ArcanePorting/Launch/LaunchService.swift) | Scrive l’ambiente runtime e avvia il bundle del gioco tramite NSWorkspace. |
@@ -912,7 +912,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/ArcanePortingTests/GameRuntimeConfigTests.swift](../../Tests/ArcanePortingTests/GameRuntimeConfigTests.swift) | Review di giochi nuovi ed esistenti, persistenza, lingua del rebuild e conversione DM_* con merge di env.txt. |
 | [Tests/ArcanePortingTests/GameTDBTests.swift](../../Tests/ArcanePortingTests/GameTDBTests.swift) | Database, normalizzazione dei nomi, regioni e matching delle copertine. |
 | [Tests/NXLibraryCoreTests/HoldDetectorTests.swift](../../Tests/NXLibraryCoreTests/HoldDetectorTests.swift) | Soglia temporale e distinzione fra pressione breve e prolungata. |
-| [Tests/ArcanePortingTests/ImportServiceTests.swift](../../Tests/ArcanePortingTests/ImportServiceTests.swift) | Identità, firma, spazio, riparazione della copia, rifiuto di contenuti alterati, conflitto, rollback e persistenza di bundle sintetici. |
+| [Tests/ArcanePortingTests/ImportServiceTests.swift](../../Tests/ArcanePortingTests/ImportServiceTests.swift) | Identità, firma, spazio, riparazione della copia, rifiuto di sidecar non sicuri e contenuti alterati, conflitto, rollback e persistenza di bundle sintetici. |
 | [Tests/NXLibraryCoreTests/CursorIdleTests.swift](../../Tests/NXLibraryCoreTests/CursorIdleTests.swift) | Ritardo del cursore, ripristino e ripartenza dopo interruzione o attività del mouse. |
 | [Tests/ArcanePortingTests/InstallProgressTests.swift](../../Tests/ArcanePortingTests/InstallProgressTests.swift) | Fasi Git, percentuali, byte e ricomposizione delle righe parziali. |
 | [Tests/ArcanePortingTests/KeyCheckTests.swift](../../Tests/ArcanePortingTests/KeyCheckTests.swift) | Cifratura e lettura delle intestazioni sintetiche e chiavi richieste dalle sorgenti. |
@@ -1181,6 +1181,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [docs/history/reviews/2026-11-18-spotlight-glide.md](../history/reviews/2026-11-18-spotlight-glide.md) | Campioni dei primi cambi gioco e costo di mod e salvataggio selezione. |
 | [docs/history/reviews/2026-11-18-steam-launch-spaces.md](../history/reviews/2026-11-18-steam-launch-spaces.md) | Riscontro video e log dei cambi rapidi di Space durante Play Steam, causa e regressione. |
 | [docs/history/reviews/2026-11-22-rebuild-cache.md](../history/reviews/2026-11-22-rebuild-cache.md) | Tempi prima e dopo della verifica Rebuild su cache sintetica e limiti della prova. |
+| [docs/history/reviews/2026-11-22-browser-app-adoption.md](../history/reviews/2026-11-22-browser-app-adoption.md) | Sonda locale: adozione e verifica della firma di una copia estratta dallo ZIP del browser. |
 | [docs/history/reviews/2026-11-22-cloud-per-file.md](../history/reviews/2026-11-22-cloud-per-file.md) | Sonda locale: byte e tempo per il cambio di un solo file, archivio rispetto a copia incrementale. |
 
 ## Aggiornare questo catalogo

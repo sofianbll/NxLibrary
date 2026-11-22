@@ -152,6 +152,8 @@ On first setup, Arcane looks for an existing library in `Games` and its immediat
 
 Choose **Cloud** beside **Options** on a ported game's Details page to manage the app and its build cache. For a newly imported game, **Download** restores the app to your **Game apps** folder and becomes **Play** once it is ready, without the original game files or a rebuild. Transfer progress remains visible in Details when you close the Cloud panel. **Disconnect** removes only the local rclone connection, which may also be used by other tools. It does not remove cloud files or affect game saves.
 
+If you download a ported `.app` folder through Google Drive in your browser, unzip it and choose **Add Game → Add ported app**. Arcane repairs transfer damage on its own copy and checks the existing signature without re-signing. If the check still fails, it rejects the app. Only import ports from a source you trust.
+
 ### Your library
 
 **Spotlight** places your games in a row of square tiles, with Play, Options and Favourite beside the selected title. **Collection** offers a cover-based view. Both use the same library and support a controller, keyboard or mouse.
