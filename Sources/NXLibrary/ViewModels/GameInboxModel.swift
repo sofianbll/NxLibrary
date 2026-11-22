@@ -84,7 +84,8 @@ final class GameInboxModel: ObservableObject {
                     let packages = inputs.filter(\.canRead).map { (url: $0.url, alreadyIdentified: false) }
                     let reading = Result { try reader?.contents(of: packages) ?? [:] }
                     let metadata = NintendoStoreMetadataService()
-                    let entries = GameInbox.plan(inputs: inputs, readings: (try? reading.get()) ?? [:], root: root) { id in
+                    let entries = GameInbox.plan(inputs: inputs, readings: reader == nil ? nil : (try? reading.get()) ?? [:],
+                                                 root: root) { id in
                         let titleID = String(format: "%016llX", id)
                         let profile = repo.appendingPathComponent("dm/games/\(titleID)/game.tsv")
                         if let text = try? String(contentsOf: profile, encoding: .utf8),
@@ -95,9 +96,7 @@ final class GameInboxModel: ObservableObject {
                         let names = Set(installed.filter { $0.titleId?.uppercased() == titleID }.map(\.name))
                         return names.count == 1 ? names.first : nil
                     }
-                    let warning = packages.isEmpty ? nil : reader == nil
-                        ? L10n.text("Import your keys in Porting to identify these packages.")
-                        : reading.failureDescription
+                    let warning = packages.isEmpty ? nil : reading.failureDescription
                     return (entries, warning)
                 }
             }.value

@@ -72,7 +72,7 @@ struct LocalProfilePage: View {
                     SeleneButtonRow("Profile lock", buttonTitle: lockButtonTitle) { settingPIN = true }
                 }
                 if let nextendo {
-                    Text(L10n.text("Linked Nextendo account")).seleneFont(.sectionTitle, .semibold)
+                    Text(L10n.text("Nextendo — optional online play")).seleneFont(.sectionTitle, .semibold)
                         .accessibilityAddTraits(.isHeader)
                     SeleneToggleRow("Appear online", subtitle: nextendo.presenceShared == false ? "Presence not shared" : nil,
                                     isOn: Binding(get: { profile.sharesPresence }, set: { _ in togglePresence() }))

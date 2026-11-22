@@ -19,6 +19,7 @@ public struct SetupItem: Identifiable, Equatable {
     public var chip: String
     public var about: String
     public var detail: String
+    public var inlineError: String? = nil
     /// What A does on the card ("Install", "Clone"…); nil when A does nothing.
     public var actionTitle: String?
     /// While working: how far it has got, for the card's bar; nil draws a moving bar.
@@ -124,7 +125,7 @@ public enum SetupCheck {
                 item.chip = chip
             case .failed(let message):
                 item.state = .failed
-                item.chip = "COULDN'T INSTALL"
+                item.chip = L10n.text("COULDN'T INSTALL")
                 item.detail = message
             }
             return item
@@ -165,16 +166,16 @@ public enum SetupCheck {
             let about = L10n.text("Apple's developer tools. Every game is compiled with them.")
             switch f.xcodeStatus {
             case nil:
-                return SetupItem(id: id, title: L10n.text("Xcode"), state: .missing, chip: "NOT INSTALLED", about: about,
+                return SetupItem(id: id, title: L10n.text("Xcode"), state: .missing, chip: L10n.text("NOT INSTALLED"), about: about,
                                  detail: L10n.text("Get it from the App Store, then open it once."), actionTitle: L10n.text("Get Xcode"))
             case 69?:
-                return SetupItem(id: id, title: L10n.text("Xcode"), state: .needsYou, chip: "OPEN XCODE ONCE", about: about,
+                return SetupItem(id: id, title: L10n.text("Xcode"), state: .needsYou, chip: L10n.text("OPEN XCODE ONCE"), about: about,
                                  detail: L10n.text("Open Xcode and accept its licence; it then installs its components."),
                                  actionTitle: L10n.text("Open Xcode"))
             default:
                 let minimum = f.requirements.minimumXcode
                 if let version = f.xcodeVersion, VersionNumber.isOlder(version, than: minimum) {
-                    return SetupItem(id: id, title: L10n.text("Xcode"), state: .needsYou, chip: "UPDATE XCODE", about: about,
+                    return SetupItem(id: id, title: L10n.text("Xcode"), state: .needsYou, chip: L10n.text("UPDATE XCODE"), about: about,
                                      detail: L10n.format("Xcode %@ is installed; the engine needs %@ or newer. Update it from the App Store.", [String(describing: version), String(describing: minimum)]),
                                      actionTitle: L10n.text("Open App Store"))
                 }
@@ -183,7 +184,7 @@ public enum SetupCheck {
         case .metal:
             let about = L10n.text("Compiles each game's shaders for this Mac's GPU.")
             guard let version = f.metalVersion else {
-                return SetupItem(id: id, title: L10n.text("Metal compiler"), state: .missing, chip: "NOT INSTALLED",
+                return SetupItem(id: id, title: L10n.text("Metal compiler"), state: .missing, chip: L10n.text("NOT INSTALLED"),
                                  about: about, detail: L10n.text("Arcane downloads it through Xcode."), actionTitle: L10n.text("Install"))
             }
             if version == f.certifiedMetal {
@@ -194,11 +195,11 @@ public enum SetupCheck {
                              L10n.format("Version %@; the untested toolchain override is on, so builds may differ.", [String(describing: version)]))
             }
             if f.requirements.metalDownload(for: f.certifiedMetal) != nil {
-                return SetupItem(id: id, title: L10n.text("Metal compiler"), state: .warning, chip: "NOT CERTIFIED", about: about,
+                return SetupItem(id: id, title: L10n.text("Metal compiler"), state: .warning, chip: L10n.text("NOT CERTIFIED"), about: about,
                                  detail: L10n.format("Version %@; the engine is tested with %@. Arcane installs %@ through Xcode.", [String(describing: version), String(describing: f.certifiedMetal), String(describing: f.certifiedMetal)]),
                                  actionTitle: L10n.format("Install %@", [String(describing: f.certifiedMetal)]))
             }
-            return SetupItem(id: id, title: L10n.text("Metal compiler"), state: .warning, chip: "WAITING FOR ENGINE", about: about,
+            return SetupItem(id: id, title: L10n.text("Metal compiler"), state: .warning, chip: L10n.text("WAITING FOR ENGINE"), about: about,
                              detail: L10n.format("Version %@ came with this Xcode; the engine is tested with %@. New builds wait for an Arcane update tested with it. Games you built still play.", [String(describing: version), String(describing: f.certifiedMetal)]),
                              actionTitle: nil)
         case .engine:
@@ -206,32 +207,32 @@ public enum SetupCheck {
             let short = String(f.pinnedCommit.prefix(7))
             switch f.engine {
             case .missing:
-                return SetupItem(id: id, title: L10n.text("nxnative engine"), state: .missing, chip: "NOT INSTALLED", about: about,
+                return SetupItem(id: id, title: L10n.text("nxnative engine"), state: .missing, chip: L10n.text("NOT INSTALLED"), about: about,
                                  detail: L10n.format("Arcane clones it into %@ at %@.", [String(describing: f.engineFolder.path), String(describing: short)]), actionTitle: L10n.text("Clone"))
             case .notACheckout:
-                return SetupItem(id: id, title: L10n.text("nxnative engine"), state: .warning, chip: "NOT A CHECKOUT", about: about,
+                return SetupItem(id: id, title: L10n.text("nxnative engine"), state: .warning, chip: L10n.text("NOT A CHECKOUT"), about: about,
                                  detail: L10n.format("%@ is not a git checkout of nxnative. Move it away, then check again.", [String(describing: f.engineFolder.path)]),
                                  actionTitle: nil)
             case .checkout(_, true):
-                return SetupItem(id: id, title: L10n.text("nxnative engine"), state: .warning, chip: "LOCAL CHANGES", about: about,
+                return SetupItem(id: id, title: L10n.text("nxnative engine"), state: .warning, chip: L10n.text("LOCAL CHANGES"), about: about,
                                  detail: L10n.format("%@ has changed files. Arcane never touches them: put them aside, then check again.", [String(describing: f.engineFolder.path)]),
                                  actionTitle: nil)
             case .checkout(let head, false) where head == f.newestEngine?.commit && head != f.pinnedCommit:
                 // The player's own choice: ready, never "other version", and A goes back to the tested engine.
                 var card = ready(id, L10n.text("nxnative engine"), NewestEngineCopy.note,
                                  NewestEngineCopy.setupDetail(choice: f.newestEngine!, tested: f.pinnedCommit))
-                card.chip = "NEWEST ENGINE"
+                card.chip = L10n.text("NEWEST ENGINE")
                 card.isUntested = true
                 card.actionTitle = L10n.text("Back to tested")
                 return card
             case .checkout(let head, false) where head != f.pinnedCommit:
                 // Warning either way: Setup reopens for it and Install all runs it.
                 if f.engineBehind == false {
-                    return SetupItem(id: id, title: L10n.text("nxnative engine"), state: .warning, chip: "OTHER VERSION", about: about,
+                    return SetupItem(id: id, title: L10n.text("nxnative engine"), state: .warning, chip: L10n.text("OTHER VERSION"), about: about,
                                      detail: L10n.format("The engine here is at %@, not the %@ this version of Arcane is tested with. Switch moves it to %@. Games you built keep playing.", [String(describing: head.prefix(7)), String(describing: short), String(describing: short)]),
                                      actionTitle: L10n.text("Switch"))
                 }
-                return SetupItem(id: id, title: L10n.text("nxnative engine"), state: .warning, chip: "UPDATE READY", about: about,
+                return SetupItem(id: id, title: L10n.text("nxnative engine"), state: .warning, chip: L10n.text("UPDATE READY"), about: about,
                                  detail: L10n.format("This version of Arcane uses nxnative %@; the engine here is at %@. Update downloads it and switches to it. Games you built keep playing.", [String(describing: short), String(describing: head.prefix(7))]),
                                  actionTitle: L10n.text("Update"))
             case .checkout:
@@ -240,47 +241,49 @@ public enum SetupCheck {
         case .runtime:
             let about = L10n.text("Python 3.14 with its modules, zstd and glslang, inside Arcane.")
             if let problem = f.runtimeProblem {
-                return SetupItem(id: id, title: L10n.text("Python and tools"), state: .failed, chip: "REINSTALL APP", about: about,
+                return SetupItem(id: id, title: L10n.text("Python and tools"), state: .failed, chip: L10n.text("REINSTALL APP"), about: about,
                                  detail: L10n.format("%@. Reinstall Arcane from its DMG.", [String(describing: problem)]), actionTitle: nil)
             }
-            return SetupItem(id: id, title: L10n.text("Python and tools"), state: .ready, chip: "✓ INCLUDED", about: about,
+            return SetupItem(id: id, title: L10n.text("Python and tools"), state: .ready, chip: L10n.text("✓ INCLUDED"), about: about,
                              detail: L10n.text("Nothing to install."), actionTitle: nil)
         case .keys:
             let about = L10n.text("Your console's prod.keys, which unlock your own games. They stay on this Mac.")
             if let keys = f.keys {
-                return SetupItem(id: id, title: L10n.text("Keys"), state: .ready, chip: "✓ IMPORTED", about: about,
+                return SetupItem(id: id, title: L10n.text("Keys"), state: .ready, chip: L10n.text("✓ IMPORTED"), about: about,
                                  detail: L10n.format("Header key and %@ application key generations.", [String(describing: keys.applicationKeyGenerations.count)]),
-                                 actionTitle: L10n.text("Replace"))
+                                 inlineError: f.keysError, actionTitle: L10n.text("Replace"))
             }
             if f.keysOptional {
-                return SetupItem(id: id, title: L10n.text("Keys"), state: .ready, chip: "OPTIONAL", about: about,
-                                 detail: L10n.text("Needed for NSP/XCI packages. Extracted folders do not use keys."), actionTitle: L10n.text("Choose file"))
+                return SetupItem(id: id, title: L10n.text("Keys"), state: .ready, chip: L10n.text("OPTIONAL"), about: about,
+                                 detail: L10n.text("Needed for NSP/XCI packages. Extracted folders do not use keys."),
+                                 inlineError: f.keysError, actionTitle: L10n.text("Choose file"))
             }
-            return SetupItem(id: id, title: L10n.text("Keys"), state: .missing, chip: "NOT IMPORTED", about: about,
-                             detail: f.keysError ?? L10n.text("Choose your prod.keys file."), actionTitle: L10n.text("Choose file"))
+            return SetupItem(id: id, title: L10n.text("Keys"), state: .missing, chip: L10n.text("NOT IMPORTED"), about: about,
+                             detail: f.keysError ?? L10n.text("Choose your prod.keys file."), inlineError: f.keysError,
+                             actionTitle: L10n.text("Choose file"))
         case .library:
             let about = GameFoldersCopy.appsAbout
             if f.libraryNeedsConfirmation {
-                return SetupItem(id: id, title: GameFoldersCopy.appsTitle, state: .needsYou, chip: "CHOOSE FOLDER", about: about,
+                return SetupItem(id: id, title: GameFoldersCopy.appsTitle, state: .needsYou, chip: L10n.text("CHOOSE FOLDER"), about: about,
                                  detail: f.libraryFolder.map { L10n.format("Choose this folder or another: %@", [String(describing: $0.path)]) }
                                     ?? L10n.text("Choose where to keep your game apps. An empty folder is fine."),
                                  actionTitle: L10n.text("Choose folder"))
             }
             switch f.libraryReadable {
             case nil:
-                return SetupItem(id: id, title: GameFoldersCopy.appsTitle, state: .missing, chip: "NOT CHOSEN", about: about,
+                return SetupItem(id: id, title: GameFoldersCopy.appsTitle, state: .missing, chip: L10n.text("NOT CHOSEN"), about: about,
                                  detail: L10n.text("Choose the folder containing your game apps."), actionTitle: L10n.text("Choose folder"))
             case false?:
-                return SetupItem(id: id, title: GameFoldersCopy.appsTitle, state: .warning, chip: "NOT READABLE", about: about,
+                return SetupItem(id: id, title: GameFoldersCopy.appsTitle, state: .warning, chip: L10n.text("NOT READABLE"), about: about,
                                  detail: f.libraryFolder.map { L10n.format("Cannot read %@. Reconnect it or choose another.", [String(describing: $0.path)]) }
                                     ?? L10n.text("Arcane cannot read this folder. Reconnect it or choose another."), actionTitle: L10n.text("Choose folder"))
             case true?:
                 if f.libraryWritable == false {
-                    return SetupItem(id: id, title: GameFoldersCopy.appsTitle, state: .warning, chip: "READ ONLY", about: about,
+                    return SetupItem(id: id, title: GameFoldersCopy.appsTitle, state: .warning, chip: L10n.text("READ ONLY"), about: about,
                                      detail: L10n.text("Choose a writable folder for new builds. Existing apps still play."),
                                      actionTitle: L10n.text("Change"))
                 }
-                return SetupItem(id: id, title: GameFoldersCopy.appsTitle, state: .ready, chip: "✓ READY", about: about,
+                return SetupItem(id: id, title: GameFoldersCopy.appsTitle, state: .ready, chip: L10n.text("✓ READY"), about: about,
                                  detail: [GameFoldersCopy.appsContents, f.libraryFolder?.path].compactMap { $0 }.joined(separator: "\n"),
                                  actionTitle: L10n.text("Change"))
             }
@@ -288,22 +291,22 @@ public enum SetupCheck {
             let about = GameFoldersCopy.sourcesAbout(extractedFolders: f.extractedFoldersSupported)
             switch f.sourcesReadable {
             case nil:
-                return SetupItem(id: id, title: GameFoldersCopy.sourcesTitle, state: .ready, chip: "OPTIONAL", about: about,
+                return SetupItem(id: id, title: GameFoldersCopy.sourcesTitle, state: .ready, chip: L10n.text("OPTIONAL"), about: about,
                                  detail: L10n.text("Existing game apps play without sources. Choose later in Settings → Porting → Game folders."),
                                  actionTitle: L10n.text("Choose folder"), isRequired: false)
             case false?:
-                return SetupItem(id: id, title: GameFoldersCopy.sourcesTitle, state: .warning, chip: "FOLDER UNAVAILABLE", about: about,
+                return SetupItem(id: id, title: GameFoldersCopy.sourcesTitle, state: .warning, chip: L10n.text("FOLDER UNAVAILABLE"), about: about,
                                  detail: f.sourcesFolder.map { L10n.format("Unavailable: %@. Existing game apps still play.", [String(describing: $0.path)]) }
                                     ?? L10n.text("Reconnect this folder or choose another. Existing game apps still play."),
                                  actionTitle: L10n.text("Change"), isRequired: false)
             case true?:
-                return SetupItem(id: id, title: GameFoldersCopy.sourcesTitle, state: .ready, chip: "✓ CHOSEN", about: about,
+                return SetupItem(id: id, title: GameFoldersCopy.sourcesTitle, state: .ready, chip: L10n.text("✓ CHOSEN"), about: about,
                                  detail: f.sourcesFolder?.path ?? L10n.text("Ready to find game sources."), actionTitle: L10n.text("Change"), isRequired: false)
             }
         }
     }
 
     private static func ready(_ id: SetupItemID, _ title: String, _ about: String, _ detail: String) -> SetupItem {
-        SetupItem(id: id, title: title, state: .ready, chip: "✓ READY", about: about, detail: detail, actionTitle: nil)
+        SetupItem(id: id, title: title, state: .ready, chip: L10n.text("✓ READY"), about: about, detail: detail, actionTitle: nil)
     }
 }

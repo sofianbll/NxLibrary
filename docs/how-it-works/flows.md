@@ -40,6 +40,7 @@ Punti fissi:
 - Un archivio illeggibile non diventa mai una libreria vuota.
 - La Dev legge e scrive solo nel suo profilo.
 - La scelta Steam del primo Setup resta salvata anche alla chiusura; lettura e attivazione usano la cartella scelta nella fonte. Una lettura incompleta offre Retry, senza dichiarare la libreria vuota.
+- Se il file delle chiavi viene rifiutato in Get ready, il motivo compare sulla scheda Chiavi, dalla quale si può riprovare senza chiudere un dialogo.
 - La cartella Game files ricordata resta una preferenza del selettore: l'avvio non ne enumera i sorgenti.
 - La shell riceve gli stessi comandi dal profilo esteso GameController o, in sua assenza, da un pad HID Nintendo. Un pad dichiarato compatibile da macOS attende fino a due secondi prima del ripiego a HID.
 - Menu e dialoghi nativi hanno precedenza sul routing della shell: `nativeDialogOwnsInput` ferma i comandi del controller anche se un benvenuto, Setup o dialogo dell'app è già aperto sotto.
@@ -131,6 +132,8 @@ Nella pagina Spotlight di un titolo Steam, Giù porta anche a **More like this**
 ## 5. Costruire un gioco Switch (Add Game)
 
 **Ordinare i file prima del porting.** Libreria → Sort incoming files (anche da Spotlight) mostra i file nella cartella Inbox configurata e quelli trascinati. Arcane legge i metadati senza estrarre il gioco e mostra il nuovo nome e il percorso per ogni file. Si conferma una riga o l'intero gruppo pronto, inclusi i duplicati indicati. Se **Game files** non è la radice attesa, il triage è in sola lettura finché non si conferma la correzione. Arcane copia in una cartella temporanea sul volume di destinazione, verifica dimensione e SHA-256, pubblica senza sostituire e usa il catalogo delle sorgenti per verificare il ritrovamento. Solo allora sposta l'originale nel Cestino; un file ambiguo o non verificato rimane al suo posto. Questo passaggio non aggiunge un'app alla libreria e non avvia il porting.
+
+Se mancano chiavi valide, la riga del pacchetto invita a importarle prima di poterlo identificare.
 
 **Add Game → Add ported app.** Scegli un bundle locale nel selettore oppure trascina un solo `.app` sulla schermata Add Game. Se la riga è disabilitata, il sottotitolo indica l'operazione in corso. Se il titolo esiste, Replace o Cancel decide se procedere. Arcane controlla lo spazio, ripara i metadati di trasferimento solo sulla copia e verifica identità e firma prima di pubblicarla in Game apps. La sorgente resta intatta e il titolo compare in libreria.
 

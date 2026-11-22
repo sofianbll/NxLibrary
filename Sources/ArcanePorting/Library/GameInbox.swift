@@ -16,6 +16,7 @@ public enum GameInbox {
         public let destination: URL?
         public let content: PackageContent?
         public let issue: String?
+        public let needsKeys: Bool
         public let duplicate: Bool
         fileprivate let stamp: Stamp?
     }
@@ -65,16 +66,22 @@ public enum GameInbox {
         }
     }
 
-    public static func plan(inputs: [Input], readings: [URL: PackageReading], root: URL,
+    /// A nil reading map means package identification could not start without keys.
+    public static func plan(inputs: [Input], readings: [URL: PackageReading]?, root: URL,
                             names: (UInt64) -> String?) -> [Entry] {
         let folders = (try? files(in: root)) ?? []
         let entries: [Entry] = inputs.map { input in
             let url = input.url
             func ambiguous(_ issue: String, content: PackageContent? = nil) -> Entry {
-                Entry(source: url, destination: nil, content: content, issue: issue, duplicate: false, stamp: nil)
+                Entry(source: url, destination: nil, content: content, issue: issue, needsKeys: false, duplicate: false, stamp: nil)
             }
             guard input.canRead, safe(url), input.stamp == Stamp(url), !within(url, root) else {
                 return ambiguous(L10n.text("Not a supported incoming file."))
+            }
+            guard let readings else {
+                return Entry(source: url, destination: nil, content: nil,
+                             issue: L10n.text("Keys missing: import them to identify this file"),
+                             needsKeys: true, duplicate: false, stamp: nil)
             }
             guard case .contents(let rows)? = readings[url], rows.count == 1, let row = rows.first,
                   row.kind != .unknown, let version = row.version else {
@@ -112,7 +119,7 @@ public enum GameInbox {
             if duplicate && (!safe(destination) || (try? verifySame(url, destination)) == nil) {
                 return ambiguous(L10n.text("A different file already occupies the destination."), content: row)
             }
-            return Entry(source: url, destination: destination, content: row, issue: nil,
+            return Entry(source: url, destination: destination, content: row, issue: nil, needsKeys: false,
                          duplicate: duplicate, stamp: input.stamp)
         }
         let destinations = Dictionary(grouping: entries.compactMap { $0.destination }, by: destinationKey)
@@ -121,7 +128,8 @@ public enum GameInbox {
                 return entry
             }
             return Entry(source: entry.source, destination: nil, content: entry.content,
-                         issue: L10n.text("Multiple incoming files have the same destination."), duplicate: false, stamp: nil)
+                         issue: L10n.text("Multiple incoming files have the same destination."),
+                         needsKeys: false, duplicate: false, stamp: nil)
         }
     }
 
