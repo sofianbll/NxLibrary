@@ -4,7 +4,9 @@ import Foundation
 public struct RcloneStorageBackend: StorageBackend {
     private static let staging = ".arcane-upload"
     private static let smallDownloadLimit: Int64 = 64 * 1024
-    private static let flags = ["--drive-skip-shortcuts", "--local-links=false", "--copy-links=false"]
+    private static let flags = ["--drive-skip-shortcuts", "--local-links=false", "--copy-links=false",
+                                "--drive-chunk-size", "64M", "--multi-thread-streams", "4",
+                                "--multi-thread-cutoff", "64M"]
     private let remote: String
     private let root: String
     private let executable: URL?
@@ -124,6 +126,52 @@ public struct RcloneStorageBackend: StorageBackend {
         }
     }
 
+    package func tree(in prefix: StorageObjectKey) async throws -> [StorageObject] {
+        let target = try path(for: prefix)
+        let items: [Item]
+        do {
+            items = try decode([Item].self, from: await run([
+                "lsjson", target, "--recursive", "--hash-type", "MD5", "--no-modtime", "--no-mimetype",
+            ]))
+        } catch StorageBackendError.notFound { return [] }
+        // Include directories: a duplicate Drive directory makes all child paths ambiguous.
+        guard Set(items.map(\.path)).count == items.count else { throw StorageBackendError.invalidResponse }
+        return items.filter { $0.isDirectory != true }.map {
+            StorageObject(key: StorageObjectKey($0.path), size: $0.size, hashes: $0.hashes ?? [:])
+        }
+    }
+
+    package func copyFiles(_ paths: [String], from local: URL, to key: StorageObjectKey,
+                           reusing previous: StorageObjectKey?,
+                           progress: (@Sendable (StorageProgress) -> Void)?) async throws {
+        let reuse = try previous.map { ["--copy-dest", try path(for: $0)] } ?? []
+        // Encode links on the source only. The local fixture must store the same sidecars as Drive.
+        try await copyFiles(paths, from: ":local,links=true:" + local.path, to: path(for: key),
+                            flags: reuse, progress: progress)
+    }
+
+    package func downloadFiles(_ paths: [String], from key: StorageObjectKey, to local: URL,
+                               progress: (@Sendable (StorageProgress) -> Void)?) async throws {
+        try await copyFiles(paths, from: path(for: key), to: local.path, flags: [], progress: progress)
+    }
+
+    private func copyFiles(_ paths: [String], from: String, to: String, flags: [String],
+                           progress: (@Sendable (StorageProgress) -> Void)?) async throws {
+        guard !paths.isEmpty else { return }
+        guard paths.allSatisfy({ !$0.hasPrefix("/") && CloudLibraryPreference.safePath($0) }) else {
+            throw StorageBackendError.invalidKey
+        }
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("arcane-rclone-\(UUID())")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
+                                                attributes: [.posixPermissions: 0o700])
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("paths")
+        try Data((paths.joined(separator: "\n") + "\n").utf8).write(to: file)
+        _ = try await run(["copy", from, to, "--files-from-raw", file.path, "--checksum", "--immutable",
+                           "--no-update-modtime", "--transfers", "4", "--checkers", "4",
+                           "--buffer-size", "4M"] + flags, progress: progress)
+    }
+
     private func checkDirectory(_ base: String, prefix: String = "") async throws {
         struct Directory: Decodable { let IsDir: Bool }
         let directory: Directory?
@@ -147,67 +195,6 @@ public struct RcloneStorageBackend: StorageBackend {
                     progress: (@Sendable (StorageProgress) -> Void)?) async throws {
         try validateFingerprint(object)
         try await put(source, as: object, md5Only: false, progress: progress)
-    }
-
-    package struct ArchiveUpload: Sendable {
-        fileprivate let path: String
-    }
-
-    package func archiveUpload() throws -> ArchiveUpload {
-        try .init(path: objectPath("\(Self.staging)/\(UUID().uuidString)"))
-    }
-
-    package func archiveUploadProcess(to upload: ArchiveUpload) throws -> Process {
-        let sink = Process()
-        sink.executableURL = try binary()
-        let environment = RcloneConfiguration.environment()
-        sink.environment = environment
-        // An unsupported remote must fail rather than let rcat spool an unknown-size stream to disk.
-        sink.arguments = ["rcat", upload.path, "--temp-dir", "/dev/null", "--buffer-size", "0",
-                          "--streaming-upload-cutoff", "1M", "--drive-chunk-size", "8M", "--retries", "1"]
-            + Self.flags + RcloneConfiguration.flags(config: config, environment: environment)
-        return sink
-    }
-
-    package func verifyArchive(_ object: StorageObject, staged upload: ArchiveUpload) async throws {
-        try validateFingerprint(object)
-        try await verify(object, at: upload.path, md5Only: true)
-    }
-
-    package func publishArchive(_ object: StorageObject, staged upload: ArchiveUpload) async throws {
-        let final = try path(for: object.key)
-        if try await item(at: final) == nil {
-            if remote == ":local:" {
-                let destination = URL(fileURLWithPath: String(final.dropFirst(remote.count)))
-                try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(),
-                                                        withIntermediateDirectories: true)
-                try Task.checkCancellation()
-                if renamex_np(String(upload.path.dropFirst(remote.count)), destination.path, UInt32(RENAME_EXCL)) != 0,
-                   errno != EEXIST { throw StorageBackendError.publicationFailed }
-            } else {
-                _ = try await run(["moveto", upload.path, final, "--ignore-existing", "--immutable", "--checksum",
-                                   "--disable", "Copy", "--max-transfer", "0", "--retries", "1"])
-            }
-        }
-        try await verify(object, at: final, md5Only: true)
-        if remote != ":local:" {
-            let directory = StorageObjectKey(object.key.value.split(separator: "/").dropLast().joined(separator: "/"))
-            guard try await list(in: directory).filter({ $0.key == object.key }).count == 1 else {
-                throw StorageBackendError.invalidResponse
-            }
-        }
-        if try await item(at: upload.path) != nil {
-            _ = try await run(["deletefile", upload.path])
-        }
-    }
-
-    package func discardArchives(_ uploads: [ArchiveUpload]) async {
-        await Task.detached {
-            for upload in uploads {
-                _ = try? await run(["deletefile", upload.path, "--retries", "1", "--low-level-retries", "1",
-                                    "--contimeout", "5s", "--timeout", "5s"])
-            }
-        }.value
     }
 
     package func putSource(_ source: URL, as object: StorageObject,
@@ -465,8 +452,11 @@ public struct RcloneStorageBackend: StorageBackend {
         let name: String
         let size: Int64
         let hashes: [String: String]?
+        let isDirectory: Bool?
 
-        enum CodingKeys: String, CodingKey { case path = "Path", name = "Name", size = "Size", hashes = "Hashes" }
+        enum CodingKeys: String, CodingKey {
+            case path = "Path", name = "Name", size = "Size", hashes = "Hashes", isDirectory = "IsDir"
+        }
     }
 
     private struct ListResult: Decodable { let list: [Item] }

@@ -211,9 +211,9 @@ public struct CloudDriveFolders: Sendable {
                 do { manifest = try await archive.readManifest(item.object, titleID: parts[0]) }
                 catch CloudArchiveError.invalidManifest { continue }
                 archiveTitles.insert(manifest.titleID)
-                manifests.append(.init(file: item.object, dependencies: manifest.artifacts.map {
-                    $0.object(titleID: manifest.titleID)
-                }))
+                let dependencies = manifest.artifacts.flatMap { $0.objects(titleID: manifest.titleID) }
+                manifests.append(.init(file: item.object, dependencies: dependencies))
+                objects += manifest.artifacts.compactMap(\.files).flatMap(\.objects).map { .init(file: $0, dependencies: []) }
             }
         }
         for item in items where !item.IsDir {
@@ -245,15 +245,26 @@ public struct CloudDriveFolders: Sendable {
         }
         try await verifyUniqueFolder(plan.source)
         try await verifyUniqueFolder(destination)
-        let sourcePaths = Dictionary(grouping: try await contents(plan.source, recursive: true), by: \.Path)
-        var destinationPaths = Dictionary(grouping: try await contents(destination, recursive: true), by: \.Path)
+        let folders = Set(plan.entries.compactMap { Self.treeFolder($0.file.key.value) })
+        func paths(at root: String) async throws -> [String: [Item]] {
+            var result = Dictionary(grouping: try await contents(root, recursive: true), by: \.Path)
+            for folder in folders.sorted() {
+                for item in try await contents(Self.joining(root, folder), recursive: true, deep: true) {
+                    result[Self.joining(folder, item.Path), default: []].append(item)
+                }
+            }
+            return result
+        }
+        let sourcePaths = try await paths(at: plan.source)
+        var destinationPaths = try await paths(at: destination)
         var conflicts: [String] = []
         var blockedTitles = Set<Substring>()
         try await progress(0, plan.entries.count)
         for (index, entry) in plan.entries.enumerated() {
             try Task.checkCancellation()
             let path = entry.file.key.value
-            let title = path.prefix { $0 != "/" }
+            let folder = path.prefix { $0 != "/" }
+            let title = folder.hasSuffix("]") ? folder.dropLast().suffix(16) : folder
             if Self.uniquePath(path, in: sourcePaths), Self.uniquePath(path, in: destinationPaths),
                entry.dependencies.isEmpty || (!blockedTitles.contains(title) && entry.dependencies.allSatisfy({
                    Self.uniquePath($0.key.value, in: destinationPaths)
@@ -281,15 +292,37 @@ public struct CloudDriveFolders: Sendable {
             CloudArtifactKind(rawValue: path[1]) != nil
                 && path[2].range(of: #"^[0-9a-f]{64}\.aar\z"#, options: .regularExpression) != nil
         }
+        if treeFolder(entry.file.key.value) != nil {
+            return entry.dependencies.isEmpty && entry.file.size >= 0 && entry.file.md5 != nil
+        }
         guard let path = parts(entry.file) else { return false }
         if isArchive(path) { return entry.dependencies.isEmpty }
         guard path[1] == "manifests",
               path[2].range(of: #"^[0-9]{16}-[0-9a-f]{64}\.json\z"#, options: .regularExpression) != nil else { return false }
-        let kinds = entry.dependencies.compactMap { object -> CloudArtifactKind? in
-            guard let dependency = parts(object), dependency[0] == path[0], isArchive(dependency) else { return nil }
-            return CloudArtifactKind(rawValue: dependency[1])
+        return !entry.dependencies.isEmpty && entry.dependencies.allSatisfy { object in
+            if let folder = treeFolder(object.key.value) {
+                return folder.components(separatedBy: "/")[0].hasSuffix(" [\(path[0])]")
+                    && object.size >= 0 && object.md5 != nil
+            }
+            return parts(object).map { $0[0] == path[0] && isArchive($0) } == true
         }
-        return kinds.count == entry.dependencies.count && ([.app] == kinds || CloudArtifactKind.allCases == kinds)
+    }
+
+    private static func treeFolder(_ path: String) -> String? {
+        let parts = path.components(separatedBy: "/")
+        guard parts.count >= 4, parts.allSatisfy(validName),
+              let kind = CloudArtifactKind(rawValue: parts[1]),
+              parts[2].range(of: #"^[0-9a-f]{64}\z"#, options: .regularExpression) != nil else { return nil }
+        let title = String(parts[0].dropLast().suffix(16))
+        guard SaveLocation.validID(title), title == title.uppercased(), parts[0].hasSuffix(" [\(title)]") else { return nil }
+        let count = kind == .app ? 4 : 3
+        guard parts.count > count, kind != .app || (parts[3] as NSString).pathExtension.lowercased() == "app" else { return nil }
+        let relative = parts.dropFirst(count).joined(separator: "/")
+        let logical = relative.hasSuffix(CloudArtifactFiles.linkSuffix)
+            ? String(relative.dropLast(CloudArtifactFiles.linkSuffix.count)) : relative
+        guard !logical.isEmpty, SaveFiles.validRelative(logical), !CloudArchiveInventory.isExcluded(logical, kind)
+        else { return nil }
+        return parts.prefix(count).joined(separator: "/")
     }
 
     private func moveFile(_ file: StorageObject, from source: String, to destination: String) async throws -> Item? {
@@ -356,8 +389,8 @@ public struct CloudDriveFolders: Sendable {
         }
     }
 
-    private func contents(_ folder: String, recursive: Bool, hashes: Bool = true) async throws -> [Item] {
-        let scope = recursive ? ["--recursive", "--max-depth", "3", "--exclude", "/.arcane-upload/**"] : []
+    private func contents(_ folder: String, recursive: Bool, hashes: Bool = true, deep: Bool = false) async throws -> [Item] {
+        let scope = recursive ? ["--recursive", "--exclude", "/.arcane-upload/**"] + (deep ? [] : ["--max-depth", "3"]) : []
         let hashing = hashes ? ["--hash-type", "MD5"] : []
         do {
             let output = try await checked(["lsjson", try target(folder), "--no-modtime", "--no-mimetype"] + scope + hashing)
