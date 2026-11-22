@@ -258,9 +258,13 @@ final class AppViewModel: ObservableObject {
     private var profileNextendoAccounts: [UUID: NextendoSettings] = [:]
     @MainActor var profileNextendo: NextendoSettings? {
         guard localProfiles?.guest == nil, let id = localProfiles?.active?.id else { return nil }
-        if usesSharedNextendo { return .shared }
         if let account = profileNextendoAccounts[id] { return account }
-        let account = NextendoSettings(store: NextendoLaunch.tokenStore(profileID: id, originalID: localProfiles?.originalID))
+        let account = NextendoSettings(store: NextendoLaunch.tokenStore(profileID: id, originalID: localProfiles?.originalID)) { [weak self] result in
+            Task { @MainActor in
+                let level: LogLevel = (200..<300).contains(result.code) ? .info : .warning
+                self?.logs.append(LogEntry(level: level, message: "Nextendo: \(result.route) · \(result.code)"))
+            }
+        }
         profileNextendoAccounts[id] = account
         return account
     }

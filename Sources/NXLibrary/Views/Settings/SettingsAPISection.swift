@@ -341,6 +341,19 @@ struct SettingsAPISection: View {
                         .multilineTextAlignment(.trailing)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: canvas.u(340), alignment: .trailing)
+                    if let diagnostic = failure.checkDiagnostic {
+                        Text(diagnostic.message(context: localization))
+                            .seleneFont(15)
+                            .foregroundStyle(SeleneTheme.ink60)
+                    } else if failure == .discordUnlinked || failure == .emailUnverified {
+                        Text(text(failure == .discordUnlinked
+                                  ? "Nextendo account not yet verified: link Discord on nextendo.network. Verification may take a few minutes."
+                                  : "Nextendo account not yet verified: confirm your email address."))
+                            .seleneFont(15)
+                            .foregroundStyle(SeleneTheme.ink60)
+                            .multilineTextAlignment(.trailing)
+                            .frame(maxWidth: canvas.u(340), alignment: .trailing)
+                    }
                 } else if nextendo.isWaitingForBrowser || nextendo.isBusy && !nextendo.isRefreshingFriends || signedOut {
                     NextendoValue(text: text(nextendo.isWaitingForBrowser ? "Waiting for your browser…"
                                              : nextendo.isBusy ? "Checking…" : "Signed out"))
@@ -376,6 +389,11 @@ struct SettingsAPISection: View {
         }
         if nextendo.status == .expired { buttons.append(signIn) }
         buttons.append(.init("Check status") { nextendo.check(clientID: clientID) })
+        if nextendo.failure == .discordUnlinked || nextendo.failure == .emailUnverified {
+            buttons.append(.init("Open Nextendo account") {
+                NSWorkspace.shared.open(URL(string: "https://nextendo.network/compte.html")!)
+            })
+        }
         buttons.append(.init("Sign out", action: nextendo.signOut))
         return buttons
     }

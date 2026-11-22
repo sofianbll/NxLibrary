@@ -52065,6 +52065,72 @@
         }
       }
     },
+    "Nextendo account not yet verified: link Discord on nextendo.network. Verification may take a few minutes.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Nextendo-Konto noch nicht bestätigt: Verknüpfe Discord auf nextendo.network. Die Bestätigung kann einige Minuten dauern."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Nextendo account not yet verified: link Discord on nextendo.network. Verification may take a few minutes."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Cuenta de Nextendo aún sin verificar: vincula Discord en nextendo.network. La verificación puede tardar unos minutos."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Compte Nextendo pas encore vérifié : reliez Discord sur nextendo.network. La validation peut prendre quelques minutes."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Account Nextendo non ancora verificato: collega Discord su nextendo.network. La verifica può richiedere alcuni minuti."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Conta Nextendo ainda não verificada: vincule o Discord em nextendo.network. A verificação pode levar alguns minutos."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "Nextendo 账号尚未验证：请在 nextendo.network 绑定 Discord。验证可能需要几分钟。"}}
+      }
+    },
+    "Nextendo account not yet verified: confirm your email address.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Nextendo-Konto noch nicht bestätigt: Bestätige deine E-Mail-Adresse."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Nextendo account not yet verified: confirm your email address."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Cuenta de Nextendo aún sin verificar: confirma tu correo electrónico."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Compte Nextendo pas encore vérifié : confirmez votre adresse e-mail."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Account Nextendo non ancora verificato: conferma il tuo indirizzo e-mail."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Conta Nextendo ainda não verificada: confirme seu endereço de e-mail."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "Nextendo 账号尚未验证：请确认你的电子邮件地址。"}}
+      }
+    },
+    "Open Nextendo account": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Nextendo-Konto öffnen"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Open Nextendo account"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Abrir cuenta de Nextendo"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ouvrir le compte Nextendo"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Apri account Nextendo"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Abrir conta Nextendo"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "打开 Nextendo 账号页面"}}
+      }
+    },
+    "Session expired: sign in again": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Sitzung abgelaufen: erneut anmelden"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Session expired: sign in again"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Sesión caducada: vuelve a iniciar sesión"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Session expirée : reconnectez-vous"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Sessione scaduta: accedi di nuovo"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Sessão expirada: entre novamente"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "会话已过期：请重新登录"}}
+      }
+    },
+    "Nextendo server unavailable (%@)": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Nextendo-Server nicht verfügbar (%@)"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Nextendo server unavailable (%@)"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Servidor de Nextendo no disponible (%@)"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Serveur Nextendo indisponible (%@)"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Server Nextendo non disponibile (%@)"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Servidor Nextendo indisponível (%@)"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "Nextendo 服务器不可用（%@）"}}
+      }
+    },
+    "Error (%@ · %@)": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Fehler (%@ · %@)"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Error (%@ · %@)"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Error (%@ · %@)"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Erreur (%@ · %@)"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Errore (%@ · %@)"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Erro (%@ · %@)"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "错误（%@ · %@）"}}
+      }
+    },
     "Offline": {
       "comment": "nxnative launcher.json",
       "localizations": {

@@ -1,4 +1,5 @@
 import XCTest
+import NXLibraryCore
 @testable import ArcanePorting
 
 final class NextendoAccountServiceTests: XCTestCase {
@@ -200,7 +201,7 @@ final class NextendoAccountServiceTests: XCTestCase {
             "/api/profile": #"{"profile":null}"#,
             "/api/friends": #"{"friends":[]}"#,
             "/api/nex-token": #"{"pid":42,"nex_token":"synthetic-game-bearer"}"#,
-            "/api/online-status": #"{"allow":false,"reason":"unverified"}"#,
+            "/api/online-status": #"{"allow":false,"reason":"elsewhere"}"#,
         ])
         let result = try await client.check(clientID: "public-test")
         let snapshot = try XCTUnwrap(result)
@@ -213,6 +214,21 @@ final class NextendoAccountServiceTests: XCTestCase {
         XCTAssertNil(snapshot.sent)
         XCTAssertNil(snapshot.recentPlayers)
         XCTAssertEqual(snapshot.failure, .onlinePlayUnavailable)
+    }
+
+    func testAccountCheckDistinguishesDiscordFromEmailVerification() async throws {
+        for (reason, expected) in [("discord_unlinked", NextendoError.discordUnlinked), ("unverified", .emailUnverified)] {
+            let (client, _) = try await makeClient([
+                "/api/oauth/userinfo": #"{"username":"player"}"#,
+                "/api/me": #"{}"#, "/api/profile": #"{}"#, "/api/friends": #"{"friends":[]}"#,
+                "/api/nex-token": #"{"nex_token":"synthetic-game-bearer"}"#,
+                "/api/online-status": #"{"allow":false,"reason":"\#(reason)"}"#,
+                "/api/recent-players": #"{"players":[]}"#,
+            ])
+            let snapshot = try await client.check(clientID: "public-test")
+            XCTAssertEqual(snapshot?.username, "player")
+            XCTAssertEqual(snapshot?.failure, expected)
+        }
     }
 
     func testUnauthorizedAccountIsRefreshedAtMostOnceAndDoesNotExposeTokens() async throws {
@@ -231,7 +247,8 @@ final class NextendoAccountServiceTests: XCTestCase {
                 XCTAssertEqual(snapshot?.name, "player")
             } catch {
                 XCTAssertEqual(rejectCount, 2)
-                XCTAssertEqual(error as? NextendoError, .expired)
+                XCTAssertEqual((error as? NextendoError)?.checkDiagnostic,
+                               .init(route: "/api/oauth/userinfo", code: 401))
                 XCTAssertFalse(String(reflecting: error).contains("synthetic-"))
                 XCTAssertFalse(error.localizedDescription.contains("synthetic-"))
             }
@@ -240,6 +257,48 @@ final class NextendoAccountServiceTests: XCTestCase {
             let authorization = await server.authorization(for: "/api/oauth/userinfo")
             XCTAssertEqual(authorization, ["Bearer synthetic-access-1", "Bearer synthetic-access-2"])
         }
+    }
+
+    func testAccountCheckIdentifiesUnauthorizedFriends() async throws {
+        try await assertAccountCheckIdentifiesFailure(.success(401), "Session expirée : reconnectez-vous")
+    }
+
+    func testAccountCheckIdentifiesForbiddenFriends() async throws {
+        try await assertAccountCheckIdentifiesFailure(.success(403), "Session expirée : reconnectez-vous")
+    }
+
+    func testAccountCheckIdentifiesOfflineTransport() async throws {
+        try await assertAccountCheckIdentifiesFailure(.failure(URLError(.notConnectedToInternet)), "Hors ligne")
+    }
+
+    func testAccountCheckIdentifiesServerFailure() async throws {
+        try await assertAccountCheckIdentifiesFailure(.success(503), "Serveur Nextendo indisponible (503)")
+    }
+
+    func testAccountCheckIdentifiesOtherHTTPFailure() async throws {
+        try await assertAccountCheckIdentifiesFailure(.success(429), "Erreur (/api/friends · 429)")
+    }
+
+    private func assertAccountCheckIdentifiesFailure(_ failure: Result<Int, URLError>, _ message: String) async throws {
+        let (client, _) = try await makeClient([
+            "/api/oauth/userinfo": #"{"username":"player"}"#,
+            "/api/me": #"{}"#, "/api/profile": #"{}"#,
+            "/api/nex-token": #"{"nex_token":"synthetic-game-bearer"}"#,
+            "/api/online-status": #"{"allow":true}"#, "/api/recent-players": #"{"players":[]}"#,
+        ], friendFailure: failure)
+        let result = try await client.check(clientID: "public-test")
+        let snapshot = try XCTUnwrap(result)
+        XCTAssertEqual(snapshot.username, "player")
+        XCTAssertNil(snapshot.friends)
+        let issue = try XCTUnwrap(snapshot.failure)
+        let diagnostic = try XCTUnwrap(issue.checkDiagnostic)
+        XCTAssertEqual(diagnostic.route, "/api/friends")
+        let code = switch failure {
+        case .success(let status): status
+        case .failure(let error): error.code.rawValue
+        }
+        XCTAssertEqual(diagnostic.code, code)
+        XCTAssertEqual(diagnostic.message(context: AppLocale(language: .french, region: "FR")), message)
     }
 
     func testUntrustedTransportErrorsAndPartialPayloadsAreNotDisplayed() async throws {
@@ -297,14 +356,15 @@ final class NextendoAccountServiceTests: XCTestCase {
 
     private func makeClient(_ responses: [String: String], rejectUserInfo: Int = 0,
                             userInfoStarted: AsyncStream<Void>.Continuation? = nil, avatar: Data? = nil,
-                            posts: [String: (Int, String)] = [:]) async throws
+                            posts: [String: (Int, String)] = [:],
+                            friendFailure: Result<Int, URLError>? = nil) async throws
         -> (NextendoAccountService, Server) {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("Nextendo-account-\(UUID())")
         addTeardownBlock { try? FileManager.default.removeItem(at: directory) }
         let store = NextendoTokenStore(directory: directory)
         _ = try await store.withLock { try $0.write("synthetic-refresh-0") }
         let server = Server(responses: responses, rejectUserInfo: rejectUserInfo, userInfoStarted: userInfoStarted,
-                            avatar: avatar, posts: posts)
+                            avatar: avatar, posts: posts, friendFailure: friendFailure)
         let oauth = NextendoOAuth(store: store) { try await server.send($0) }
         return (NextendoAccountService(oauth: oauth), server)
     }
@@ -315,17 +375,19 @@ final class NextendoAccountServiceTests: XCTestCase {
         let userInfoStarted: AsyncStream<Void>.Continuation?
         let avatar: Data?
         let posts: [String: (Int, String)]
+        let friendFailure: Result<Int, URLError>?
         private(set) var refreshGrants = 0
         private(set) var postBodies: [String: [String]] = [:]
         private var requests: [String: [String]] = [:]
 
         init(responses: [String: String], rejectUserInfo: Int, userInfoStarted: AsyncStream<Void>.Continuation?,
-             avatar: Data?, posts: [String: (Int, String)]) {
+             avatar: Data?, posts: [String: (Int, String)], friendFailure: Result<Int, URLError>?) {
             self.responses = responses
             self.rejectUserInfo = rejectUserInfo
             self.userInfoStarted = userInfoStarted
             self.avatar = avatar
             self.posts = posts
+            self.friendFailure = friendFailure
         }
 
         func authorization(for path: String) -> [String] { requests[path] ?? [] }
@@ -362,7 +424,12 @@ final class NextendoAccountServiceTests: XCTestCase {
                 return reply(status, json)
             }
             XCTAssertEqual(request.httpMethod, "GET")
-            if path == "/api/friends" { XCTAssertEqual(url.query, "images=0") }
+            if path == "/api/friends" {
+                XCTAssertEqual(url.query, "images=0")
+                if let friendFailure {
+                    return reply(try friendFailure.get(), #"{"error":"synthetic-response-body"}"#)
+                }
+            }
             if path == "/api/oauth/userinfo", requests[path, default: []].count <= rejectUserInfo {
                 return reply(401, #"{"error":"synthetic-access-should-not-leak"}"#)
             }
