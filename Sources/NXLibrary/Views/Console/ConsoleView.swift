@@ -106,7 +106,7 @@ struct ConsoleView: View {
                     SeleneHintsBar(left: [HintItem(.b, searching ? L10n.text("Done") : L10n.text("Back"))],
                                    right: [HintItem(.a, aLabel)],
                                    bottom: SeleneBottomScrim.hintsBottom, leftInset: 18)
-                        .opacity(confirmClear ? 0 : 1)
+                        .seleneOverlaidHints(confirmClear)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -557,7 +557,7 @@ struct ConsoleView: View {
         if confirmClear {
             switch action {
             case .navigateLeft, .navigateRight:
-                let next: SeleneConfirmButton = action == .navigateLeft ? .cancel : .confirm
+                let next: SeleneConfirmButton = action == .navigateLeft ? .left : .right
                 if confirmFocus != next {
                     confirmFocus = next
                     SoundEffectService.shared.play(.focus)

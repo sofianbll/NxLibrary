@@ -58,8 +58,8 @@ struct SteamGridDBKeyDialog: View {
         .onReceive(NotificationCenter.default.publisher(for: gamepad)) { note in
             guard let action = note.object as? GamepadAction else { return }
             switch action {
-            case .navigateLeft: focus = .cancel
-            case .navigateRight: focus = .confirm
+            case .navigateLeft: focus = .left
+            case .navigateRight: focus = .right
             case .confirm: focus == .cancel ? close(saved: false) : save()
             case .cancel: close(saved: false)
             default: break

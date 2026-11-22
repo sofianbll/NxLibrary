@@ -61,6 +61,9 @@
     "Set profile code": {"localizations": {
       "en": {"stringUnit":{"state":"translated","value":"Set profile code"}}, "it": {"stringUnit":{"state":"translated","value":"Imposta codice del profilo"}}, "fr": {"stringUnit":{"state":"translated","value":"Définir le code du profil"}}, "de": {"stringUnit":{"state":"translated","value":"Profilcode festlegen"}}, "es": {"stringUnit":{"state":"translated","value":"Configurar el código del perfil"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Definir código do perfil"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"设置个人资料密码"}}
     }},
+    "Confirm": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Confirm"}}, "it": {"stringUnit":{"state":"translated","value":"Conferma"}}, "fr": {"stringUnit":{"state":"translated","value":"Confirmer"}}, "de": {"stringUnit":{"state":"translated","value":"Bestätigen"}}, "es": {"stringUnit":{"state":"translated","value":"Confirmar"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Confirmar"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"确认"}}
+    }},
     "Confirm profile code": {"localizations": {
       "en": {"stringUnit":{"state":"translated","value":"Confirm profile code"}}, "it": {"stringUnit":{"state":"translated","value":"Conferma codice del profilo"}}, "fr": {"stringUnit":{"state":"translated","value":"Confirmer le code du profil"}}, "de": {"stringUnit":{"state":"translated","value":"Profilcode bestätigen"}}, "es": {"stringUnit":{"state":"translated","value":"Confirmar el código del perfil"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Confirmar código do perfil"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"确认个人资料密码"}}
     }},

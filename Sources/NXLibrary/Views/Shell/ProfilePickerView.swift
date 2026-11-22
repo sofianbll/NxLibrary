@@ -216,8 +216,8 @@ struct ProfilePickerView: View {
     private func handle(_ action: GamepadAction) {
         if removing != nil {
             switch action {
-            case .navigateLeft: removalFocus = .cancel
-            case .navigateRight: removalFocus = .confirm
+            case .navigateLeft: removalFocus = .left
+            case .navigateRight: removalFocus = .right
             case .confirm: if removalFocus == .confirm { remove() } else { removing = nil }
             case .cancel: removing = nil
             default: break

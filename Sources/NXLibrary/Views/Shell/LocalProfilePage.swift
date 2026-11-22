@@ -162,8 +162,8 @@ struct LocalProfilePage: View {
         }
         if let nextendo, nextendo.friendToRemove != nil {
             switch action {
-            case .navigateLeft: removalFocus = .cancel
-            case .navigateRight: removalFocus = .confirm
+            case .navigateLeft: removalFocus = .left
+            case .navigateRight: removalFocus = .right
             case .confirm where removalFocus == .confirm: removeFriend()
             case .confirm, .cancel: nextendo.friendToRemove = nil
             default: break

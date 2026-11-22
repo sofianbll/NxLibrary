@@ -311,17 +311,13 @@ struct ProfileSwitchDialog: View {
         VStack {
             if waiting {
                 SeleneChoiceDialog(title: title, message: L10n.text(hasSteam ? "Close any Steam games yourself before switching." : "Waiting for the game to close…"),
-                                   choices: ["Cancel"], focus: .constant(0), cancelIndex: 0) { _ in onCancel() }
+                                   choices: ["Cancel"], focus: .constant(0), cancelIndex: 0, onCancel: onCancel) { _ in onCancel() }
             } else {
                 SeleneChoiceDialog(title: title, message: details, choices: [primary, "Cancel"], focus: $focus,
-                                   cancelIndex: 1) { $0 == 0 ? onConfirm() : onCancel() }
+                                   cancelIndex: 1, onCancel: onCancel) { $0 == 0 ? onConfirm() : onCancel() }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .overlay(alignment: .bottom) {
-            SeleneHintsBar(left: [HintItem(.b, "Cancel", action: onCancel)],
-                           right: waiting ? [] : [HintItem(.a, "Select", action: accept)])
-        }
         .onReceive(NotificationCenter.default.publisher(for: .nxProfileInput)) { note in
             switch note.object as? GamepadAction {
             case .navigateLeft: focus = 0

@@ -86,6 +86,8 @@ struct SettingsView: View {
             .padding(.top, canvas.u(SeleneTokens.Space.stageHeader))
             .frame(maxHeight: .infinity, alignment: .top)
             SeleneHintsBar(right: commandHints)
+                .seleneOverlaidHints(showingCloudAssistant || igdb.isEditing || viewModel.isEditingSteamGridDBKey
+                                    || (supportsNextendo && (nextendo.isEditingClient || nextendo.friendToRemove != nil)))
         }
         .id(theme.palette.id)
         .overlay(alignment: .bottom) {
@@ -468,8 +470,8 @@ struct SettingsView: View {
         if viewModel.isEditingSteamGridDBKey || igdb.isEditing || nextendo.isEditingClient || showingCloudAssistant { return }
         if nextendo.friendToRemove != nil {
             switch action {
-            case .navigateLeft: nextendoRemovalFocus = .cancel
-            case .navigateRight: nextendoRemovalFocus = .confirm
+            case .navigateLeft: nextendoRemovalFocus = .left
+            case .navigateRight: nextendoRemovalFocus = .right
             case .confirm where nextendoRemovalFocus == .confirm: confirmNextendoRemoval()
             case .confirm, .cancel: nextendo.friendToRemove = nil
             default: break

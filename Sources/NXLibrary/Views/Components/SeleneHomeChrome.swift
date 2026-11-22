@@ -83,5 +83,6 @@ private struct OverlaidHints: ViewModifier {
             .offset(y: hidden && !reduceMotion ? canvas.u(12) : 0)
             .animation(reduceMotion ? nil : SeleneTheme.cubicOut(0.3), value: hidden)
             .allowsHitTesting(!hidden)
+            .accessibilityHidden(hidden)
     }
 }

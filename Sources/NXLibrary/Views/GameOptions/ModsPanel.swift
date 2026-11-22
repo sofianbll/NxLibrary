@@ -102,6 +102,7 @@ struct ModsPanel: View {
                                bottom: SeleneBottomScrim.hintsBottom, leftInset: 18)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .seleneOverlayOwnership(confirmRemove == nil)
 
             if let name = confirmRemove {
                 confirmOverlay(name)
@@ -428,8 +429,8 @@ struct ModsPanel: View {
     private func handleGamepad(_ action: GamepadAction) {
         if confirmRemove != nil {
             switch action {
-            case .navigateLeft: moveConfirmFocus(.cancel)
-            case .navigateRight: moveConfirmFocus(.confirm)
+            case .navigateLeft: moveConfirmFocus(.left)
+            case .navigateRight: moveConfirmFocus(.right)
             case .confirm: confirmFocus == .confirm ? runRemove() : dismissConfirm()
             case .cancel: dismissConfirm()
             default: break

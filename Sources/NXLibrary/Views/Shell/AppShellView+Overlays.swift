@@ -37,6 +37,7 @@ extension AppShellView {
                                choices: notice.choices,
                                focus: $viewModel.settingsNoticeFocus,
                                cancelIndex: notice.choices.count > 1 ? notice.cancelIndex : nil, details: notice.choiceDetails,
+                               onCancel: { finishSettingsNotice() },
                                onChoose: { finishSettingsNotice(choice: $0) })
         }
     }
@@ -157,7 +158,7 @@ extension AppShellView {
     func installFailureInput(_ action: GamepadAction) {
         switch action {
         case .navigateLeft, .navigateRight:
-            let next: SeleneConfirmButton = action == .navigateLeft ? .cancel : .confirm
+            let next: SeleneConfirmButton = action == .navigateLeft ? .left : .right
             if viewModel.installFailureFocus != next {
                 viewModel.installFailureFocus = next
                 SoundEffectService.shared.play(.focus)
@@ -190,7 +191,7 @@ extension AppShellView {
     func closeGameInput(_ action: GamepadAction) {
         switch action {
         case .navigateLeft, .navigateRight:
-            let next: SeleneConfirmButton = action == .navigateLeft ? .cancel : .confirm
+            let next: SeleneConfirmButton = action == .navigateLeft ? .left : .right
             if viewModel.closeGameFocus != next {
                 viewModel.closeGameFocus = next
                 SoundEffectService.shared.play(.focus)
@@ -236,7 +237,7 @@ extension AppShellView {
     func updateOfferInput(_ action: GamepadAction) {
         switch action {
         case .navigateLeft, .navigateRight:
-            let next: SeleneConfirmButton = action == .navigateLeft && updater.dialogHasSecondaryButton ? .cancel : .confirm
+            let next: SeleneConfirmButton = action == .navigateRight && updater.dialogHasSecondaryButton ? .right : .left
             if updater.offerFocus != next {
                 updater.offerFocus = next
                 SoundEffectService.shared.play(.focus)
@@ -261,7 +262,7 @@ extension AppShellView {
     func removeGameInput(_ action: GamepadAction) {
         switch action {
         case .navigateLeft, .navigateRight:
-            let next: SeleneConfirmButton = action == .navigateLeft ? .cancel : .confirm
+            let next: SeleneConfirmButton = action == .navigateLeft ? .left : .right
             if viewModel.removeGameFocus != next {
                 viewModel.removeGameFocus = next
                 SoundEffectService.shared.play(.focus)

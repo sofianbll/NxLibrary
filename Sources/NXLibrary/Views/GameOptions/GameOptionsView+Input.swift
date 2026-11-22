@@ -106,7 +106,7 @@ extension GameOptionsView {
     /// Left/Right: the dialog's pills, or the value of a focused choice row.
     private func horizontal(by delta: Int) {
         if confirm != nil {
-            let next: SeleneConfirmButton = delta < 0 ? .cancel : .confirm
+            let next: SeleneConfirmButton = delta < 0 ? .left : .right
             if next != confirmFocus {
                 confirmFocus = next
                 SoundEffectService.shared.play(.focus)

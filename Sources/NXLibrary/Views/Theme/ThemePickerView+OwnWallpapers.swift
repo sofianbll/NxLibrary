@@ -38,10 +38,9 @@ extension ThemePickerView {
 
     func handleRemoval(_ action: GamepadAction) {
         switch action {
-        case .navigateLeft:
-            if removalFocus != .cancel { removalFocus = .cancel; SoundEffectService.shared.play(.focus) }
-        case .navigateRight:
-            if removalFocus != .confirm { removalFocus = .confirm; SoundEffectService.shared.play(.focus) }
+        case .navigateLeft, .navigateRight:
+            let next: SeleneConfirmButton = action == .navigateLeft ? .left : .right
+            if removalFocus != next { removalFocus = next; SoundEffectService.shared.play(.focus) }
         case .confirm:
             removalFocus == .confirm ? confirmRemoval() : keepIt()
         case .cancel:

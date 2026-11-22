@@ -174,7 +174,7 @@ struct ChangeMetadataView: View {
                                bottom: SeleneBottomScrim.hintsBottom, leftInset: 18)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .allowsHitTesting(!editing)
+            .seleneOverlayOwnership(!editing)
             if editing { editor }
         }
         .onAppear(perform: installKeyMonitor)
@@ -529,8 +529,8 @@ struct ChangeMetadataView: View {
     private func handleGamepad(_ action: GamepadAction) {
         if editing {
             switch action {
-            case .navigateLeft: editorFocus = .cancel
-            case .navigateRight: editorFocus = .confirm
+            case .navigateLeft: editorFocus = .left
+            case .navigateRight: editorFocus = .right
             case .confirm: if editorFocus == .confirm { saveDraft() } else { editing = false }
             case .cancel: editing = false
             default: break

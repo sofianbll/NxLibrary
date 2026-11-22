@@ -246,8 +246,10 @@ import ArcanePorting
                 SettingsView(initialSection: section, viewModel: vm, settings: settings, router: AppRouter(), artwork: art)
             }.environment(\.nxAppLocale, french), in: out, refs, "screenshots/game-options.png")
         }
+        precondition(SeleneConfirmButton.ordered == [.confirm, .cancel])
+        try render("11-remove", picker(selected: sam.id, removing: sam).environment(\.nxAppLocale, french),
+                   in: out, refs, "web/182-15.png")
         L10n.setContext(.init(language: .english, region: "US"))
-        try render("11-remove", picker(selected: sam.id, removing: sam), in: out, refs, "web/182-15.png")
         // Y on a profile: the wizard replaces the selector, with one bar of hints; closing it brings the selector back.
         try render("21-picker-y-wizard", picker(selected: sam.id, editing: sam, overlay: true), in: out, refs,
                    "web/182-12.png")
@@ -356,7 +358,7 @@ import ArcanePorting
         try render("31-profile-saves-copy", ZStack {
             SeleneBackdrop().still(true)
             SavesPanel(viewModel: vm, game: zelda, onClose: {}, copyingFrom: [alex])
-        }, in: out, refs, "none")
+        }.environment(\.nxAppLocale, french), in: out, refs, "none")
         precondition(profiles.choose(alex.id))
         let capturedSave = try vm.saveContext(for: zelda, launchProfileID: sam.id).location
         precondition(capturedSave == scopedSave, "Changing profiles must not reroute the launched game's achievements")
@@ -702,7 +704,8 @@ def main():
         saves = app / "Views/GameOptions/SavesPanel.swift"
         replace(saves, r"onClose: @escaping \(\) -> Void\) \{",
                 "onClose: @escaping () -> Void, copyingFrom: [LocalProfile] = []) {\n"
-                "        _copyFrom = State(initialValue: copyingFrom)")
+                "        _copyFrom = State(initialValue: copyingFrom)\n"
+                "        _copyFocus = State(initialValue: copyingFrom.count)")
         # The two snapshots share a game fixture; neither needs the live save lease or key monitor.
         replace(saves, r"\n        \.onAppear \{ model.refresh\(\); installKeyMonitor\(\) \}", "")
         replace(saves, r"ProgressView\(\)\.controlSize\(\.small\)\.tint\(SeleneTheme.ink60\)", "Color.clear")

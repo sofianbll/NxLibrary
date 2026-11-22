@@ -128,6 +128,11 @@ struct CloudSetupAssistant: View {
         case .verify: return work == nil && draft.verified
         }
     }
+    private var showsPrimary: Bool {
+        (draft.step != .account || remotes != nil)
+            && (enteredSourcesPath != nil || (work?.kind != .discover
+                && librarySuggestion == nil && sourcesSuggestion == nil))
+    }
 
     var body: some View {
         ZStack {
@@ -167,20 +172,20 @@ struct CloudSetupAssistant: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     HStack(spacing: canvas.u(14)) {
-                        pill(.cancel, move != nil ? "Cancel" : draft.step == .verify || folderName != nil
-                             || enteredSourcesPath != nil || (selectingSources && entry != .sources) ? "Back" : "Cancel",
-                             enabled: move?.isCancelling != true, action: cancel)
                         if folderName != nil {
                             pill(.create, "Continue", enabled: folderName.map(CloudDriveFolders.validName) == true,
                                  action: proposeCreation)
-                        } else if (draft.step != .account || remotes != nil)
-                            && (enteredSourcesPath != nil || (work?.kind != .discover
-                                && librarySuggestion == nil && sourcesSuggestion == nil)) {
+                        } else if showsPrimary {
                             pill(.primary, primaryTitle, enabled: primaryEnabled, action: primary)
                         }
+                        pill(.cancel, move != nil ? "Cancel" : draft.step == .verify || folderName != nil
+                             || enteredSourcesPath != nil || (selectingSources && entry != .sources) ? "Back" : "Cancel",
+                             enabled: move?.isCancelling != true, action: cancel)
                     }
                 }
-                .modifier(SeleneDialogCard())
+                .modifier(SeleneDialogCard(
+                    cancelHint: move?.isCancelling == true ? nil : HintItem(.b, "Cancel"),
+                    confirmHint: focusRows.joined().isEmpty ? nil : HintItem(.a, "Confirm")))
             }
         }
         .onAppear { inspect(); installAssistantKeys() }
@@ -728,10 +733,10 @@ struct CloudSetupAssistant: View {
     var focusedTarget: Target { focus.current(in: focusRows) }
 
     private var focusRows: [[Target]] {
-        if creation != nil { return [[.cancel, .create]] }
-        if confirmingMove { return [[.cancel, .confirmMove]] }
-        if folderName != nil { return [[.folderName], [.cancel] + (folderName.map(CloudDriveFolders.validName) == true ? [.create] : [])] }
-        if enteredSourcesPath != nil { return [[.sourcesPath], [.cancel] + (primaryEnabled ? [.primary] : [])] }
+        if creation != nil { return [[.create, .cancel]] }
+        if confirmingMove { return [[.confirmMove, .cancel]] }
+        if folderName != nil { return [[.folderName], (folderName.map(CloudDriveFolders.validName) == true ? [.create] : []) + [.cancel]] }
+        if enteredSourcesPath != nil { return [[.sourcesPath], (primaryEnabled ? [.primary] : []) + [.cancel]] }
         var rows: [[Target]] = []
         switch draft.step {
         case .account:
@@ -757,7 +762,7 @@ struct CloudSetupAssistant: View {
         case .verify:
             if work == nil && !draft.verified { rows = [[.retry]] }
         }
-        return rows + [(move?.isCancelling == true ? [] : [.cancel]) + (primaryEnabled ? [.primary] : [])]
+        return rows + [(showsPrimary && primaryEnabled ? [.primary] : []) + (move?.isCancelling == true ? [] : [.cancel])]
     }
 
     func perform(_ target: Target) {
