@@ -25,6 +25,7 @@ jobs:
         run: |
           python3 scripts/check_publication.py
           python3 scripts/check_localizations.py
+          python3 scripts/check_selene_tokens.py
       - name: Publication check regressions
         run: python3 -m unittest discover -s Tests/PublicationChecks
       - name: Swift tests
@@ -55,5 +56,6 @@ jobs:
         run: |
           python3 scripts/check_publication.py
           python3 scripts/check_localizations.py
+          python3 scripts/check_selene_tokens.py
       - name: Publication check regressions
         run: python3 -m unittest discover -s Tests/PublicationChecks
