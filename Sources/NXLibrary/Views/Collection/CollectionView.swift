@@ -20,6 +20,7 @@ struct CollectionView: View {
     @ObservedObject var cloud: CloudLibraryModel
 
     @Environment(\.seleneCanvas) var canvas
+    @Environment(\.nxAppLocale) private var localization
 
     @StateObject var art = SeleneHeroArt()
     /// Art the player picks redraws the hero and logo (their task keys carry its revision).
@@ -138,7 +139,9 @@ struct CollectionView: View {
     private func stage(games: [CatalogGame], game: PortedGame?) -> some View {
         ZStack(alignment: .topLeading) {
             if let profileCard {
-                Text(L10n.text(profileCard.title)).seleneFont(.screenTitle, .semibold)
+                Text(L10n.text(profileCard.title, context: localization))
+                    .seleneFont(.screenTitle, .semibold)
+                    .foregroundStyle(SeleneTheme.ink)
                     .accessibilityAddTraits(.isHeader)
                     .padding(.horizontal, canvas.u(SeleneTokens.Space.chromeGutter))
                     .frame(height: canvas.u(SeleneTokens.Space.stageHeader))
@@ -195,7 +198,7 @@ struct CollectionView: View {
         if viewModel.isScanningLibrary {
             EmptyView()
         } else if profileCard != nil {
-            Text(L10n.text("No games in this view."))
+            Text(L10n.text("No games in this view.", context: localization))
                 .seleneFont(.dialogTitle)
                 .foregroundColor(SeleneTheme.ink)
         } else if hasAnyGame {

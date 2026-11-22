@@ -816,6 +816,9 @@ def main():
         replace(app / "Views/Spotlight/SeleneArtBackground.swift",
                 r"            SeleneArtLayer\(image: art,[^\n]*\n",
                 "            if let art { Image(nsImage: art).resizable().scaledToFill() }\n")
+        # ImageRenderer never runs the asynchronous cover lookup: use the synthetic game art already loaded by the probe.
+        replace(app / "Views/Components/SwitchBoxArtCover.swift", r"            if let cover \{",
+                r'            if let cover = cover ?? TileArtMemo.shared.object(forKey: "nxnative|\(game.id)" as NSString) {')
         replace(app / "Views/Theme/MoonlightRenderer.swift", r"                if let image \{\n                    Image\(decorative:",
                 "                if let image = engine.snapshot(width: max(w, 1), height: max(h, 1), colors: colors) {\n                    Image(decorative:")
         # ImageRenderer does not rasterize AppKit scroll views or fields. Render their real SwiftUI contents.
