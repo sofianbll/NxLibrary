@@ -14,7 +14,7 @@ Menu apre il centro di controllo al rilascio; a 500 ms apre invece Settings, con
 | Ordinamento | RS | RS | R3 | F3 |
 | Cambia vista | View | − | Clic del touchpad | V |
 | Centro / Settings | ≡ | + | Options | ⌘K / ⌘, |
-| Cerca | — | — | — | ⌘F (o clic su Find a game) |
+| Cerca | View per 0,5 s | − per 0,5 s | Clic del touchpad per 0,5 s | ⌘F |
 
 | Schermata | Comandi specifici |
 |---|---|
@@ -25,4 +25,4 @@ Menu apre il centro di controllo al rilascio; a 500 ms apre invece Settings, con
 | Centro di controllo | A seleziona; B chiude un pannello o il centro. Menu corto non chiude il centro. |
 | Ricerca, opzioni, Setup e dialoghi | Prendono l'input prima della schermata sottostante. Solo B/Esc torna indietro o chiude via scorciatoia. |
 
-La barra Selene usa i simboli del profilo attivo quando leggibili, poi quelli della famiglia riconosciuta; Options e touchpad possono mostrare il nome fisico. Su PlayStation, Create non cambia vista. La preferenza per disattivare View è in Settings → Navigation.
+La barra Selene usa i simboli del profilo attivo quando leggibili, poi quelli della famiglia riconosciuta; Options e touchpad possono mostrare il nome fisico. Con una manetta, Cerca è il secondo gesto di View; senza manetta la barra mostra ⌘F. Su PlayStation, Create non cambia vista. Settings → Navigation può disattivare il cambio di vista senza disattivare la ricerca.

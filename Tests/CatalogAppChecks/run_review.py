@@ -444,16 +444,26 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
             .up: .navigateUp, .down: .navigateDown, .left: .navigateLeft, .right: .navigateRight,
             .a: .confirm, .b: .cancel, .x: .secondaryAction, .y: .contextAction,
             .l: .tabPrevious, .r: .tabNext, .zl: .jumpToStart, .zr: .jumpToEnd,
-            .r3: .rightStickPress, .view: .view,
+            .r3: .rightStickPress,
         ]
         for button in ControllerButton.allCases {
             require(GamepadAction.onPress(button) == presses[button], "Unexpected binding for \(button)")
         }
-        let actions = ControllerButton.allCases.compactMap(GamepadAction.onPress)
-            + [GamepadAction.menuAction(.tap), GamepadAction.menuAction(.hold)]
+        let held: [ControllerButton: (GamepadAction, GamepadAction)] = [.menu: (.menu, .menuHold), .view: (.view, .search)]
+        var actions = ControllerButton.allCases.compactMap(GamepadAction.onPress)
+        for button in ControllerButton.allCases {
+            require(GamepadAction.holdAction(button, .tap) == held[button]?.0
+                    && GamepadAction.holdAction(button, .hold) == held[button]?.1, "Unexpected hold binding for \(button)")
+            if let (tap, long) = held[button] { actions += [tap, long] }
+        }
+        var viewHold = HoldDetector()
+        viewHold.press(at: 1)
+        let tap = viewHold.release(at: 1.2).flatMap { GamepadAction.holdAction(.view, $0) }
+        viewHold.press(at: 2)
+        let hold = viewHold.tick(at: 2.5).flatMap { GamepadAction.holdAction(.view, $0) }
+        require(tap == .view && hold == .search && viewHold.release(at: 2.6) == nil,
+                "View hold must open Search without switching views on release")
         require(Set(actions).count == actions.count, "No two button gestures may emit the same command")
-        require(GamepadAction.menuAction(.tap) == .menu && GamepadAction.menuAction(.hold) == .menuHold,
-                "Menu opens the control center on tap and Settings on hold")
         let screens: [(AppRoute, Notification.Name)] = [
             (.library, .nxSpotlightGamepadAction), (.collection, .nxCollectionGamepadAction),
             (.detail(UUID()), .nxDetailGamepadAction), (.settings(.startUp), .nxSettingsGamepadAction),

@@ -316,7 +316,7 @@ In fullscreen, the pointer hides after three seconds without movement. Moving th
 | Back | Escape | Back button |
 | Control center | `⌘K` | Tap Menu / `+` / Options |
 | Settings | `⌘,` | Hold Menu / `+` / Options for 0.5 s |
-| Find a game | `⌘F` | — |
+| Find a game | `⌘F` | Hold View / `−` / touchpad click for 0.5 s |
 | Switch library view | `V` | View / `−` / touchpad click |
 | Switch tabs / filters | Q / E where shown | LB / RB |
 

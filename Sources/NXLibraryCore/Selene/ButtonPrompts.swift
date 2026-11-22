@@ -8,7 +8,7 @@ public enum ButtonNameStyle: String, Codable, CaseIterable, Identifiable {
 }
 
 public enum PromptButton: String, CaseIterable {
-    case a, b, x, y, lb, rb, lt, rt, rs, view, menu
+    case a, b, x, y, lb, rb, lt, rt, rs, view, menu, move, search
 }
 
 public enum ConnectedPad {
@@ -43,6 +43,8 @@ public enum ButtonPrompts {
         case .rt: return .text(L10n.text("end"))
         case .view: return .text("V")
         case .menu: return .text("⌘K")
+        case .move: return .text("← →")
+        case .search: return .text("⌘F")
         }
     }
     public static func label(_ button: PromptButton, style: ButtonNameStyle, connected: ConnectedPad) -> String {
@@ -86,7 +88,7 @@ public enum ButtonPrompts {
         "inset", "filled", "dashed", "dotted", "lefthalf", "righthalf", "tophalf", "bottomhalf"
     ]
 
-    private static func nintendoSymbol(_ b: PromptButton) -> String {
+    private static func nintendoSymbol(_ b: PromptButton) -> String? {
         switch b {
         case .a: return "a.circle"
         case .b: return "b.circle"
@@ -99,10 +101,12 @@ public enum ButtonPrompts {
         case .rs: return "r.joystick.press.down"
         case .view: return "minus.circle"
         case .menu: return "plus.circle"
+        case .move: return "arrow.left.and.right"
+        case .search: return nil
         }
     }
 
-    private static func xboxSymbol(_ b: PromptButton) -> String {
+    private static func xboxSymbol(_ b: PromptButton) -> String? {
         switch b {
         case .a: return "a.circle"
         case .b: return "b.circle"
@@ -115,6 +119,8 @@ public enum ButtonPrompts {
         case .rs: return "r.joystick.press.down"
         case .view: return "rectangle.on.rectangle.circle"
         case .menu: return "line.3.horizontal.circle"
+        case .move: return "arrow.left.and.right"
+        case .search: return nil
         }
     }
 
@@ -129,7 +135,8 @@ public enum ButtonPrompts {
         case .lt: return "l2.rectangle.roundedtop"
         case .rt: return "r2.rectangle.roundedtop"
         case .rs: return "r.joystick.press.down"
-        case .view, .menu: return nil // Use the physical button's label if the framework has no glyph.
+        case .move: return "arrow.left.and.right"
+        case .view, .menu, .search: return nil // Use the key's label when no glyph is defined.
         }
     }
 
@@ -155,6 +162,8 @@ public enum ButtonPrompts {
         case .rs: return "RS"
         case .view: return "−"
         case .menu: return "+"
+        case .move: return "← →"
+        case .search: return "⌘F"
         }
     }
 
@@ -171,6 +180,8 @@ public enum ButtonPrompts {
         case .rs: return "RS"
         case .view: return "View"
         case .menu: return "Menu"
+        case .move: return "← →"
+        case .search: return "⌘F"
         }
     }
 
@@ -187,6 +198,8 @@ public enum ButtonPrompts {
         case .rs: return "R3"
         case .view: return L10n.text("Touchpad")
         case .menu: return "Options"
+        case .move: return "← →"
+        case .search: return "⌘F"
         }
     }
 }

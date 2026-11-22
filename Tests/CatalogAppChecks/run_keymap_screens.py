@@ -34,19 +34,50 @@ final class ThemeStore {
         let output = URL(fileURLWithPath: CommandLine.arguments[2])
         let font = root.appendingPathComponent("Resources/Selene/Fonts/MaterialIcons-Regular.ttf")
         precondition(CTFontManagerRegisterFontsForURL(font as CFURL, .process, nil))
+        let locale = AppLocale(language: .french, region: "FR")
+        L10n.setContext(locale)
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
-        for (name, brand): (String, GamepadBrand) in [
-            ("xbox", .xbox), ("switch", .nintendoSwitch), ("ps5", .playstation),
+        for (name, brand): (String?, GamepadBrand?) in [
+            ("xbox", .xbox), ("switch", .nintendoSwitch), ("ps5", .playstation), ("keyboard", nil),
+            (nil, .generic),
         ] {
-            GameControllerService.shared.activeBrand = brand
+            GameControllerService.shared.activeBrand = brand ?? .generic
+            GameControllerService.shared.isGamepadConnected = brand != nil
             let left = HintItem.homeGlobals(other: "Spotlight", onOther: {}, onMenu: {}, onSearch: {})
             let right = [HintItem(.a, "Play"), HintItem(.x, "Details"), HintItem(.y, "Game options")]
+            let bar = SeleneHintsBar(left: left, right: right)
+            precondition(bar.visibleLeft(connected: brand != nil).map(\.button)
+                         == (brand == nil ? [.view, .menu, .search] : [.view, .menu]))
+            precondition(left.first?.hold == "Hold: Search")
+            let withoutSwitch = HintItem.homeGlobals(other: "Spotlight", onOther: nil, onMenu: {}, onSearch: {})
+            let alternateBar = SeleneHintsBar(left: withoutSwitch)
+            precondition(alternateBar.visibleLeft(connected: brand != nil).map(\.button)
+                         == (brand == nil ? [.menu, .search] : [.view, .menu]))
+            let pad = ConnectedPad(connected: brand != nil, brand: brand ?? .generic)
+            // HintItem requires a PromptButton on every screen; each token must render a glyph or a labeled keycap.
+            for style in ButtonNameStyle.allCases {
+                for button in PromptButton.allCases {
+                    if button == .search || ButtonPrompts.usesKeyboard(style: style, connected: pad) {
+                        switch ButtonPrompts.keyboardKey(button) {
+                        case .symbol(let symbol):
+                            precondition(NSImage(systemSymbolName: symbol, accessibilityDescription: nil) != nil)
+                        case .text(let text): precondition(!text.trimmingCharacters(in: .whitespaces).isEmpty)
+                        }
+                    } else if ButtonPrompts.symbol(button, style: style, connected: pad)
+                        .flatMap(SelenePromptBadge.filled) == nil {
+                        precondition(!ButtonPrompts.label(button, style: style, connected: pad)
+                            .trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
+                }
+            }
+            guard let name else { continue }
             let view = ZStack(alignment: .bottom) {
                 Rectangle().fill(SeleneTheme.baseGradient)
                 SeleneBottomScrim()
-                SeleneHintsBar(left: left, right: right)
+                bar
             }.frame(width: 1344, height: 756)
                 .environment(\.seleneCanvas, SeleneCanvas(size: .init(width: 1344, height: 756)))
+                .environment(\.nxAppLocale, locale)
                 .frame(height: 160, alignment: .bottom)
                 .clipped()
             let renderer = ImageRenderer(content: view)
@@ -56,7 +87,7 @@ final class ThemeStore {
             else { fatalError("Could not render \(name)") }
             try png.write(to: output.appendingPathComponent("\(name).png"))
         }
-        print("Rendered three Selene help bars without a window.")
+        print("Verified every hint token and rendered four Selene help bars without a window.")
     }
 }
 '''

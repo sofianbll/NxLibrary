@@ -97,7 +97,8 @@ final class ButtonPromptsTests: XCTestCase {
 
     func testEveryButtonHasASymbolInEveryStyle() {
         for style in ButtonNameStyle.allCases where style != .automatic {
-            for button in PromptButton.allCases where style != .playstation || (button != .view && button != .menu) {
+            for button in PromptButton.allCases where button != .search
+                && (style != .playstation || (button != .view && button != .menu)) {
                 XCTAssertNotNil(ButtonPrompts.symbol(button, style: style, connected: .none))
             }
         }
@@ -112,6 +113,7 @@ final class ButtonPromptsTests: XCTestCase {
         XCTAssertEqual(ButtonPrompts.keyboardKey(.view), .text("V"))
         XCTAssertEqual(ButtonPrompts.keyboardKey(.rb), .text("E"))
         XCTAssertEqual(ButtonPrompts.keyboardKey(.rs), .text("F3"))
+        XCTAssertEqual(ButtonPrompts.keyboardKey(.search), .text("⌘F"))
     }
 
     func testFaceAndMenuLabelsByFamily() {

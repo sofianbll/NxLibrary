@@ -77,7 +77,7 @@ enum GamepadAction: Hashable {
     case menu              // Menu / + / Options (tap)
     case menuHold          // Menu / + / Options (hold)
     case view              // View / − / Touchpad
-    case search            // ⌘F
+    case search            // View / − / Touchpad (hold), or ⌘F
     case jumpToStart       // Left trigger
     case jumpToEnd         // Right trigger
     case rightStickPress   // R3
@@ -97,12 +97,15 @@ enum GamepadAction: Hashable {
         case .zl: return .jumpToStart
         case .zr: return .jumpToEnd
         case .r3: return .rightStickPress
-        case .view: return .view
-        case .menu, .home, .l3, .capture: return nil
+        case .view, .menu, .home, .l3, .capture: return nil
         }
     }
 
-    static func menuAction(_ result: HoldResult) -> Self {
-        result == .tap ? .menu : .menuHold
+    static func holdAction(_ button: ControllerButton, _ result: HoldResult) -> Self? {
+        switch button {
+        case .menu: return result == .tap ? .menu : .menuHold
+        case .view: return result == .tap ? .view : .search
+        default: return nil
+        }
     }
 }

@@ -53,7 +53,7 @@ struct ControlsView: View {
             ("Menu", "⌘K · " + name(.menu)),
             ("Hold: Settings", "⌘, · " + name(.menu)),
             ("View", "V · " + name(.view)),
-            ("Find a game", "⌘F"),
+            ("Find a game", "⌘F · " + name(.view) + " (\(L10n.text("Hold: Search")))"),
             (L10n.text("Move a tile"), L10n.text("Hold Confirm on a Spotlight tile"))
         ]
     }

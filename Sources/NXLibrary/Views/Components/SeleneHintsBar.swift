@@ -2,19 +2,18 @@ import SwiftUI
 import NXLibraryCore
 
 struct HintItem: Identifiable {
-    /// Stable across renders: the button (or glyph) and the label.
-    var id: String { "\(button?.rawValue ?? glyph?.rawValue ?? "-")|\(label)" }
-    var button: PromptButton?
-    var glyph: MaterialIcon?
+    /// Stable across renders: the button and the label.
+    var id: String { "\(button.rawValue)|\(label)" }
+    let button: PromptButton
     var label: String
     var hold: String?
+    var controllerOnly = false
     /// A mouse click on the hint, when the screen has one for it.
     var action: (() -> Void)?
 
-    init(_ button: PromptButton?, _ label: String, glyph: MaterialIcon? = nil, hold: String? = nil,
+    init(_ button: PromptButton, _ label: String, hold: String? = nil,
          action: (() -> Void)? = nil) {
         self.button = button
-        self.glyph = glyph
         self.label = label
         self.hold = hold
         self.action = action
@@ -37,6 +36,7 @@ struct SeleneHintsBar: View {
     @Environment(\.nxAppLocale) private var localization
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneShowButtonHints) private var showHints
+    @ObservedObject private var controller = GameControllerService.shared
 
     var left: [HintItem] = []
     var right: [HintItem] = []
@@ -52,7 +52,9 @@ struct SeleneHintsBar: View {
     var body: some View {
         if showHints {
             HStack(alignment: .bottom, spacing: canvas.u(22)) {
-                HStack(spacing: canvas.u(22)) { ForEach(left) { item($0) } }
+                HStack(spacing: canvas.u(22)) {
+                    ForEach(visibleLeft(connected: controller.isGamepadConnected)) { item($0) }
+                }
                     .padding(.leading, canvas.u(leftInset))
                 Spacer(minLength: canvas.u(22))
                 HStack(spacing: canvas.u(22)) {
@@ -71,6 +73,10 @@ struct SeleneHintsBar: View {
             // A soft shadow lifts the prompts off whatever art is behind them.
             .shadow(color: .black.opacity(0.5), radius: canvas.u(6), y: canvas.u(1))
         }
+    }
+
+    func visibleLeft(connected: Bool) -> [HintItem] {
+        left.filter { connected ? $0.button != .search : !$0.controllerOnly }
     }
 
     private var rightSlots: [HintItem?] {
@@ -92,11 +98,7 @@ struct SeleneHintsBar: View {
 
     private func content(_ item: HintItem, reserve: [String] = []) -> some View {
         HStack(spacing: canvas.u(8)) {
-            if let button = item.button {
-                SelenePromptBadge(button: button)
-            } else if let glyph = item.glyph {
-                badge { MaterialIconView(glyph, size: 18) }
-            }
+            SelenePromptBadge(button: item.button)
             VStack(alignment: .leading, spacing: 0) {
                 ZStack(alignment: .leading) {
                     ForEach(reserve, id: \.self) { Text(L10n.text($0, context: localization)).seleneFont(19).hidden() }
@@ -104,20 +106,12 @@ struct SeleneHintsBar: View {
                         .seleneFont(19)
                         .foregroundColor(SeleneTheme.ink90)
                 }
-                if let hold = item.hold {
+                if controller.isGamepadConnected, let hold = item.hold {
                     Text(L10n.text(hold, context: localization))
                         .seleneFont(13).foregroundColor(SeleneTheme.ink60)
                 }
             }
         }
         .shadow(color: .black.opacity(0.55), radius: canvas.u(4), y: canvas.u(1))
-    }
-
-    private func badge<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        content()
-            .foregroundColor(SeleneTheme.scrim)
-            .padding(.horizontal, canvas.u(8))
-            .frame(minWidth: canvas.u(30), minHeight: canvas.u(30))
-            .background(RoundedRectangle(cornerRadius: canvas.u(15), style: .continuous).fill(SeleneTheme.ink))
     }
 }

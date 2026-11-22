@@ -21,7 +21,7 @@ extension SpotlightView {
 
     func contextHints(_ model: Snapshot, _ state: SpotlightState) -> [HintItem] {
         if state.isLifted {
-            return [HintItem(nil, L10n.text("◂ ▸  Move")), HintItem(.a, L10n.text("Drop")), HintItem(.b, L10n.text("Cancel"))]
+            return [HintItem(.move, "Move"), HintItem(.a, L10n.text("Drop")), HintItem(.b, L10n.text("Cancel"))]
         }
         if cardMenu != nil {
             return [HintItem(.a, L10n.text("Select")), HintItem(.b, L10n.text("Back"))]

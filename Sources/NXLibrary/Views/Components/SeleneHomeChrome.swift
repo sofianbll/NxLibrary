@@ -43,12 +43,14 @@ struct SeleneHomeChrome<Backdrop: View, Stage: View>: View {
 }
 
 extension HintItem {
-    /// Both home screens' left hints: the other view, Menu and mouse/keyboard Search.
+    /// Both home screens share View's hold label and the keyboard-only search keycap.
     static func homeGlobals(other: String, onOther: (() -> Void)?, onMenu: @escaping () -> Void,
                             onSearch: @escaping () -> Void) -> [HintItem] {
-        (onOther.map { [HintItem(.view, other, action: $0)] } ?? [])
-            + [HintItem(.menu, "Menu", hold: "Hold: Settings", action: onMenu),
-               HintItem(nil, "Find a game", glyph: .search, action: onSearch)]
+        var view = HintItem(.view, onOther == nil ? "Hold: Search" : other,
+                            hold: onOther == nil ? nil : "Hold: Search", action: onOther ?? onSearch)
+        view.controllerOnly = onOther == nil
+        return [view, HintItem(.menu, "Menu", hold: "Hold: Settings", action: onMenu),
+                HintItem(.search, "Search", action: onSearch)]
     }
 }
 
