@@ -305,6 +305,7 @@ final class AppViewModel: ObservableObject {
                 guard let self else { return }
                 self.hasActiveSaveOperations = self.saveGate.hasActiveOperations
                 self.cloudLibrary.appInstallWake?.yield(())
+                MainActor.assumeIsolated { self.startNextCloudOperation() }
                 self.porting.scheduleNextBuild()
             }
         }

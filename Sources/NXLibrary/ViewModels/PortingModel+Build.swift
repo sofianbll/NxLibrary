@@ -307,7 +307,14 @@ extension PortingModel {
         app.buildQueue = pendingBuilds.ids
         guard hasRestoredBuildQueue else { return }
         hasBuildQueueWrites = true
-        buildQueueStore.save([activeBuildRequest].compactMap { $0 } + pendingBuilds.entries.map(\.value))
+        buildQueueStore.save([activeBuildRequest].compactMap { $0 } + pendingBuilds.entries.map(\.value)) { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                let message = L10n.text("The build queue could not be saved. Builds may not resume after quitting.")
+                self.app.logs.append(LogEntry(level: .error, message: message))
+                self.app.alertMessage = message
+            }
+        }
     }
 
     func scheduleNextBuild() {

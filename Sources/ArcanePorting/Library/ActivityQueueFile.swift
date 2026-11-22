@@ -52,8 +52,8 @@ package final class ActivityQueueFile<Entry: Codable & Sendable>: Sendable {
 
     package func save(_ entries: [Entry], onFailure: (@Sendable () -> Void)? = nil) {
         io.async {
-            guard self.canWrite.withLock({ $0 }) else { return }
             do {
+                guard self.canWrite.withLock({ $0 }) else { throw CocoaError(.fileWriteUnknown) }
                 try FileManager.default.createDirectory(at: self.file.deletingLastPathComponent(), withIntermediateDirectories: true)
                 try JSONEncoder().encode(WriteSnapshot(entries: entries)).write(to: self.file, options: .atomic)
             } catch {

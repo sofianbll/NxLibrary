@@ -76327,6 +76327,17 @@
         }
       }
     },
+    "The build queue could not be saved. Builds may not resume after quitting.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "The build queue could not be saved. Builds may not resume after quitting."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Impossibile salvare la coda di compilazione. Le compilazioni potrebbero non riprendere dopo l’uscita."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Impossible d’enregistrer la file de compilation. Les compilations risquent de ne pas reprendre après avoir quitté Arcane."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Die Build-Warteschlange konnte nicht gespeichert werden. Builds werden nach dem Beenden möglicherweise nicht fortgesetzt."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se pudo guardar la cola de compilación. Es posible que las compilaciones no se reanuden después de salir."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível salvar a fila de compilação. As compilações podem não ser retomadas após sair."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "无法保存构建队列。退出后可能无法继续构建。"}}
+      }
+    },
     "Move to Trash: %@. The installed app, saves and logs stay. Rebuilds will be disabled until you attach the sources again.": {
       "comment": "Source removal safety copy. User paths/names remain verbatim.",
       "localizations": {

@@ -290,6 +290,7 @@ extension PortingModel {
         activeBuildToolchain = nil
         finishActivityBuild(result.cancelled ? .cancelled : result.success && activityFailure == nil
             ? .succeeded : .failed(activityFailure ?? L10n.text("Porting failed")))
+        app.startNextCloudOperation()
         scheduleNextBuild()
     }
 
