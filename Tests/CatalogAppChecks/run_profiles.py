@@ -38,6 +38,7 @@ import ArcanePorting
                               platform: .macApp, sizeBytes: 0, modificationDate: .now, titleId: "0100000000001000")
         let slate = LocalProfile(name: "", look: alex.look)
         ProfileEditorView.checkInput(existing: sam, new: slate)
+        let (rejectedPIN, readyPIN) = ProfilePINDialog.checkInput()
         print("Profile editor input checks passed")
         let avatarGames = (0..<7).map { index -> CatalogGame in
             var item = game
@@ -246,8 +247,17 @@ import ArcanePorting
                        in: out, refs, reference, size: .init(width: 1600, height: 900))
         }
         try render("settings-profile-pin", SettingsView(initialSection: .profileSecurity, viewModel: vm, settings: settings,
-                   router: settingsRouter, artwork: art, fixturePIN: true).environment(\.nxAppLocale, french),
-                   in: out, refs, "none")
+                   router: settingsRouter, artwork: art, fixturePIN: "set").environment(\.nxAppLocale, french),
+                   in: out, refs, "none", names: .automatic)
+        var locked = profiles.active!
+        precondition(locked.setPIN("1234") && profiles.update(locked))
+        try render("settings-profile-change-pin", SettingsView(initialSection: .profileSecurity, viewModel: vm,
+                   settings: settings, router: settingsRouter, artwork: art, fixturePIN: "change")
+                   .environment(\.nxAppLocale, french), in: out, refs, "none", names: .playstation)
+        try render("settings-profile-remove-pin", SettingsView(initialSection: .profileSecurity, viewModel: vm,
+                   settings: settings, router: settingsRouter, artwork: art, fixturePIN: "remove")
+                   .environment(\.nxAppLocale, french), in: out, refs, "none", names: .nintendo)
+        SettingsView.checkPINChange(viewModel: vm, settings: settings, artwork: art, profiles: profiles)
         for section: SettingsSection in [.profileIdentity, .profileNextendo, .profileCards] {
             SettingsView(initialSection: section, viewModel: vm, settings: settings, router: settingsRouter, artwork: art)
                 .pressScreenFixtureReset()
@@ -279,12 +289,18 @@ import ArcanePorting
                 }
             }, in: out, refs, "none")
         }
-        try render("33-profile-lock", ZStack {
-            picker(selected: alex.id).seleneOverlayOwnership(false)
-            SeleneOverlay(style: .profileRemoval) {
-                ProfilePINDialog(title: "Unlock profile", onCancel: {}, onPIN: { _ in nil })
-            }
-        }, in: out, refs, "none")
+        func lock(_ dialog: ProfilePINDialog) -> some View {
+            ZStack {
+                picker(selected: alex.id).seleneOverlayOwnership(false)
+                SeleneOverlay(style: .profileRemoval) { dialog }
+            }.environment(\.nxAppLocale, french)
+        }
+        L10n.setContext(french)
+        try render("33-profile-lock", lock(.init(title: "Unlock profile", onCancel: {}, onPIN: { _ in nil })),
+                   in: out, refs, "none", names: .nintendo)
+        try render("34-profile-lock-error", lock(rejectedPIN), in: out, refs, "none")
+        try render("35-profile-lock-ready", lock(readyPIN), in: out, refs, "none")
+        L10n.setContext(.init(language: .english, region: "US"))
         func stage<Bar: View>(_ top: Bar, showsSort: Bool = true, player: LocalProfile? = nil) -> some View {
             ZStack(alignment: .top) {
                 SeleneBackdrop().still(true)
@@ -1015,6 +1031,145 @@ extension ProfileEditorView {
 }
 '''
 
+PIN_TEST = r'''
+extension ProfilePINDialog {
+    @MainActor static var inspectFixture: ((Self) -> Void)?
+
+    @MainActor static func checkInput() -> (rejected: Self, ready: Self) {
+        var mounted: Self?
+        var submitted: [String] = []
+        var cancelled = 0
+        inspectFixture = { mounted = $0 }
+        defer { inspectFixture = nil }
+        let dialog = Self(title: "Unlock profile", onCancel: { cancelled += 1 }, onPIN: { pin in
+            submitted.append(pin)
+            return pin == "2345" ? nil : "Incorrect code."
+        })
+        let host = NSHostingView(rootView: AnyView(dialog.frame(width: 1440, height: 810)))
+        host.frame = CGRect(x: 0, y: 0, width: 1440, height: 810)
+        func settle() {
+            _ = host.fittingSize
+            host.layoutSubtreeIfNeeded()
+            RunLoop.main.run(until: Date().addingTimeInterval(0.02))
+        }
+        func post(_ input: Any, channel: Notification.Name = .nxProfileInput) {
+            NotificationCenter.default.post(name: channel, object: input)
+            settle()
+        }
+        func press(_ action: GamepadAction) { post(action) }
+        func key(_ text: String, code: UInt16, modifiers: NSEvent.ModifierFlags = []) {
+            let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: modifiers,
+                                        timestamp: 0, windowNumber: 0, context: nil, characters: text,
+                                        charactersIgnoringModifiers: text, isARepeat: false, keyCode: code)!
+            precondition(Self.handleKey(event, input: .nxProfileInput) == nil)
+            settle()
+        }
+        func fill() {
+            for (digit, code) in [("2", UInt16(19)), ("3", 20), ("4", 21), ("5", 23)] { key(digit, code: code) }
+        }
+        settle()
+        precondition(mounted != nil && host.window == nil)
+        post(8, channel: .nxSettingsPINInput)
+        precondition(mounted!.keypad.count == 0)
+        press(.menu)
+        precondition(submitted.isEmpty && !mounted!.keypad.canValidate)
+        press(.navigateDown); press(.navigateDown); press(.navigateDown)
+        precondition(mounted!.keypad.selected == .erase)
+        press(.navigateRight); press(.confirm)
+        press(.secondaryAction)
+        precondition(mounted!.keypad.count == 0)
+        press(.confirm); press(.navigateLeft); press(.confirm)
+        precondition(mounted!.keypad.count == 0)
+        key("1", code: 18); key("\u{7f}", code: 51)
+        precondition(mounted!.keypad.count == 0)
+        press(.navigateRight); press(.navigateRight); press(.confirm)
+        precondition(mounted!.keypad.selected == .validate && submitted.isEmpty)
+        for digit in [0, 1, 2, 3] { post(digit) }
+        precondition(mounted!.keypad.canValidate && submitted.isEmpty)
+        press(.confirm)
+        precondition(submitted == ["0123"] && mounted!.keypad.count == 0 && mounted!.shakes == 1)
+        precondition(mounted!.error == "Incorrect code.")
+
+        // ImageRenderer doesn't mount @State, so seed a fresh dialog from the real rejected state.
+        var rejected = Self(title: "Unlock profile", onCancel: {}, onPIN: { _ in nil })
+        rejected._error = State(initialValue: mounted!.error)
+        rejected._keypad = State(initialValue: mounted!.keypad)
+        fill()
+        precondition(submitted == ["0123"] && mounted!.keypad.selected == .digit(1))
+        var ready = Self(title: "Unlock profile", onCancel: {}, onPIN: { _ in nil })
+        ready._keypad = State(initialValue: mounted!.keypad)
+        press(.menu)
+        precondition(submitted == ["0123", "2345"] && mounted!.error == nil)
+        fill()
+        key("\r", code: 36, modifiers: .command)
+        precondition(submitted == ["0123", "2345", "2345"])
+        press(.cancel)
+        precondition(cancelled == 1)
+
+        host.rootView = AnyView(dialog.environment(\.seleneReduceMotion, true).id("reduced").frame(width: 1440, height: 810))
+        settle()
+        for digit in [0, 1, 2, 3] { post(digit) }
+        press(.menu)
+        precondition(mounted!.error == "Incorrect code." && mounted!.keypad.count == 0 && mounted!.shakes == 0)
+        print("Profile keypad input checks passed")
+        return (rejected, ready)
+    }
+}
+'''
+
+SETTINGS_PIN_TEST = r'''
+extension SettingsView {
+    @MainActor static func checkPINChange(viewModel: AppViewModel, settings: AppSettingsStore,
+                                          artwork: ArtworkStore, profiles: LocalProfileStore) {
+        let router = AppRouter()
+        router.openSettings(.profileSecurity)
+        let view = Self(initialSection: .profileSecurity, viewModel: viewModel, settings: settings,
+                        router: router, artwork: artwork)
+        let host = NSHostingView(rootView: AnyView(view.frame(width: 1440, height: 810)))
+        host.frame = CGRect(x: 0, y: 0, width: 1440, height: 810)
+        func settle() {
+            _ = host.fittingSize
+            host.layoutSubtreeIfNeeded()
+            RunLoop.main.run(until: Date().addingTimeInterval(0.02))
+        }
+        func press(_ action: GamepadAction) {
+            NotificationCenter.default.post(name: .nxSettingsGamepadAction, object: action)
+            settle()
+        }
+        func enter(_ digits: [Int]) {
+            for digit in digits { NotificationCenter.default.post(name: .nxSettingsPINInput, object: digit) }
+            settle()
+            press(.menu)
+        }
+        settle()
+        press(.confirm) // Enter the Security rows.
+        press(.confirm) // Change code.
+        enter([4, 3, 2, 1])
+        enter([4, 3, 2, 1])
+        enter([4, 3, 2, 1])
+        precondition(profiles.active?.matchesPIN("1234") == true)
+        enter([1, 2, 3, 4])
+        enter([4, 3, 2, 1])
+        enter([4, 3, 2, 0])
+        precondition(profiles.active?.matchesPIN("1234") == true)
+        enter([4, 3, 2, 1])
+        precondition(profiles.active?.matchesPIN("4321") == true)
+        press(.navigateRight)
+        press(.confirm) // Remove code.
+        enter([4, 3, 2, 1])
+        precondition(profiles.active?.isLocked == false && host.window == nil)
+        press(.confirm) // Set code.
+        enter([1, 0, 1, 0])
+        precondition(profiles.active?.isLocked == false)
+        enter([1, 0, 1, 0])
+        precondition(profiles.active?.matchesPIN("1010") == true)
+        press(.secondaryAction) // Reset still asks for the current code.
+        enter([1, 0, 1, 0])
+        precondition(profiles.active?.isLocked == false)
+    }
+}
+'''
+
 
 def replace(file, old, new):
     original = file.read_text()
@@ -1134,10 +1289,11 @@ extension ProfilePage {
                 "\n                .fixedSize(horizontal: false, vertical: true)\n        }.clipped()\n    }\n\n    private var reduceMotion")
         settings_view = app / "Views/Settings/SettingsView.swift"
         replace(settings_view, r"profileAccount: NextendoSettings\? = nil\) \{",
-                "profileAccount: NextendoSettings? = nil, fixturePIN: Bool = false) {")
+                "profileAccount: NextendoSettings? = nil, fixturePIN: String? = nil) {")
         replace(settings_view, r"profiles = viewModel.localProfiles",
                 "profiles = viewModel.localProfiles\n"
-                "        _pinProfileID = State(initialValue: fixturePIN ? profiles?.active?.id : nil)")
+                "        _pinProfileID = State(initialValue: fixturePIN != nil ? profiles?.active?.id : nil)\n"
+                '        _pinAction = State(initialValue: fixturePIN == "remove" ? .remove : fixturePIN == "change" ? .change : .set)')
         replace(settings_view, r"@State private var focusArea: SettingsFocusArea = \.sidebar", "@State private var focusArea: SettingsFocusArea")
         replace(settings_view, r"_section = State\(initialValue: initialSection\)",
                 "_section = State(initialValue: initialSection)\n"
@@ -1149,6 +1305,7 @@ extension ProfilePage {
         with (app / "Views/Settings/SettingsView.swift").open("a") as swift:
             swift.write("\nextension SettingsView {\n    func pressScreenFixtureReset() { handleGamepad(.secondaryAction) }\n"
                         "    func pressScreenFixtureBack() { handleBack() }\n}\n")
+            swift.write(SETTINGS_PIN_TEST)
         with (app / "Views/Settings/SettingsPortingStorageSection.swift").open("a") as swift:
             swift.write("\nextension SettingsPortingStorageSection {\n    func publishScreenFixtureActions() { publishActions() }\n}\n")
         replace(app / "Views/Shell/ProfilePickerView.swift",
@@ -1167,6 +1324,13 @@ extension ProfilePage {
         replace(editor, r"    var body: some View \{\n", "    var body: some View {\n        let _ = Self.inspectFixture?(self)\n")
         with editor.open("a") as swift:
             swift.write(EDITOR_TEST)
+        pin = app / "Views/Shell/AppShellView+Profiles.swift"
+        replace(pin, r"(struct ProfilePINDialog: View \{.*?    var body: some View \{\n)",
+                lambda m: m[1] + "        let _ = Self.inspectFixture?(self)\n")
+        with pin.open("a") as swift:
+            swift.write(PIN_TEST)
+        replace(app / "Services/GameControllerService.swift", r"        gcSource.start\(\)\n        hidSource.start\(\)",
+                "        // The probe never starts physical controller discovery.")
         api = app / "Views/Settings/SettingsAPISection.swift"
         replace(api, r"            if supportsNextendo && accountOnly \{ nextendo.check\(clientID: clientID\) \}", "")
         replace(api, r"@State private var friendsExpanded = false",

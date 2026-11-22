@@ -22,6 +22,8 @@ struct SelenePromptBadge: View {
     var body: some View {
         if button == .search || ButtonPrompts.usesKeyboard(style: style, connected: pad) {
             keycap(keyboardOverride ?? ButtonPrompts.keyboardKey(button))
+        } else if button == .navigate {
+            badgeImage("dpad")
         } else if let name = ButtonPrompts.symbol(button, style: style, connected: pad,
                                            reported: controller.buttonSymbols),
            let symbol = Self.filled(name) {

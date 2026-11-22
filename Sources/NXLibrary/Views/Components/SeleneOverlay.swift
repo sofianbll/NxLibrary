@@ -53,3 +53,16 @@ struct SeleneHoverFocus {
         return true
     }
 }
+
+/// Selene's Ui.Shake: a short side-to-side for rejected input.
+struct SeleneShake: GeometryEffect {
+    var amount: CGFloat
+    let distance: CGFloat
+    var animatableData: CGFloat {
+        get { amount }
+        set { amount = newValue }
+    }
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        ProjectionTransform(CGAffineTransform(translationX: distance * sin(amount * .pi * 4), y: 0))
+    }
+}

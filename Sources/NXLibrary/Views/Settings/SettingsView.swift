@@ -26,7 +26,9 @@ struct SettingsView: View {
     @State private var cloudAdvanced = false
     @State private var multiplayerAdvanced = false
     @State private var localePicker: LocalePickerMode?
+    private enum PINAction { case set, change, remove }
     @State private var pinProfileID: UUID?
+    @State private var pinAction: PINAction = .set
     @State private var firstPIN: String?
     @State private var editingProfileName = false
     private var profileDialogOpen: Bool { editingProfileName || pinProfileID != nil }
@@ -231,11 +233,15 @@ struct SettingsView: View {
 
     @ViewBuilder private var profilePINOverlay: some View {
         if let profile = profiles?.active, pinProfileID == profile.id {
-            let title = profile.isLocked ? "Remove profile code" : firstPIN == nil ? "Set profile code" : "Confirm profile code"
+            let title = switch pinAction {
+            case .set: firstPIN == nil ? "Set profile code" : "Confirm profile code"
+            case .change: "Enter current profile code"
+            case .remove: "Remove profile code"
+            }
             SeleneOverlay(style: .profileRemoval, onOutside: cancelPIN) {
-                ProfilePINDialog(title: title, allowsTouchID: profile.isLocked, onCancel: cancelPIN,
+                ProfilePINDialog(title: title, allowsTouchID: pinAction == .remove, input: .nxSettingsPINInput, onCancel: cancelPIN,
                                  onTouchID: { _ = savePIN(nil) }, onPIN: enterPIN)
-                    .id(firstPIN != nil)
+                    .id(title)
             }
         }
     }
@@ -286,6 +292,7 @@ struct SettingsView: View {
                         profileNextendo: hasProfileAccount ? nextendo : nil,
                         onEditProfileName: { editingProfileName = true },
                         onProfilePIN: openPIN,
+                        onRemovePIN: { openPIN(removing: true) },
                         onViewControls: { showingControls = true },
                         onChooseLanguage: { localePicker = .language },
                         onChooseRegion: { localePicker = .region },
@@ -412,7 +419,7 @@ struct SettingsView: View {
                 saveProfileSetting(profile, in: profiles, notifying: viewModel)
             }
         case .profileSecurity:
-            openPIN()
+            openPIN(removing: true)
         case .profileNextendo:
             if let profiles, var profile = profiles.active {
                 profile.appearsOnline = nil
@@ -498,18 +505,11 @@ struct SettingsView: View {
                   !window.isSheet,
                   window.attachedSheet == nil,
                   NSApp.modalWindow == nil else { return event }
+            if pinProfileID != nil {
+                return ProfilePINDialog.handleKey(event, input: .nxSettingsPINInput)
+            }
             let modifiers = event.modifierFlags.intersection([.command, .control, .option])
             guard modifiers.isEmpty else { return event }
-            if pinProfileID != nil {
-                if let key = event.charactersIgnoringModifiers, key.utf8.count == 1, let digit = Int(key) {
-                    if !event.isARepeat { NotificationCenter.default.post(name: .nxProfileInput, object: digit) }
-                    return nil
-                }
-                if event.keyCode == 51 || event.keyCode == 16 {
-                    handleGamepad(event.keyCode == 51 ? .secondaryAction : .contextAction)
-                    return nil
-                }
-            }
             let typing = window.firstResponder is NSText
             if editingProfileName {
                 if typing && event.keyCode != 53 { return event }
@@ -566,7 +566,11 @@ struct SettingsView: View {
     }
 
     private func handleGamepad(_ action: GamepadAction) {
-        if profileDialogOpen {
+        if pinProfileID != nil {
+            NotificationCenter.default.post(name: .nxSettingsPINInput, object: action)
+            return
+        }
+        if editingProfileName {
             NotificationCenter.default.post(name: .nxProfileInput, object: action)
             return
         }
@@ -621,16 +625,24 @@ struct SettingsView: View {
         nextendo.updateFriend(.remove(pid: friend.id), clientID: settings.settings.nextendoClientID ?? NextendoLaunch.buildClientID)
     }
 
-    private func openPIN() {
-        guard let profiles, profiles.guest == nil else { return }
-        pinProfileID = profiles.active?.id
+    private func openPIN() { openPIN(removing: false) }
+
+    private func openPIN(removing: Bool) {
+        guard let profiles, profiles.guest == nil, let profile = profiles.active else { return }
+        pinAction = removing ? .remove : profile.isLocked ? .change : .set
+        pinProfileID = profile.id
     }
 
     private func cancelPIN() { pinProfileID = nil; firstPIN = nil }
 
     private func enterPIN(_ pin: String) -> String? {
         guard let profile = profiles?.active, profile.id == pinProfileID else { cancelPIN(); return nil }
-        if profile.isLocked { return profile.matchesPIN(pin) ? savePIN(nil) : "Incorrect code." }
+        if pinAction != .set {
+            guard profile.matchesPIN(pin) else { return "Incorrect code." }
+            if pinAction == .remove { return savePIN(nil) }
+            pinAction = .set
+            return nil
+        }
         guard let firstPIN else { self.firstPIN = pin; return nil }
         guard firstPIN == pin else { return "The codes do not match." }
         return savePIN(pin)
