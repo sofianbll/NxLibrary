@@ -168,7 +168,7 @@ Send trasmette Apple Archive in streaming a una chiave temporanea remota, senza 
 
 Con solo una copia cloud dell'app, Download sostituisce il pulsante principale e usa lo stesso ripristino del pannello: verifica hash, inventario e firma prima di pubblicare la copia mancante e riattivare Play. Il download usa Game apps per un titolo importato e non richiede sorgenti, cache o una build. La terza riga propone Send o Download per i file del gioco mancanti da un lato; con una divergenza non offre azioni.
 
-Nel pannello Download si riempie con i byte ricevuti, come l'azione principale in Spotlight e Details. Se il totale è ignoto, resta l'indicatore esistente. Cancel rimane un'azione separata nel pannello.
+Nel pannello Download si riempie con i byte ricevuti e li mostra una sola volta accanto al punto di stato. In Spotlight e Details una sola riga mostra fase e byte sotto Download. La barra resta quando il totale è ignoto o quando il pulsante non indica il progresso. Cancel rimane un'azione separata nel pannello.
 
 Durante la verifica, la riga Rebuild mostra una barra Selene; un clic, A o Invio sulla riga oppure B/Esc con la riga selezionata annulla la verifica. Se l'inventario dei metadati conferma che l'ultima compilazione riuscita ha scritto la cache locale dopo il manifest, Rebuild la riusa senza calcolarne l'hash. Se le copie differiscono e la data non dimostra che quella locale è più recente, il dialogo mette Download in testa e gli dà il focus, poi propone la cache di questo Mac, se valida, e Rebuild senza cache. Annulla è in fondo. Con un manifest senza cache, Rebuild usa i file originali e una cache temporanea. Dopo l'installazione, un'app diversa dal manifest risulta «Newer on this Mac» e resta da inviare manualmente.
 

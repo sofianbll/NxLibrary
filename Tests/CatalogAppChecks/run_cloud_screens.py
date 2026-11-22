@@ -134,23 +134,31 @@ DOWNLOAD_FILL = r'''
         checkDownloadFill(nil)
         try render("panel-download-idle", output,
             CloudLibraryPanel(viewModel: vm, model: model, game: game).environment(\.nxAppLocale, fr))
-        for percent in [0, 40, 100] {
+        for percent in [0, 40, 100, nil] as [Int?] {
             model.update(game.id) {
                 $0.action = .restore(.app)
                 $0.progress = .init(.downloading, kind: .app,
-                    transfer: .init(bytesTransferred: Int64(percent) * 1_000_000, totalBytes: 100_000_000))
+                    transfer: percent.map { .init(bytesTransferred: Int64($0) * 1_000_000, totalBytes: 100_000_000) })
             }
-            checkDownloadFill(Double(percent) / 100)
-            try render("panel-download-\(percent)", output,
+            checkDownloadFill(percent.map { Double($0) / 100 })
+            let suffix = percent.map(String.init) ?? "unknown"
+            if percent == 40 {
+                let progress = model.states[game.id]?.progress
+                let english = AppLocale(language: .english, region: "US")
+                precondition(CloudLibraryProgressView.bytesSummary(progress, context: english) == "40 MB of 100 MB")
+                precondition(CloudLibraryProgressView.downloadSummary(progress, context: english) ==
+                             "Downloading app · 40 MB of 100 MB")
+            }
+            try render("panel-download-\(suffix)", output,
                 CloudLibraryPanel(viewModel: vm, model: model, game: game).environment(\.nxAppLocale, fr))
-            try render("spotlight-download-\(percent)", output,
+            try render("spotlight-download-\(suffix)", output,
                 SpotlightGameInfoView(game: game, logo: nil,
                     presentation: .init(game: game, metadata: nil, totalPlaytime: 0, lastPlayed: nil),
                     isRunning: false, focusedPill: 0, onPill: { _ in }, onHoverPill: { _ in },
                     cloud: model, showsCloudPill: true, downloadsApp: true, downloadEnabled: true)
                     .environment(\.nxAppLocale, fr),
                 size: .init(width: 1120, height: 460))
-            try render("details-download-\(percent)", output,
+            try render("details-download-\(suffix)", output,
                 DetailsTopBlock(game: game, logo: nil,
                     presentation: .init(game: game, metadata: nil, totalPlaytime: 0, lastPlayed: nil),
                     isRunning: false, focusedPill: 0, primaryEnabled: true, expanded: .constant(false),
@@ -162,10 +170,6 @@ DOWNLOAD_FILL = r'''
         model.update(game.id) { $0.progress = .init(.verifying, kind: .app, downloadComplete: true) }
         checkDownloadFill(1)
         precondition(CloudLibraryProgressView.fraction(model.states[game.id]?.progress) == nil)
-        model.update(game.id) { $0.progress = .init(.downloading, kind: .app) }
-        checkDownloadFill(0)
-        try render("panel-download-unknown", output,
-            CloudLibraryPanel(viewModel: vm, model: model, game: game).environment(\.nxAppLocale, fr))
         model.update(game.id) { $0.queued = true }
         checkDownloadFill(nil)
 '''

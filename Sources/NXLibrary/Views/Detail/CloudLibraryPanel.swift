@@ -113,12 +113,15 @@ struct CloudLibraryPanel: View {
         }
         let control = artifactControl(item)
         let downloadFill = CloudLibraryProgressView.downloadFill(state, item: item)
+        let downloading = CloudLibraryProgressView.isDownloading(state, item: item)
+        let downloadBytes = downloadFill == nil ? nil
+            : CloudLibraryProgressView.bytesSummary(state.progress, context: localization)
         return VStack(alignment: .leading, spacing: canvas.u(8)) {
             HStack(spacing: canvas.u(12)) {
                 VStack(alignment: .leading, spacing: canvas.u(5)) {
                     Text(title).seleneFont(17, .semibold).foregroundColor(SeleneTheme.ink90)
                         .accessibilityAddTraits(.isHeader)
-                    SeleneStatusDot(text: indicator.label(context: localization), color: indicator.status.color,
+                    SeleneStatusDot(text: downloadBytes ?? indicator.label(context: localization), color: indicator.status.color,
                                     labelColor: indicator.status == .failed ? PortingPillCopy.softRed : SeleneTheme.ink90,
                                     accessibilityTitle: title,
                                     pulses: indicator.isTransferring)
@@ -126,23 +129,25 @@ struct CloudLibraryPanel: View {
                 .multilineTextAlignment(.leading)
                 .layoutPriority(1)
                 Spacer(minLength: 0)
-                VStack(alignment: .trailing, spacing: canvas.u(4)) {
-                    if live, CloudLibraryProgressView.fraction(state.progress) != nil {
-                        Text(CloudLibraryProgressView.summary(state.progress, context: localization, showsPhase: false))
-                            .seleneFont(13).monospacedDigit()
-                            .fixedSize(horizontal: false, vertical: true)
-                    } else {
-                        if let size { Text(size).seleneFont(15).monospacedDigit() }
-                        if !indicator.progress, let published {
-                            Text(published).seleneFont(13)
+                if downloadFill == nil {
+                    VStack(alignment: .trailing, spacing: canvas.u(4)) {
+                        if live, CloudLibraryProgressView.fraction(state.progress) != nil {
+                            Text(CloudLibraryProgressView.summary(state.progress, context: localization, showsPhase: false))
+                                .seleneFont(13).monospacedDigit()
+                                .fixedSize(horizontal: false, vertical: true)
+                        } else {
+                            if let size { Text(size).seleneFont(15).monospacedDigit() }
+                            if !indicator.progress, let published {
+                                Text(published).seleneFont(13)
+                            }
                         }
                     }
+                    .foregroundColor(SeleneTheme.ink75)
+                    .multilineTextAlignment(.trailing)
                 }
-                .foregroundColor(SeleneTheme.ink75)
-                .multilineTextAlignment(.trailing)
                 HStack(spacing: canvas.u(10)) {
-                    if let downloadFill, control == .cancel {
-                        downloadButton(nil, fill: downloadFill)
+                    if downloading, control == .cancel {
+                        downloadButton(nil, fill: downloadFill ?? 0)
                     }
                     if let control {
                         switch control {
@@ -164,7 +169,9 @@ struct CloudLibraryPanel: View {
                     .help(path)
             }
             if live {
-                CloudLibraryProgressView(progress: state.progress, status: indicator.status, showsSummary: false)
+                if downloadFill == nil {
+                    CloudLibraryProgressView(progress: state.progress, status: indicator.status, showsSummary: false)
+                }
             } else if let issue = state.issue, issue.item == item {
                 if issue.failed { failureLine(issue.message, failure: state.transferFailure, item: item) }
                 else {
@@ -396,14 +403,19 @@ struct CloudLibraryProgressView: View {
     let progress: CloudArchiveProgress?
     var status: CloudLibraryStatus = .pending
     var showsSummary = true
+    var showsBar = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: canvas.u(5)) {
             if showsSummary {
-                Text(Self.summary(progress, context: localization)).seleneFont(15).monospacedDigit()
-                    .foregroundColor(SeleneTheme.ink90)
+                let summary = showsBar ? Self.summary(progress, context: localization)
+                    : Self.downloadSummary(progress, context: localization)
+                Text(summary).seleneFont(15).monospacedDigit()
+                    .foregroundColor(showsBar ? SeleneTheme.ink90 : SeleneTheme.ink75)
             }
-            SeleneProgressBar(progress: Self.fraction(progress), height: showsSummary ? 6 : 4, color: status.color)
+            if showsBar {
+                SeleneProgressBar(progress: Self.fraction(progress), height: showsSummary ? 6 : 4, color: status.color)
+            }
         }
     }
 
@@ -412,14 +424,29 @@ struct CloudLibraryProgressView: View {
         return min(1, max(0, Double(transfer.bytesTransferred) / Double(transfer.totalBytes)))
     }
 
-    static func downloadFill(_ state: CloudLibraryState, item: CloudLibraryItem) -> Double? {
-        guard !state.queued, state.activeItem == item else { return nil }
+    static func isDownloading(_ state: CloudLibraryState, item: CloudLibraryItem) -> Bool {
+        guard !state.queued, state.activeItem == item else { return false }
         switch state.action {
-        case .restore, .restoreBuildCache, .downloadSources:
-            return state.progress?.downloadComplete == true ? 1 : fraction(state.progress) ?? 0
-        default:
-            return nil
+        case .restore, .restoreBuildCache, .downloadSources: return true
+        default: return false
         }
+    }
+
+    static func downloadFill(_ state: CloudLibraryState, item: CloudLibraryItem) -> Double? {
+        guard isDownloading(state, item: item) else { return nil }
+        return state.progress?.downloadComplete == true ? 1 : fraction(state.progress)
+    }
+
+    static func bytesSummary(_ progress: CloudArchiveProgress?, context: AppLocale) -> String? {
+        guard let transfer = progress?.transfer, transfer.totalBytes > 0 else { return nil }
+        func bytes(_ count: Int64) -> String { count.formatted(.byteCount(style: .file).locale(context.formatLocale)) }
+        return L10n.format("%@ of %@", [bytes(transfer.bytesTransferred), bytes(transfer.totalBytes)], context: context)
+    }
+
+    static func downloadSummary(_ progress: CloudArchiveProgress?, context: AppLocale) -> String {
+        guard let progress else { return L10n.text("Preparing cloud operation…", context: context) }
+        let phase = L10n.text(phaseKey(progress), context: context)
+        return bytesSummary(progress, context: context).map { phase + " · " + $0 } ?? phase
     }
 
     static func summary(_ progress: CloudArchiveProgress?, context: AppLocale, showsPhase: Bool = true) -> String {
@@ -427,12 +454,11 @@ struct CloudLibraryProgressView: View {
         guard let progress else { return text("Preparing cloud operation…") }
         var segments = showsPhase ? [text(phaseKey(progress))] : []
         let locale = context.formatLocale
-        func bytes(_ count: Int64) -> String { count.formatted(.byteCount(style: .file).locale(locale)) }
         if let transfer = progress.transfer, let fraction = fraction(progress) {
-            segments.append(L10n.format("%@ of %@", [bytes(transfer.bytesTransferred), bytes(transfer.totalBytes)], context: context))
+            if let bytes = bytesSummary(progress, context: context) { segments.append(bytes) }
             if showsPhase { segments.append(percent(fraction, context: context)) }
             if let speed = transfer.bytesPerSecond, speed.isFinite, speed > 0, speed < Double(Int64.max) {
-                segments.append(L10n.format("%@/s", [bytes(Int64(speed))], context: context))
+                segments.append(L10n.format("%@/s", [Int64(speed).formatted(.byteCount(style: .file).locale(locale))], context: context))
             }
             if let eta = estimate(progress, context: context) { segments.append(eta) }
         }

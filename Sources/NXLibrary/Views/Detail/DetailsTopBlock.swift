@@ -73,7 +73,8 @@ struct DetailsTopBlock: View {
             }
                 .padding(.top, canvas.u(pillSet.isFailed ? 10 : 26))
             if let state = cloud.states[game.id], let active = state.activeItem, active != .sources, !state.queued {
-                CloudLibraryProgressView(progress: state.progress)
+                CloudLibraryProgressView(progress: state.progress,
+                    showsBar: !showsDownloadPill || CloudLibraryProgressView.downloadFill(state, item: .app) == nil)
                     .frame(maxWidth: canvas.u(700), alignment: .leading)
                     .padding(.top, canvas.u(12))
             } else if let issue = cloud.states[game.id]?.issue, issue.item != .sources {
@@ -188,7 +189,7 @@ struct DetailsTopBlock: View {
                                      enabled: isRunning || (downloadsApp ? downloadEnabled && cloud.states[game.id]?.action == nil
                                          && cloud.states[game.id]?.refreshing != true
                                          : primaryEnabled && pillSet.unavailableReason == nil),
-                                     downloadFill: downloadsApp && !isRunning
+                                     downloadFill: showsDownloadPill
                                          ? CloudLibraryProgressView.downloadFill(state, item: .app) ?? 0 : nil,
                                      action: onPrimary)
                 }
@@ -224,6 +225,10 @@ struct DetailsTopBlock: View {
 
     private var downloadsApp: Bool {
         cloud.archive != nil && cloud.states[game.id]?.appIsCloudOnly == true
+    }
+
+    private var showsDownloadPill: Bool {
+        downloadsApp && !isRunning && pillSet != .queued && pillSet != .porting && !pillSet.isFailed
     }
 
     // MARK: - Stats

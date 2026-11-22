@@ -74,6 +74,14 @@ struct SpotlightGameInfoView: View {
                 }
                     .padding(.leading, canvas.u(2))
                     .padding(.top, canvas.u(pillSet.isFailed ? 10 : 18))
+                if showsDownloadPill, let state = cloud.states[game.id],
+                   CloudLibraryProgressView.isDownloading(state, item: .app) {
+                    CloudLibraryProgressView(progress: state.progress,
+                        showsBar: CloudLibraryProgressView.downloadFill(state, item: .app) == nil)
+                        .frame(maxWidth: canvas.u(700), alignment: .leading)
+                        .padding(.leading, canvas.u(2))
+                        .padding(.top, canvas.u(12))
+                }
                 portingNote
                     .padding(.leading, canvas.u(4))
                     .padding(.top, canvas.u(12))
@@ -157,10 +165,14 @@ struct SpotlightGameInfoView: View {
                                ? downloadEnabled && cloud.states[game.id]?.action == nil && cloud.states[game.id]?.refreshing != true
                                : pillSet.unavailableReason == nil),
                            primaryQueued: pillSet == .queued,
-                           primaryDownloadFill: downloadsApp && !isRunning
+                           primaryDownloadFill: showsDownloadPill
                                ? CloudLibraryProgressView.downloadFill(state, item: .app) ?? 0 : nil,
                            cloud: showsCloudPill ? CloudLibraryIndicator(state: state) : nil,
                            onAction: onPill, onHover: onHoverPill)
+    }
+
+    private var showsDownloadPill: Bool {
+        downloadsApp && !isRunning && pillSet != .queued && pillSet != .porting && !pillSet.isFailed
     }
 
     private var primaryTitle: String {
