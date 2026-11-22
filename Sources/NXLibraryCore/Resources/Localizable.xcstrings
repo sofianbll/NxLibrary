@@ -1,6 +1,380 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "A file or folder changed. Refresh and review the proposal again.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "A file or folder changed. Refresh and review the proposal again."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Un file o una cartella è cambiato. Aggiorna e controlla di nuovo."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Un fichier ou un dossier a changé. Actualisez et vérifiez à nouveau."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Eine Datei oder ein Ordner wurde geändert. Aktualisiere und prüfe erneut."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Cambió un archivo o una carpeta. Actualiza y vuelve a revisar."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Um arquivo ou pasta mudou. Atualize e confira novamente."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "文件或文件夹已更改。请刷新并重新检查。"}}
+      }
+    },
+    "Arcane did not discover the copy. The original was kept.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Arcane did not discover the copy. The original was kept."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Arcane non ha trovato la copia. L'originale è stato conservato."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Arcane n’a pas trouvé la copie. L’original a été conservé."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Arcane hat die Kopie nicht gefunden. Das Original wurde behalten."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Arcane no encontró la copia. Se conservó el original."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O Arcane não encontrou a cópia. O original foi mantido."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "Arcane 未找到副本。原文件已保留。"}}
+      }
+    },
+    "Not a supported incoming file.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Not a supported incoming file."}},
+        "it": {"stringUnit": {"state": "translated", "value": "File in arrivo non supportato."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ce fichier reçu n’est pas pris en charge."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Diese eingehende Datei wird nicht unterstützt."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Este archivo recibido no es compatible."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Este arquivo recebido não é compatível."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "不支持此收到的文件。"}}
+      }
+    },
+    "No single verified title, kind and version.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "No single verified title, kind and version."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Non è possibile verificare un solo titolo, tipo e versione."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Impossible de confirmer un titre, un type et une version uniques."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Titel, Typ und Version lassen sich nicht eindeutig bestätigen."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se pudo confirmar un solo título, tipo y versión."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível confirmar um único título, tipo e versão."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "无法验证唯一的游戏、类型和版本。"}}
+      }
+    },
+    "No unambiguous game name or destination.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "No unambiguous game name or destination."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nome del gioco o destinazione non univoci."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Le nom du jeu ou sa destination ne sont pas certains."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spielname oder Ziel sind nicht eindeutig."}},
+        "es": {"stringUnit": {"state": "translated", "value": "El nombre del juego o su destino no son inequívocos."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível determinar o nome do jogo ou o destino."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "无法确定游戏名称或目标位置。"}}
+      }
+    },
+    "No verified DLC name.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "No verified DLC name."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nome del DLC non verificato."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Le nom du DLC n’a pas pu être confirmé."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Der DLC-Name konnte nicht bestätigt werden."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se pudo confirmar el nombre del DLC."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível confirmar o nome do DLC."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "无法确认 DLC 名称。"}}
+      }
+    },
+    "The proposed name is too long.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "The proposed name is too long."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Il nome proposto è troppo lungo."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Le nom proposé est trop long."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Der vorgeschlagene Name ist zu lang."}},
+        "es": {"stringUnit": {"state": "translated", "value": "El nombre propuesto es demasiado largo."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O nome proposto é longo demais."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "建议的名称过长。"}}
+      }
+    },
+    "A different file already occupies the destination.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "A different file already occupies the destination."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Un altro file occupa già la destinazione."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Un autre fichier occupe déjà la destination."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Am Ziel liegt bereits eine andere Datei."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ya hay otro archivo en el destino."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Já há outro arquivo no destino."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "目标位置已有其他文件。"}}
+      }
+    },
+    "Multiple incoming files have the same destination.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Multiple incoming files have the same destination."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Più file in arrivo hanno la stessa destinazione."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Plusieurs fichiers reçus ont la même destination."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Mehrere eingehende Dateien haben dasselbe Ziel."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Varios archivos recibidos tienen el mismo destino."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Vários arquivos recebidos têm o mesmo destino."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "多个收到的文件指向同一目标位置。"}}
+      }
+    },
+    "Change Game files?": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Change Game files?"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cambiare la cartella File di gioco?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Changer le dossier Fichiers de jeu ?"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Ordner für Spieldateien ändern?"}},
+        "es": {"stringUnit": {"state": "translated", "value": "¿Cambiar la carpeta de archivos de juego?"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Alterar a pasta de arquivos de jogos?"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "更改游戏文件夹？"}}
+      }
+    },
+    "Use %@ as the Game files folder. No files will move.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Use %@ as the Game files folder. No files will move."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Usa %@ come cartella dei file di gioco. Nessun file viene spostato."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Utiliser %@ comme dossier des fichiers de jeu. Aucun fichier ne sera déplacé."}},
+        "de": {"stringUnit": {"state": "translated", "value": "%@ als Ordner für Spieldateien verwenden. Es werden keine Dateien verschoben."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Usar %@ como carpeta de archivos de juego. No se moverá ningún archivo."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Usar %@ como pasta de arquivos de jogos. Nenhum arquivo será movido."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "将 %@ 用作游戏文件夹。不会移动任何文件。"}}
+      }
+    },
+    "Import your keys in Porting to identify these packages.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Import your keys in Porting to identify these packages."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Importa le chiavi in Porting per identificare questi pacchetti."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Importez vos clés dans Portage pour identifier ces paquets."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Importiere deine Schlüssel unter Porting, um diese Pakete zu identifizieren."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Importa tus claves en Portar para identificar estos paquetes."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Importe suas chaves em Portabilidade para identificar estes pacotes."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "在移植设置中导入密钥以识别这些包。"}}
+      }
+    },
+    "Sort %@ selected files?": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Sort %@ selected files?"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ordinare i file selezionati (%@)?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ranger la sélection (%@) ?"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Ausgewählte Dateien sortieren (%@)?"}},
+        "es": {"stringUnit": {"state": "translated", "value": "¿Ordenar los archivos seleccionados (%@)?"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Organizar os arquivos selecionados (%@)?"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "整理选中的 %@ 个文件？"}}
+      }
+    },
+    "Arcane checks the copies before moving the originals to Trash. Identical copies already in Game files: %@.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Arcane checks the copies before moving the originals to Trash. Identical copies already in Game files: %@."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Arcane verifica le copie prima di spostare gli originali nel Cestino. Copie identiche già nei file di gioco: %@."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Arcane vérifie les copies avant de placer les originaux dans la Corbeille. Copies identiques déjà rangées : %@."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Arcane prüft die Kopien, bevor die Originale in den Papierkorb verschoben werden. Bereits vorhandene identische Kopien: %@."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Arcane comprueba las copias antes de enviar los originales a la papelera. Copias idénticas ya archivadas: %@."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O Arcane verifica as cópias antes de mover os originais para o Lixo. Cópias idênticas já organizadas: %@."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "Arcane 验证副本后才会将原文件移到废纸篓。游戏文件夹中已有的相同副本：%@。"}}
+      }
+    },
+    "Sort and move to Trash": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Sort and move to Trash"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ordina e sposta nel Cestino"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ranger et mettre à la Corbeille"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Sortieren und in den Papierkorb verschieben"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ordenar y mover a la papelera"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Organizar e mover para o Lixo"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "整理并移到废纸篓"}}
+      }
+    },
+    "Wait for porting and transfers to finish before sorting.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Wait for porting and transfers to finish before sorting."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Attendi la fine del porting e dei trasferimenti prima di ordinare."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Attendez la fin du portage et des transferts avant de ranger."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Warte vor dem Sortieren, bis Portierung und Übertragungen abgeschlossen sind."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Espera a que terminen la portabilidad y las transferencias antes de ordenar."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Aguarde o fim da portabilidade e das transferências antes de organizar."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "请等待移植和传输完成后再整理。"}}
+      }
+    },
+    "This file is linked to a library game.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "This file is linked to a library game."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Questo file è collegato a un gioco della libreria."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ce fichier est associé à un jeu de la bibliothèque."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Diese Datei ist mit einem Spiel in der Bibliothek verknüpft."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Este archivo está vinculado a un juego de la biblioteca."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Este arquivo está vinculado a um jogo da biblioteca."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "此文件已关联到游戏库中的游戏。"}}
+      }
+    },
+    "Files sorted: %@.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Files sorted: %@."}},
+        "it": {"stringUnit": {"state": "translated", "value": "File ordinati: %@."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Fichiers rangés : %@."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Sortierte Dateien: %@."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Archivos ordenados: %@."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Arquivos organizados: %@."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "已整理文件：%@。"}}
+      }
+    },
+    "Inbox": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Inbox"}},
+        "it": {"stringUnit": {"state": "translated", "value": "In arrivo"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Fichiers reçus"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Eingang"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Archivos recibidos"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Arquivos recebidos"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "收件箱"}}
+      }
+    },
+    "Sort incoming files": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Sort incoming files"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ordina i file in arrivo"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Trier les fichiers reçus"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Eingehende Dateien sortieren"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ordenar archivos recibidos"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Organizar arquivos recebidos"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "整理收到的文件"}}
+      }
+    },
+    "Incoming files are ready to review.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Incoming files are ready to review."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ci sono file in arrivo da esaminare."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Des fichiers reçus sont à examiner."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Eingehende Dateien können geprüft werden."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Hay archivos recibidos por revisar."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Há arquivos recebidos para revisar."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "有收到的文件等待检查。"}}
+      }
+    },
+    "Review the names and destinations before sorting your Switch files.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Review the names and destinations before sorting your Switch files."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Controlla i nomi e le destinazioni prima di ordinare i file Switch."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vérifiez les noms et les destinations avant de ranger vos fichiers Switch."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Prüfe Namen und Ziele, bevor du deine Switch-Dateien sortierst."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Revisa los nombres y destinos antes de ordenar tus archivos de Switch."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Confira os nomes e destinos antes de organizar seus arquivos do Switch."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "整理 Switch 文件前，请检查文件名和目标位置。"}}
+      }
+    },
+    "Game files points to a different folder": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Game files points to a different folder"}},
+        "it": {"stringUnit": {"state": "translated", "value": "File di gioco punta a un'altra cartella"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Fichiers de jeu ne pointe pas vers le dossier attendu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spieldateien verweist auf einen anderen Ordner"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Archivos de juego apunta a otra carpeta"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Arquivos de jogos aponta para outra pasta"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "游戏文件指向了其他文件夹"}}
+      }
+    },
+    "Correct Game files": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Correct Game files"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Correggi la cartella"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Corriger le dossier"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Ordner korrigieren"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Corregir carpeta"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Corrigir pasta"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "更正文件夹"}}
+      }
+    },
+    "Choose Inbox folder": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose Inbox folder"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli la cartella in arrivo"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisir le dossier de réception"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Eingangsordner wählen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elegir carpeta de entrada"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolher pasta de entrada"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "选择收件文件夹"}}
+      }
+    },
+    "Sort all ready files": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Sort all ready files"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ordina tutti i file pronti"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ranger tous les fichiers prêts"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Alle bereiten Dateien sortieren"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ordenar todos los archivos listos"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Organizar todos os arquivos prontos"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "整理所有就绪文件"}}
+      }
+    },
+    "Drop files here": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Drop files here"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Trascina qui i file"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Déposer les fichiers ici"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Dateien hierher ziehen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Suelta archivos aquí"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Solte os arquivos aqui"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "将文件拖到此处"}}
+      }
+    },
+    "Checking files…": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Checking files…"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Verifica dei file…"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vérification des fichiers…"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Dateien werden geprüft…"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Comprobando archivos…"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Verificando arquivos…"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在检查文件…"}}
+      }
+    },
+    "No incoming files": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "No incoming files"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nessun file in arrivo"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Aucun fichier reçu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Keine eingehenden Dateien"}},
+        "es": {"stringUnit": {"state": "translated", "value": "No hay archivos recibidos"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nenhum arquivo recebido"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "没有收到的文件"}}
+      }
+    },
+    "Base game": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Base game"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Gioco base"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Jeu de base"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Basisspiel"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Juego base"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Jogo base"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "本体"}}
+      }
+    },
+    "DLC": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "DLC"}},
+        "it": {"stringUnit": {"state": "translated", "value": "DLC"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "DLC"}},
+        "de": {"stringUnit": {"state": "translated", "value": "DLC"}},
+        "es": {"stringUnit": {"state": "translated", "value": "DLC"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "DLC"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "DLC"}}
+      }
+    },
+    "Ambiguous": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Ambiguous"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ambiguo"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ambigu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Nicht eindeutig"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ambiguo"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Ambíguo"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "无法确认"}}
+      }
+    },
+    "Review duplicate": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Review duplicate"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Controlla il duplicato"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Examiner le doublon"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Duplikat prüfen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Revisar duplicado"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Revisar duplicata"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "检查重复文件"}}
+      }
+    },
+    "Sort file": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Sort file"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ordina il file"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ranger le fichier"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Datei sortieren"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ordenar archivo"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Organizar arquivo"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "整理文件"}}
+      }
+    },
     "No network": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "No network"}},

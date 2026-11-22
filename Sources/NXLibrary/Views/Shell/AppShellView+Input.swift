@@ -179,6 +179,13 @@ extension AppShellView {
                     return nil
                 }
             }
+            if router.route == .gameInbox, !router.isMenuPresented, mods.isEmpty,
+               let action = GameInboxView.keyAction(event.keyCode) {
+                if !event.isARepeat || action == .navigateUp || action == .navigateDown {
+                    GameControllerService.shared.onAction?(action)
+                }
+                return nil
+            }
             let key = event.charactersIgnoringModifiers?.lowercased() ?? ""
             let typing = event.window?.firstResponder is NSText
             var action: GamepadAction?
@@ -299,6 +306,9 @@ extension AppShellView {
             router.closeMenu()
             viewModel.refreshLibrary()
             if sources.configuration.isEnabled { sources.refresh() }
+        case .gameInbox:
+            router.closeMenu()
+            router.openGameInbox()
         }
     }
 

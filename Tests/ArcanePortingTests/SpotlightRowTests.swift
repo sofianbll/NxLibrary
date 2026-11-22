@@ -93,8 +93,9 @@ final class SpotlightRowTests: XCTestCase {
     }
 
     func testCardTitlesIconsAndKeys() {
-        XCTAssertEqual(SpotlightCard.allCases.map(\.title), ["Collection", "Surprise me", "Activity", "Mods", "Add Game"])
-        XCTAssertEqual(SpotlightCard.allCases.map(\.icon), [.collections, .casino, .timeline, .puzzle, .add])
+        XCTAssertEqual(SpotlightCard.allCases.map(\.title), ["Collection", "Surprise me", "Activity", "Mods", "Add Game", "Inbox"])
+        XCTAssertEqual(SpotlightCard.allCases.map(\.icon), [.collections, .casino, .timeline, .puzzle, .add, .folder])
+        XCTAssertEqual(SpotlightRow.build(gameIDs: [], enabledCards: [.inbox], order: []), [.card(.inbox)])
         XCTAssertEqual(SpotlightItem.card(.addGame).key, "card:addGame")
         let id = UUID()
         XCTAssertEqual(SpotlightItem.game(id).key, "game:\(id.uuidString)")

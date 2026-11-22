@@ -56,6 +56,7 @@ struct SpotlightCardInfoView: View {
         case .activity: return L10n.text("Activity")
         case .mods: return L10n.text("Mods")
         case .addGame: return L10n.text("Add a game")
+        case .inbox: return L10n.text("Inbox")
         }
     }
 
@@ -66,6 +67,7 @@ struct SpotlightCardInfoView: View {
         case .activity: return L10n.text("What you played this week.")
         case .mods: return L10n.text("Mods that work with your games, from GameBanana.")
         case .addGame: return L10n.text("Build a game from your own dumps.")
+        case .inbox: return L10n.text("Incoming files are ready to review.")
         }
     }
 
@@ -76,6 +78,7 @@ struct SpotlightCardInfoView: View {
         // Activity and Mods have no button here: the hint in the corner says it once.
         case .activity, .mods: return nil
         case .addGame: return L10n.text("Add")
+        case .inbox: return L10n.text("Open")
         }
     }
 
@@ -102,7 +105,7 @@ struct SpotlightCardInfoView: View {
             } else {
                 stat("MODS", modCounts?.looking == false ? L10n.text("None yet") : L10n.text("Looking…"))
             }
-        case .addGame:
+        case .addGame, .inbox:
             EmptyView()
         }
     }

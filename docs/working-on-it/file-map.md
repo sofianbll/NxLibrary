@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 22 novembre 2026. Copertura di **883 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 22 novembre 2026. Copertura di **891 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -119,6 +119,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 | [Sources/NXLibrary/ViewModels/AppViewModel+SteamGridDB.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+SteamGridDB.swift) | Verifica, salva e rimuove la chiave SteamGridDB dell’utente senza registrarne il valore. |
 | [Sources/NXLibrary/ViewModels/AppIconModel.swift](../../Sources/NXLibrary/ViewModels/AppIconModel.swift) | Applica o ripristina l’icona dell’app del gioco dopo build, avvio e chiusura del gioco, senza toccare giochi in esecuzione o in build; Change artwork ne osserva l’avanzamento e raggiunge il coordinatore solo da `app`. |
 | [Sources/NXLibrary/ViewModels/CheatsModel.swift](../../Sources/NXLibrary/ViewModels/CheatsModel.swift) | Adatta Core e bundle installato al pannello Cheats, alla riga di stato, alla pagina del gioco e alla diagnostica; chiede a git l'engine dell'app con `prepare(for:)`; raggiunge il coordinatore solo da `app`. |
+| [Sources/NXLibrary/ViewModels/GameInboxModel.swift](../../Sources/NXLibrary/ViewModels/GameInboxModel.swift) | Cartella configurabile, lettura dei file con nxnative, avviso Game files, conferma e verifica nel catalogo delle sorgenti prima del Cestino. |
 | [Sources/NXLibrary/ViewModels/PortingModel.swift](../../Sources/NXLibrary/ViewModels/PortingModel.swift) | Stato di Add Game e del porting: bozza, selezione delle sorgenti e spazio richiesto, chiavi, passo del wizard, stato della build mostrato ed esito. Il lavoro sta nelle estensioni qui sotto; raggiunge il coordinatore solo da `app`. |
 | [Sources/NXLibrary/ViewModels/PortingModel+AddGame.swift](../../Sources/NXLibrary/ViewModels/PortingModel+AddGame.swift) | Selettore condiviso dei file, scansione e scelta delle sorgenti, passi di Add Game e regole di Back. |
 | [Sources/NXLibrary/ViewModels/PortingModel+Build.swift](../../Sources/NXLibrary/ViewModels/PortingModel+Build.swift) | Avvio con gioco chiuso, annullamento del porting o della verifica cache, nuovo tentativo e FIFO persistente. |
@@ -423,6 +424,7 @@ Cartella `Sources/ArcanePorting/Library/`.
 | [Sources/ArcanePorting/Library/LibraryPresentation+Porting.swift](../../Sources/ArcanePorting/Library/LibraryPresentation+Porting.swift) | Valori della libreria per un gioco portato (fatti dello store Nintendo, console, sorgenti staccate) e l’entrata per `CatalogGame`, che sceglie la strada Switch o Steam. |
 | [Sources/ArcanePorting/Library/RunningGames.swift](../../Sources/ArcanePorting/Library/RunningGames.swift) | Quali giochi portati sono in esecuzione: confronta il bundle ID effettivo con quelli delle app aperte. |
 | [Sources/ArcanePorting/Library/StorageManager.swift](../../Sources/ArcanePorting/Library/StorageManager.swift) | Misura app, cache e log per gioco e totali senza duplicare percorsi condivisi; verifica cartelle e sorgenti prima della pulizia selettiva. I backup appartengono al flusso Saves. |
+| [Sources/ArcanePorting/Library/GameInbox.swift](../../Sources/ArcanePorting/Library/GameInbox.swift) | Propone nomi e destinazioni delle sorgenti; riconosce duplicati e collisioni, copia e verifica prima del Cestino. |
 | [Sources/ArcanePorting/Library/CloudArchiveInventory.swift](../../Sources/ArcanePorting/Library/CloudArchiveInventory.swift) | Controlla gerarchia, link, esclusioni, hash e metadati per Apple Archive e i file; trova la scrittura più recente della cache senza leggerne il contenuto. |
 | [Sources/ArcanePorting/Library/CloudArtifactFiles.swift](../../Sources/ArcanePorting/Library/CloudArtifactFiles.swift) | Valida percorsi, dimensioni e MD5 di un albero v2, confronta l'elenco rclone, ripristina i link e inventaria il contenuto al netto delle firme per l'adozione. |
 | [Sources/ArcanePorting/Library/CloudGameArchive.swift](../../Sources/ArcanePorting/Library/CloudGameArchive.swift) | Pubblica app e cache separatamente, legge i manifest per ripristino e adozione, verifica la compatibilità cache e può sospendere lo scambio atomico. |
@@ -633,6 +635,8 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Sources/NXLibrary/Views/AddGame/AddGameRows.swift](../../Sources/NXLibrary/Views/AddGame/AddGameRows.swift) | Rende le righe riutilizzabili per sorgenti e azioni di Add Game. |
 | [Sources/NXLibrary/Views/AddGame/AddGameAction.swift](../../Sources/NXLibrary/Views/AddGame/AddGameAction.swift) | Identifica le azioni navigabili dei passaggi del wizard. |
 | [Sources/NXLibrary/Views/AddGame/AddGameStepThreeView.swift](../../Sources/NXLibrary/Views/AddGame/AddGameStepThreeView.swift) | Mostra progresso, log, cancellazione ed esito del porting, con nuovo tentativo d’installazione per una build già pronta. |
+| [Sources/NXLibrary/Views/Porting/GameInboxView.swift](../../Sources/NXLibrary/Views/Porting/GameInboxView.swift) | Pagina Selene con rilascio file, anteprima per riga e azioni singole o in gruppo. |
+| [Sources/NXLibrary/Views/Porting/GameInboxView+Input.swift](../../Sources/NXLibrary/Views/Porting/GameInboxView+Input.swift) | Traduce tastiera e controller in focus e azioni dell'Inbox. |
 
 ## UI · Spotlight
 
@@ -650,7 +654,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Sources/NXLibrary/Views/Spotlight/SpotlightRowView.swift](../../Sources/NXLibrary/Views/Spotlight/SpotlightRowView.swift) | Disegna la riga di tile con finestra visibile, focus e titoli; la faccia della card Mods (`ModsCardCover`). |
 | [Sources/NXLibrary/Views/Spotlight/SpotlightTopBar.swift](../../Sources/NXLibrary/Views/Spotlight/SpotlightTopBar.swift) | Disegna filtri al centro, ritratto con punto di presenza e orologio a destra; il menu di ordinamento condiviso parte dal prompt in fondo. |
 | [Sources/NXLibrary/Views/Spotlight/SpotlightInfoView.swift](../../Sources/NXLibrary/Views/Spotlight/SpotlightInfoView.swift) | Mostra logo, Play o Download con fase e byte, Cloud, statistiche e stato di porting. |
-| [Sources/NXLibrary/Views/Spotlight/SpotlightCardInfoView.swift](../../Sources/NXLibrary/Views/Spotlight/SpotlightCardInfoView.swift) | Mostra informazioni e azioni delle card Collection, Surprise, Activity e Add Game. |
+| [Sources/NXLibrary/Views/Spotlight/SpotlightCardInfoView.swift](../../Sources/NXLibrary/Views/Spotlight/SpotlightCardInfoView.swift) | Mostra informazioni e azioni delle card Spotlight, inclusa Inbox. |
 | [Sources/NXLibrary/Views/Spotlight/SpotlightPageSections.swift](../../Sources/NXLibrary/Views/Spotlight/SpotlightPageSections.swift) | Modello della pagina inferiore con dettagli, link e giochi correlati del catalogo; generi e descrizione; la descrizione può venire da Wikipedia (`WikipediaAbout`). |
 | [Sources/NXLibrary/Views/Spotlight/SpotlightScreenshotStrip.swift](../../Sources/NXLibrary/Views/Spotlight/SpotlightScreenshotStrip.swift) | Disegna la striscia di screenshot con focus e stile adattabile alle schermate. |
 | [Sources/NXLibrary/Views/Spotlight/SeleneArtBackground.swift](../../Sources/NXLibrary/Views/Spotlight/SeleneArtBackground.swift) | Compone wallpaper, sfondo del gioco, transizioni e maschere leggendo la palette dallo snapshot condiviso; l'arte è un `CALayer` che dissolve nel render server (`SeleneArtLayer`) e che l'entrata di Spotlight tiene nascosto (`ArtReveal`). |
@@ -998,6 +1002,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/NXLibraryCoreTests/IGDBMetadataTests.swift](../../Tests/NXLibraryCoreTests/IGDBMetadataTests.swift) | Identità, ruoli, date precise per piattaforma, Steam, cache offline, retry, annullamento e token/coda condivisi. |
 | [Tests/NXLibraryCoreTests/DatabaseMetadataTests.swift](../../Tests/NXLibraryCoreTests/DatabaseMetadataTests.swift) | Parser pubblici, identità/ambiguità, date, conteggio richieste, letture concorrenti, cache, annullamento, risposte errate e retry. |
 | [Tests/ArcanePortingTests/SourceCatalogTests.swift](../../Tests/ArcanePortingTests/SourceCatalogTests.swift) | Fixture PFS0/CNMT e riconoscimento di base, aggiornamenti e DLC. |
+| [Tests/ArcanePortingTests/GameInboxTests.swift](../../Tests/ArcanePortingTests/GameInboxTests.swift) | Nomi, metadati ambigui, collisioni, duplicati, copia interrotta, ritrovamento e Cestino simulato. |
 | [Tests/ArcanePortingTests/EngineUpgradeSourcesTests.swift](../../Tests/ArcanePortingTests/EngineUpgradeSourcesTests.swift) | Cartelle estratte, pacchetti multipli, collegamento per ID esatto, persistenza, bridge Python e restaging senza perdita di originali. |
 | [Tests/NXLibraryCoreTests/SpotlightPageTests.swift](../../Tests/NXLibraryCoreTests/SpotlightPageTests.swift) | Estratti del testo e stati dello scorrimento della pagina del gioco. |
 | [Tests/ArcanePortingTests/SpotlightRowTests.swift](../../Tests/ArcanePortingTests/SpotlightRowTests.swift) | Ordine, card, riordino delle tile, gioco avviato primo nell’ordine salvato e selezione Surprise. |
@@ -1062,6 +1067,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [run_notices.py](../../Tests/CatalogAppChecks/run_notices.py) | Esegue il modello e i metodi reali degli avvisi e del ponte legacy senza finestre, dopo swift test. |
 | [run_review.py](../../Tests/CatalogAppChecks/run_review.py) | Verifica senza finestre achievement, loghi, focus, keymap, badge mod in Online, priorità dei dialoghi e Steam durante Play. |
 | [run_keymap_screens.py](../../Tests/CatalogAppChecks/run_keymap_screens.py) | Verifica tutti i glifi e rende la barra Selene per Xbox, Switch, DualSense e tastiera senza aprire finestre. |
+| [run_inbox_screens.py](../../Tests/CatalogAppChecks/run_inbox_screens.py) | Rende Inbox vuota, tre file, un file ambiguo, la conferma Selene e la card Spotlight su un profilo fittizio, senza finestre. |
 | [run_cloud_screens.py](../../Tests/CatalogAppChecks/run_cloud_screens.py) | Rende Cloud, Download, aggiornamento pronto, riferimento e Play together in PNG; verifica dialoghi e trasferimento durante Play con fixture locali. |
 | [run_profiles.py](../../Tests/CatalogAppChecks/run_profiles.py) | Verifica la riga di avvio e rende selettore su Spotlight, profili, assistente, account, menu (anche i sottomenu sopra Details, in due lingue, con la larghezza uguale delle pillole misurata in tutte le lingue), badge e ordinamento senza finestre né dati reali. |
 | [run_startup_recovery.py](../../Tests/CatalogAppChecks/run_startup_recovery.py) | Coordinatore di avvio reale su profili sintetici: conflitto, scelta esplicita, offerta obsoleta, Retry e fallimento della preparazione; nessuna finestra. |
