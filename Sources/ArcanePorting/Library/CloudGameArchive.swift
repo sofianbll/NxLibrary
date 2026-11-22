@@ -1165,11 +1165,18 @@ public actor CloudGameArchive {
     }
 
     func requireSpace(in directory: URL, bytes: Int64, entries: Int, archive: Int64 = 0) throws {
-        let overhead = Int64(entries) * 16_384 + 1_048_576
-        guard bytes <= Int64.max - overhead, archive <= Int64.max - overhead - bytes,
-              let free = capacity(directory), free >= bytes + overhead + archive else {
+        guard let required = Self.requiredBytes(bytes: bytes, entries: entries, archive: archive),
+              let free = capacity(directory), free >= required else {
             throw CloudArchiveError.insufficientSpace
         }
+    }
+
+    nonisolated static func requiredBytes(bytes: Int64, entries: Int, archive: Int64 = 0) -> Int64? {
+        guard (0...CloudArchiveInventory.maximumEntries).contains(entries) else { return nil }
+        let overhead = Int64(entries) * 16_384 + 1_048_576
+        guard bytes >= 0, archive >= 0, bytes <= Int64.max - overhead, archive <= Int64.max - overhead - bytes
+        else { return nil }
+        return bytes + overhead + archive
     }
 
     private func inventory(in archive: URL, kind: CloudArtifactKind) async throws -> [CloudArchiveInventory.Entry] {

@@ -179,9 +179,10 @@ extension AppShellView {
                     return nil
                 }
             }
-            if router.route == .gameInbox, !router.isMenuPresented, mods.isEmpty,
-               let action = GameInboxView.keyAction(event.keyCode) {
-                if !event.isARepeat || action == .navigateUp || action == .navigateDown {
+            if !router.isMenuPresented, mods.isEmpty,
+               let action = router.route == .personalStore ? PersonalStoreView.keyAction(event.keyCode)
+                 : router.route == .gameInbox ? GameInboxView.keyAction(event.keyCode) : nil {
+                if !event.isARepeat || [.navigateUp, .navigateDown, .navigateLeft, .navigateRight].contains(action) {
                     GameControllerService.shared.onAction?(action)
                 }
                 return nil
@@ -296,6 +297,9 @@ extension AppShellView {
         case .gameInbox:
             router.closeMenu()
             router.openGameInbox()
+        case .personalStore:
+            router.closeMenu()
+            router.navigate(to: .personalStore)
         }
     }
 

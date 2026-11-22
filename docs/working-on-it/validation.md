@@ -11,6 +11,7 @@ Come si aggiorna:
 
 | Parte | Stato | Prove ancora da fare |
 |---|---|---|
+| My library (Apps e ROM collegate) | in attesa | Da Spotlight e Library, provare mouse, tastiera, controller, VoiceOver, Riduci movimento e ritorno alla tessera. Su dati di prova, verificare i filtri, la conferma col budget, un'offerta cambiata mentre è in coda, Attività e la revisione Add Game senza build automatica. |
 | Inbox per i file Switch | in attesa | Con un profilo separato, aprire da Libreria e Spotlight, navigare con la tastiera e il controller, provare deposito e rilascio, correzione esplicita, conferma singola e in gruppo, duplicato e file ambiguo. Con copie autorizzate, controllare riconoscimento nxnative, percorso, Cestino e visibilità da Add Game. |
 | Presenza e aggiornamento degli amici Nextendo | in attesa | Con due conti di prova verificare online, passaggio a In gioco, cambio profilo, Mostrati online disattivato, Aggiorna e orario relativo. Le verifiche automatiche usano un trasporto finto. |
 | Snapshot del profilo nell'overlay Switch | in attesa | Aprire l’overlay con un host compatibile e due profili di prova: nome, ritratto, anello, durate e ultimi amici del solo profilo attivo. Verificare tab senza dati nascosti e file rimosso all’uscita; ripetere con un host precedente senza snapshot. |

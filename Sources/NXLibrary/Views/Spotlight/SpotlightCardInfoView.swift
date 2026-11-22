@@ -57,6 +57,7 @@ struct SpotlightCardInfoView: View {
         case .mods: return L10n.text("Mods")
         case .addGame: return L10n.text("Add a game")
         case .inbox: return L10n.text("Inbox")
+        case .personalStore: return card.title
         }
     }
 
@@ -68,6 +69,7 @@ struct SpotlightCardInfoView: View {
         case .mods: return L10n.text("Mods that work with your games, from GameBanana.")
         case .addGame: return L10n.text("Build a game from your own dumps.")
         case .inbox: return L10n.text("Incoming files are ready to review.")
+        case .personalStore: return L10n.text("Your apps and ROMs, on this Mac and in your cloud.")
         }
     }
 
@@ -78,7 +80,7 @@ struct SpotlightCardInfoView: View {
         // Activity and Mods have no button here: the hint in the corner says it once.
         case .activity, .mods: return nil
         case .addGame: return L10n.text("Add")
-        case .inbox: return L10n.text("Open")
+        case .inbox, .personalStore: return L10n.text("Open")
         }
     }
 
@@ -105,7 +107,7 @@ struct SpotlightCardInfoView: View {
             } else {
                 stat("MODS", modCounts?.looking == false ? L10n.text("None yet") : L10n.text("Looking…"))
             }
-        case .addGame, .inbox:
+        case .addGame, .inbox, .personalStore:
             EmptyView()
         }
     }

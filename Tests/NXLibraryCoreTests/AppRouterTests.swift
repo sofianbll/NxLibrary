@@ -115,9 +115,10 @@ final class MenuSelectionModelTests: XCTestCase {
         XCTAssertEqual(MenuAction.allCases, [.profile, .library, .activityCenter, .settings, .power])
         XCTAssertEqual(MenuAction.allCases.map(\.title), ["Profile", "Library", "Activity center", "Settings", "Power"])
         XCTAssertEqual(MenuAction.profile.entries, [.switchProfile, .editProfile, .theme])
-        XCTAssertEqual(MenuAction.library.entries, [.addGame, .manageSources, .refreshLibrary, .gameInbox])
+        XCTAssertEqual(MenuAction.library.entries, [.addGame, .manageSources, .refreshLibrary, .gameInbox, .personalStore])
         XCTAssertEqual(MenuEntry.allCases.map(\.title),
-                       ["Switch profile", "Edit profile", "Theme", "Add Game", "Manage sources", "Library refresh", "Sort incoming files"])
+                       ["Switch profile", "Edit profile", "Theme", "Add Game", "Manage sources", "Library refresh",
+                        "Sort incoming files", "My library"])
         // Console and the Setup check live in Settings; Activity and Settings act at once.
         XCTAssertTrue(MenuAction.activityCenter.entries.isEmpty && MenuAction.settings.entries.isEmpty)
         XCTAssertEqual(MenuAction.allCases.flatMap(\.entries).count, MenuEntry.allCases.count)
@@ -155,7 +156,7 @@ final class MenuSelectionModelTests: XCTestCase {
         XCTAssertTrue(model.isEntryOpen && model.isSubmenuOpen)
         XCTAssertEqual(model.entry, .addGame)
         model.moveEntry(by: 5)
-        XCTAssertEqual(model.entry, .gameInbox)
+        XCTAssertEqual(model.entry, .personalStore)
         model.moveEntry(by: -9)
         XCTAssertEqual(model.entry, .addGame)
         // An icon without a card never opens one.

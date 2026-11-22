@@ -47,6 +47,9 @@ struct GameRuntimeConfig {}
 enum GameFoldersCopy {
     static func sourcesPickerMessage(extractedFolders: Bool) -> String { "Fixture picker" }
 }
+enum ExtractedSourceCatalog {
+    static func recognizes(_ folder: URL) -> Bool { folder.lastPathComponent == "Extracted fixture" }
+}
 
 // Only the system picker is substituted. The production methods configure it
 // and choose which scan to request; no permissions or real windows are involved.
@@ -89,10 +92,15 @@ final class SourceHost {
     // ACTUAL_REMEMBERED_FOLDER
     // ACTUAL_FOLDER_PICKER
     // ACTUAL_FILE_PICKER
+    // ACTUAL_PREPARE_FILES
     // ACTUAL_FILE_CHOOSER
     func restoreBuildInputs(automatic: Bool) {}
     func refreshCompatibility() {}
-    func startNewAddGame(defaults: GameRuntimeConfig) { selectedGameFolder = nil }
+    func startNewAddGame(defaults: GameRuntimeConfig) {
+        keepsRememberedGameFolder = true
+        selectedGameFolder = nil
+        keepsRememberedGameFolder = false
+    }
     func scanGameFolder(_ folder: URL) { scans.append((folder, selectedPackageURLs)) }
     func boot(_ startup: Startup) {
         let didCompleteSetup = true
@@ -141,8 +149,18 @@ final class SourceHost {
         require(filesModel.scans.count == 1 && filesModel.scans.last?.files == files,
                 "Explicit files must request one scan limited to those files")
         require(filesModel.gameFilesFolder == folder, "File picks must preserve the remembered folder")
+
+        let store = SourceHost()
+        require(store.prepareAddGameFiles(files, defaults: GameRuntimeConfig()), "Store files must open a draft")
+        require(store.scans.count == 1 && store.scans.last?.files == files,
+                "Preparing the Store draft must only scan the selected files")
+        require(store.gameFilesFolder == folder, "Store review must preserve the remembered folder")
+        let extracted = otherFolder.appendingPathComponent("Extracted fixture")
+        require(store.prepareAddGameFiles([extracted], defaults: GameRuntimeConfig()), "Extracted source must open a draft")
+        require(store.scans.last?.folder == extracted && store.scans.last?.files == nil,
+                "Store review must scan the extracted directory itself")
         if failures > 0 { exit(1) }
-        print("Source access checks passed: no launch scan, remembered picker, cancel, explicit folder and files.")
+        print("Source access checks passed: no launch scan, remembered picker, cancel, explicit files and Store draft.")
     }
 }
 '''
@@ -151,6 +169,7 @@ for marker, signature in (
     ('// ACTUAL_REMEMBERED_FOLDER', '    var gameFilesFolder:'),
     ('// ACTUAL_FOLDER_PICKER', '    func selectGameFolder('),
     ('// ACTUAL_FILE_PICKER', '    func selectGameFiles('),
+    ('// ACTUAL_PREPARE_FILES', '    func prepareAddGameFiles('),
     ('// ACTUAL_FILE_CHOOSER', '    func chooseGameFiles('),
 ):
     host = host.replace(marker + '\n', declaration(signature, porting_source) + '\n')

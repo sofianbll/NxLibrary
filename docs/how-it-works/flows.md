@@ -70,6 +70,8 @@ Punti fissi:
 - Una scansione aggiorna solo ciò che ha osservato; un'assenza non cancella nulla.
 - Un risultato superato da un cambio di cartella o di fonte non si applica.
 
+**My library** si apre dalla card Spotlight o da Menu → Library. LB/RB cambiano Apps e ROM, X cambia filtro, le frecce percorrono righe e tessere; B dalla scheda torna alla selezione. Per un trasferimento la scheda mostra origine, dimensione, spazio richiesto stimato e spazio libero; la conferma accoda in Attività. Per i file locali, Prepare porting scansiona i file e apre Add Game; la build resta un'azione esplicita.
+
 ## 3. Play di un gioco Switch (nxnative)
 
 ```mermaid

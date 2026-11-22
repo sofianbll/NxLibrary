@@ -1,6 +1,248 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Update available": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Update available"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Aggiornamento disponibile"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mise à jour disponible"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Update verfügbar"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Actualización disponible"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Atualização disponível"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "有可用更新"}}
+      }
+    },
+    "Source: personal cloud": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Source: personal cloud"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Fonte: cloud personale"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Source : cloud personnel"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Quelle: persönliche Cloud"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Origen: nube personal"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Origem: nuvem pessoal"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "来源：个人云端"}}
+      }
+    },
+    "My library": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "My library"}},
+        "it": {"stringUnit": {"state": "translated", "value": "La mia libreria"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ma bibliothèque"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Meine Bibliothek"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Mi biblioteca"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Minha biblioteca"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "我的游戏库"}}
+      }
+    },
+    "Your apps and ROMs, on this Mac and in your cloud.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Your apps and ROMs, on this Mac and in your cloud."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Le tue app e ROM, su questo Mac e nel cloud."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Tes apps et tes ROM, sur ce Mac et dans ton cloud."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Deine Apps und ROMs, auf diesem Mac und in deiner Cloud."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Tus apps y ROM, en este Mac y en tu nube."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Seus apps e ROMs, neste Mac e na sua nuvem."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "这台 Mac 和你的云端中的应用与 ROM。"}}
+      }
+    },
+    "Apps": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Apps"}},
+        "it": {"stringUnit": {"state": "translated", "value": "App"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Apps"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Apps"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Apps"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Apps"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "应用"}}
+      }
+    },
+    "ROM": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "ROM"}},
+        "it": {"stringUnit": {"state": "translated", "value": "ROM"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "ROM"}},
+        "de": {"stringUnit": {"state": "translated", "value": "ROM"}},
+        "es": {"stringUnit": {"state": "translated", "value": "ROM"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "ROM"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "ROM"}}
+      }
+    },
+    "On this Mac": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "On this Mac"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Su questo Mac"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Sur ce Mac"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Auf diesem Mac"}},
+        "es": {"stringUnit": {"state": "translated", "value": "En este Mac"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Neste Mac"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "在这台 Mac 上"}}
+      }
+    },
+    "To download": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "To download"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Da scaricare"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "À télécharger"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Zum Laden"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Por descargar"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Para baixar"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "待下载"}}
+      }
+    },
+    "Updates": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Updates"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Aggiornamenti"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mises à jour"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Updates"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Actualizaciones"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Atualizações"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "更新"}}
+      }
+    },
+    "Previous tab": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Previous tab"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scheda precedente"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Onglet précédent"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Vorheriger Tab"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Pestaña anterior"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Aba anterior"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "上一个标签页"}}
+      }
+    },
+    "Next tab": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Next tab"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scheda successiva"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Onglet suivant"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Nächster Tab"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Pestaña siguiente"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Próxima aba"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "下一个标签页"}}
+      }
+    },
+    "No games match this filter.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "No games match this filter."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nessun gioco corrisponde a questo filtro."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Aucun jeu ne correspond à ce filtre."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Keine Spiele entsprechen diesem Filter."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ningún juego coincide con este filtro."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nenhum jogo corresponde a este filtro."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "没有符合此筛选条件的游戏。"}}
+      }
+    },
+    "In your cloud": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "In your cloud"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nel tuo cloud"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Dans ton cloud"}},
+        "de": {"stringUnit": {"state": "translated", "value": "In deiner Cloud"}},
+        "es": {"stringUnit": {"state": "translated", "value": "En tu nube"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Na sua nuvem"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "在你的云端"}}
+      }
+    },
+    "Your ROM library": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Your ROM library"}},
+        "it": {"stringUnit": {"state": "translated", "value": "La tua libreria ROM"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ta bibliothèque de ROM"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Deine ROM-Bibliothek"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Tu biblioteca de ROM"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Sua biblioteca de ROMs"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "你的 ROM 库"}}
+      }
+    },
+    "Ready to build": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Ready to build"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Da compilare"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "À compiler"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Bereit zum Kompilieren"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Por compilar"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Para compilar"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "待编译"}}
+      }
+    },
+    "Update app": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Update app"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Aggiorna app"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mettre à jour"}},
+        "de": {"stringUnit": {"state": "translated", "value": "App aktualisieren"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Actualizar app"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Atualizar app"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "更新应用"}}
+      }
+    },
+    "Download ROM": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Download ROM"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scarica ROM"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Télécharger la ROM"}},
+        "de": {"stringUnit": {"state": "translated", "value": "ROM laden"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Descargar ROM"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Baixar ROM"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "下载 ROM"}}
+      }
+    },
+    "Prepare porting": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Prepare porting"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Prepara il porting"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Préparer la compilation"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Portierung vorbereiten"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Preparar la compilación"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Preparar a compilação"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "准备移植"}}
+      }
+    },
+    "Transfer size: %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Transfer size: %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Dimensione del trasferimento: %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Taille du transfert : %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Übertragungsgröße: %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Tamaño de la transferencia: %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Tamanho da transferência: %@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "传输大小：%@"}}
+      }
+    },
+    "Space required: %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Space required: %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Spazio richiesto: %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Espace requis : %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Benötigter Speicher: %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Espacio necesario: %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Espaço necessário: %@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "所需空间：%@"}}
+      }
+    },
+    "Space available: %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Space available: %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Spazio libero: %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Espace libre : %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Freier Speicher: %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Espacio libre: %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Espaço livre: %@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "可用空间：%@"}}
+      }
+    },
+    "See Activity for this transfer.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "See Activity for this transfer."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Segui il trasferimento in Attività."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Suis ce transfert dans Activité."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Verfolge die Übertragung unter Aktivität."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Sigue la transferencia en Actividad."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Acompanhe a transferência em Atividade."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "在活动中心查看此传输。"}}
+      }
+    },
     "A file or folder changed. Refresh and review the proposal again.": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "A file or folder changed. Refresh and review the proposal again."}},
