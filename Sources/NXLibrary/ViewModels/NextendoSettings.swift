@@ -20,21 +20,25 @@ import ArcanePorting
     @Published private(set) var friendMessage: (key: String, isError: Bool)?
     @Published private(set) var friendsNeedRefresh = false
     @Published private(set) var submittedFriendCode: String?
+    @Published private(set) var friendsUpdatedAt: Date?
+    @Published private(set) var isRefreshingFriends = false
+    @Published private(set) var presenceShared: Bool?
+    @Published private(set) var presenceRevision = UUID()
     private var operation: Task<Void, Never>?
     private var ticket = UUID()
-    private var isSigningOut = false
+    @Published private(set) var isSigningOut = false
     private let store: NextendoTokenStore
-    private let service: NextendoAccountService
+    let accountService: NextendoAccountService
 
-    init(store: NextendoTokenStore = .init()) {
+    init(store: NextendoTokenStore = .init(), service: NextendoAccountService? = nil) {
         self.store = store
-        service = NextendoAccountService(oauth: NextendoOAuth(store: store))
+        accountService = service ?? NextendoAccountService(oauth: NextendoOAuth(store: store))
     }
 
     func check(clientID: String?) {
         run(checking: true) { model in
             if let clientID {
-                try model.apply(await model.service.check(clientID: clientID))
+                try model.apply(await model.accountService.check(clientID: clientID))
             } else {
                 let store = model.store
                 let hasToken = try await Task.detached { try store.hasToken() }.value
@@ -45,13 +49,35 @@ import ArcanePorting
         }
     }
 
+    func refreshFriends(clientID: String?) {
+        guard let clientID, let account, status == .signedIn, !isBusy else { return }
+        isRefreshingFriends = true
+        run(friendAction: true) { model in
+            guard let updated = try? await model.accountService.refreshFriends(in: account, clientID: clientID),
+                  !Task.isCancelled else { return }
+            model.account = updated
+            model.friendsNeedRefresh = updated.requests == nil || updated.sent == nil
+            model.friendsUpdatedAt = .now
+        }
+    }
+
+    func publishPresence(clientID: String, eligible: () -> Bool) async {
+        await accountService.maintainPresence(clientID: clientID, eligible: { !self.isSigningOut && eligible() }) {
+            self.presenceShared = $0
+        }
+    }
+
+    func clearPresence() {
+        presenceShared = nil
+    }
+
     func updateFriend(_ action: NextendoFriendAction, clientID: String?) {
         guard status == .signedIn, !friendsNeedRefresh, let username = account?.username, let clientID else { return }
         run(friendAction: true) { model in
             model.friendMessage = nil
             model.submittedFriendCode = nil
             do {
-                let update = try await model.service.updateFriend(action, username: username, clientID: clientID)
+                let update = try await model.accountService.updateFriend(action, username: username, clientID: clientID)
                 try Task.checkCancellation()
                 if let snapshot = update.snapshot { try model.apply(snapshot) }
                 model.friendsNeedRefresh = update.snapshot?.friends == nil
@@ -94,7 +120,8 @@ import ArcanePorting
             let (authorization, code) = try await model.authorize(clientID: clientID)
             try Task.checkCancellation()
             model.isWaitingForBrowser = false
-            try model.apply(await model.service.signIn(authorization, code: code))
+            try model.apply(await model.accountService.signIn(authorization, code: code))
+            model.presenceRevision = UUID()
         }
     }
 
@@ -119,6 +146,8 @@ import ArcanePorting
         }
         account = nil
         accountName = nil
+        friendsUpdatedAt = nil
+        isRefreshingFriends = false
         failure = nil
         friendToRemove = nil
         friendMessage = nil
@@ -136,6 +165,7 @@ import ArcanePorting
         revision = UUID()
         friendsNeedRefresh = false
         account = snapshot
+        friendsUpdatedAt = snapshot?.friends == nil ? nil : .now
         accountName = snapshot?.name
         status = snapshot == nil ? .signedOut : .signedIn
         failure = snapshot?.failure
@@ -164,6 +194,7 @@ import ArcanePorting
                     self.isBusy = false
                     self.isWaitingForBrowser = false
                     self.isSigningOut = false
+                    self.isRefreshingFriends = false
                     self.operation = nil
                 }
             }

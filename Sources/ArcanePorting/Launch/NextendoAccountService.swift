@@ -27,9 +27,9 @@ public struct NextendoAccountSnapshot {
     public let friendCode: String?
     public let avatar: Data?
     public let avatarPID: UInt64?
-    public let friends: [Friend]?
-    public let requests: [Player]?
-    public let sent: [Player]?
+    public package(set) var friends: [Friend]?
+    public package(set) var requests: [Player]?
+    public package(set) var sent: [Player]?
     public let recentPlayers: [Player]?
     public let failure: NextendoError?
 
@@ -63,6 +63,41 @@ public struct NextendoAccountService {
     public func check(clientID: String) async throws -> NextendoAccountSnapshot? {
         guard let access = try await oauth.refreshAccess(clientID: clientID) else { return nil }
         return try await snapshot(clientID: clientID, access: access)
+    }
+
+    /// Arcane only owns idle presence. Let the server expire it when this task stops.
+    @MainActor package func maintainPresence(clientID: String, eligible: () -> Bool,
+                                            sleep: (Duration) async throws -> Void = { try await Task.sleep(for: $0) },
+                                            report: (Bool?) -> Void) async {
+        while !Task.isCancelled && eligible() {
+            var shared: Bool?
+            do {
+                if let access = try await oauth.refreshAccess(clientID: clientID) {
+                    guard !Task.isCancelled, eligible() else { return }
+                    let (_, status) = try await oauth.post("/api/presence", json: Data(#"{"status":1,"platform":"app"}"#.utf8),
+                                                          clientID: clientID, access: access)
+                    shared = (200..<300).contains(status)
+                }
+            } catch is CancellationError { return }
+            catch { shared = false }
+            guard !Task.isCancelled, eligible() else { return }
+            report(shared)
+            do { try await sleep(.seconds(45)) }
+            catch { return }
+        }
+    }
+
+    /// Refresh just the visible lists, retaining the rest of the account card.
+    package func refreshFriends(in snapshot: NextendoAccountSnapshot, clientID: String) async throws -> NextendoAccountSnapshot? {
+        guard let access = try await oauth.refreshAccess(clientID: clientID),
+              try await oauth.userInfo(clientID: clientID, access: access).username == snapshot.username,
+              let lists = try await friendLists(clientID: clientID, access: access).body,
+              let friends = lists.objects("friends") else { return nil }
+        var updated = snapshot
+        updated.friends = Self.sortedFriends(friends)
+        updated.requests = lists.objects("requests").map(Self.players)
+        updated.sent = lists.objects("sent").map(Self.players)
+        return updated
     }
 
     public func signIn(_ attempt: NextendoAuthorization, code: String) async throws -> NextendoAccountSnapshot? {
@@ -162,7 +197,7 @@ public struct NextendoAccountService {
         else { user = try await oauth.userInfo(clientID: clientID, access: access) }
         async let me = read("/api/me", clientID: clientID, access: access)
         async let profileSection = read("/api/profile", clientID: clientID, access: access)
-        async let friendsSection = read("/api/friends", query: [.init(name: "images", value: "0")], clientID: clientID, access: access)
+        async let friendsSection = friendLists(clientID: clientID, access: access)
         async let online = onlineStatus(clientID: clientID, access: access)
         async let recent = read("/api/recent-players", clientID: clientID, access: access)
         let sections = try await [me, profileSection, friendsSection, online]
@@ -201,6 +236,10 @@ public struct NextendoAccountService {
         var body: NextendoDocument? = nil
         var unauthorized = false
         var forbidden = false
+    }
+
+    private func friendLists(clientID: String, access: String) async throws -> Section {
+        try await read("/api/friends", query: [.init(name: "images", value: "0")], clientID: clientID, access: access)
     }
 
     private func read(_ path: String, query: [URLQueryItem] = [], clientID: String, access: String) async throws -> Section {

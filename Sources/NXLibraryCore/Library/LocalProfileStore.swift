@@ -7,6 +7,8 @@ public struct LocalProfile: Codable, Equatable, Identifiable {
     public var avatar: Int
     public var portrait: Data?
     public var look: Look
+    // Omitted by older profile files; only an explicit opt-out disables idle presence.
+    public var appearsOnline: Bool? = nil
     public fileprivate(set) var favorites: Set<UUID> = []
 
     public init(id: UUID = UUID(), name: String, avatar: Int = 0, portrait: Data? = nil, look: Look) {

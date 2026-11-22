@@ -11,6 +11,7 @@ struct SettingsAPISection: View {
     let supportsNextendo: Bool
     var accountOnly = false
     var accountOffline = false
+    var appearOnline: Binding<Bool>?
     @Binding var advanced: Bool
     let onActions: ([SettingsRowAction]) -> Void
     @Environment(\.seleneCanvas) private var canvas
@@ -32,6 +33,8 @@ struct SettingsAPISection: View {
     private var clientID: String? { settings.settings.nextendoClientID ?? NextendoLaunch.buildClientID }
     private let accountRowID = "Nextendo"
     private let friendsRowID = "nextendoFriends"
+    private let refreshFriendsRowID = "nextendoRefreshFriends"
+    private let appearOnlineRow = "Appear online"
     private let addRowID = "nextendoAddFriend"
     private let recentRowID = "nextendoRecentPlayers"
     private let linksRowID = "nextendoLinks"
@@ -42,6 +45,10 @@ struct SettingsAPISection: View {
     private var friendData: NextendoAccountSnapshot? { nextendo.friendsNeedRefresh ? nil : nextendo.account }
     private var friends: [NextendoAccountSnapshot.Friend]? { friendData?.friends }
     private var canUpdateFriends: Bool { !nextendo.isBusy && !nextendo.friendsNeedRefresh && clientID != nil }
+    private var friendsRefreshClient: String? {
+        supportsNextendo && showFriends && (accountOnly || friendsExpanded) && !accountOffline ? clientID : nil
+    }
+    private var canRefreshFriends: Bool { friendsRefreshClient != nil && !nextendo.isBusy }
 
     private var serviceRows: some View {
         Group {
@@ -133,6 +140,17 @@ struct SettingsAPISection: View {
         .onChange(of: nextendo.isBusy) { if supportsNextendo { publishActions() } }
         .onChange(of: nextendo.isWaitingForBrowser) { if supportsNextendo { publishActions() } }
         .onDisappear { if supportsNextendo { endNextendoVisit() } }
+        .task(id: friendsRefreshClient) {
+            guard let clientID = friendsRefreshClient else { return }
+            if let date = nextendo.friendsUpdatedAt, Date.now.timeIntervalSince(date) >= 60 {
+                nextendo.refreshFriends(clientID: clientID)
+            }
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(60)) } catch { return }
+                guard !Task.isCancelled else { return }
+                nextendo.refreshFriends(clientID: clientID)
+            }
+        }
         .task(id: copiedCode) {
             guard let code = copiedCode else { return }
             do { try await Task.sleep(for: .seconds(1.4)) } catch { return }
@@ -238,6 +256,10 @@ struct SettingsAPISection: View {
 
     @ViewBuilder private var nextendoRows: some View {
         nextendoAccountRow
+        if let appearOnline {
+            SeleneToggleRow(appearOnlineRow, subtitle: !appearOnline.wrappedValue || nextendo.presenceShared == false
+                            ? "Presence not shared" : nil, isOn: appearOnline)
+        }
         if showFriends {
             let title = friends.map {
                 L10n.format("Friends · %lld online out of %lld", [$0.filter { $0.presence != .offline }.count, $0.count],
@@ -246,10 +268,30 @@ struct SettingsAPISection: View {
             SeleneButtonRow(title, id: friendsRowID, verbatimTitle: true,
                             buttonTitle: friendsExpanded ? "Hide" : "Show", action: toggleFriends)
                 .accessibilityValue(text(friendsExpanded ? "Expanded" : "Collapsed"))
+            if accountOnly || friendsExpanded { refreshFriendsRow }
             if friendsExpanded {
                 friendsPanel
             }
         }
+    }
+
+    private var refreshFriendsRow: some View {
+        SeleneRow("Refresh friends", id: refreshFriendsRowID) {
+            if let date = nextendo.friendsUpdatedAt {
+                TimelineView(.periodic(from: date, by: 1)) { _ in
+                    let age = date.formatted(.relative(presentation: .numeric, unitsStyle: .abbreviated)
+                        .locale(localization.formatLocale))
+                    NextendoValue(text: L10n.format("Updated %@", [age], context: localization))
+                }
+            }
+            action(.init("Refresh", action: refreshFriends), row: refreshFriendsRowID, index: 0)
+                .disabled(!canRefreshFriends)
+        }
+    }
+
+    private func refreshFriends() {
+        guard canRefreshFriends else { return }
+        nextendo.refreshFriends(clientID: friendsRefreshClient)
     }
 
     private var nextendoClientRow: some View {
@@ -280,7 +322,7 @@ struct SettingsAPISection: View {
                                about: signedOut ? text("Free community online play for compatible nxnative games. Requires a Nextendo account.")
                                    : details.isEmpty ? nil : details,
                                focused: focusedRow == accountRowID,
-                               leading: signedOut ? nil : AnyView(NextendoAvatar(pid: account?.avatarPID, image: account?.avatar,
+                               leading: signedOut ? nil : AnyView(NextendoAvatar(service: nextendo.accountService, pid: account?.avatarPID, image: account?.avatar,
                                                                               revision: nextendo.revision)),
                                titleAccessory: signedOut ? nil : AnyView(accountStatus)) {
             VStack(alignment: .trailing, spacing: canvas.u(4)) {
@@ -291,7 +333,7 @@ struct SettingsAPISection: View {
                         .multilineTextAlignment(.trailing)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: canvas.u(340), alignment: .trailing)
-                } else if nextendo.isWaitingForBrowser || nextendo.isBusy || signedOut {
+                } else if nextendo.isWaitingForBrowser || nextendo.isBusy && !nextendo.isRefreshingFriends || signedOut {
                     NextendoValue(text: text(nextendo.isWaitingForBrowser ? "Waiting for your browser…"
                                              : nextendo.isBusy ? "Checking…" : "Signed out"))
                 }
@@ -372,7 +414,7 @@ struct SettingsAPISection: View {
                 LazyVStack(spacing: canvas.u(8)) {
                     ForEach(friends) { friend in
                         let row = friendRowID(friend.id)
-                        NextendoFriendLine(friend: friend, revision: nextendo.revision) {
+                        NextendoFriendLine(friend: friend, revision: nextendo.revision, service: nextendo.accountService) {
                             action(removeButton(friend), row: row, index: 0)
                                 .disabled(!canUpdateFriends)
                         }
@@ -416,7 +458,7 @@ struct SettingsAPISection: View {
                     ForEach(players) { player in
                         playerLine(player.name, row: recentPlayerRowID(player.id),
                                    buttons: recentButton(player).map { [$0] } ?? []) {
-                            NextendoGameTitle(name: player.game, id: player.gameID)
+                            NextendoGameTitle(service: nextendo.accountService, name: player.game, id: player.gameID)
                         }
                     }
                 }
@@ -566,8 +608,15 @@ struct SettingsAPISection: View {
             actions.append(.init(id: "nextendo", title: "Nextendo", rowID: accountRowID, isEnabled: canActivateNextendo,
                                  secondary: buttons.dropFirst().first.map { ($0.title, $0.action) },
                                  additionalButtons: buttons.dropFirst(2).map(\.action), activate: buttons[0].action))
+            if let appearOnline {
+                actions.append(.init(id: appearOnlineRow, title: appearOnlineRow) { appearOnline.wrappedValue.toggle() })
+            }
             if showFriends {
                 actions.append(.init(id: friendsRowID, title: "Friends", rowID: friendsRowID, activate: toggleFriends))
+                if accountOnly || friendsExpanded {
+                    actions.append(.init(id: refreshFriendsRowID, title: "Refresh friends", rowID: refreshFriendsRowID,
+                                         isEnabled: canRefreshFriends, activate: refreshFriends))
+                }
                 if friendsExpanded {
                     actions.append(.init(id: addRowID, title: "Add a friend", rowID: addRowID, isEnabled: canUpdateFriends,
                                          secondary: ("Add", sendFriendCode)) { friendCodeFocused = true })
@@ -640,21 +689,24 @@ private struct NextendoFriendLine<Trailing: View>: View {
     @Environment(\.nxAppLocale) private var locale
     let friend: NextendoAccountSnapshot.Friend
     let revision: UUID
+    let service: NextendoAccountService
     @ViewBuilder var trailing: () -> Trailing
 
     var body: some View {
         HStack(spacing: canvas.u(8)) {
-            NextendoAvatar(pid: friend.id, initial: String(friend.name.prefix(1)), revision: revision)
+            NextendoAvatar(service: service, pid: friend.id, initial: String(friend.name.prefix(1)), revision: revision)
             Text(friend.name).seleneFont(15).foregroundColor(SeleneTheme.ink90).lineLimit(1)
             if friend.favorite {
                 MaterialIconView(.favorite, size: 16).foregroundColor(SeleneTheme.glyph)
                     .accessibilityLabel(L10n.text("Favorite", context: locale))
             }
             Spacer(minLength: canvas.u(8))
-            if friend.presence == .playing {
-                NextendoGameTitle(name: friend.game, id: friend.gameID)
+            HStack(spacing: canvas.u(4)) {
+                SeleneStatusDot(text: L10n.text(status, context: locale), color: color).fixedSize()
+                if friend.presence == .playing {
+                    NextendoGameTitle(service: service, name: friend.game, id: friend.gameID, prefix: "· ")
+                }
             }
-            SeleneStatusDot(text: L10n.text(status, context: locale), color: color).fixedSize()
             trailing()
         }
         .padding(.horizontal, canvas.u(8))
@@ -683,19 +735,21 @@ private struct NextendoFriendLine<Trailing: View>: View {
 private struct NextendoGameTitle: View {
     @Environment(\.nxAppLocale) private var locale
     @State private var resolved: (key: String, title: String)?
+    let service: NextendoAccountService
     let name: String?
     let id: String?
+    var prefix = ""
     private var key: String { "\(id ?? "")|\(locale.language.rawValue)" }
 
     var body: some View {
         Group {
             if let title = name ?? (resolved?.key == key ? resolved?.title : nil) {
-                NextendoValue(text: title).help(title)
+                NextendoValue(text: prefix + title).help(title)
             }
         }
         .task(id: key) {
             guard name == nil, let id,
-                  let title = try? await NextendoAccountService().gameTitle(id: id, language: locale.language),
+                  let title = try? await service.gameTitle(id: id, language: locale.language),
                   !Task.isCancelled else { return }
             resolved = (key, title)
         }
@@ -705,6 +759,7 @@ private struct NextendoGameTitle: View {
 private struct NextendoAvatar: View {
     @Environment(\.seleneCanvas) private var canvas
     @State private var loaded: (key: String, image: NSImage)?
+    let service: NextendoAccountService
     let pid: UInt64?
     var image: Data? = nil
     var initial: String? = nil
@@ -730,7 +785,7 @@ private struct NextendoAvatar: View {
         .accessibilityHidden(true)
         .task(id: key) {
             guard image == nil, let pid, TileArtMemo.shared.object(forKey: key as NSString) == nil,
-                  let data = try? await NextendoAccountService().avatar(pid: pid),
+                  let data = try? await service.avatar(pid: pid),
                   !Task.isCancelled, let avatar = NSImage(data: data) else { return }
             TileArtMemo.store(avatar, for: key as NSString)
             loaded = (key, avatar)

@@ -11,6 +11,7 @@ Come si aggiorna:
 
 | Parte | Stato | Prove ancora da fare |
 |---|---|---|
+| Presenza e aggiornamento degli amici Nextendo | in attesa | Con due conti di prova verificare online, passaggio a In gioco, cambio profilo, Mostrati online disattivato, Aggiorna e orario relativo. Le verifiche automatiche usano un trasporto finto. |
 | Profili locali e menu di ordinamento (fase 1) | validato da Sofian, tranne la scelta dell’avatar | L’avatar passa alla verifica della fase 2. |
 | Avatar rinnovato, isolamento dei profili e Nextendo (fase 2) | in attesa | Con due profili di prova confrontare preferiti, cronologia e aspetto in Spotlight, Collection, Attività e Details. Provare ritaglio/GIF con tastiera, controller, VoiceOver e Riduci movimento; collegare due conti Nextendo e verificare due lanci online, un host precedente e il backup/ripristino su una copia. |
 | Pin del motore nel bundle e aggiornamento perso | in attesa | Dal Mac del giocatore controllare l'offerta, le note e il riavvio; in Setup provare Clone su una cartella nuova e Update o Switch su un checkout pulito con `origin` upstream. Verificare SHA raggiunto, `origin` invariato, checkout sporco intatto e un gioco esistente ancora giocabile. |

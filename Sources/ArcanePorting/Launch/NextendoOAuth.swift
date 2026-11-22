@@ -113,7 +113,7 @@ public struct NextendoOAuth {
         }
     }
 
-    init(store: NextendoTokenStore, send: @escaping (URLRequest) async throws -> (Data, URLResponse)) {
+    package init(store: NextendoTokenStore, send: @escaping (URLRequest) async throws -> (Data, URLResponse)) {
         self.store = store
         self.send = send
     }

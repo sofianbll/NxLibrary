@@ -2,6 +2,66 @@ import XCTest
 @testable import ArcanePorting
 
 final class NextendoAccountServiceTests: XCTestCase {
+    @MainActor
+    func testIdlePresenceRenewsAndStopsWhenAPlayOrPreferenceChangeOccurs() async throws {
+        let (client, server) = try await makeClient([:], posts: ["/api/presence": (200, #"{"ok":true}"#)])
+        var enabled = false
+        var playing = false
+        var intervals: [Duration] = []
+        var results: [Bool?] = []
+        let eligible = { enabled && !playing }
+        let renew = { (interval: Duration) in
+            intervals.append(interval)
+            if intervals.count == 2 { playing = true }
+        }
+        await client.maintainPresence(clientID: "public-test", eligible: eligible, sleep: renew) { results.append($0) }
+        enabled = true
+        await client.maintainPresence(clientID: "public-test", eligible: eligible, sleep: renew) { results.append($0) }
+        await client.maintainPresence(clientID: "public-test", eligible: eligible, sleep: renew) { results.append($0) }
+        XCTAssertEqual(intervals, [.seconds(45), .seconds(45)])
+        XCTAssertEqual(results, [true, true])
+        let payloads = await server.postBodies["/api/presence"] ?? []
+        XCTAssertEqual(payloads.count, 2)
+        for payload in payloads {
+            let fields = try JSONSerialization.jsonObject(with: Data(payload.utf8)) as? [String: Any]
+            XCTAssertEqual(fields?.keys.sorted(), ["platform", "status"])
+            XCTAssertEqual(fields?["status"] as? Int, 1)
+            XCTAssertEqual(fields?["platform"] as? String, "app")
+        }
+    }
+
+    @MainActor
+    func testPresenceDenialDoesNotExpireTheAccount() async throws {
+        for status in [401, 403] {
+            let (client, server) = try await makeClient([:], posts: ["/api/presence": (status, #"{"error":"denied"}"#)])
+            var results: [Bool?] = []
+            await client.maintainPresence(clientID: "public-test", eligible: { true },
+                                          sleep: { _ in throw CancellationError() }) { results.append($0) }
+            XCTAssertEqual(results, [false])
+            let grants = await server.refreshGrants
+            XCTAssertEqual(grants, 1)
+        }
+    }
+
+    func testRefreshFriendsUpdatesListsWithoutReloadingProfileOrOnlinePlay() async throws {
+        let (client, server) = try await makeClient([
+            "/api/oauth/userinfo": #"{"username":"player","display_name":"Pilot"}"#,
+            "/api/friends": #"{"friends":[{"pid":42,"name":"Friend","presence":{"status":1}}],"requests":[],"sent":[]}"#,
+        ])
+        let before = NextendoAccountSnapshot(name: "Pilot", username: "player", countryCode: "FR", friendCode: nil,
+                                            avatar: nil, avatarPID: nil, friends: [], requests: [], sent: [],
+                                            recentPlayers: [], failure: .onlinePlayUnavailable)
+        let result = try await client.refreshFriends(in: before, clientID: "public-test")
+        let updated = try XCTUnwrap(result)
+        XCTAssertEqual(updated.friends?.map(\.presence), [.online])
+        XCTAssertEqual(updated.countryCode, "FR")
+        XCTAssertEqual(updated.failure, .onlinePlayUnavailable)
+        for path in ["/api/profile", "/api/online-status", "/api/recent-players"] {
+            let requests = await server.authorization(for: path)
+            XCTAssertTrue(requests.isEmpty)
+        }
+    }
+
     func testSnapshotCombinesCanonicalAccountAndFriendsFields() async throws {
         let (client, server) = try await makeClient([
             "/api/oauth/userinfo": #"{"pid":42,"username":"player","display_name":"Mii name","friend_code":"000011112222"}"#,
@@ -11,7 +71,7 @@ final class NextendoAccountServiceTests: XCTestCase {
                 {"friends":[
                   {"pid":7,"name":"Ada"},
                   {"pid":3,"name":"Zoe","favorite":true,"presence":{"status":2,"app_id":"0100000000000000","jeu":"Game 2"}},
-                  {"pid":4,"name":"Cléo","favorite":true,"presence":{"status":0,"jeu":"Old game"}},
+                  {"pid":4,"name":"Cléo","favorite":true,"presence":{"status":0,"app_id":"0100000000000000","jeu":"Old game"}},
                   {"pid":6,"name":"Ben","presence":{"status":1}},
                   {"pid":5,"name":"Aria","presence":{"status":1}},
                   {"pid":9,"username":"Yuki","presence":{"status":1,"app_id":"0100000000000001","jeu":"Game 1"}},
@@ -40,6 +100,7 @@ final class NextendoAccountServiceTests: XCTestCase {
         XCTAssertEqual(snapshot.friends?.map(\.name), ["Zoe", "Aria", "Ben", "Yuki", "Cléo", "Ada"])
         XCTAssertEqual(snapshot.friends?.map(\.presence), [.playing, .online, .online, .playing, .offline, .offline])
         XCTAssertEqual(snapshot.friends?.compactMap(\.game), ["Game 2", "Game 1"])
+        XCTAssertEqual(snapshot.friends?.compactMap(\.gameID), ["0100000000000000", "0100000000000001"])
         XCTAssertEqual(snapshot.requests?.map(\.id), [21])
         XCTAssertEqual(snapshot.requests?.map(\.name), ["Incoming"])
         XCTAssertEqual(snapshot.sent?.map(\.name), ["Outgoing"])

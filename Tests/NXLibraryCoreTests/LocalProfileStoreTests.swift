@@ -22,7 +22,9 @@ final class LocalProfileStoreTests: XCTestCase {
             XCTAssertEqual(first.look, .init(settings))
             XCTAssertEqual(store.originalID, first.id)
             XCTAssertFalse(store.remove(first.id))
-            let other = LocalProfile(name: "  Jade ", avatar: 2, look: .init(AppSettings()))
+            XCTAssertNil(first.appearsOnline)
+            var other = LocalProfile(name: "  Jade ", avatar: 2, look: .init(AppSettings()))
+            other.appearsOnline = false
             XCTAssertTrue(store.update(other))
             XCTAssertEqual(store.active?.id, first.id)
             let profileFile = url.appendingPathComponent("profiles.json")
@@ -35,6 +37,7 @@ final class LocalProfileStoreTests: XCTestCase {
             let reopened = LocalProfileStore(directory: url, settings: .init(), name: "Do not reimport")
             XCTAssertEqual(reopened.active?.name, "Jade")
             XCTAssertEqual(reopened.active?.favorites, [game])
+            XCTAssertEqual(reopened.active?.appearsOnline, false)
             XCTAssertTrue(reopened.remove(other.id))
             XCTAssertEqual(reopened.active, first)
         }

@@ -27,6 +27,7 @@ import ArcanePorting
         precondition(CTFontManagerRegisterFontsForURL(font as CFURL, .process, nil))
         let data = AppData.supportRoot
         let settings = AppSettingsStore(fileURL: data.appendingPathComponent("settings.json"))
+        settings.settings.nextendoClientID = "fixture-client"
         let profiles = LocalProfileStore(directory: data, settings: settings.settings, name: "Alex")
         let alex = profiles.active!
         let sam = LocalProfile(name: "Sam", avatar: 3, look: alex.look)
@@ -84,12 +85,12 @@ import ArcanePorting
                        last: Date(timeIntervalSince1970: 1_791_014_400), duration: 9450)]
         for (name, presence) in [("connected", ProfilePresence.connected), ("offline", .offline), ("no-account", .notLinked),
                                  ("loading", .loading), ("unknown", .unknown), ("error", .failed), ("expired", .expired)] {
-            let nextendo = NextendoSettings(store: .init(directory: data.appendingPathComponent("fixture-account")))
+            let nextendo = fakeAccount(data.appendingPathComponent("fixture-account"))
             nextendo.setScreenFixture(presence)
             try render("08-profile-\(name)", ProfilePageLayout(profile: alex, presence: presence, games: history, onClose: {}) {
                 SettingsAPISection(viewModel: vm, settings: settings, showsMultiplayer: true, supportsNextendo: true,
-                                   accountOnly: true, accountOffline: presence == .offline, advanced: .constant(false),
-                                   onActions: { _ in }, nextendo: nextendo)
+                                   accountOnly: true, accountOffline: presence == .offline, appearOnline: .constant(true),
+                                   advanced: .constant(false), onActions: { _ in }, nextendo: nextendo)
             }, in: out, refs, "screenshots/activity.png")
         }
         let router = AppRouter()
@@ -147,13 +148,16 @@ import ArcanePorting
         precondition(vm.catalogSnapshot.revision == revision && vm.catalogGames.first?.isFavorite == true)
         let accountDir = NextendoLaunch.tokenStore(profileID: sam.id, originalID: alex.id, root: data).directory
         precondition(accountDir != NextendoLaunch.tokenStore(profileID: alex.id, originalID: alex.id, root: data).directory)
-        let samAccount = NextendoSettings(store: .init(directory: accountDir))
+        let samAccount = fakeAccount(accountDir)
         samAccount.setScreenFixture(.connected, second: true)
+        L10n.setContext(french)
         try render("18-second-profile-nextendo", ProfilePageLayout(profile: sam, presence: .connected,
             games: [.init(id: secondGame, name: game.name, last: .now, duration: 123)], onClose: {}, onSwitch: {}) {
             SettingsAPISection(viewModel: vm, settings: settings, showsMultiplayer: true, supportsNextendo: true,
-                               accountOnly: true, advanced: .constant(false), onActions: { _ in }, nextendo: samAccount)
-        }, in: out, refs, "screenshots/activity.png")
+                               accountOnly: true, appearOnline: .constant(true), advanced: .constant(false),
+                               onActions: { _ in }, nextendo: samAccount)
+        }.environment(\.nxAppLocale, french), in: out, refs, "screenshots/activity.png")
+        L10n.setContext(.init(language: .english, region: "US"))
         try render("12-sort-before", stage(BeforeSortTopBar(), showsSort: false), in: out, refs, "screenshots/library.png")
         try render("13-sort-after", after, in: out, refs, "screenshots/library.png")
         var focus: LibrarySort? = current
@@ -171,6 +175,15 @@ import ArcanePorting
             panel(NSImage(contentsOf: beforeImage)!, "Arcane · avant")
             panel(NSImage(contentsOf: afterImage)!, "Arcane · après")
         }), to: out.appendingPathComponent("15-sort-avant-apres.png"))
+    }
+
+    @MainActor static func fakeAccount(_ directory: URL) -> NextendoSettings {
+        let store = NextendoTokenStore(directory: directory)
+        let oauth = NextendoOAuth(store: store) { request in
+            precondition(request.url?.path == "/api/avatar")
+            return (Data(), HTTPURLResponse(url: request.url!, statusCode: 404, httpVersion: nil, headerFields: nil)!)
+        }
+        return NextendoSettings(store: store, service: .init(oauth: oauth))
     }
 
     @MainActor static func checkGIF(in root: URL) throws {
@@ -309,13 +322,22 @@ def main():
         page = app / "Views/Shell/LocalProfilePage.swift"
         replace(page, r'            ScrollViewReader \{ proxy in\n                ScrollView \{', '            Group {\n                Group {')
         replace(page, r'                \.onChange\(of: row\) \{ _, value in\n.*?\n                }', '')
-        replace(app / "Views/Settings/SettingsAPISection.swift", r"            if supportsNextendo \{ nextendo.check\(clientID: clientID\) \}", "")
+        replace(page, r"\.padding\(\.bottom, canvas.u\(134\)\)", ".padding(.bottom, canvas.u(70))")
+        api = app / "Views/Settings/SettingsAPISection.swift"
+        replace(api, r"            if supportsNextendo \{ nextendo.check\(clientID: clientID\) \}", "")
+        replace(api, r"@State private var friendsExpanded = false",
+                "@State private var friendsExpanded = true")
+        replace(api, r'            TextField\(text\("Friend code"\).*?\n                \.onSubmit\(sendFriendCode\)',
+                '            Text(verbatim: "SW-0000-0000-0000")')
         with (package / "Sources/ArcanePorting/Launch/NextendoAccountService.swift").open("a") as swift:
             swift.write(r'''
 extension NextendoAccountSnapshot {
     package static func screenFixture(second: Bool) -> Self {
         .init(name: second ? "Solar Pilot" : "Lunar Pilot", username: second ? "fixture2" : "fixture", countryCode: nil, friendCode: nil, avatar: nil,
-              avatarPID: nil, friends: [.init(id: 1, name: "Sol", favorite: false, presence: .online, game: nil, gameID: nil)],
+              avatarPID: nil, friends: [
+                  .init(id: 1, name: "Sol", favorite: false, presence: .online, game: nil, gameID: nil),
+                  .init(id: 2, name: "Nova", favorite: false, presence: .playing, game: "Pokémon Legends: Z-A", gameID: nil)
+              ],
               requests: [], sent: [], recentPlayers: [], failure: nil)
     }
 }
@@ -325,7 +347,9 @@ extension NextendoAccountSnapshot {
 extension NextendoSettings {
     func setScreenFixture(_ presence: ProfilePresence, second: Bool = false) {
         switch presence {
-        case .connected: status = .signedIn; account = .screenFixture(second: second); accountName = account?.name
+        case .connected:
+            status = .signedIn; account = .screenFixture(second: second); accountName = account?.name
+            friendsUpdatedAt = .now.addingTimeInterval(-30)
         case .offline: status = .unavailable
         case .loading: isBusy = true
         case .expired: status = .expired

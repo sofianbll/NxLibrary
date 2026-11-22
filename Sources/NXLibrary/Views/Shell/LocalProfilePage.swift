@@ -23,11 +23,12 @@ enum ProfilePresence: String {
 
 struct LocalProfilePage: View {
     let profile: LocalProfile
+    @ObservedObject var nextendo: NextendoSettings
     @ObservedObject var viewModel: AppViewModel
     @ObservedObject var settings: AppSettingsStore
     @ObservedObject var history: PlaySessionStore
-    @StateObject private var nextendo: NextendoSettings
     let onClose: () -> Void
+    let onAppearOnline: (Bool) -> Void
     let onSwitch: () -> Void
     @State private var actions: [SettingsRowAction] = []
     @State private var row: String?
@@ -36,21 +37,9 @@ struct LocalProfilePage: View {
     @State private var checked = false
     @State private var removalFocus: SeleneConfirmButton = .cancel
 
-    init(profile: LocalProfile, originalID: UUID?, viewModel: AppViewModel, settings: AppSettingsStore,
-         history: PlaySessionStore, onClose: @escaping () -> Void, onSwitch: @escaping () -> Void) {
-        self.profile = profile
-        self.viewModel = viewModel
-        self.settings = settings
-        self.history = history
-        self.onClose = onClose
-        self.onSwitch = onSwitch
-        let store = NextendoLaunch.tokenStore(profileID: profile.id, originalID: originalID)
-        _nextendo = StateObject(wrappedValue: profile.id == originalID ? .shared : NextendoSettings(store: store))
-    }
-
     private var presence: ProfilePresence {
         if online == false { return .offline }
-        if nextendo.isBusy { return .loading }
+        if nextendo.isBusy && !nextendo.isRefreshingFriends { return .loading }
         if nextendo.status == .expired { return .expired }
         if nextendo.status == .unavailable || nextendo.failure != nil && nextendo.status == .signedOut { return .failed }
         if nextendo.status == .signedIn { return nextendo.account == nil ? .unknown : .connected }
@@ -61,7 +50,9 @@ struct LocalProfilePage: View {
         ZStack {
             ProfilePageLayout(profile: profile, presence: presence, games: recent, onClose: onClose, onSwitch: onSwitch) {
                 SettingsAPISection(viewModel: viewModel, settings: settings, showsMultiplayer: true,
-                                   supportsNextendo: true, accountOnly: true, accountOffline: online == false, advanced: .constant(false),
+                                   supportsNextendo: true, accountOnly: true, accountOffline: online == false,
+                                   appearOnline: Binding(get: { profile.appearsOnline != false }, set: onAppearOnline),
+                                   advanced: .constant(false),
                                    onActions: updateActions, nextendo: nextendo)
                     .environment(\.seleneFocusedRowID, row)
                     .environment(\.seleneFocusedButton, button)

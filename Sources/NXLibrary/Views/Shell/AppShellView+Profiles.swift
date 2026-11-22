@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import NXLibraryCore
+import ArcanePorting
 
 struct ProfileFlow {
     enum Page { case picker, editor, detail }
@@ -21,6 +22,34 @@ extension Notification.Name {
 }
 
 extension AppShellView {
+    var profileNextendo: NextendoSettings? {
+        guard let active = profiles.active else { return nil }
+        if active.id == profiles.originalID { return .shared }
+        return additionalNextendo?.id == active.id ? additionalNextendo?.account : nil
+    }
+
+    @ViewBuilder var profilePresenceTask: some View {
+        if let profile = profiles.active, let nextendo = profileNextendo {
+            let clientID = settings.settings.nextendoClientID ?? NextendoLaunch.buildClientID
+            let eligible = {
+                profiles.active?.id == profile.id && profiles.active?.appearsOnline != false && !profiles.failed
+                    && runningGames.runningGameIDs.isEmpty && !SteamPlayCoordinator.blocksIdlePresence(SteamPlayCoordinator.shared.states)
+                    && viewModel.launchingGameId == nil && viewModel.launchOverlay == nil
+                    && (settings.settings.nextendoClientID ?? NextendoLaunch.buildClientID) == clientID
+            }
+            NextendoPresenceTask(account: nextendo, clientID: !steamBlocksIdlePresence && eligible() ? clientID : nil,
+                                 eligible: eligible)
+                .id(profile.id)
+        }
+    }
+
+    func updateProfileNextendo() {
+        additionalNextendo = profiles.active.flatMap { profile in
+            guard profile.id != profiles.originalID else { return nil }
+            return (profile.id, NextendoSettings(store: NextendoLaunch.tokenStore(profileID: profile.id, originalID: profiles.originalID)))
+        }
+    }
+
     @ViewBuilder var profileLayer: some View {
         if let flow = profileFlow, let active = profiles.active {
             switch flow.page {
@@ -31,10 +60,20 @@ extension AppShellView {
                                   onChoose: chooseProfile, onClose: closeProfile,
                                   onActiveEdited: applyActiveProfile)
             case .detail:
-                LocalProfilePage(profile: active, originalID: profiles.originalID, viewModel: viewModel,
-                                 settings: settings, history: playSessions, onClose: closeProfile) {
-                    profileFlow?.page = .picker
-                    profileFlow?.returnsToPortrait = true
+                if let nextendo = profileNextendo {
+                    LocalProfilePage(profile: active, nextendo: nextendo, viewModel: viewModel,
+                                     settings: settings, history: playSessions, onClose: closeProfile, onAppearOnline: { enabled in
+                        guard var profile = profiles.active, profile.id == active.id else { return }
+                        profile.appearsOnline = enabled ? nil : false
+                        if !profiles.update(profile) {
+                            viewModel.showSettingsNotice(title: L10n.text("Settings not saved"),
+                                                         message: L10n.text("Your changes could not be saved. Try again."))
+                        }
+                    }) {
+                        profileFlow?.page = .picker
+                        profileFlow?.returnsToPortrait = true
+                    }
+                    .id(active.id)
                 }
             }
         }
@@ -115,5 +154,27 @@ extension AppShellView {
             postProfileAction(action)
         }
         return nil
+    }
+}
+
+private struct NextendoPresenceTask: View {
+    @ObservedObject var account: NextendoSettings
+    let clientID: String?
+    let eligible: () -> Bool
+
+    private struct Key: Equatable {
+        let clientID: String?
+        let revision: UUID
+    }
+
+    var body: some View {
+        Color.clear.accessibilityHidden(true).allowsHitTesting(false)
+            .task(id: Key(clientID: account.isSigningOut ? nil : clientID, revision: account.presenceRevision)) {
+                guard !Task.isCancelled else { return }
+                account.clearPresence()
+                if let clientID, !account.isSigningOut {
+                    await account.publishPresence(clientID: clientID, eligible: eligible)
+                }
+            }
     }
 }

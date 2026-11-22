@@ -57718,6 +57718,39 @@
         }
       }
     },
+    "Appear online": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Appear online"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Mostrati online"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Apparaître en ligne"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Online erscheinen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Aparecer en línea"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Aparecer online"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "显示在线"}}
+      }
+    },
+    "Presence not shared": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Presence not shared"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Presenza non condivisa"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Présence non partagée"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Status wird nicht geteilt"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Presencia no compartida"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Presença não compartilhada"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "未共享在线状态"}}
+      }
+    },
+    "Refresh friends": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Refresh friends"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Aggiorna amici"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Actualiser les amis"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Freundesliste aktualisieren"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Actualizar lista de amigos"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Atualizar lista de amigos"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "刷新好友列表"}}
+      }
+    },
     "Refresh": {
       "comment": "SavesPanel.swift:144",
       "localizations": {

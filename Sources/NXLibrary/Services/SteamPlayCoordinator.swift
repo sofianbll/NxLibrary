@@ -86,6 +86,9 @@ final class SteamPlayCoordinator: ObservableObject {
 
     /// A Steam game's own app is running.
     var hasRunningGame: Bool { states.values.contains { if case .running = $0.phase { return true }; return false } }
+    static func blocksIdlePresence(_ states: [UUID: SteamPlayState]) -> Bool {
+        states.values.contains { switch $0.phase { case .starting, .running: true; default: false } }
+    }
 
     func isRunningGame(pid: Int32) -> Bool {
         states.values.contains { $0.phase == .running(pid: pid) }
