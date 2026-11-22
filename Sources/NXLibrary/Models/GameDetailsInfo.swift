@@ -11,7 +11,7 @@ struct GameDLCItem: Identifiable, Hashable {
     let folderPath: String
 
     var formattedSize: String {
-        ByteCountFormatter.string(fromByteCount: sizeBytes, countStyle: .file)
+        seleneBytes(sizeBytes)
     }
 }
 
@@ -25,11 +25,11 @@ struct GameDetailsProfile: Equatable {
     let isExecutablePlayable: Bool
 
     var formattedTotalSize: String {
-        ByteCountFormatter.string(fromByteCount: appBundleSizeBytes, countStyle: .file)
+        seleneBytes(appBundleSizeBytes)
     }
 
     var formattedSaveSize: String {
-        ByteCountFormatter.string(fromByteCount: saveSizeBytes, countStyle: .file)
+        seleneBytes(saveSizeBytes)
     }
 
     static func inspect(for game: PortedGame) -> GameDetailsProfile {

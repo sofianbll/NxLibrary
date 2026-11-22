@@ -78,7 +78,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 | [Sources/NXLibrary/Views/MainView.swift](../../Sources/NXLibrary/Views/MainView.swift) | Presenta AppShellView come contenuto della finestra principale. |
 | [Sources/NXLibrary/Views/Shell/AppShellView.swift](../../Sources/NXLibrary/Views/Shell/AppShellView.swift) | Possiede il backdrop persistente e lo stato condiviso, passa a Spotlight il modello Mods, compone schermate e overlay e instrada input e avvisi (compresi i guasti cloud e l'annullamento da tastiera). `nativeDialogOwnsInput` sospende controller e tastiera sotto dialoghi nativi. Il file tiene stato, init e `body`; il resto sta nelle estensioni qui sotto. |
 | [Sources/NXLibrary/Views/Components/SeleneOverlay.swift](../../Sources/NXLibrary/Views/Components/SeleneOverlay.swift) | Velo, stile del blur, clic all'esterno, isolamento di puntatore e VoiceOver, suggerimenti e filtro per il focus al passaggio del puntatore. |
-| [Sources/NXLibrary/Views/Shell/AppShellView+Layers.swift](../../Sources/NXLibrary/Views/Shell/AppShellView+Layers.swift) | Strati e overlay della shell; ripristina il centro attività e sveglia la coda dopo la scansione. |
+| [Sources/NXLibrary/Views/Shell/AppShellView+Layers.swift](../../Sources/NXLibrary/Views/Shell/AppShellView+Layers.swift) | Strati e overlay della shell; ripristina il centro attività, sveglia la coda dopo la scansione e azzera le notifiche al cambio di profilo. |
 | [Sources/NXLibrary/Views/Shell/AppShellView+Startup.swift](../../Sources/NXLibrary/Views/Shell/AppShellView+Startup.swift) | Avvia la shell, ripristina la home e risveglia le installazioni e la coda di porting alla chiusura del gioco. |
 | [Sources/NXLibrary/Views/Shell/AppShellView+Profiles.swift](../../Sources/NXLibrary/Views/Shell/AppShellView+Profiles.swift) | Home, cambio dopo la chiusura dei giochi, conferme dell’ospite, tastierino PIN e rinnovo della presenza. |
 | [Sources/NXLibrary/Views/Shell/AppShellView+Overlays.swift](../../Sources/NXLibrary/Views/Shell/AppShellView+Overlays.swift) | Dialoghi e avvisi della shell: cloud, impostazioni, benvenuto, installazione fallita, Close Game, rimozione e aggiornamento. Passa l'indice di Annulla al dialogo condiviso. |
@@ -90,7 +90,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 | [Sources/NXLibrary/Views/Shell/ProfileEditorView.swift](../../Sources/NXLibrary/Views/Shell/ProfileEditorView.swift) | Bozza dei quattro passi, tastiera a schermo, avatar, ritaglio e anteprima del tema. |
 | [Sources/NXLibrary/Views/Shell/ProfileAvatar.swift](../../Sources/NXLibrary/Views/Shell/ProfileAvatar.swift) | Ritaglia artwork locale o file scelti e conserva le GIF animate con i loro tempi. |
 | [Sources/NXLibrary/Views/Shell/LocalProfilePage.swift](../../Sources/NXLibrary/Views/Shell/LocalProfilePage.swift) | Identità e attività anche senza conto; codice, presenza, visibilità del gioco e pannello Nextendo facoltativo. |
-| [Sources/NXLibrary/Views/Shell/ActivityCenterView.swift](../../Sources/NXLibrary/Views/Shell/ActivityCenterView.swift) | Mostra Compilazione e Cloud anche vuote, code e aggiornamento pronto in grigio, progressi Selene ed esiti. |
+| [Sources/NXLibrary/Views/Shell/ActivityCenterView.swift](../../Sources/NXLibrary/Views/Shell/ActivityCenterView.swift) | Mostra Compilazione e Cloud anche vuote, code e aggiornamento pronto in grigio, progressi Selene ed esiti senza dettagli uguali allo stato. |
 | [Sources/NXLibraryCore/Selene/ActivityCenterFocus.swift](../../Sources/NXLibraryCore/Selene/ActivityCenterFocus.swift) | Identità e navigazione delle righe attive, in coda, concluse e del comando Clear all. |
 | [Sources/NXLibraryCore/NXLibraryCore.swift](../../Sources/NXLibraryCore/NXLibraryCore.swift) | Espone la versione nominale del modulo Core. |
 | [LaunchReveal.swift](../../Sources/NXLibrary/Views/Launch/LaunchReveal.swift) | Rende visibile la finestra al primo frame del moonlight, con dissolvenza e scadenza, poi consente il fullscreen; integra il bootstrap con un NSView non interattivo. |
@@ -142,12 +142,12 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 | [Sources/NXLibrary/Models/AppIconAppearanceMode.swift](../../Sources/NXLibrary/Models/AppIconAppearanceMode.swift) | Enumera le varianti dell’icona dell’app selezionabili dall’utente. |
 | [Sources/NXLibrary/Models/BuildStageItem.swift](../../Sources/NXLibrary/Models/BuildStageItem.swift) | Rappresenta una fase del porting nella lista di avanzamento. |
 | [Sources/NXLibrary/Models/BuildState.swift](../../Sources/NXLibrary/Models/BuildState.swift) | Enumera gli esiti e lo stato operativo del porting nella UI. |
-| [Sources/NXLibrary/Models/GameDetailsInfo.swift](../../Sources/NXLibrary/Models/GameDetailsInfo.swift) | Ispeziona DLC e salvataggi del bundle e prepara dimensioni e dettagli del gioco. |
+| [Sources/NXLibrary/Models/GameDetailsInfo.swift](../../Sources/NXLibrary/Models/GameDetailsInfo.swift) | Ispeziona DLC e salvataggi del bundle e prepara dimensioni localizzate e dettagli del gioco. |
 | [Sources/NXLibrary/Models/GamepadType.swift](../../Sources/NXLibrary/Models/GamepadType.swift) | Definisce brand dei controller e azioni astratte GamepadAction. |
 | [Sources/NXLibrary/Models/LogEntry.swift](../../Sources/NXLibrary/Models/LogEntry.swift) | Rappresenta messaggi, livelli e identità delle righe di log mostrate dall’app. |
 | [Sources/NXLibrary/Models/PlayedGame.swift](../../Sources/NXLibrary/Models/PlayedGame.swift) | Gioco nxnative o Steam per schermata di lancio e card di fine sessione. |
 | [Sources/NXLibrary/Models/NXLibraryError.swift](../../Sources/NXLibrary/Models/NXLibraryError.swift) | Raggruppa errori applicativi e relative spiegazioni, compresi i rifiuti prima del porting. |
-| [Sources/NXLibrary/Models/SelectableGame.swift](../../Sources/NXLibrary/Models/SelectableGame.swift) | Rappresenta le sorgenti selezionabili e l’ordinamento delle versioni nel wizard. |
+| [Sources/NXLibrary/Models/SelectableGame.swift](../../Sources/NXLibrary/Models/SelectableGame.swift) | Rappresenta le sorgenti selezionabili, la loro dimensione localizzata e l’ordinamento delle versioni nel wizard. |
 | [Sources/NXLibrary/Models/UpstreamCheckState.swift](../../Sources/NXLibrary/Models/UpstreamCheckState.swift) | Rappresenta gli stati del controllo del changelog upstream. |
 
 ## Integrazione con macOS e servizi applicativi
@@ -400,7 +400,7 @@ Cartella `Sources/ArcanePorting/`.
 
 | File | Responsabilità |
 |---|---|
-| [Sources/ArcanePorting/PortedGame.swift](../../Sources/ArcanePorting/PortedGame.swift) | Modello persistente del gioco con bundle, sorgenti, impostazioni, build e installazione in attesa. |
+| [Sources/ArcanePorting/PortedGame.swift](../../Sources/ArcanePorting/PortedGame.swift) | Modello persistente del gioco con bundle, sorgenti, impostazioni, build e installazione in attesa; espone la dimensione localizzata. |
 | [Sources/ArcanePorting/LibraryFile.swift](../../Sources/ArcanePorting/LibraryFile.swift) | Contenitore versionato del catalogo della libreria. |
 | [Sources/ArcanePorting/GameStatus.swift](../../Sources/ArcanePorting/GameStatus.swift) | Enumera disponibilità e stato del gioco rispetto ad app, sorgenti e porting. |
 | [Sources/ArcanePorting/TargetPlatform.swift](../../Sources/ArcanePorting/TargetPlatform.swift) | Definisce il target mac-app e le sue etichette per l’interfaccia. |
@@ -807,7 +807,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Sources/NXLibrary/Views/Components/SteamPlatformLogo.swift](../../Sources/NXLibrary/Views/Components/SteamPlatformLogo.swift) | Logo ufficiale Steam per la piattaforma dei giochi Steam: da solo, almeno 50 pixel, spazio libero della manovella. |
 | [Sources/NXLibrary/Views/Components/GameLogoArea.swift](../../Sources/NXLibrary/Views/Components/GameLogoArea.swift) | Area del logo del gioco con la geometria condivisa da Spotlight e Collection; caricamento e impostazioni restano fuori. |
 | [Sources/NXLibrary/Views/Components/GamePrimaryActions.swift](../../Sources/NXLibrary/Views/Components/GamePrimaryActions.swift) | Azioni principali con avanzamento di Download, Options, pillola Cloud e preferito con bersagli di input stabili. |
-| [Sources/NXLibrary/Views/Components/SessionCard.swift](../../Sources/NXLibrary/Views/Components/SessionCard.swift) | Card di fine sessione e toast degli obiettivi: aspettano che Arcane sia davanti, compaiono 1,8 s dopo per 8 s. |
+| [Sources/NXLibrary/Views/Components/SessionCard.swift](../../Sources/NXLibrary/Views/Components/SessionCard.swift) | Card di fine sessione e toast degli obiettivi con titolo plurale: aspettano che Arcane sia davanti, compaiono 1,8 s dopo per 8 s e si azzerano al cambio di profilo. |
 
 ## UI · temi, rendering e sfondi
 
@@ -1043,7 +1043,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/NXLibraryCoreTests/SettingsRowButtonsTests.swift](../../Tests/NXLibraryCoreTests/SettingsRowButtonsTests.swift) | Riga con due pulsanti: Sinistra/Destra fra i pulsanti, uscita dalla riga, riga con un solo pulsante, A preme quello in focus. |
 | [Tests/NXLibraryCoreTests/SpotlightRowGeometryTests.swift](../../Tests/NXLibraryCoreTests/SpotlightRowGeometryTests.swift) | Posto a schermo = camera più posto nella riga, tessere che restano ferme durante lo scorrimento, distanze costanti e quattro tessere di riserva ai bordi. |
 | [Tests/NXLibraryCoreTests/TileMotionTests.swift](../../Tests/NXLibraryCoreTests/TileMotionTests.swift) | Periodi e curve di bagliore, ring e riflesso, campioni che chiudono il loop senza salti, fase nel periodo e simbolo del download. |
-| [Tests/ArcanePortingTests/AppLocaleTests.swift](../../Tests/ArcanePortingTests/AppLocaleTests.swift) | Preferenze, migrazione, formati, ricerca, identità e traduzioni native; avvisi pipeline localizzati senza output tecnico grezzo. |
+| [Tests/ArcanePortingTests/AppLocaleTests.swift](../../Tests/ArcanePortingTests/AppLocaleTests.swift) | Preferenze, migrazione, formati (anche Go/Mo), ricerca, identità e traduzioni native (anche il plurale degli obiettivi); avvisi pipeline localizzati senza output tecnico grezzo. |
 | [Tests/PublicationChecks/test_localizations.py](../../Tests/PublicationChecks/test_localizations.py) | Rifiuto di cataloghi incompleti e bundle senza risorse. |
 | [DevelopmentProfileTests.swift](../../Tests/ArcanePortingTests/DevelopmentProfileTests.swift) | Copia, conservazione della sorgente, errori, controllo Porting di una libreria malformata, sessioni, symlink e ripetizione. |
 | [DevelopmentProfileEffectTests.swift](../../Tests/ArcanePortingTests/DevelopmentProfileEffectTests.swift) | Isolamento Dev, staging e richieste esplicite. Verifica anche che la riconciliazione delle mod conservi record e overlay dopo un errore di lettura. |
@@ -1083,7 +1083,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [run_keymap_screens.py](../../Tests/CatalogAppChecks/run_keymap_screens.py) | Verifica tutti i glifi e rende la barra Selene per Xbox, Switch, DualSense e tastiera senza aprire finestre. |
 | [run_inbox_screens.py](../../Tests/CatalogAppChecks/run_inbox_screens.py) | Rende Inbox vuota, tre file, un file ambiguo, la conferma Selene e la card Spotlight su un profilo fittizio, senza finestre. |
 | [run_cloud_screens.py](../../Tests/CatalogAppChecks/run_cloud_screens.py) | Verifica pulsante Cloud e glifi; `--compare-with-5047557` confronta i pixel della scheda, salvo il punto del trasferimento. Rende copertina, pannello, attività, My library, riferimento e Play together; verifica azioni e trasferimento durante Play con fixture locali. |
-| [run_profiles.py](../../Tests/CatalogAppChecks/run_profiles.py) | Rende profili con/senza conto, cambio in gioco, ospite, PIN, menu (sottomenu sopra Details e pillole misurate in tutte le lingue), My library nei sei stati e schermate della libreria; controlla avvio e salvataggi, senza finestre né dati reali. |
+| [run_profiles.py](../../Tests/CatalogAppChecks/run_profiles.py) | Rende profili con/senza conto, cambio in gioco, ospite, PIN, menu (sottomenu sopra Details e pillole misurate in tutte le lingue), My library nei sei stati e schermate della libreria; controlla avvio, salvataggi e azzeramento della card di fine sessione, senza finestre né dati reali. |
 | [run_startup_recovery.py](../../Tests/CatalogAppChecks/run_startup_recovery.py) | Coordinatore di avvio reale su profili sintetici: conflitto, scelta esplicita, offerta obsoleta, Retry e fallimento della preparazione; nessuna finestra. |
 | [run_source_access.py](../../Tests/CatalogAppChecks/run_source_access.py) | Esegue avvio, observer, selettori e preparazione dei file da My library: scansione limitata, cartella ricordata e nessuna build dalla preparazione. |
 | [run_onboarding.py](../../Tests/CatalogAppChecks/run_onboarding.py) | Esegue observer e ripristino del Setup, uscita durante lettura pendente con annullamento, input sotto modali, scelte acceso/spento/nil, radice della fonte, focus dopo Retry e richiesta notifiche su dati sintetici; nessuna finestra. |

@@ -83,7 +83,7 @@ struct AchievementsScreen: View {
                                bottom: SeleneBottomScrim.hintsBottom, leftInset: 18)
             }
         }
-        .animation(SeleneTheme.quick, value: state.isDetailOpen)
+        .animation(reduceMotion ? nil : SeleneTheme.quick, value: state.isDetailOpen)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(L10n.text("Achievements"))
@@ -337,7 +337,7 @@ struct AchievementsScreen: View {
             }
             shoulder(.rb, L10n.text("Next"), step: 1)
         }
-        .animation(SeleneTheme.quick, value: state.filter)
+        .animation(reduceMotion ? nil : SeleneTheme.quick, value: state.filter)
     }
 
     private func shoulder(_ button: PromptButton, _ label: String, step: Int) -> some View {
@@ -388,6 +388,7 @@ struct AchievementsScreen: View {
 /// and the unlock date (or Not unlocked).
 private struct AchievementsScreenRow: View {
     @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.seleneReduceMotion) private var reduceMotion
     @State private var hovered = false
 
     let row: AchievementRow
@@ -457,7 +458,7 @@ private struct AchievementsScreenRow: View {
         // Instant: the list scrolling under a still pointer flips rows in and out of hover, and an animation
         // for each would pile up on the scroll.
         .onHover { hovered = $0 }
-        .animation(SeleneTheme.quick, value: focused)
+        .animation(reduceMotion ? nil : SeleneTheme.quick, value: focused)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(focused ? .isSelected : [])
     }
@@ -549,7 +550,7 @@ private struct AchievementsList: View {
         VStack(spacing: 0) {
             LinearGradient(colors: [.black.opacity(atTop ? 1 : 0), .black], startPoint: .top, endPoint: .bottom)
                 .frame(height: canvas.u(Screen.topFade))
-                .animation(.easeInOut(duration: 0.3), value: atTop)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: atTop)
             Color.black
             LinearGradient(colors: [.black, .black.opacity(0)], startPoint: .top, endPoint: .bottom)
                 .frame(height: canvas.u(Screen.bottomFade))

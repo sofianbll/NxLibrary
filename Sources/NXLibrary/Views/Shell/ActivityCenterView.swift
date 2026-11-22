@@ -324,7 +324,7 @@ private struct ActivityRow: View {
     private var content: some View {
         VStack(alignment: .leading, spacing: canvas.u(3)) {
             Text(title).seleneFont(17, .semibold).lineLimit(1)
-            if let detail {
+            if let detail, detail != status {
                 Text(detail).seleneFont(15).foregroundColor(SeleneTheme.ink60).lineLimit(2)
                     .monospacedDigit()
             }

@@ -161,7 +161,7 @@ public struct PortedGame: Identifiable, Codable, Equatable {
     }
 
     public var formattedSize: String {
-        ByteCountFormatter.string(fromByteCount: sizeBytes, countStyle: .file)
+        sizeBytes.formatted(.byteCount(style: .file).locale(L10n.context.formatLocale))
     }
 
     public var formattedDate: String {

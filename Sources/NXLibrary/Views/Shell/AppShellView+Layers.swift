@@ -322,7 +322,7 @@ extension AppShellView {
         .onReceive(viewModel.localAchievementUnlocks) { unlocks in
             if profiles.active?.id == unlocks.profile { sessionCard.unlocked(unlocks.names) }
         }
-        .onChange(of: profiles.active?.id) { _, _ in sessionCard.clearAchievements() }
+        .onChange(of: profiles.active?.id) { sessionCard.profileDidChange() }
         .onReceive(runningGames.$pausedGameIDs) { ids in
             // A game can reach Home before the launch cover has faded, especially across Spaces.
             if let launch = viewModel.launchOverlay, ids.contains(launch.game.id) { viewModel.dismissLaunchOverlay() }

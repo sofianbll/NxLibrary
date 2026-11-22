@@ -259,7 +259,7 @@ DOWNLOAD_FILL = r'''
         checkDownloadFill(1)
         let waiting = CloudLibraryIndicator(state: model.states[game.id]!, item: .app)
         precondition(waiting.status == .queued && !waiting.isTransferring)
-        precondition(waiting.label(context: fr) == "Mise à jour prête · appliquée quand tu quittes le jeu")
+        precondition(waiting.label(context: fr) == "Mise à jour prête · appliquée à la fermeture du jeu")
         try render("panel-update-ready", output,
             CloudLibraryPanel(viewModel: vm, model: model, game: game).environment(\.nxAppLocale, fr))
         model.active = (queuedRequest, Task {})
