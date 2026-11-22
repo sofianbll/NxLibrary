@@ -135,6 +135,7 @@ struct PersonalStoreView: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, canvas.u(SeleneTokens.Space.chromeGutter))
             .padding(.top, canvas.u(SeleneTokens.Space.section))
             .padding(.bottom, canvas.u(SeleneBottomScrim.contentClearance))
@@ -259,7 +260,7 @@ struct PersonalStoreView: View {
 extension PersonalStore.Filter {
     var key: String {
         switch self {
-        case .all: return "All"
+        case .all: return "All library items"
         case .local: return "On this Mac"
         case .downloads: return "To download"
         case .updates: return "Updates"

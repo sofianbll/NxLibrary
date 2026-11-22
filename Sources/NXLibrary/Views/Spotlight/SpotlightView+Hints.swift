@@ -48,7 +48,8 @@ extension SpotlightView {
         case .row:
             switch model.selectedItem {
             case .card(let card):
-                if card == .inbox || card == .personalStore { return [HintItem(.a, L10n.text("Open"))] }
+                if card == .personalStore { return [] } // The card already shows Open with A.
+                if card == .inbox { return [HintItem(.a, L10n.text("Open"))] }
                 let more = [HintItem(.y, L10n.text("Card options"))]
                 return card == .activity ? more : more + [HintItem(.a, card == .surprise ? L10n.text("Pick") : card == .mods ? L10n.text("Browse") : L10n.text("Open"))]
             case .game:

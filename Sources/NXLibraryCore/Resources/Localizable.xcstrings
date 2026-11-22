@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "All library items": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "All"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Tutti"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Tous"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Alle"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Todos"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Todos"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "全部"}}
+      }
+    },
     "Update available": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Update available"}},
