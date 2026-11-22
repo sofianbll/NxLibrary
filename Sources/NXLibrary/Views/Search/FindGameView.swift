@@ -158,7 +158,7 @@ struct FindGameView: View {
         case .confirm:
             let games = results
             pick(focused.flatMap { games.indices.contains($0) ? games[$0] : nil } ?? games.first)
-        case .cancel, .viewHold:
+        case .cancel:
             close()
         default:
             break

@@ -130,7 +130,7 @@ struct ModsPanel: View {
 
     private var hints: [HintItem] {
         guard let mod = focusedMod else { return [HintItem(.a, L10n.text("Select"))] }
-        var items = [HintItem(nil, L10n.text("◂ ▸  Move")), HintItem(.y, L10n.text("Remove"), action: askRemove)]
+        var items = [HintItem(.move, "Move"), HintItem(.y, L10n.text("Remove"), action: askRemove)]
         items.append(HintItem(.a, !mod.isMod ? L10n.text("Select") : mod.isOn ? L10n.text("Turn off") : L10n.text("Turn on")))
         return items
     }
@@ -431,7 +431,7 @@ struct ModsPanel: View {
             case .navigateLeft: moveConfirmFocus(.cancel)
             case .navigateRight: moveConfirmFocus(.confirm)
             case .confirm: confirmFocus == .confirm ? runRemove() : dismissConfirm()
-            case .cancel, .secondaryAction, .menu: dismissConfirm()
+            case .cancel: dismissConfirm()
             default: break
             }
             return
@@ -444,7 +444,7 @@ struct ModsPanel: View {
         case .confirm:
             if let focusedRow { activate(focusedRow) }
         case .contextAction: askRemove()
-        case .cancel, .secondaryAction, .menu: close()
+        case .cancel: close()
         default: break
         }
     }

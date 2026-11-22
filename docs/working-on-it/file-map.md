@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 22 novembre 2026. Copertura di **878 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 22 novembre 2026. Copertura di **881 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -155,7 +155,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 | [Sources/NXLibrary/Services/NativeMenuCommands.swift](../../Sources/NXLibrary/Services/NativeMenuCommands.swift) | Coordina tracking, disponibilità nella scena e passaggio differito dai menu macOS alle azioni del launcher. |
 | [Sources/NXLibrary/Services/NextendoBrowserSignIn.swift](../../Sources/NXLibrary/Services/NextendoBrowserSignIn.swift) | Apre il browser predefinito e riceve una callback HTTP su loopback, con annullamento e scadenza. |
 | [Sources/NXLibrary/Services/ControllerSource.swift](../../Sources/NXLibrary/Services/ControllerSource.swift) | Contratto di connessione, identità e transizioni normalizzate per le sorgenti di input. |
-| [Sources/NXLibrary/Services/GameControllerService.swift](../../Sources/NXLibrary/Services/GameControllerService.swift) | Sceglie il pad attivo, gestisce tap, hold e navigazione, pubblica azioni e simboli. |
+| [Sources/NXLibrary/Services/GameControllerService.swift](../../Sources/NXLibrary/Services/GameControllerService.swift) | Sceglie il pad attivo, distingue tap e hold (500 ms) di Menu e View, pubblica progresso di Menu, azioni e simboli. |
 | [Sources/NXLibrary/Services/GCControllerSource.swift](../../Sources/NXLibrary/Services/GCControllerSource.swift) | Legge il profilo esteso di GameController, lo schema dei tasti e i simboli di sistema. |
 | [Sources/NXLibrary/Services/HIDControllerSource.swift](../../Sources/NXLibrary/Services/HIDControllerSource.swift) | Scopre i pad HID Nintendo fisici e legge i report `0x3F` e `0x30` del pad selezionato in modalità condivisa. |
 | [Sources/NXLibrary/Services/LaunchReadinessProbe.swift](../../Sources/NXLibrary/Services/LaunchReadinessProbe.swift) | Attende una finestra visibile del gioco (per bundle o, per Steam, per pid) per terminare la schermata di lancio. |
@@ -257,9 +257,9 @@ Cartella `Sources/NXLibraryCore/Selene/`.
 | [Sources/NXLibraryCore/Selene/OnlineBackgrounds.swift](../../Sources/NXLibraryCore/Selene/OnlineBackgrounds.swift) | Modella sorgenti e risultati e interpreta le risposte dei provider di sfondi fissi e video. |
 | [Sources/NXLibraryCore/Selene/SeleneImporter.swift](../../Sources/NXLibraryCore/Selene/SeleneImporter.swift) | Importa suoni e wallpaper dalla cartella Selene dell’utente e risolve cue e fallback. |
 | [Sources/NXLibraryCore/Selene/ButtonPrompts.swift](../../Sources/NXLibraryCore/Selene/ButtonPrompts.swift) | Traduce azioni in simboli o etichette per tastiera e controller Switch, Xbox e PlayStation. |
-| [Sources/NXLibraryCore/Selene/ControllerInput.swift](../../Sources/NXLibraryCore/Selene/ControllerInput.swift) | Decodifica entrambi i report Nintendo, calibra gli stick per formato, calcola transizioni, annulla pressioni e decide il ripiego HID. |
+| [Sources/NXLibraryCore/Selene/ControllerInput.swift](../../Sources/NXLibraryCore/Selene/ControllerInput.swift) | Decodifica entrambi i report Nintendo, calibra gli stick per formato, calcola transizioni e decide il ripiego HID. |
 | [Sources/NXLibraryCore/Selene/FocusIndex.swift](../../Sources/NXLibraryCore/Selene/FocusIndex.swift) | Mantiene un indice di focus entro i limiti di una lista. |
-| [Sources/NXLibraryCore/Selene/HoldDetector.swift](../../Sources/NXLibraryCore/Selene/HoldDetector.swift) | Distingue pressione breve e prolungata usando un tempo fornito dal chiamante. |
+| [Sources/NXLibraryCore/Selene/HoldDetector.swift](../../Sources/NXLibraryCore/Selene/HoldDetector.swift) | Distingue pressione breve e prolungata a 500 ms e consente di annullarla senza azione. |
 | [Sources/NXLibraryCore/Selene/MaterialIcon.swift](../../Sources/NXLibraryCore/Selene/MaterialIcon.swift) | Elenca i glifi del font Material Icons incluso nel bundle. |
 | [Sources/NXLibraryCore/Selene/MenuSelectionModel.swift](../../Sources/NXLibraryCore/Selene/MenuSelectionModel.swift) | Gestisce azioni selezionate nel control center e nelle scelte Power. |
 | [Sources/NXLibraryCore/Selene/MoonlightField.swift](../../Sources/NXLibraryCore/Selene/MoonlightField.swift) | Genera in modo deterministico i dati delle particelle per lo sfondo Metal. |
@@ -527,9 +527,10 @@ Cartella `Sources/ArcanePorting/Launch/`.
 | [Sources/ArcanePorting/Launch/ImportService.swift](../../Sources/ArcanePorting/Launch/ImportService.swift) | Identità e scansione dei bundle nxnative; ripara sidecar, sigilli e quarantena in staging. Firma ad hoc solo se la firma originale non verifica e la politica dei manifest lo consente. |
 | [Sources/ArcanePorting/Launch/AppIconProgress.swift](../../Sources/ArcanePorting/Launch/AppIconProgress.swift) | Stati e testi della preparazione icona, con esito informativo aggiunto al log della build conclusa. |
 | [Sources/ArcanePorting/Launch/IconLaunchWait.swift](../../Sources/ArcanePorting/Launch/IconLaunchWait.swift) | Conserva una richiesta Play durante la firma dell'icona e la revoca su annullamento, errore o chiusura del dialogo. |
-| [Sources/ArcanePorting/Launch/LaunchService.swift](../../Sources/ArcanePorting/Launch/LaunchService.swift) | Scrive l’ambiente runtime e avvia il bundle del gioco tramite NSWorkspace. |
+| [Sources/ArcanePorting/Launch/LaunchService.swift](../../Sources/ArcanePorting/Launch/LaunchService.swift) | Scrive le impostazioni runtime su file quando richiesto; avvia il bundle tramite NSWorkspace con le chiavi overlay solo nel processo. |
 | [Sources/ArcanePorting/Launch/HomeMenu.swift](../../Sources/ArcanePorting/Launch/HomeMenu.swift) | Rileva il protocollo Home del bundle, identifica `dmhost` e modella pausa, ripresa e uscita. |
-| [Sources/ArcanePorting/Launch/InstalledEngineCapabilities.swift](../../Sources/ArcanePorting/Launch/InstalledEngineCapabilities.swift) | Risolve le capacità Home e del descrittore Z-A a partire dai metadati del bundle, con cache Git. |
+| [Sources/ArcanePorting/Launch/GameOverlayLaunch.swift](../../Sources/ArcanePorting/Launch/GameOverlayLaunch.swift) | Riconosce le chiavi overlay nel `dmhost`; valida e serializza la palette; passa tempo di gioco e copertina locale. |
+| [Sources/ArcanePorting/Launch/InstalledEngineCapabilities.swift](../../Sources/ArcanePorting/Launch/InstalledEngineCapabilities.swift) | Risolve le capacità Home, overlay e descrittore Z-A dal bundle, con cache Git per le verifiche di ascendenza. |
 | [Sources/ArcanePorting/Launch/NextendoLaunch.swift](../../Sources/ArcanePorting/Launch/NextendoLaunch.swift) | Rileva il supporto Nextendo dal checkout e dalla build, valida la sessione e compone l'ambiente del lancio. |
 | [Sources/ArcanePorting/Launch/NextendoAccountService.swift](../../Sources/ArcanePorting/Launch/NextendoAccountService.swift) | Legge profilo e amici, aggiorna le liste, rinnova la presenza OAuth e risolve ritratti e titoli pubblici senza bearer. |
 | [Sources/ArcanePorting/Launch/NextendoOnlineCounts.swift](../../Sources/ArcanePorting/Launch/NextendoOnlineCounts.swift) | Legge e valida il conteggio pubblico per title ID, con download limitato e cache breve. |
@@ -765,7 +766,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Sources/NXLibrary/Views/Components/SeleneBottomScrim.swift](../../Sources/NXLibrary/Views/Components/SeleneBottomScrim.swift) | Definisce sfumatura inferiore, posizione condivisa dei comandi (32 unità dal fondo) e fascia libera dai contenuti. |
 | [Sources/NXLibrary/Views/Components/SeleneConfirmDialog.swift](../../Sources/NXLibrary/Views/Components/SeleneConfirmDialog.swift) | Card di conferma, scelte multiple su una riga anche con note, e SeleneSuccessNotice. |
 | [Sources/NXLibrary/Views/Components/AppUpdateDialog.swift](../../Sources/NXLibrary/Views/Components/AppUpdateDialog.swift) | Presenta controllo aggiornamenti, note di release, errori e progresso nel dialogo dell’app. |
-| [Sources/NXLibrary/Views/Components/SeleneHintsBar.swift](../../Sources/NXLibrary/Views/Components/SeleneHintsBar.swift) | Disegna i suggerimenti contestuali alla posizione condivisa, con grandezza dei simboli invariata. |
+| [Sources/NXLibrary/Views/Components/SeleneHintsBar.swift](../../Sources/NXLibrary/Views/Components/SeleneHintsBar.swift) | Disegna i suggerimenti contestuali: ogni voce ha un glifo o un'etichetta di tasto; ⌘F appare senza manetta. |
 | [Sources/NXLibrary/Views/Components/SeleneHomeChrome.swift](../../Sources/NXLibrary/Views/Components/SeleneHomeChrome.swift) | Rende elementi condivisi della cornice e dei controlli della home Selene; trattiene gli hint durante l’entrata. |
 | [Sources/NXLibrary/Views/Components/SeleneOptionRow.swift](../../Sources/NXLibrary/Views/Components/SeleneOptionRow.swift) | Disegna righe di opzioni con icona, titolo, descrizione, focus e contenuto laterale. |
 | [Sources/NXLibrary/Views/Components/SeleneExpandableText.swift](../../Sources/NXLibrary/Views/Components/SeleneExpandableText.swift) | Rivela la descrizione completa animando l'altezza fra due layout di testo stabili; usato solo dalle righe dei metadati. |
@@ -887,7 +888,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/ArcanePortingTests/CloudGameArchiveTests.swift](../../Tests/ArcanePortingTests/CloudGameArchiveTests.swift) | App firmata sintetica e cache con rclone finto o locale: invio incrementale, manifest intermedio visibile dal riferimento, annullamento, cache compatibile, precedenza e migrazione `.aar`. |
 | [Tests/ArcanePortingTests/GameAppDestinationTests.swift](../../Tests/ArcanePortingTests/GameAppDestinationTests.swift) | Installazione e scoperta nella cartella scelta, rebuild dopo il cambio cartella, conflitti di nome, sorgenti protette e cartelle non disponibili o di sola lettura. |
 | [Tests/NXLibraryCoreTests/ButtonPromptsTests.swift](../../Tests/NXLibraryCoreTests/ButtonPromptsTests.swift) | Etichette e simboli per tastiera, controller e scelte esplicite dell’utente. |
-| [Tests/NXLibraryCoreTests/ControllerInputTests.swift](../../Tests/NXLibraryCoreTests/ControllerInputTests.swift) | Report Nintendo sintetici e cambio di formato, calibrazione, transizioni, annullamento degli hold e precedenza di GameController. |
+| [Tests/NXLibraryCoreTests/ControllerInputTests.swift](../../Tests/NXLibraryCoreTests/ControllerInputTests.swift) | Report Nintendo sintetici e cambio di formato, calibrazione, transizioni e precedenza di GameController. |
 | [Tests/ArcanePortingTests/CheatCopyTests.swift](../../Tests/ArcanePortingTests/CheatCopyTests.swift) | Testi di intestazione, rifiuto, conferma e rimozione dei cheats. |
 | [Tests/ArcanePortingTests/CheatFileTests.swift](../../Tests/ArcanePortingTests/CheatFileTests.swift) | Parsing dei codici secondo il motore, sezioni, metadati, nomi duplicati e codici non validi. |
 | [Tests/ArcanePortingTests/CheatInstallTests.swift](../../Tests/ArcanePortingTests/CheatInstallTests.swift) | Build ID, title ID, file senza nome, cartelle e decisioni di installazione. |
@@ -926,7 +927,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/ArcanePortingTests/InstallProgressTests.swift](../../Tests/ArcanePortingTests/InstallProgressTests.swift) | Fasi Git, percentuali, byte e ricomposizione delle righe parziali. |
 | [Tests/ArcanePortingTests/KeyCheckTests.swift](../../Tests/ArcanePortingTests/KeyCheckTests.swift) | Cifratura e lettura delle intestazioni sintetiche e chiavi richieste dalle sorgenti. |
 | [Tests/ArcanePortingTests/KeyStoreTests.swift](../../Tests/ArcanePortingTests/KeyStoreTests.swift) | Importazione e sostituzione atomica, conservazione della copia precedente in caso di errore, permessi 0600 e riepilogo. |
-| [Tests/ArcanePortingTests/LaunchServiceTests.swift](../../Tests/ArcanePortingTests/LaunchServiceTests.swift) | Scrittura dell’ambiente, avvio del bundle e propagazione degli errori. |
+| [Tests/ArcanePortingTests/LaunchServiceTests.swift](../../Tests/ArcanePortingTests/LaunchServiceTests.swift) | Scrittura dell’ambiente, avvio, errori e invio delle sole chiavi overlay compatibili senza toccare `env.txt`. |
 | [Tests/ArcanePortingTests/HomeMenuTests.swift](../../Tests/ArcanePortingTests/HomeMenuTests.swift) | Capacità e ambiente del bundle, stati e segnale al solo figlio sintetico. |
 | [Tests/ArcanePortingTests/LauncherSettingsTests.swift](../../Tests/ArcanePortingTests/LauncherSettingsTests.swift) | Metadati launcher.json e fallback dei controlli per build precedenti. |
 | [Tests/NXLibraryCoreTests/LaunchBoxArtTests.swift](../../Tests/NXLibraryCoreTests/LaunchBoxArtTests.swift) | Risultati di ricerca, scelta della voce Switch/Switch 2, payload Nuxt con file pieni e screenshot. |
@@ -1057,7 +1058,8 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [CatalogPersonalizationTests.swift](../../Tests/ArcanePortingTests/CatalogPersonalizationTests.swift) | Rinomina senza perdita del lookup e isolamento di chiavi uguali tra fonti. |
 | [CatalogBuildRecoveryTests.swift](../../Tests/ArcanePortingTests/CatalogBuildRecoveryTests.swift) | Vecchia build persistita e nuova conservata, sospensione automatica e conferme obsolete. |
 | [run_notices.py](../../Tests/CatalogAppChecks/run_notices.py) | Esegue il modello e i metodi reali degli avvisi e del ponte legacy senza finestre, dopo swift test. |
-| [run_review.py](../../Tests/CatalogAppChecks/run_review.py) | Verifica senza finestre achievement, loghi, focus, navigazione, badge mod in Online, priorità dei dialoghi e Steam durante Play. |
+| [run_review.py](../../Tests/CatalogAppChecks/run_review.py) | Verifica senza finestre achievement, loghi, focus, keymap, badge mod in Online, priorità dei dialoghi e Steam durante Play. |
+| [run_keymap_screens.py](../../Tests/CatalogAppChecks/run_keymap_screens.py) | Verifica tutti i glifi e rende la barra Selene per Xbox, Switch, DualSense e tastiera senza aprire finestre. |
 | [run_cloud_screens.py](../../Tests/CatalogAppChecks/run_cloud_screens.py) | Rende Cloud, Download, aggiornamento pronto, riferimento e Play together in PNG; verifica dialoghi e trasferimento durante Play con fixture locali. |
 | [run_profiles.py](../../Tests/CatalogAppChecks/run_profiles.py) | Rende profili, assistente, account, menu, badge e ordinamento senza finestre né dati reali. |
 | [run_startup_recovery.py](../../Tests/CatalogAppChecks/run_startup_recovery.py) | Coordinatore di avvio reale su profili sintetici: conflitto, scelta esplicita, offerta obsoleta, Retry e fallimento della preparazione; nessuna finestra. |
@@ -1161,6 +1163,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [docs/README.md](../README.md) | Indice della documentazione: cosa c'è in ogni cartella, per chi è e da dove partire. |
 | [docs/how-it-works/architecture.md](../how-it-works/architecture.md) | Come funziona oggi ogni area: confini dei componenti, regole, dati su disco e verifiche; niente storia né stati di validazione. |
 | [docs/how-it-works/flows.md](../how-it-works/flows.md) | Schemi dei flussi completi: avvio, libreria, Play Switch e Steam, Add Game, salvataggi, mod, impostazioni, aggiornamento dell’app. |
+| [docs/how-it-works/keymap.md](../how-it-works/keymap.md) | Keymap per tasto e schermata, precedenza dei dialoghi e glifi per famiglia. |
 | [docs/how-it-works/steam.md](../how-it-works/steam.md) | Riferimento unico dell’integrazione Steam: file letti, stati, osservazione, libreria, Play, ore, achievement, scelte e limiti. |
 | [docs/working-on-it/conventions.md](conventions.md) | Dove va il codice; ricette per fonti, interfaccia Selene e conferme, impostazioni, dati, rete, testi, test e documentazione. |
 | [docs/working-on-it/development.md](development.md) | Documenta prerequisiti, runtime, build, debug, verifiche, CI e release, compreso l'ID Nextendo pubblico della release personale. |

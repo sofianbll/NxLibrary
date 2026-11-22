@@ -31,7 +31,7 @@ flowchart TD
     H --> K["Prima home Spotlight: moonlight condiviso → entrata<br/>Entrance animation; niente volo con Riduci movimento"]
     I --> K
     F --> J["In background: recuperi dei salvataggi, installazioni in attesa,<br/>scansione Steam se attivo, controllo engine se attivo, aggiornamenti;<br/>avviso se la copia è temporanea (App Translocation)"]
-    P["GameController · ripiego HID 0x3F / 0x30"] --> Q["GameControllerService: GamepadAction"]
+    P["GameController · ripiego HID 0x3F / 0x30"] --> Q["GameControllerService: GamepadAction<br/>Menu: centro / Settings; View: cambia vista / Cerca"]
     Q --> F
 ```
 
@@ -89,7 +89,8 @@ flowchart TD
     N -->|"no"| E["LauncherSettings migra launcher.json<br/>oppure LaunchService aggiorna env.txt"]
     E --> F["CloudSavesPreferences applica la scelta cloud"]
     F --> M["ModStore riconcilia le cartelle prima di Play"]
-    M --> G["LaunchService apre l'app (NSWorkspace)<br/>DM_MODS_OFF controlla il gruppo ExeFS già nel bundle"]
+    M --> O["GameOverlayLaunch: palette e dati locali<br/>solo se il dmhost dichiara le chiavi"]
+    O --> G["LaunchService apre l'app (NSWorkspace)<br/>DM_MODS_OFF controlla il gruppo ExeFS già nel bundle"]
     G --> H["LaunchCoverWindow + LaunchMotion<br/>finché LaunchReadinessProbe vede una finestra"]
     H --> I["RunningGameMonitor · PlaySessionStore (heartbeat)"]
     I -->|"Home → Back to console mode (build compatibile)"| PZ["Notifica del PID di dmhost → Arcane davanti nella schermata corrente"]

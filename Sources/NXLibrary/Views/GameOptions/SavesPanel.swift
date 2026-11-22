@@ -248,7 +248,7 @@ struct SavesPanel: View {
             switch action {
             case .navigateLeft: confirmFocus = .cancel
             case .navigateRight: confirmFocus = .confirm
-            case .cancel, .secondaryAction, .menu: close()
+            case .cancel: close()
             case .confirm:
                 if model.issue != nil { model.dismissIssue() }
                 else if confirmFocus == .cancel { close() }
@@ -265,7 +265,7 @@ struct SavesPanel: View {
         case .navigateLeft, .navigateRight:
             if rows.indices.contains(focus), rows[focus] == .target { activate(.target) }
         case .confirm: if rows.indices.contains(focus) { activate(rows[focus]) }
-        case .cancel, .secondaryAction, .menu: close()
+        case .cancel: close()
         default: break
         }
     }

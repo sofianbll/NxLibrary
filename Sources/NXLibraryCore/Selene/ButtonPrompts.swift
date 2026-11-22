@@ -8,7 +8,7 @@ public enum ButtonNameStyle: String, Codable, CaseIterable, Identifiable {
 }
 
 public enum PromptButton: String, CaseIterable {
-    case a, b, x, y, lb, rb, lt, rt, rs, view, menu
+    case a, b, x, y, lb, rb, lt, rt, rs, view, menu, move, search
 }
 
 public enum ConnectedPad {
@@ -28,8 +28,8 @@ public enum ButtonPrompts {
     }
 
     /// The key the screens' key monitors take for each prompt: Return confirms,
-    /// Esc goes back, X and Y, Q/E for the shoulders (E also steps the filter),
-    /// Home/End for the triggers, Tab for View and ⌘K for Menu.
+    /// Esc goes back, X and Y, Q/E for filters, Home/End for the triggers,
+    /// F3 for sort, V for View and ⌘K for Menu.
     public static func keyboardKey(_ button: PromptButton) -> KeyCap {
         switch button {
         case .a: return .symbol("return")
@@ -38,11 +38,13 @@ public enum ButtonPrompts {
         case .y: return .text("Y")
         case .lb: return .text("Q")
         case .rb: return .text("E")
-        case .rs: return .text("S")
+        case .rs: return .text("F3")
         case .lt: return .text(L10n.text("home"))
         case .rt: return .text(L10n.text("end"))
-        case .view: return .text(L10n.text("tab"))
+        case .view: return .text("V")
         case .menu: return .text("⌘K")
+        case .move: return .text("← →")
+        case .search: return .text("⌘F")
         }
     }
     public static func label(_ button: PromptButton, style: ButtonNameStyle, connected: ConnectedPad) -> String {
@@ -86,7 +88,7 @@ public enum ButtonPrompts {
         "inset", "filled", "dashed", "dotted", "lefthalf", "righthalf", "tophalf", "bottomhalf"
     ]
 
-    private static func nintendoSymbol(_ b: PromptButton) -> String {
+    private static func nintendoSymbol(_ b: PromptButton) -> String? {
         switch b {
         case .a: return "a.circle"
         case .b: return "b.circle"
@@ -99,10 +101,12 @@ public enum ButtonPrompts {
         case .rs: return "r.joystick.press.down"
         case .view: return "minus.circle"
         case .menu: return "plus.circle"
+        case .move: return "arrow.left.and.right"
+        case .search: return nil
         }
     }
 
-    private static func xboxSymbol(_ b: PromptButton) -> String {
+    private static func xboxSymbol(_ b: PromptButton) -> String? {
         switch b {
         case .a: return "a.circle"
         case .b: return "b.circle"
@@ -115,10 +119,12 @@ public enum ButtonPrompts {
         case .rs: return "r.joystick.press.down"
         case .view: return "rectangle.on.rectangle.circle"
         case .menu: return "line.3.horizontal.circle"
+        case .move: return "arrow.left.and.right"
+        case .search: return nil
         }
     }
 
-    private static func playstationSymbol(_ b: PromptButton) -> String {
+    private static func playstationSymbol(_ b: PromptButton) -> String? {
         switch b {
         case .a: return "xmark.circle"
         case .b: return "circle.circle"
@@ -129,8 +135,8 @@ public enum ButtonPrompts {
         case .lt: return "l2.rectangle.roundedtop"
         case .rt: return "r2.rectangle.roundedtop"
         case .rs: return "r.joystick.press.down"
-        case .view: return "square.and.arrow.up.circle"
-        case .menu: return "line.3.horizontal.circle"
+        case .move: return "arrow.left.and.right"
+        case .view, .menu, .search: return nil // Use the key's label when no glyph is defined.
         }
     }
 
@@ -156,6 +162,8 @@ public enum ButtonPrompts {
         case .rs: return "RS"
         case .view: return "−"
         case .menu: return "+"
+        case .move: return "← →"
+        case .search: return "⌘F"
         }
     }
 
@@ -172,6 +180,8 @@ public enum ButtonPrompts {
         case .rs: return "RS"
         case .view: return "View"
         case .menu: return "Menu"
+        case .move: return "← →"
+        case .search: return "⌘F"
         }
     }
 
@@ -186,8 +196,10 @@ public enum ButtonPrompts {
         case .lt: return "L2"
         case .rt: return "R2"
         case .rs: return "R3"
-        case .view: return "Create"
+        case .view: return L10n.text("Touchpad")
         case .menu: return "Options"
+        case .move: return "← →"
+        case .search: return "⌘F"
         }
     }
 }

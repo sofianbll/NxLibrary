@@ -462,7 +462,10 @@ def multiplayer_fixture(app, host, before):
     change(sidebar, r'            ScrollViewReader \{ proxy in.*?(?=\n        }\n    })', '            groups')
     change(sidebar, r'ForEach\(SettingsSidebarGroup.all\)', 'ForEach(Array(SettingsSidebarGroup.all.prefix(2)))')
     nextendo = app / "ViewModels/NextendoSettings.swift"
-    change(nextendo, r'    func check\(clientID: String\?\) \{.*?(?=\n    func updateFriend)', '    func check(clientID: String?) {}\n')
+    change(nextendo, r'    func check\(clientID: String\?\) \{.*?\n    }', '    func check(clientID: String?) {}')
+    if not before:
+        change(nextendo, r'    func publishPresence\(clientID: String, eligible: \(\) -> Bool\) async \{.*?\n    }',
+               '    func publishPresence(clientID: String, eligible: () -> Bool) async {}')
     model = app / "ViewModels/RuntimeSettingsModel.swift"
     change(model, r'NXNativeGameSettings\.forGame\(game\)', '''NXNativeGameSettings.forGame(game, store: MemorySavedChoices(),
             supportDirectory: AppData.supportRoot, preferences: AppData.preferences)''')

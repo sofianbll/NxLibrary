@@ -8,7 +8,7 @@ import NXLibraryCore
 /// game's own picks. Every row acts on the record it was opened for, re-read from the catalog.
 ///
 /// Input: Up/Down move (clamped), A activates, B (or Esc) leaves Edit details, then closes;
-/// X and Menu close. A click activates; a click on the dimmed area steps back.
+/// A click activates; a click on the dimmed area steps back.
 struct SteamOptionsView: View {
     @ObservedObject var viewModel: AppViewModel
     let game: CatalogGame
@@ -243,7 +243,6 @@ struct SteamOptionsView: View {
         case .navigateDown: moveFocus(by: 1)
         case .confirm: if let row = focusedRow { perform(row) }
         case .cancel: back()
-        case .secondaryAction, .menu: onClose()
         default: break
         }
     }

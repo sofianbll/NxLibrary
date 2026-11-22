@@ -182,9 +182,19 @@ extension AppViewModel {
             let codeMods = await Task.detached(priority: .userInitiated) {
                 store?.codeModsLaunchEnvironment(app: appURL, build: game.lastBuild, online: online) ?? [:]
             }.value
+            let overlay = await InstalledEngineCapabilities.shared.gameOverlay(in: appURL)
+            var cover: URL?
+            if overlay.supportsCover {
+                let key = personalizations.nxnativeKey(for: game)
+                cover = ArtworkPicks.shared.url(titleID: key, slot: .cover)
+                    ?? ArtworkStore().cachedURL(titleID: key, kind: .boxart)
+            }
             let overrides = (gameSettings == nil ? config.toEnvironmentDict() : environment)
                 .merging(homeMenu) { _, launcher in launcher }
                 .merging(codeMods) { _, mods in mods }
+                .merging(overlay.environment(palette: ThemeStore.shared.palette,
+                                             playtime: playSessionStore?.totalDuration(for: game.id),
+                                             cover: cover)) { _, session in session }
             openGame(game, titleId: titleId, token: saveLaunchToken, environment: overrides)
         }
     }

@@ -20,7 +20,7 @@ struct SelenePromptBadge: View {
     }
 
     var body: some View {
-        if ButtonPrompts.usesKeyboard(style: style, connected: pad) {
+        if button == .search || ButtonPrompts.usesKeyboard(style: style, connected: pad) {
             keycap(keyboardOverride ?? ButtonPrompts.keyboardKey(button))
         } else if let name = ButtonPrompts.symbol(button, style: style, connected: pad,
                                            reported: controller.buttonSymbols),
@@ -61,7 +61,7 @@ struct SelenePromptBadge: View {
         var clean = name
         if clean.hasSuffix(".fill") { clean = String(clean.dropLast(5)) }
         if clean.hasSuffix(".circle") { clean = String(clean.dropLast(7)) }
-        return clean
+        return NSImage(systemSymbolName: clean, accessibilityDescription: nil) != nil ? clean : name
     }
 
     /// A Mac key: a rounded square (not the round controller buttons), ink with the

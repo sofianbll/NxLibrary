@@ -443,6 +443,54 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
 
         let input = MenuHost()
         input.connectController()
+        let presses: [ControllerButton: GamepadAction] = [
+            .up: .navigateUp, .down: .navigateDown, .left: .navigateLeft, .right: .navigateRight,
+            .a: .confirm, .b: .cancel, .x: .secondaryAction, .y: .contextAction,
+            .l: .tabPrevious, .r: .tabNext, .zl: .jumpToStart, .zr: .jumpToEnd,
+            .r3: .rightStickPress,
+        ]
+        for button in ControllerButton.allCases {
+            require(GamepadAction.onPress(button) == presses[button], "Unexpected binding for \(button)")
+        }
+        let held: [ControllerButton: (GamepadAction, GamepadAction)] = [.menu: (.menu, .menuHold), .view: (.view, .search)]
+        var actions = ControllerButton.allCases.compactMap(GamepadAction.onPress)
+        for button in ControllerButton.allCases {
+            require(GamepadAction.holdAction(button, .tap) == held[button]?.0
+                    && GamepadAction.holdAction(button, .hold) == held[button]?.1, "Unexpected hold binding for \(button)")
+            if let (tap, long) = held[button] { actions += [tap, long] }
+        }
+        var viewHold = HoldDetector()
+        viewHold.press(at: 1)
+        let tap = viewHold.release(at: 1.2).flatMap { GamepadAction.holdAction(.view, $0) }
+        viewHold.press(at: 2)
+        let hold = viewHold.tick(at: 2.5).flatMap { GamepadAction.holdAction(.view, $0) }
+        require(tap == .view && hold == .search && viewHold.release(at: 2.6) == nil,
+                "View hold must open Search without switching views on release")
+        require(Set(actions).count == actions.count, "No two button gestures may emit the same command")
+        let screens: [(AppRoute, Notification.Name)] = [
+            (.library, .nxSpotlightGamepadAction), (.collection, .nxCollectionGamepadAction),
+            (.detail(UUID()), .nxDetailGamepadAction), (.settings(.startUp), .nxSettingsGamepadAction),
+            (.addGame, .nxAddGameGamepadAction), (.console, .nxConsoleGamepadAction),
+        ]
+        for (route, name) in screens {
+            let routeInput = InputRecorder()
+            let observer = NotificationCenter.default.addObserver(forName: name, object: nil, queue: nil) { note in
+                if let action = note.object as? GamepadAction { MainActor.assumeIsolated { routeInput.actions.append(action) } }
+            }
+            input.router.route = route
+            let local = route == .console ? actions.filter { $0 != .menu && $0 != .menuHold } : actions
+            for action in local { GameControllerService.shared.onAction?(action) }
+            require(routeInput.actions == local, "\(route) must receive each command exactly once")
+            if route == .console {
+                GameControllerService.shared.onAction?(.menu)
+                require(input.router.isMenuPresented, "Menu opens the control center in Console")
+                input.router.isMenuPresented = false
+                GameControllerService.shared.onAction?(.menuHold)
+                require(input.router.route == .settings(.startUp), "Menu hold opens Settings from Console")
+            }
+            NotificationCenter.default.removeObserver(observer)
+        }
+        input.router.route = .library
         let received = InputRecorder()
         let watch = NotificationCenter.default.addObserver(forName: .nxSpotlightGamepadAction,
                                                            object: nil, queue: nil) { note in
@@ -462,6 +510,16 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
         input.router.activityCenterFocus = nil
         input.router.isMenuPresented = false
         input.dialogActions = []
+        input.router.isSearchPresented = true
+        for action: GamepadAction in [.menu, .menuHold, .view] { GameControllerService.shared.onAction?(action) }
+        require(input.router.route == .library && !input.router.isMenuPresented && received.actions.isEmpty,
+                "Search owns input, including Menu and View")
+        input.router.isSearchPresented = false
+        input.viewModel.isGameOptionsOpen = true
+        for action: GamepadAction in [.menu, .menuHold] { GameControllerService.shared.onAction?(action) }
+        require(input.router.route == .library && !input.router.isMenuPresented && received.actions.isEmpty,
+                "Game Options blocks the global Menu shortcuts")
+        input.viewModel.isGameOptionsOpen = false
         let blockers: [(String, (Bool) -> Void)] = [
             ("pending alert", { input.viewModel.alertMessage = $0 ? "Fixture alert" : nil }),
             ("modal dialog", { NSApp.modalWindow = $0 ? 1 : nil }),

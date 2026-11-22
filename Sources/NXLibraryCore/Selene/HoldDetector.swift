@@ -8,18 +8,25 @@ public enum HoldResult: Equatable {
 /// Distinguishes a tap from a hold on a single button. Time is supplied by the
 /// caller so the logic stays deterministic.
 public struct HoldDetector {
+    public static let defaultThreshold: TimeInterval = 0.5
     public let threshold: TimeInterval
     private var pressedAt: TimeInterval?
     private var fired = false
 
-    public init(threshold: TimeInterval = 0.5) {
+    public init(threshold: TimeInterval = Self.defaultThreshold) {
         self.threshold = threshold
     }
 
     public var isPressed: Bool { pressedAt != nil }
 
     public mutating func press(at time: TimeInterval) {
+        guard pressedAt == nil else { return }
         pressedAt = time
+        fired = false
+    }
+
+    public mutating func reset() {
+        pressedAt = nil
         fired = false
     }
 

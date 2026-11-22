@@ -109,7 +109,8 @@ import ArcanePorting
                     Spacer()
                 }
                 if showsSort {
-                    SeleneHintsBar(right: [LibrarySortMenu.hint(current, action: {})])
+                    SeleneHintsBar(left: HintItem.homeGlobals(other: "Spotlight", onOther: {}, onMenu: {}, onSearch: {}),
+                                   right: [LibrarySortMenu.hint(current, action: {})])
                         .frame(maxHeight: .infinity, alignment: .bottom)
                 }
             }

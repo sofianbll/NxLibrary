@@ -138,7 +138,7 @@ struct MoreSettingsPanel: View {
             change(rows[focus], by: action == .navigateLeft ? -1 : 1)
         case .confirm:
             if rows.indices.contains(focus) { change(rows[focus], by: 1) }
-        case .cancel, .secondaryAction, .menu:
+        case .cancel:
             onClose()
         default:
             break

@@ -415,6 +415,8 @@ struct AddGameView: View {
         case .confirm:
             if let row = focusedRow(in: rows(for: porting.buildWizardStep)) { activate(row) }
         case .cancel: handleBack()
+        case .menu: router.isMenuPresented = true
+        case .menuHold: router.openSettings(.startUp)
         default: break
         }
     }

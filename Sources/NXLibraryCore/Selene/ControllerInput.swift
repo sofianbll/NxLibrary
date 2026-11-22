@@ -144,30 +144,6 @@ public struct NintendoHIDInput {
     }
 }
 
-public struct ControllerHolds {
-    private var detectors: [ControllerButton: HoldDetector] = [:]
-
-    public init() {}
-
-    public var isPressed: Bool { detectors.values.contains(where: \.isPressed) }
-
-    public mutating func update(_ button: ControllerButton, pressed: Bool, at time: TimeInterval) -> HoldResult? {
-        if pressed {
-            detectors[button, default: HoldDetector()].press(at: time)
-            return nil
-        }
-        guard var detector = detectors.removeValue(forKey: button) else { return nil }
-        return detector.release(at: time)
-    }
-
-    public mutating func tick(at time: TimeInterval) -> [ControllerButton] {
-        detectors.keys.filter { detectors[$0]?.tick(at: time) == .hold }
-    }
-
-    /// A disconnect or source switch is not a release, and must not fire a tap or hold.
-    public mutating func reset() { detectors.removeAll() }
-}
-
 public enum ControllerArbitration: Equatable {
     case gameController, wait(until: TimeInterval), hid
 

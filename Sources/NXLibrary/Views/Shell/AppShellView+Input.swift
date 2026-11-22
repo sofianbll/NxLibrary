@@ -16,7 +16,7 @@ extension AppShellView {
             if focus.selected != current { SoundEffectService.shared.play(.focus) }
         case .confirm: openActivityCenterRow(current, router: router, viewModel: viewModel)
         case .secondaryAction: cancelActivityCenterRow(current, viewModel: viewModel)
-        case .cancel, .menu: router.closeMenu()
+        case .cancel: router.closeMenu()
         default: break
         }
     }
@@ -82,7 +82,7 @@ extension AppShellView {
     }
 
     /// App-level monitor for the keyboard equivalents of the controller gestures.
-    /// Handles only Tab, Cmd+F, Cmd+, , Home and End; every other event passes through.
+    /// Handles V, Cmd+F, Cmd+, Home and End outside the shell's dialogs.
     func installGestureKeyMonitor() {
         guard gestureKeyMonitor == nil else { return }
         gestureKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [router, viewModel] event in
@@ -179,12 +179,12 @@ extension AppShellView {
             let typing = event.window?.firstResponder is NSText
             var action: GamepadAction?
             switch (event.keyCode, key, mods) {
-            case (48, _, []):                       // Tab
-                if typing { return event }
+            case (_, "v", []):
+                if typing || !isHomeRoute { return event }
                 action = .view
             case (_, "f", [.command]):              // Cmd+F
-                if typing { return event }
-                action = .viewHold
+                if typing || !isHomeRoute { return event }
+                action = .search
             case (_, ",", [.command]):              // Cmd+,
                 // Same as holding Menu. Consumed, so the menu-bar Settings command does not open Settings a second time.
                 action = .menuHold
@@ -197,7 +197,7 @@ extension AppShellView {
             default:
                 return event
             }
-            if let action { GameControllerService.shared.onAction?(action) }
+            if let action, !event.isARepeat { GameControllerService.shared.onAction?(action) }
             return nil
         }
     }
@@ -208,15 +208,22 @@ extension AppShellView {
     }
 
     /// Input while the control center is open: arrows move, A selects, B (or Esc) closes the Power pills
-    /// first and then the menu, Menu closes it, and hold Menu closes it and opens Settings.
+    /// first and then the menu. Holding Menu opens Settings.
     func menuInput(_ action: GamepadAction) {
         if router.activityCenterFocus != nil {
             activityCenterInput(action, router: router, viewModel: viewModel)
             return
         }
-        // The Theme screen takes everything but Menu, which closes the whole menu.
-        if router.isThemePickerOpen, action != .menu, action != .menuHold {
+        if action == .menu { return }
+        // The Theme screen owns its input, including its own confirmations.
+        if router.isThemePickerOpen {
             NotificationCenter.default.post(name: .nxThemePickerGamepadAction, object: action)
+            return
+        }
+        if action == .menuHold {
+            router.closeMenu()
+            if case .settings = router.route { return }
+            router.openSettings(.startUp)
             return
         }
         switch action {
@@ -240,11 +247,6 @@ extension AppShellView {
             } else {
                 router.closeMenu()
             }
-        case .menu:
-            router.closeMenu()
-        case .menuHold:
-            router.closeMenu()
-            router.openSettings(.startUp)
         default:
             break
         }

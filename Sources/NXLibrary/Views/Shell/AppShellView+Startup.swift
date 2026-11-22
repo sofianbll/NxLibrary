@@ -81,7 +81,7 @@ extension AppShellView {
         installGestureKeyMonitor()
         GameControllerService.shared.onAction = { [weak viewModel, weak router] action in
             guard let viewModel, let router else { return }
-            guard !nativeMenus.isTracking, !nativeDialogOwnsInput else { return }
+            guard !nativeMenus.isTracking, !nativeDialogOwnsInput, viewModel.launchOverlay == nil else { return }
             if viewModel.cloudQuitRequested {
                 cloudQuitInput(action)
                 return
@@ -129,47 +129,31 @@ extension AppShellView {
                 return
             }
             if viewModel.isGameOptionsOpen {
+                guard action != .menu, action != .menuHold else { return }
                 NotificationCenter.default.post(name: .nxGameOptionsGamepadAction, object: action)
                 return
             }
-            if router.isSearchPresented, router.route == .library || router.route == .collection,
-               action != .menu, action != .menuHold {
+            if router.isSearchPresented, router.route == .library || router.route == .collection {
                 NotificationCenter.default.post(name: .nxFindGameGamepadAction, object: action)
                 return
             }
-            if action == .menuHold {
-                // Hold Menu (and Cmd+,) opens Settings from any screen.
-                guard !router.isScreenshotViewerOpen else { return }
-                if case .settings = router.route { return }
-                router.openSettings(.startUp)
-                return
-            }
+            if router.isScreenshotViewerOpen, action == .menu || action == .menuHold { return }
             switch router.route {
             case .library:
                 NotificationCenter.default.post(name: .nxSpotlightGamepadAction, object: action)
             case .collection:
                 NotificationCenter.default.post(name: .nxCollectionGamepadAction, object: action)
             case .detail:
-                if action == .menu {
-                    router.isMenuPresented = true
-                } else {
-                    NotificationCenter.default.post(name: .nxDetailGamepadAction, object: action)
-                }
+                NotificationCenter.default.post(name: .nxDetailGamepadAction, object: action)
             case .settings:
-                if action == .menu {
-                    router.isMenuPresented = true
-                } else {
-                    NotificationCenter.default.post(name: .nxSettingsGamepadAction, object: action)
-                }
+                NotificationCenter.default.post(name: .nxSettingsGamepadAction, object: action)
             case .addGame:
-                if action == .menu {
-                    router.isMenuPresented = true
-                } else {
-                    NotificationCenter.default.post(name: .nxAddGameGamepadAction, object: action)
-                }
+                NotificationCenter.default.post(name: .nxAddGameGamepadAction, object: action)
             case .console:
                 if action == .menu {
                     router.isMenuPresented = true
+                } else if action == .menuHold {
+                    router.openSettings(.startUp)
                 } else {
                     NotificationCenter.default.post(name: .nxConsoleGamepadAction, object: action)
                 }

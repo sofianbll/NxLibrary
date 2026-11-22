@@ -187,7 +187,7 @@ struct AppShellView: View {
             updater.checkNow()
         }
         .onReceive(NotificationCenter.default.publisher(for: .nxLibraryOpenMenu)) { _ in
-            guard profileFlow == nil, !isCloseGameOpen, !viewModel.isGameOptionsOpen, !router.isScreenshotViewerOpen else { return }
+            guard nativeMenuAvailability.general else { return }
             router.isMenuPresented = true
         }
         .onReceive(NotificationCenter.default.publisher(for: .nxLibraryOpenSettings)) { _ in
@@ -257,7 +257,7 @@ struct AppShellView: View {
             } else if router.isSearchPresented {
                 // FindGameView's key monitor closes it.
             } else if isHomeRoute {
-                router.isMenuPresented = true
+                // Spotlight and Collection handle Esc with their own key monitors.
             } else if case .settings = router.route {
                 // SettingsView handles its own Esc.
             } else if case .addGame = router.route {

@@ -6,8 +6,8 @@ import ArcanePorting
 /// Spotlight's controller, keyboard and pointer input.
 extension SpotlightView {
     func handle(_ action: GamepadAction) {
-        // The entrance plays to its end: no press skips it or acts underneath.
-        guard entrance.takesInput else { return }
+        // Settings stays available during the entrance (including via ⌘,).
+        guard entrance.takesInput || action == .menuHold else { return }
         if viewer != nil { return handleViewer(action) }
         if achievementsScreen != nil { return handleAchievements(action) }
         if viewModel.spotlight.isLifted { return handleLifted(action) }
@@ -99,8 +99,8 @@ extension SpotlightView {
                 SoundEffectService.shared.play(.click)
             }
         case .view:
-            if settings.settings.viewButtonSwitches { router.openCollection() }
-        case .viewHold:
+            if settings.settings.viewButtonSwitches { router.setInitialRoute(.collection) }
+        case .search:
             router.isSearchPresented = true
         case .menu:
             router.isMenuPresented = true
@@ -284,7 +284,7 @@ extension SpotlightView {
         case .navigateUp: cardMenu?.index = max(0, menu.index - 1)
         case .navigateDown: cardMenu?.index = min(last, menu.index + 1)
         case .confirm: chooseCardMenu(menu.index)
-        case .cancel, .contextAction:
+        case .cancel:
             cardMenu = nil
             SoundEffectService.shared.play(.focus)
         default: break
@@ -338,7 +338,7 @@ extension SpotlightView {
             play(game)
         case .card(.collection):
             SoundEffectService.shared.play(.click)
-            router.openCollection()
+            router.setInitialRoute(.collection)
         case .card(.surprise):
             surprise()
         case .card(.activity):
@@ -522,7 +522,7 @@ extension SpotlightView {
                 case 53: handle(.cancel)
                 case 12: handle(.tabPrevious)
                 case 14: handle(.tabNext)
-                case 36, 49, 125, 126, 7, 16, 48: break
+                case 36, 49, 125, 126, 7, 9, 16, 99: break
                 default: return event
                 }
                 return nil
@@ -534,16 +534,12 @@ extension SpotlightView {
             case 125: action = .navigateDown
             case 126: action = .navigateUp
             case 36, 49, 76: action = .confirm
-            case 53:
-                // On the row Esc falls through to the shell, which opens the Menu.
-                guard viewModel.spotlight.focus != .row || viewModel.spotlight.isLifted
-                        || cardMenu != nil || sortMenu != nil || profileFocused else { return event }
-                action = .cancel
+            case 53: action = .cancel
             case 7: action = .secondaryAction   // X
             case 16: action = .contextAction    // Y
             case 12: action = .tabPrevious      // Q
             case 14: action = .tabNext          // E
-            case 1: action = .rightStickPress  // S: Sort
+            case 99: action = .rightStickPress  // F3: keyboard equivalent of the existing sort action
             default: return event
             }
             handle(action)

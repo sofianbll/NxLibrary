@@ -68,8 +68,9 @@ struct CollectionView: View {
         let game = selectedGame(in: games)
         SeleneHomeChrome(
             leftHints: HintItem.homeGlobals(other: "Spotlight",
-                                            onOther: { if settings.settings.viewButtonSwitches { router.showLibrary() } },
-                                            onMenu: { router.isMenuPresented = true }),
+                                             onOther: settings.settings.viewButtonSwitches ? { handle(.view) } : nil,
+                                             onMenu: { router.isMenuPresented = true },
+                                             onSearch: { handle(.search) }),
             rightHints: contextHints(game) + [LibrarySortMenu.hint(settings.settings.librarySort, action: openSort)],
             hintsHidden: router.overlayHasHints(viewModel),
             backdrop: {

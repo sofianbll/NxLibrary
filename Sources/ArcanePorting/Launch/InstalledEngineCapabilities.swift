@@ -24,6 +24,10 @@ public actor InstalledEngineCapabilities {
         return HomeMenu.supported(by: app, knownEngine: known)
     }
 
+    public func gameOverlay(in app: URL) -> GameOverlayLaunch {
+        GameOverlayLaunch(app: app)
+    }
+
     public func mergesTrpfd(in app: URL, engineFolder: String, gameData: URL,
                             environment: [String: String] = ProcessInfo.processInfo.environment) async -> Bool {
         // Only the Z-A profile is supported. Unknown metadata must not hide warnings.
