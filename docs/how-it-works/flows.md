@@ -99,6 +99,7 @@ flowchart TD
     PZ -->|"Uscita del processo mentre è in pausa"| J
     I --> J["Fine: snapshot rimosso, sessione salvata → SessionCard<br/>GameFocus/LibraryWindow riportano la libreria davanti"]
     J --> K["Dopo la chiusura: icone, installazioni in attesa"]
+    J --> L["Pilota obiettivi: leggi il salvataggio confermato<br/>registra per profilo → toast al ritorno, snapshot al prossimo Play"]
 ```
 
 Play applica la scelta per gioco o il default globale. In Local usa l'adattatore VPN scelto o, se l'utente conferma l'avviso, la rete locale; il lancio non modifica le scelte salvate. I parametri espliciti di `env.txt` mantengono la precedenza.

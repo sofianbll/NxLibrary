@@ -140,6 +140,12 @@ struct AchievementsScreen: View {
             .shadow(color: .black.opacity(0.4), radius: canvas.u(6))
             .accessibilityLabel(game.name)
 
+            if game.steamGame == nil {
+                Text(L10n.text("Arcane · local"))
+                    .seleneFont(19, .semibold)
+                    .foregroundColor(SeleneTheme.ink75)
+            }
+
             if !recent.isEmpty {
                 VStack(alignment: .leading, spacing: canvas.u(12)) {
                     Text(L10n.text("Recently unlocked"))
@@ -354,7 +360,7 @@ struct AchievementsScreen: View {
 
     /// Order and Open share the bottom-right hints. Keep Order available even when the filter is empty.
     private func listHints(hasRows: Bool) -> [HintItem] {
-        var hints = [HintItem(.y, Self.title(state.order)) { onCycleOrder() }]
+        var hints: [HintItem] = game.steamGame == nil ? [] : [HintItem(.y, Self.title(state.order)) { onCycleOrder() }]
         if hasRows { hints.append(HintItem(.a, L10n.text("Open")) { onOpen() }) }
         return hints
     }
@@ -427,6 +433,10 @@ private struct AchievementsScreenRow: View {
                     }
                     .labelStyle(.titleAndIcon)
                     .foregroundColor(SeleneTheme.ink82)
+                } else if let progress = row.progress {
+                    Text(L10n.format("%d / %d", [progress.current, progress.target]))
+                        .monospacedDigit()
+                        .foregroundColor(SeleneTheme.ink75)
                 } else {
                     Text(L10n.text("Not unlocked"))
                         .foregroundColor(SeleneTheme.ink.opacity(0.45))

@@ -28,12 +28,12 @@ public final class NSWorkspaceLauncher: AppLaunching {
             if let error {
                 completion(false, error.localizedDescription)
             } else if let app {
+                completion(true, nil)
                 if let onExit {
                     DispatchQueue.main.async {
                         Self.watchExit(of: app, onExit: onExit)
                     }
                 }
-                completion(true, nil)
             } else {
                 completion(false, nil)
             }
@@ -88,13 +88,15 @@ public final class LaunchService {
 
     public func launch(appURL: URL, environment: [String: String] = [:],
                        overlay: GameOverlayLaunch? = nil, snapshot: GameOverlaySnapshot? = nil,
+                       onExit: (() -> Void)? = nil,
                        completion: @escaping (Bool, String?) -> Void) {
         launch(appURL: appURL, environment: environment, overlay: overlay, snapshot: snapshot,
-               temporaryDirectory: FileManager.default.temporaryDirectory, completion: completion)
+               temporaryDirectory: FileManager.default.temporaryDirectory, onExit: onExit, completion: completion)
     }
 
     func launch(appURL: URL, environment: [String: String] = [:],
                 overlay: GameOverlayLaunch?, snapshot: GameOverlaySnapshot?, temporaryDirectory: URL,
+                onExit: (() -> Void)? = nil,
                 completion: @escaping (Bool, String?) -> Void) {
         var values = environment.merging(Self.launchEnvironment) { _, fixed in fixed }
         values[GameOverlayLaunch.dataKey] = nil
@@ -103,7 +105,11 @@ public final class LaunchService {
             values[GameOverlayLaunch.dataKey] = file.path
             cleanup = { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
         }
-        launcher.open(appURL, environment: values, onExit: cleanup) { success, error in
+        let afterExit: (() -> Void)? = (cleanup == nil && onExit == nil) ? nil : {
+            cleanup?()
+            onExit?()
+        }
+        launcher.open(appURL, environment: values, onExit: afterExit) { success, error in
             if !success { cleanup?() }
             completion(success, error)
         }

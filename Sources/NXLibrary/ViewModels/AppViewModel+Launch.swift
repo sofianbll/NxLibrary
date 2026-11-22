@@ -80,7 +80,12 @@ extension AppViewModel {
             alertMessage = SaveFailure.busy.localizedDescription
             return
         }
-        let overlayData = gameOverlayData()
+        var overlayData = gameOverlayData()
+        if let profile = overlayData.snapshot.profile,
+           let pack = localAchievementPack(for: game, profile: profile.id),
+           let progress = localAchievementStore.progress(for: pack, profile: profile.id) {
+            overlayData.snapshot.achievements = pack.summary(progress, language: L10n.context.language)
+        }
         launchingGameId = game.id
         playSessionStore?.expectStart(gameID: game.id)
         let setting = gameSettings.flatMap { NextendoLaunch.networkSetting(in: $0.settings) }
@@ -239,7 +244,9 @@ extension AppViewModel {
 
     private func openGame(_ game: PortedGame, titleId: String, token saveLaunchToken: UUID,
                           environment: [String: String], overlay: GameOverlayLaunch, snapshot: GameOverlaySnapshot) {
-        launchService.launch(appURL: game.url, environment: environment, overlay: overlay, snapshot: snapshot) { [weak self] success, error in
+        let evaluate = snapshot.profile.flatMap { localAchievementExit(for: game, profile: $0.id, environment: environment) }
+        launchService.launch(appURL: game.url, environment: environment, overlay: overlay, snapshot: snapshot,
+                             onExit: evaluate) { [weak self] success, error in
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.saveGate.end(titleID: titleId, token: saveLaunchToken)
@@ -261,6 +268,62 @@ extension AppViewModel {
                     SoundEffectService.shared.play(.error)
                     self.logs.append(LogEntry(level: .error, message: message))
                 }
+            }
+        }
+    }
+
+    func localAchievementSummary(for game: PortedGame, profile: UUID) -> AchievementSummary? {
+        guard let pack = localAchievementPack(for: game, profile: profile) else { return nil }
+        return pack.summary(localAchievementStore.progress(for: pack, profile: profile), language: L10n.context.language)
+    }
+
+    private func localAchievementPack(for game: PortedGame, profile: UUID) -> LocalAchievementPack? {
+        guard let pack = LocalAchievementPack.linksAwakening,
+              pack.matches(titleID: game.titleId, gameVersion: game.versionString),
+              localProfiles?.failed == false, localProfiles?.originalID == profile,
+              localProfiles?.profiles.count == 1 else { return nil }
+        return pack
+    }
+
+    private func localAchievementExit(for game: PortedGame, profile: UUID,
+                                      environment: [String: String]) -> (() -> Void)? {
+        // shortcut: Arcane does not map its additional profiles to nxnative accounts. Never guess a mapping.
+        guard !AppData.profile.isDevelopment, let pack = localAchievementPack(for: game, profile: profile),
+              pack.matches(titleID: game.titleId, gameVersion: BuildOutputInstaller.version(of: game.url)),
+              environment["DM_SAVE"] == nil, environment["HOME"] == nil,
+              let location = try? saveContext(for: game).location else { return nil }
+        return { [weak self] in
+            // LaunchService can observe an instant exit before its successful open callback releases the lease.
+            DispatchQueue.main.async { [weak self] in
+                self?.evaluateLocalAchievements(for: game, pack: pack, profile: profile, location: location)
+            }
+        }
+    }
+
+    private func evaluateLocalAchievements(for game: PortedGame, pack: LocalAchievementPack,
+                                           profile: UUID, location: SaveLocation) {
+        guard localAchievementPack(for: game, profile: profile) != nil,
+              let token = saveGate.begin(titleID: location.titleID) else { return }
+        let date = Date.now
+        saveQueue.async { [weak self, saveGate] in
+            let counts: [LocalAchievementPack.Metric: Int]?
+            if !SaveTransaction.needsRecovery(location: location),
+               RunningGameMonitor.runningApplication(for: game) == nil {
+                switch pack.reader {
+                case .linksAwakening: counts = LinksAwakeningAchievements.readPrimary(from: location)
+                }
+            } else {
+                counts = nil
+            }
+            DispatchQueue.main.async {
+                defer { saveGate.end(titleID: location.titleID, token: token) }
+                guard let self, let counts, self.localAchievementPack(for: game, profile: profile) != nil else { return }
+                let ids = self.localAchievementStore.record(counts, in: pack, profile: profile, at: date)
+                self.localAchievementRevision &+= 1
+                let names = pack.summary(self.localAchievementStore.progress(for: pack, profile: profile),
+                                         language: L10n.context.language).rows(.unlocked)
+                    .filter { ids.contains($0.id) }.map(\.name)
+                if !names.isEmpty { self.localAchievementUnlocks.send((profile, names)) }
             }
         }
     }

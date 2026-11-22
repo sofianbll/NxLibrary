@@ -13,7 +13,12 @@ public enum AchievementOrder: CaseIterable, Sendable {
 
 /// One achievement as the card and the screen show it. A hidden achievement still locked is masked.
 public struct AchievementRow: Equatable, Identifiable, Sendable {
-    /// Steam's API name.
+    public struct Progress: Equatable, Sendable {
+        public let current: Int
+        public let target: Int
+    }
+
+    /// Stable ID from the achievement source.
     public let id: String
     public let name: String
     public let description: String
@@ -23,6 +28,7 @@ public struct AchievementRow: Equatable, Identifiable, Sendable {
     /// Share of Steam's players who have it, 0–100; nil while unknown.
     public let percent: Double?
     public let isMasked: Bool
+    public internal(set) var progress: Progress? = nil
 
     /// Its crystal from its rarity; nil while the rarity is unknown.
     public var tier: AchievementTier? { AchievementTier.forPercent(percent) }
@@ -37,10 +43,12 @@ public struct AchievementSummary: Equatable, Sendable {
     private let lockedRows: [AchievementRow]
 
     public init(achievements: [SteamAchievement], percents: [String: Double]) {
-        let rows = achievements.enumerated().map { index, achievement in
-            (index, Self.row(achievement, percent: percents[achievement.apiName]))
-        }
-        total = achievements.count
+        self.init(rows: achievements.map { Self.row($0, percent: percents[$0.apiName]) })
+    }
+
+    init(rows source: [AchievementRow]) {
+        let rows = Array(source.enumerated())
+        total = source.count
         unlockedRows = rows.filter { $0.1.unlockedAt != nil }
             .sorted { ($0.1.unlockedAt!, -$0.0) > ($1.1.unlockedAt!, -$1.0) }.map(\.1)
         unlocked = unlockedRows.count

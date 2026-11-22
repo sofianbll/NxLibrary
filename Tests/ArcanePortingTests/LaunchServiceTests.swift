@@ -63,8 +63,9 @@ final class LaunchServiceTests: XCTestCase {
         noSections.friends = []
         XCTAssertNil(try noSections.encoded())
         let environment = overlay.environment(palette: .fallback, playtime: nil, cover: nil, profilePlaytime: "20 h")
+        var exits = 0
         service.launch(appURL: app, environment: environment, overlay: overlay, snapshot: snapshot,
-                       temporaryDirectory: root) { ok, _ in XCTAssertTrue(ok) }
+                       temporaryDirectory: root, onExit: { exits += 1 }) { ok, _ in XCTAssertTrue(ok) }
         XCTAssertEqual(launcher.environment["DM_OVERLAY_PLAY_TIME"], "20 h")
         XCTAssertEqual(try Data(contentsOf: env), before)
         let path = try XCTUnwrap(launcher.environment["DM_OVERLAY_DATA"])
@@ -95,10 +96,13 @@ final class LaunchServiceTests: XCTestCase {
             XCTAssertEqual(process.terminationStatus, 0)
         }
         launcher.onExit?()
+        XCTAssertEqual(exits, 1)
         XCTAssertEqual(Set(try fm.contentsOfDirectory(atPath: root.path)), expectedChildren)
 
         launcher.shouldSucceed = false
-        service.launch(appURL: app, overlay: overlay, snapshot: snapshot, temporaryDirectory: root) { ok, _ in XCTAssertFalse(ok) }
+        service.launch(appURL: app, overlay: overlay, snapshot: snapshot, temporaryDirectory: root,
+                       onExit: { exits += 1 }) { ok, _ in XCTAssertFalse(ok) }
+        XCTAssertEqual(exits, 1)
         XCTAssertNotEqual(launcher.environment["DM_OVERLAY_DATA"], path)
         XCTAssertEqual(Set(try fm.contentsOfDirectory(atPath: root.path)), expectedChildren)
     }

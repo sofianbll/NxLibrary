@@ -45,6 +45,10 @@ struct AchievementIcon: View {
                     .aspectRatio(contentMode: .fill)
                     .blur(radius: secret ? canvas.u(size * 0.09) : 0, opaque: true)
                     .transition(.opacity)
+            } else if appID == 0, let file {
+                Image(systemName: file)
+                    .font(.system(size: canvas.u(size * 0.44), weight: .semibold))
+                    .foregroundColor(SeleneTheme.ink)
             }
         }
         .frame(width: canvas.u(size), height: canvas.u(size))
@@ -59,7 +63,7 @@ struct AchievementIcon: View {
         }
         .accessibilityHidden(true)
         .task(id: file) {
-            guard let file, Self.memory.object(forKey: Self.key(appID, file)) == nil,
+            guard appID != 0, let file, Self.memory.object(forKey: Self.key(appID, file)) == nil,
                   let url = await SteamMetadataService.shared.achievementIcon(appID: appID, file: file),
                   !Task.isCancelled else { return }
             // Read and decoded off the main thread; at most 2 MiB, already validated as an image.

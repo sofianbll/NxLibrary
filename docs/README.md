@@ -19,6 +19,7 @@ The guides in `how-it-works/` and `working-on-it/` are in Italian, except `devel
 | [keymap.md](how-it-works/keymap.md) | Launcher bindings, screen priority and controller button names. |
 | [flows.md](how-it-works/flows.md) | The main paths end to end: launch, library, Play, Add Game, saves, mods, settings, updates. |
 | [steam.md](how-it-works/steam.md) | The Steam integration in full. |
+| [achievements.md](how-it-works/achievements.md) | Local Switch achievements and how to add a title. |
 
 ## working-on-it/
 
