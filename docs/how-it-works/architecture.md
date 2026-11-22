@@ -194,7 +194,8 @@ La variante asincrona attende su una coda utility e invia SIGTERM al sottoproces
 ## Navigazione e focus
 
 `check_selene_tokens.py` impedisce alla CI di accettare nuovi argomenti numerici
-per font, padding e raggi. Rimuovere dalla baseline le occorrenze sostituite con token.
+per font, padding e raggi. In una pull request ogni voce della baseline può solo
+diminuire. Rimuovere le occorrenze sostituite con token.
 
 `SeleneTokens` conserva le misure di riferimento del canvas e gli effetti condivisi;
 `SeleneTheme` applica la palette corrente. `Motion` definisce le curve per ruolo.

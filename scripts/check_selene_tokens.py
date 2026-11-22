@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Reject new numeric typography, padding and radius literals in view code."""
+import argparse
 from collections import Counter
 import json
 from pathlib import Path
 import re
+import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,9 +44,21 @@ def scan(root=ROOT):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--base", help="Git revision whose baseline must not grow")
+    args = parser.parse_args()
     allowed = json.loads(BASELINE.read_text())
     found = scan()
     failed = False
+    if args.base:
+        relative = BASELINE.relative_to(ROOT).as_posix()
+        tracked = subprocess.check_output(["git", "ls-tree", args.base, "--", relative], cwd=ROOT)
+        if tracked:
+            original = json.loads(subprocess.check_output(["git", "show", f"{args.base}:{relative}"], cwd=ROOT))
+            for path, allowances in baseline_additions(allowed, original).items():
+                for signature, count in sorted(allowances.items()):
+                    print(f"{path}: baseline grows by {count} for {signature}", file=sys.stderr)
+                    failed = True
     for path, matches in found.items():
         remaining = Counter(allowed.get(path, {}))
         for signature, line in matches:
@@ -60,6 +74,14 @@ def main():
         print(f"{path}: remove obsolete baseline file entry", file=sys.stderr)
         failed = True
     return int(failed)
+
+
+def baseline_additions(current, original):
+    return {
+        path: extra
+        for path, allowances in current.items()
+        if (extra := Counter(allowances) - Counter(original.get(path, {})))
+    }
 
 
 if __name__ == "__main__":

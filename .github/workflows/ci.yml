@@ -21,6 +21,7 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
+          fetch-depth: 2
       - name: Publication inputs
         run: |
           python3 scripts/check_publication.py
@@ -28,6 +29,9 @@ jobs:
           python3 scripts/check_selene_tokens.py
       - name: Publication check regressions
         run: python3 -m unittest discover -s Tests/PublicationChecks
+      - name: Selene baseline can only shrink
+        if: github.event_name == 'pull_request'
+        run: python3 scripts/check_selene_tokens.py --base HEAD^1
       - name: Swift tests
         run: swift test
       - name: Application regressions without UI
@@ -52,6 +56,7 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
+          fetch-depth: 2
       - name: Publication inputs
         run: |
           python3 scripts/check_publication.py
@@ -59,3 +64,5 @@ jobs:
           python3 scripts/check_selene_tokens.py
       - name: Publication check regressions
         run: python3 -m unittest discover -s Tests/PublicationChecks
+      - name: Selene baseline can only shrink
+        run: python3 scripts/check_selene_tokens.py --base HEAD^1

@@ -27,3 +27,11 @@ class SeleneTokenChecks(unittest.TestCase):
         /* .padding(8) */ let source = ".cornerRadius(2)"
         view.seleneFont(.caption).padding(canvas.u(SeleneTokens.Space.small))'''
         self.assertEqual(list(check.literals(text)), [])
+
+    def test_baseline_may_lose_but_not_gain_allowances(self):
+        old = {"A.swift": {".padding(4": 3, ".padding(8": 2}}
+        self.assertEqual(check.baseline_additions({"A.swift": {".padding(4": 2}}, old), {})
+        self.assertEqual(
+            check.baseline_additions({"A.swift": {".padding(4": 2, ".padding(12": 1}}, old),
+            {"A.swift": {".padding(12": 1}},
+        )
