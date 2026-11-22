@@ -6,14 +6,15 @@ import XCTest
 
 final class CloudDriveFoldersTests: XCTestCase {
     func testDiscoverLibraryReadsOnlyGamesAndImmediateChildrenUsingValidatedManifests() async throws {
-        let backend = try DiscoveryBackend()
+        let named = "Old name [\(DiscoveryBackend.title)]"
+        let backend = try DiscoveryBackend(folder: named)
         var checked = [String]()
         let match = try await CloudDriveFolders.discoverLibrary(directories: { path in
             checked.append(path)
             switch path {
             case "Games": return ["Empty", "Library", DiscoveryBackend.title]
             case "Games/Empty": return ["Nested"]
-            case "Games/Library": return [DiscoveryBackend.title, DiscoveryBackend.title]
+            case "Games/Library": return [DiscoveryBackend.title, named, named]
             default: throw StorageBackendError.invalidKey
             }
         }, count: { path, folders in
@@ -23,7 +24,7 @@ final class CloudDriveFoldersTests: XCTestCase {
         XCTAssertEqual(match, .init(path: "Games/Library", games: 1))
         XCTAssertEqual(checked, ["Games", "Games/Empty", "Games/Library"])
         let reads = await backend.reads
-        XCTAssertEqual(reads, ["\(DiscoveryBackend.title)/manifests", backend.manifest.key.value])
+        XCTAssertEqual(reads, ["\(named)/manifests", "\(DiscoveryBackend.title)/manifests", backend.manifest.key.value])
     }
 
     func testDiscoveryDistinguishesErrorsAndCancellationFromAbsence() async throws {
@@ -305,7 +306,7 @@ private actor DiscoveryBackend: StorageBackend {
     private let data: Data
     private(set) var reads: [String] = []
 
-    init(corrupt: Bool = false) throws {
+    init(corrupt: Bool = false, folder: String = DiscoveryBackend.title) throws {
         let hash = String(repeating: "0", count: 64)
         let artifacts = CloudArtifactKind.allCases.map {
             CloudGameManifest.Artifact(kind: $0, size: 7, sha256: hash, md5: String(hash.prefix(32)),
@@ -316,11 +317,12 @@ private actor DiscoveryBackend: StorageBackend {
         let bytes = try encoder.encode(CloudGameManifest(version: 1, titleID: Self.title, createdAt: Date(), artifacts: artifacts))
         data = corrupt ? Data(repeating: 0, count: bytes.count) : bytes
         let digest = SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
-        manifest = .init(key: .init("\(Self.title)/manifests/0000000000000001-\(digest).json"), size: Int64(bytes.count), hashes: [:])
+        manifest = .init(key: .init("\(folder)/manifests/0000000000000001-\(digest).json"), size: Int64(bytes.count), hashes: [:])
     }
 
     func list(in prefix: StorageObjectKey) async throws -> [StorageObject] {
         reads.append(prefix.value)
+        guard manifest.key.value.hasPrefix(prefix.value + "/") else { throw CloudLibraryFailure.folderMissing }
         return [manifest]
     }
     func get(_ key: StorageObjectKey, to destination: URL, progress: (@Sendable (StorageProgress) -> Void)?) async throws {

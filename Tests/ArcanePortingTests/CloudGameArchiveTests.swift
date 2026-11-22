@@ -15,6 +15,9 @@ final class CloudGameArchiveTests: XCTestCase {
         let paths = try await f.backend.list().map(\.key.value)
         XCTAssertTrue(paths.contains { $0.hasPrefix("Fixture [\(title)]/app/")
             && $0.hasSuffix("/Fixture.app/Contents/Info.plist") })
+        XCTAssertEqual(paths.filter { $0.contains("/manifests/") }.map {
+            String($0.prefix { $0 != "/" })
+        }, ["Fixture [\(title)]"])
         XCTAssertFalse(paths.contains { $0.hasSuffix(".aar") })
         let tree = try XCTUnwrap(manifest.artifacts.first?.files)
         let downloaded = f.root.appendingPathComponent("Browser.app")
@@ -24,6 +27,37 @@ final class CloudGameArchiveTests: XCTestCase {
         let staged = try importer.stageAdoption(plan, replacing: true)
         defer { importer.cleanupAdoption(staged, published: false) }
         XCTAssertEqual(staged.app.titleId, title)
+    }
+
+    func testNewestManifestWinsAcrossBothFolders() async throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let legacy = try await publishLegacy(f)
+        let modern = try await f.service.upload(f.game)
+        let imported = try await f.service.latestManifests()
+        XCTAssertEqual(imported, [modern])
+
+        let folder = f.remote.appendingPathComponent("\(title)/manifests")
+        let old = try XCTUnwrap(FileManager.default.contentsOfDirectory(atPath: folder.path).first)
+        try FileManager.default.copyItem(at: folder.appendingPathComponent(old),
+            to: folder.appendingPathComponent("9999999999999999" + old.dropFirst(16)))
+        let newest = try await f.service.latest(titleID: title, expectingArchive: true)
+        XCTAssertEqual(newest, legacy)
+    }
+
+    func testRenamedGameReusesNamedFolderWithoutAPublishedManifest() async throws {
+        let f = try fixture(useSyntheticBackend: true)
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let existing = "Old name [\(title)]"
+        try FileManager.default.createDirectory(at: f.remote.appendingPathComponent(existing),
+                                               withIntermediateDirectories: false)
+        let published = try await f.service.upload(f.game)
+        XCTAssertEqual(published.gameName, "Fixture")
+        let paths = try await f.backend.list().map(\.key.value)
+        XCTAssertFalse(paths.isEmpty)
+        XCTAssertTrue(paths.allSatisfy { $0.hasPrefix(existing + "/") })
+        let latest = try await f.service.latest(titleID: title)
+        XCTAssertEqual(latest, published)
     }
 
     func testIncrementalSendTransfersOnlyChangedFile() async throws {
@@ -44,6 +78,7 @@ final class CloudGameArchiveTests: XCTestCase {
     func testMovingLibraryIncludesFilesReferencedByVersionTwo() async throws {
         let f = try fixture()
         defer { try? FileManager.default.removeItem(at: f.root) }
+        let legacy = try await publishLegacy(f)
         let published = try await f.service.upload(f.game)
         let destination = f.root.appendingPathComponent("Moved")
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: false)
@@ -58,6 +93,9 @@ final class CloudGameArchiveTests: XCTestCase {
         let latest = try await CloudGameArchive(backend: moved).latest(titleID: title)
         XCTAssertEqual(latest, published)
         for artifact in published.artifacts { try await XCTUnwrap(artifact.files).verify(on: moved) }
+        for object in legacy.artifacts.flatMap({ $0.objects(titleID: title) }) { try await moved.verify(object) }
+        let legacyManifests = try await moved.list(in: .init("\(title)/manifests"))
+        XCTAssertEqual(legacyManifests.count, 1)
     }
 
     func testInterruptedCacheRestorationKeepsVerifiedFilesForBuildAndResume() async throws {
@@ -358,6 +396,8 @@ final class CloudGameArchiveTests: XCTestCase {
         XCTAssertTrue(empty.isEmpty, "A title folder alone is not an archived game")
 
         let published = try await publishLegacy(f)
+        let legacyOnly = try await service.latest(titleID: title, expectingArchive: true)
+        XCTAssertEqual(legacyOnly, published)
         XCTAssertEqual(published.gameName, "Fixture")
         XCTAssertEqual(published.bundleName, "Fixture.app")
         XCTAssertEqual(published.gameVersion, "1.2")

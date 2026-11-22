@@ -434,13 +434,17 @@ public actor CloudGameArchive {
     }
 
     func latestManifests(in folders: [String]) async throws -> [CloudGameManifest] {
-        // Uploads use uppercase IDs as case-sensitive storage keys.
-        let titles = Set(folders.filter { SaveLocation.validID($0) && $0 == $0.uppercased() })
+        var titles: [String: [String]] = [:]
+        for folder in Set(folders) {
+            if let title = CloudDriveFolders.titleID(in: folder) { titles[title, default: []].append(folder) }
+        }
         guard titles.count <= 2_000 else { throw StorageBackendError.invalidResponse }
         var manifests: [CloudGameManifest] = []
-        for title in titles.sorted() {
+        for title in titles.keys.sorted() {
             try Task.checkCancellation()
-            if let manifest = try await latest(titleID: title) { manifests.append(manifest) }
+            if let manifest = try await latest(titleID: title, folders: titles[title, default: []]) {
+                manifests.append(manifest)
+            }
         }
         try Task.checkCancellation()
         return manifests
@@ -449,18 +453,33 @@ public actor CloudGameArchive {
     public func latest(titleID: String, expectingArchive: Bool = false) async throws -> CloudGameManifest? {
         let title = titleID.uppercased()
         guard SaveLocation.validID(title) else { throw CloudArchiveError.unsafePath }
-        let directory = StorageObjectKey("\(title)/manifests")
-        let entries: [StorageObject]
-        do { entries = try await backend.list(in: directory) }
-        catch CloudLibraryFailure.folderMissing {
-            // The per-title manifests folder is implicit until the first archive is published.
-            if expectingArchive { throw CloudLibraryFailure.folderMissing }
-            _ = try await backend.rootDirectories()
-            return nil
+        let folders = try await titleFolders(title)
+        return try await latest(titleID: title, folders: folders, expectingArchive: expectingArchive)
+    }
+
+    private func titleFolders(_ title: String) async throws -> [String] {
+        try await backend.rootDirectories().filter { CloudDriveFolders.titleID(in: $0) == title }
+    }
+
+    private func latest(titleID title: String, folders: [String], expectingArchive: Bool = false) async throws -> CloudGameManifest? {
+        var entries: [(name: Substring, object: StorageObject)] = []
+        var foundDirectory = false
+        for folder in folders.filter({ $0 != title }).sorted() + folders.filter({ $0 == title }) {
+            try Task.checkCancellation()
+            let directory = "\(folder)/manifests"
+            let listed: [StorageObject]
+            do { listed = try await backend.list(in: StorageObjectKey(directory)) }
+            catch CloudLibraryFailure.folderMissing { continue }
+            foundDirectory = true
+            for object in listed where object.key.value.hasPrefix(directory + "/") && object.key.value.hasSuffix(".json") {
+                entries.append((object.key.value.dropFirst(directory.count + 1), object))
+            }
         }
-        guard let newest = entries.filter({ $0.key.value.hasPrefix(directory.value + "/") && $0.key.value.hasSuffix(".json") })
-            .max(by: { $0.key.value < $1.key.value }) else { return nil }
-        guard entries.filter({ $0.key == newest.key }).count == 1 else { throw CloudArchiveError.invalidManifest }
+        try Task.checkCancellation()
+        if expectingArchive && !foundDirectory { throw CloudLibraryFailure.folderMissing }
+        // The immutable filename starts with the publication timestamp. Named folders win exact ties.
+        guard let newest = entries.max(by: { $0.name < $1.name })?.object else { return nil }
+        guard entries.filter({ $0.object.key == newest.key }).count == 1 else { throw CloudArchiveError.invalidManifest }
         return try await readManifest(newest, titleID: title)
     }
 
@@ -483,10 +502,10 @@ public actor CloudGameArchive {
     }
 
     func readManifest(_ object: StorageObject, titleID title: String) async throws -> CloudGameManifest {
-        let prefix = "\(title)/manifests/"
-        guard SaveLocation.validID(title), object.key.value.hasPrefix(prefix),
-              object.key.value.hasSuffix(".json") else { throw CloudArchiveError.invalidManifest }
-        let name = object.key.value.dropFirst(prefix.count).dropLast(5)
+        let path = object.key.value.components(separatedBy: "/")
+        guard path.count == 3, CloudDriveFolders.titleID(in: path[0]) == title, path[1] == "manifests",
+              path[2].hasSuffix(".json") else { throw CloudArchiveError.invalidManifest }
+        let name = path[2].dropLast(5)
         let parts = name.split(separator: "-", omittingEmptySubsequences: false)
         guard parts.count == 2, parts[0].count == 16, Int64(parts[0]) != nil, Self.isHex(String(parts[1]), count: 64),
               (1...Int64(Self.manifestLimit)).contains(object.size) else { throw CloudArchiveError.invalidManifest }
@@ -536,8 +555,9 @@ public actor CloudGameArchive {
         var artifacts: [Artifact] = []
         var gameName: String?, bundleName: String?
         var sourceSelection = game.sourceSelection
+        let folders = try await titleFolders(game.titleID)
         let previous: CloudGameManifest?
-        do { previous = try await latest(titleID: game.titleID) }
+        do { previous = try await latest(titleID: game.titleID, folders: folders) }
         catch CloudArchiveError.invalidManifest where selected.count == 1 { throw CloudArchiveError.needsFullUpload }
         catch CloudArchiveError.invalidManifest { previous = nil }
         if selected.count == 1 {
@@ -567,7 +587,9 @@ public actor CloudGameArchive {
             guard !snapshot.isSkippedOnly else { throw CloudArchiveError.localMissing }
             return (source, parent, snapshot, try CloudArtifactFiles.entries(at: source, snapshot: snapshot))
         }
-        var gameFolder = previous?.artifacts.compactMap { $0.files?.folder.components(separatedBy: "/").first }.first
+        let namedFolders = folders.filter { $0 != game.titleID }.sorted()
+        var gameFolder = previous?.artifacts.compactMap { $0.files?.folder.components(separatedBy: "/").first }
+            .first(where: namedFolders.contains) ?? namedFolders.first
         for (kind, (source, parent, snapshot, files)) in zip(selected, snapshots) {
             try checkUpload(source, parent: parent, snapshot: snapshot, kind: kind)
             let info = kind == .app ? try await verifiedApp(source, titleID: game.titleID) : [:]
@@ -620,7 +642,8 @@ public actor CloudGameArchive {
             try checkUpload(source, parent: parent, snapshot: snapshot, kind: kind)
         }
         let timestamp = String(format: "%016lld", Int64(now.timeIntervalSince1970 * 1000))
-        let key = StorageObjectKey("\(game.titleID)/manifests/\(timestamp)-\(hashes["sha256"]!).json")
+        guard let gameFolder else { throw CloudArchiveError.unsafePath }
+        let key = StorageObjectKey("\(gameFolder)/manifests/\(timestamp)-\(hashes["sha256"]!).json")
         try await put(file, object: StorageObject(key: key, size: Int64(data.count), hashes: hashes), progress: nil)
         return manifest
     }
