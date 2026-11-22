@@ -74,9 +74,9 @@ public final class AppRouter: ObservableObject {
         self.route = route
     }
 
-    /// Left and Right move along the row. They do nothing while the Power pills are open.
+    /// Left and Right move along the row. They do nothing while a card or the Power pills are open.
     public func moveMenu(by delta: Int) {
-        guard !menuSelection.isPowerOpen else { return }
+        guard !menuSelection.isSubmenuOpen else { return }
         menuSelection.move(by: delta)
     }
 
@@ -86,7 +86,16 @@ public final class AppRouter: ObservableObject {
         menuSelection.movePower(by: delta)
     }
 
+    /// Up and Down move the open card's entries. They do nothing while it is closed.
+    public func moveEntryMenu(by delta: Int) { menuSelection.moveEntry(by: delta) }
+
     public func openPowerMenu() { menuSelection.openPower() }
+
+    /// A press on Profile or Library: the card opens above its icon.
+    public func openEntryMenu() { menuSelection.openEntries() }
+
+    /// B on a card: closes it and leaves the menu open, the focus on its icon.
+    public func closeEntryMenu() { menuSelection.closeEntries() }
 
     /// B on the Power pills: closes them and leaves the menu open.
     public func closePowerMenu() { menuSelection.closePower() }
@@ -138,5 +147,6 @@ public final class AppRouter: ObservableObject {
         isThemePickerOpen = false
         activityCenterFocus = nil
         menuSelection.closePower()
+        menuSelection.closeEntries()
     }
 }

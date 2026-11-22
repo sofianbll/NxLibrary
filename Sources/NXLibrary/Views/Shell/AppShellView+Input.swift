@@ -211,8 +211,8 @@ extension AppShellView {
         gestureKeyMonitor = nil
     }
 
-    /// Input while the control center is open: arrows move, A selects, B (or Esc) closes the Power pills
-    /// first and then the menu. Holding Menu opens Settings.
+    /// Input while the control center is open: arrows move, A selects, B (or Esc) closes the open card or
+    /// Power pills first and then the menu. Holding Menu opens Settings.
     func menuInput(_ action: GamepadAction) {
         if router.activityCenterFocus != nil {
             activityCenterInput(action, router: router, viewModel: viewModel)
@@ -237,17 +237,23 @@ extension AppShellView {
             router.moveMenu(by: 1)
         case .navigateUp:
             router.movePowerMenu(by: -1)
+            router.moveEntryMenu(by: -1)
         case .navigateDown:
             router.movePowerMenu(by: 1)
+            router.moveEntryMenu(by: 1)
         case .confirm:
             if router.menuSelection.isPowerOpen {
                 runPower(router.menuSelection.power)
+            } else if router.menuSelection.isEntryOpen {
+                runMenuEntry(router.menuSelection.entry)
             } else {
                 runMenuAction(router.menuSelection.selected)
             }
         case .cancel:
             if router.menuSelection.isPowerOpen {
                 router.closePowerMenu()
+            } else if router.menuSelection.isEntryOpen {
+                router.closeEntryMenu()
             } else {
                 router.closeMenu()
             }
@@ -256,46 +262,57 @@ extension AppShellView {
         }
     }
 
-    /// A row button. The menu closes before it navigates; Power only opens or closes its
-    /// pills, and Theme opens its screen in place of the row.
+    /// A row button. Profile and Library open or close their card, Power its pills; the others act at once,
+    /// closing the menu before they navigate.
     func runMenuAction(_ action: MenuAction) {
         switch action {
-        case .switchProfile: openProfile(.picker, fromMenu: true)
-        case .editProfile: openProfile(.editor, fromMenu: true)
+        case .profile, .library:
+            router.closePowerMenu()
+            if router.menuSelection.isEntryOpen {
+                router.closeEntryMenu()
+            } else {
+                router.openEntryMenu()
+            }
         case .activityCenter:
             router.closePowerMenu()
+            router.closeEntryMenu()
             var focus = ActivityCenterFocus()
             focus.selected = ActivityCenterView.rows(viewModel).first
             router.activityCenterFocus = focus
             SoundEffectService.shared.play(.openPanel)
         case .power:
+            router.closeEntryMenu()
             if router.menuSelection.isPowerOpen {
                 router.closePowerMenu()
             } else {
                 router.openPowerMenu()
             }
+        case .settings:
+            router.closeMenu()
+            router.openSettings(.startUp)
+        }
+    }
+
+    /// A line of the Profile or Library card. The card closes first, so that coming back from a profile
+    /// screen or Theme (B) lands on the row with the focus on the same icon.
+    func runMenuEntry(_ entry: MenuEntry) {
+        router.closeEntryMenu()
+        switch entry {
+        case .switchProfile: openProfile(.picker, fromMenu: true)
+        case .editProfile: openProfile(.editor, fromMenu: true)
+        case .theme:
+            // The menu's own screen: the theme's colors, then the background.
+            router.isThemePickerOpen = true
         case .addGame:
             router.closeMenu()
             openFreshAddGame()
+        case .manageSources:
+            router.closeMenu()
+            router.openSettings(.sources)
         case .refreshLibrary:
             router.closeMenu()
             viewModel.refreshLibrary()
             if sources.configuration.isEnabled { sources.refresh() }
-        case .manageSources:
-            router.closeMenu()
-            router.openSettings(.sources)
-        case .settings:
-            router.closeMenu()
-            router.openSettings(.startUp)
-        case .theme:
-            // The menu's own screen: the theme's colors, then the background.
-            router.isThemePickerOpen = true
-        case .console:
-            router.closeMenu()
-            router.openConsole()
-        case .setupCheck:
-            router.closeMenu()
-            viewModel.reopenSetup()
         }
     }
 

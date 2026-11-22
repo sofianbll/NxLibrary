@@ -3,7 +3,7 @@ import NXLibraryCore
 
 /// Selene's control center (MenuScreen.cs): the screen dimmed at 0.55, one row of
 /// icon buttons along the bottom, the focused item's name above a white ring.
-/// Power opens its pills stacked above its button.
+/// Profile, Library and Power open a card of lines stacked above their icon.
 ///
 /// Keyboard input (arrows, Return, Space, Esc) is taken by the shell's key monitor
 /// while the menu is open and sent through `menuInput`, the same path as the
@@ -17,6 +17,8 @@ struct MenuOverlayView: View {
     let onSelect: (MenuAction) -> Void
     /// A click on a Power pill; the shell runs it.
     let onSelectPower: (PowerAction) -> Void
+    /// A click on a line of the Profile or Library card; the shell runs it.
+    var onSelectEntry: (MenuEntry) -> Void = { _ in }
 
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.nxAppLocale) private var localization
@@ -30,7 +32,7 @@ struct MenuOverlayView: View {
         settingsReduceMotion || accessibilityReduceMotion
     }
 
-    private var powerOpen: Bool { router.menuSelection.isPowerOpen }
+    private var submenuOpen: Bool { router.menuSelection.isSubmenuOpen }
 
     // Selene units (MenuScreen.cs): 96u cells with no gap, a 70u dot with a 3u
     // ring, the bar 70u above the bottom edge, so the dot's centre is 105u up
@@ -83,7 +85,7 @@ struct MenuOverlayView: View {
             onSelect(action)
         } label: {
             VStack(spacing: 0) {
-                Text(action == .switchProfile ? activeProfile?.name ?? action.title : action.title)
+                Text(action == .profile ? activeProfile?.name ?? action.title : action.title)
                     .seleneFont(18, .semibold)
                     .foregroundColor(SeleneTheme.ink)
                     .lineLimit(1)
@@ -92,7 +94,7 @@ struct MenuOverlayView: View {
                     .opacity(isFocused ? 1 : 0)
                     .offset(y: isFocused || reduceMotion ? 0 : canvas.u(6))
                     .animation(SeleneTheme.focusIn, value: isFocused)
-                if action == .switchProfile, activeProfile != nil, isFocused {
+                if action == .profile, activeProfile != nil, isFocused {
                     Text(action.title).seleneFont(14).foregroundColor(SeleneTheme.ink60).lineLimit(1).fixedSize()
                 }
 
@@ -107,7 +109,7 @@ struct MenuOverlayView: View {
                         .opacity(isFocused ? 1 : 0)
                         .animation(SeleneTheme.focusIn, value: isFocused)
                     Group {
-                        if action == .switchProfile, let activeProfile {
+                        if action == .profile, let activeProfile {
                             ProfilePortrait(profile: activeProfile, size: 52)
                         } else {
                             MaterialIconView(action.icon, size: iconSize)
@@ -132,11 +134,11 @@ struct MenuOverlayView: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering in
-            if hovering, !powerOpen { router.menuSelection.selected = action }
+            if hovering, !submenuOpen { router.menuSelection.selected = action }
         }
         .overlay(alignment: .bottom) {
-            if action == .power, powerOpen {
-                powerPills
+            if let lines = lines(above: action) {
+                card(lines)
                     .transition(.opacity)
                     .offset(y: -canvas.u(labelBand + labelGap + dotSize + pillsGap))
             }
@@ -147,7 +149,7 @@ struct MenuOverlayView: View {
         .opacity(presented ? 1 : 0)
         .offset(y: presented || reduceMotion ? 0 : canvas.u(24))
         .animation(entrance(index), value: presented)
-        .animation(SeleneTheme.quick, value: powerOpen)
+        .animation(SeleneTheme.quick, value: lines(above: action) == nil)
     }
 
     private func entrance(_ index: Int) -> Animation {
@@ -156,23 +158,54 @@ struct MenuOverlayView: View {
         return reduceMotion ? .easeOut(duration: 0.12) : curve.delay(Double(index) * 0.025)
     }
 
-    // MARK: - Power pills
+    // MARK: - Cards
 
-    private var powerPills: some View {
-        VStack(spacing: canvas.u(12)) {
-            ForEach(PowerAction.allCases) { action in
-                SelenePillButton(title: action.title,
-                                 icon: action.icon,
-                                 minWidth: 240,
-                                 focused: router.menuSelection.power == action) {
-                    router.menuSelection.power = action
-                    onSelectPower(action)
-                }
-                .onHover { hovering in
-                    if hovering { router.menuSelection.power = action }
-                }
-                .accessibilityLabel(action.title)
+    /// One line of a card above an icon: Power's pills, or the entries of Profile and Library.
+    private struct Line: Identifiable, Equatable {
+        let id: String
+        let title: String
+        let icon: MaterialIcon
+        let width: CGFloat
+        let focused: Bool
+        let focus: () -> Void
+        let choose: () -> Void
+        static func == (a: Line, b: Line) -> Bool { a.id == b.id }
+    }
+
+    /// The lines open above `action`'s icon, or nil when it has no card open.
+    private func lines(above action: MenuAction) -> [Line]? {
+        let model = router.menuSelection
+        if action == .power, model.isPowerOpen {
+            return PowerAction.allCases.map { power in
+                Line(id: power.id, title: power.title, icon: power.icon, width: 240, focused: model.power == power,
+                     focus: { router.menuSelection.power = power },
+                     choose: { router.menuSelection.power = power; onSelectPower(power) })
             }
         }
+        if action == model.selected, model.isEntryOpen {
+            return action.entries.map { entry in
+                Line(id: entry.id, title: entry.title, icon: entry.icon, width: 320, focused: model.entry == entry,
+                     focus: { router.menuSelection.entry = entry },
+                     choose: { router.menuSelection.entry = entry; onSelectEntry(entry) })
+            }
+        }
+        return nil
+    }
+
+    private func card(_ lines: [Line]) -> some View {
+        VStack(spacing: canvas.u(12)) {
+            ForEach(lines) { line in
+                SelenePillButton(title: line.title,
+                                 icon: line.icon,
+                                 minWidth: line.width,
+                                 focused: line.focused, action: line.choose)
+                .onHover { hovering in
+                    if hovering { line.focus() }
+                }
+                .accessibilityLabel(line.title)
+            }
+        }
+        // Over a 96-unit cell: a pill takes the width of its title when that is wider than its minimum.
+        .fixedSize()
     }
 }

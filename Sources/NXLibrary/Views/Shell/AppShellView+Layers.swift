@@ -140,7 +140,8 @@ extension AppShellView {
                             hasBuildActivity: viewModel.isBuilding || viewModel.isCheckingCloudBuild
                                 || !viewModel.buildQueue.isEmpty || !viewModel.activityResults.entries.isEmpty,
                             onSelect: { runMenuAction($0) },
-                            onSelectPower: { runPower($0) }
+                            onSelectPower: { runPower($0) },
+                            onSelectEntry: { runMenuEntry($0) }
                         )
                         .transition(.opacity)
                     }
