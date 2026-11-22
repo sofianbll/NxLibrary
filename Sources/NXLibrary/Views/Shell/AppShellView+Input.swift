@@ -248,31 +248,18 @@ extension AppShellView {
         }
     }
 
-    /// A row button. Profile and Library open or close their card, Power its pills; the others act at once,
-    /// closing the menu before they navigate.
+    /// A row button. Profile and Library open or close their card, Power its pills (`pressMenuIcon`); the others
+    /// act at once, closing the menu before they navigate.
     func runMenuAction(_ action: MenuAction) {
+        router.pressMenuIcon(action)
         switch action {
-        case .profile, .library:
-            router.closePowerMenu()
-            if router.menuSelection.isEntryOpen {
-                router.closeEntryMenu()
-            } else {
-                router.openEntryMenu()
-            }
+        case .profile, .library, .power:
+            break
         case .activityCenter:
-            router.closePowerMenu()
-            router.closeEntryMenu()
             var focus = ActivityCenterFocus()
             focus.selected = ActivityCenterView.rows(viewModel).first
             router.activityCenterFocus = focus
             SoundEffectService.shared.play(.openPanel)
-        case .power:
-            router.closeEntryMenu()
-            if router.menuSelection.isPowerOpen {
-                router.closePowerMenu()
-            } else {
-                router.openPowerMenu()
-            }
         case .settings:
             router.closeMenu()
             router.openSettings(.startUp)

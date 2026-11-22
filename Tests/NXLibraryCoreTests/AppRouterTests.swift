@@ -231,6 +231,29 @@ final class MenuSelectionModelTests: XCTestCase {
               outcome: { .power($0) }, isOpen: { $0.menuSelection.isPowerOpen })
     }
 
+    /// A mouse click on an icon opens its submenu; on another icon it replaces the open one; on the same icon it closes it.
+    func testClickingIconsOpensReplacesAndClosesSubmenus() {
+        let router = AppRouter()
+        router.isMenuPresented = true
+        router.pressMenuIcon(.library)
+        XCTAssertTrue(router.menuSelection.isEntryOpen)
+        XCTAssertEqual(router.menuSelection.selected, .library)
+        router.pressMenuIcon(.profile)
+        XCTAssertEqual(router.menuSelection.selected, .profile)
+        XCTAssertTrue(router.menuSelection.isEntryOpen)
+        XCTAssertEqual(router.menuSelection.entry, .switchProfile)
+        router.pressMenuIcon(.power)
+        XCTAssertTrue(router.menuSelection.isPowerOpen && !router.menuSelection.isEntryOpen)
+        router.pressMenuIcon(.library)
+        XCTAssertTrue(router.menuSelection.isEntryOpen && !router.menuSelection.isPowerOpen)
+        router.pressMenuIcon(.library)
+        XCTAssertFalse(router.menuSelection.isSubmenuOpen)
+        router.pressMenuIcon(.library)
+        router.pressMenuIcon(.settings)
+        XCTAssertFalse(router.menuSelection.isSubmenuOpen)
+        XCTAssertEqual(router.menuSelection.selected, .settings)
+    }
+
     func testActivityCenterUsesMenuLifetime() {
         let router = AppRouter()
         router.isMenuPresented = true

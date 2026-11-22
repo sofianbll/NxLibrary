@@ -132,6 +132,24 @@ public final class AppRouter: ObservableObject {
         return .none
     }
 
+    /// A press on a row icon, by pointer or by A: the focus lands on it, and its card or Power's pills open, or close
+    /// when they were already open on it. The submenu of another icon closes first; the other icons hold none.
+    public func pressMenuIcon(_ action: MenuAction) {
+        let wasFocused = menuSelection.selected == action
+        menuSelection.selected = action
+        switch action {
+        case .profile, .library:
+            closePowerMenu()
+            if wasFocused, menuSelection.isEntryOpen { closeEntryMenu() } else { openEntryMenu() }
+        case .power:
+            closeEntryMenu()
+            if wasFocused, menuSelection.isPowerOpen { closePowerMenu() } else { openPowerMenu() }
+        case .activityCenter, .settings:
+            closePowerMenu()
+            closeEntryMenu()
+        }
+    }
+
     public func navigate(to route: AppRoute) {
         guard route != self.route else { return }
         isReturningFromBack = false

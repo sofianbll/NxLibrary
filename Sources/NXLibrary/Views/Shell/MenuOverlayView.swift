@@ -27,8 +27,6 @@ struct MenuOverlayView: View {
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
 
     @State private var presented = false
-    /// Where the pointer was when a hover last focused: a hover only focuses when the pointer has moved since.
-    @State private var pointer = NSEvent.mouseLocation
 
     /// Gates scale and movement only; opacity always animates.
     private var reduceMotion: Bool {
@@ -78,15 +76,6 @@ struct MenuOverlayView: View {
         .onAppear { presented = true }
     }
 
-    /// A hover focuses only when the pointer moved since the last one that did: a card or the row redrawing
-    /// under a resting pointer reports a new hover, which would otherwise take the focus back from the keys.
-    private func hovered(_ hovering: Bool, focus: () -> Void) {
-        let now = NSEvent.mouseLocation
-        guard hovering, now != pointer else { return }
-        pointer = now
-        focus()
-    }
-
     // MARK: - Row
 
     private var row: some View {
@@ -102,7 +91,6 @@ struct MenuOverlayView: View {
         let hasActivity = action == .activityCenter && (hasBuildActivity || cloudLibrary.isWorking)
 
         return Button {
-            router.menuSelection.selected = action
             onSelect(action)
         } label: {
             VStack(spacing: 0) {
@@ -155,7 +143,7 @@ struct MenuOverlayView: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering in
-            hovered(hovering) { if !submenuOpen { router.menuSelection.selected = action } }
+            if hovering, !submenuOpen { router.menuSelection.selected = action }
         }
         .accessibilityLabel(action.title)
         .accessibilityValue(hasActivity ? L10n.text("Activity in progress", context: localization) : "")
@@ -182,14 +170,14 @@ struct MenuOverlayView: View {
             action = .power
             lines = PowerAction.allCases.map { power in
                 .init(id: power.id, title: power.title, icon: power.icon, width: 240, focused: model.power == power,
-                      focus: { hovered(true) { router.menuSelection.power = power } },
+                      focus: { router.menuSelection.power = power },
                       choose: { router.menuSelection.power = power; onSelectPower(power) })
             }
         } else if model.isEntryOpen {
             action = model.selected
             lines = action.entries.map { entry in
                 .init(id: entry.id, title: entry.title, icon: entry.icon, width: 320, focused: model.entry == entry,
-                      focus: { hovered(true) { router.menuSelection.entry = entry } },
+                      focus: { router.menuSelection.entry = entry },
                       choose: { router.menuSelection.entry = entry; onSelectEntry(entry) })
             }
         } else {
