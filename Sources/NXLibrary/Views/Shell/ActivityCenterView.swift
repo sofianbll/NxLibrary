@@ -10,7 +10,8 @@ struct ActivityCenterView: View {
     let onFocus: (ActivityCenterFocus.Row) -> Void
     let onOpen: (ActivityCenterFocus.Row) -> Void
     let onCancel: (ActivityCenterFocus.Row) -> Void
-    let onClose: () -> Void
+    let onBack: () -> Void
+    let onOutside: () -> Void
 
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.nxAppLocale) private var localization
@@ -35,7 +36,7 @@ struct ActivityCenterView: View {
     var body: some View {
         let rows = Self.rows(viewModel)
         let focused = focus.current(in: rows)
-        SeleneOverlay(style: .activity, alignment: .bottom, onOutside: onClose) {
+        SeleneOverlay(style: .activity, alignment: .bottom, onOutside: onOutside) {
             VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.panel)) {
                 Text(text("Activity center")).seleneFont(.panelTitle, .semibold)
                     .accessibilityAddTraits(.isHeader)
@@ -57,10 +58,10 @@ struct ActivityCenterView: View {
             .modifier(SeleneDialogCard(width: 920))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            SeleneHintsBar(left: [HintItem(.b, "Close", action: onClose)],
+            SeleneHintsBar(left: [HintItem(.b, "Close", action: onBack)],
                            right: hints(focused))
         }
-        .accessibilityAction(.escape, onClose)
+        .accessibilityAction(.escape, onBack)
     }
 
     private func sections(_ rows: [ActivityCenterFocus.Row], focused: ActivityCenterFocus.Row) -> some View {

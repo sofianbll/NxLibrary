@@ -27,6 +27,7 @@ struct MenuOverlayView: View {
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
 
     @State private var presented = false
+    @State private var hover = SeleneHoverFocus()
 
     /// Gates scale and movement only; opacity always animates.
     private var reduceMotion: Bool {
@@ -138,7 +139,7 @@ struct MenuOverlayView: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering in
-            if hovering, !submenuOpen { router.menuSelection.selected = action }
+            if hover.moved(hovering), !submenuOpen { router.menuSelection.selected = action }
         }
         .accessibilityLabel(action.title)
         .accessibilityValue(hasActivity ? L10n.text("Activity in progress", context: localization) : "")

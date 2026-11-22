@@ -16,7 +16,7 @@ extension AppShellView {
             if focus.selected != current { SoundEffectService.shared.play(.focus) }
         case .confirm: openActivityCenterRow(current, router: router, viewModel: viewModel)
         case .secondaryAction: cancelActivityCenterRow(current, viewModel: viewModel)
-        case .cancel: router.closeMenu()
+        case .cancel: router.menuStep(.back)
         default: break
         }
     }
@@ -219,8 +219,8 @@ extension AppShellView {
         gestureKeyMonitor = nil
     }
 
-    /// Input while the control center is open: arrows move, A selects, B (or Esc) closes the open card or
-    /// Power pills first and then the menu. Holding Menu opens Settings.
+    /// Input while the control center is open: arrows move, A selects, B (or Esc) closes the open panel
+    /// first and then the menu. Holding Menu opens Settings.
     func menuInput(_ action: GamepadAction) {
         if router.activityCenterFocus != nil {
             activityCenterInput(action, router: router, viewModel: viewModel)

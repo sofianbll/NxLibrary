@@ -81,6 +81,25 @@ final class AppRouterTests: XCTestCase {
         XCTAssertFalse(router.isThemePickerOpen)
     }
 
+    func testBackFromActivityKeepsTheMenuOpenUnlikeOutsideClick() {
+        let router = AppRouter()
+        router.isMenuPresented = true
+        router.pressMenuIcon(.activityCenter)
+        router.activityCenterFocus = ActivityCenterFocus()
+        router.menuStep(.back)
+        XCTAssertTrue(router.isMenuPresented)
+        XCTAssertEqual(router.menuSelection.selected, .activityCenter)
+        XCTAssertNil(router.activityCenterFocus)
+        router.menuStep(.back)
+        XCTAssertFalse(router.isMenuPresented)
+
+        router.isMenuPresented = true
+        router.activityCenterFocus = ActivityCenterFocus()
+        router.closeMenu()
+        XCTAssertFalse(router.isMenuPresented)
+        XCTAssertNil(router.activityCenterFocus)
+    }
+
     func testMoveMenuMovesPillsWhileOpen() {
         let router = AppRouter()
         router.menuSelection.selected = .power

@@ -100,12 +100,17 @@ final class InputHost {
     let viewModel = InputState()
     var entrance = SpotlightEntrance.Phase.covered
     var handled: [GamepadAction] = []
+    var routed: [GamepadAction] = []
     // ACTUAL_OVERLAID
     // ACTUAL_COVERED
     func landEntrance() { entrance.land() }
     func handle(_ action: GamepadAction) {
+        routed.append(action)
         // ACTUAL_INPUT_PRELUDE
         handled.append(action)
+    }
+    func clickProfilesHint() {
+        // ACTUAL_PROFILE_HINT
     }
     func receive(_ note: Notification) {
         // ACTUAL_RECEIVER
@@ -133,6 +138,10 @@ final class InputHost {
         landed.receive(Notification(name: .init("fixture"), object: GamepadAction.profiles))
         require(ProfileFlow.requests == 1 && landed.handled == [.confirm],
                 "Home after landing asks the shell without moving Spotlight focus")
+        let routedBeforeClick = landed.routed
+        landed.clickProfilesHint()
+        require(ProfileFlow.requests == 2 && landed.routed == routedBeforeClick,
+                "Clicking the visible Profiles hint must ask the shell directly, like Home")
         for setup in [false, true] {
             let input = InputHost()
             input.viewModel.showSetupCheck = setup
@@ -173,9 +182,12 @@ for marker, path, signature in (
     ('// ACTUAL_READY', renderer, '    private static func announceFirstFrame('),
 ):
     host = host.replace(marker, declaration(path, signature))
-receiver = declaration('Sources/NXLibrary/Views/Spotlight/SpotlightView.swift',
+spotlight = 'Sources/NXLibrary/Views/Spotlight/SpotlightView.swift'
+receiver = declaration(spotlight,
                        '        .onReceive(NotificationCenter.default.publisher(for: .nxSpotlightGamepadAction))')
 host = host.replace('// ACTUAL_RECEIVER', receiver.split('{ note in', 1)[1].rsplit('}', 1)[0])
+hint = declaration(spotlight, 'onProfiles: {')
+host = host.replace('// ACTUAL_PROFILE_HINT', hint.split('{', 1)[1].rsplit('}', 1)[0])
 handler = declaration('Sources/NXLibrary/Views/Spotlight/SpotlightView+Input.swift',
                       '    func handle(_ action: GamepadAction)')
 prelude = handler[handler.index('{') + 1:handler.index('        if viewer != nil')]

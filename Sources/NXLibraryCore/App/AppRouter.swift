@@ -114,7 +114,7 @@ public final class AppRouter: ObservableObject {
     public func closePowerMenu() { menuSelection.closePower() }
 
     /// One press on the open control center, from the keyboard or a controller: moves the focus or closes
-    /// the Power pills or card, and says what the shell must run, as Selene's MenuScreen does.
+    /// the open panel, and says what the shell must run, as Selene's MenuScreen does.
     @discardableResult
     public func menuStep(_ step: MenuStep) -> MenuOutcome {
         switch step {
@@ -127,7 +127,8 @@ public final class AppRouter: ObservableObject {
             if menuSelection.isEntryOpen { return .entry(menuSelection.entry) }
             return .action(menuSelection.selected)
         case .back:
-            if menuSelection.isPowerOpen { closePowerMenu() }
+            if activityCenterFocus != nil { activityCenterFocus = nil }
+            else if menuSelection.isPowerOpen { closePowerMenu() }
             else if menuSelection.isEntryOpen { closeEntryMenu() }
             else { closeMenu() }
         }
