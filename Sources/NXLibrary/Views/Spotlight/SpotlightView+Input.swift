@@ -89,8 +89,11 @@ extension SpotlightView {
             }
             mutate { if $0.focus != .row { $0.focus = .row; moved = true } }
         case .secondaryAction:
-            // X scrolls to the game's page (the pills), like Down from the row.
-            if selectedGame != nil || selectedCatalogGame?.integration == .steam {
+            if selectedItem == .card(.activity) {
+                settings.settings.showsRecentBuilds.toggle()
+                SoundEffectService.shared.play(.click)
+            } else if selectedGame != nil || selectedCatalogGame?.integration == .steam {
+                // X scrolls to the game's page (the pills), like Down from the row.
                 mutate { if $0.focus == .row { moved = $0.showGameDetails() } }
             }
         case .contextAction:

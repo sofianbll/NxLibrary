@@ -8,6 +8,7 @@ import ArcanePorting
 struct SpotlightCardInfoView: View {
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneReduceMotion) private var reduceMotion
+    @Environment(\.nxAppLocale) private var locale
 
     let card: SpotlightCard
     let gameCount: Int
@@ -17,7 +18,11 @@ struct SpotlightCardInfoView: View {
     let topGames: [PortedGame]
     let focusedTop: Int?
     let artwork: ArtworkStore
+    let boxArt: BoxArtService
+    let boxArtIndexVersion: Int
     let onTopGame: (Int) -> Void
+    /// Nil hides the section; an empty history has its own visible state.
+    var recentBuilds: [(game: PortedGame, date: Date)]? = nil
     /// The Mods card: working mods found so far and the games they are for.
     var modCounts: (mods: Int, games: Int, looking: Bool)? = nil
 
@@ -129,7 +134,47 @@ struct SpotlightCardInfoView: View {
                     .padding(canvas.u(-6))
                 }
             }
+            if let recentBuilds {
+                VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.compact)) {
+                    Text(L10n.text("Recently built"))
+                        .textCase(.uppercase)
+                        .seleneFont(.metadata, .semibold)
+                        .foregroundStyle(SeleneTheme.ink60)
+                        .accessibilityAddTraits(.isHeader)
+                    if recentBuilds.isEmpty {
+                        Text(L10n.text("No completed builds yet."))
+                            .seleneFont(.caption)
+                            .foregroundStyle(SeleneTheme.ink75)
+                    } else {
+                        HStack(alignment: .top, spacing: canvas.u(SeleneTokens.Space.medium)) {
+                            ForEach(recentBuilds, id: \.game.id) { item in
+                                buildTile(item.game, date: item.date)
+                            }
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    private func buildTile(_ game: PortedGame, date: Date) -> some View {
+        let width = canvas.u(SeleneTokens.Space.chromeGutter)
+        let height = width * CollectionRow.coverHeight / CollectionRow.coverWidth
+        let shape = RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.cover))
+        return VStack(spacing: canvas.u(SeleneTokens.Space.tight)) {
+            SwitchBoxArtCover(game: game, width: width, height: height, boxArt: boxArt,
+                              artwork: artwork, indexVersion: boxArtIndexVersion)
+                .clipShape(shape)
+                .overlay { shape.strokeBorder(SeleneTheme.ink15) }
+            Text(date.formatted(.dateTime.day().month(.abbreviated).locale(locale.formatLocale)))
+                .seleneFont(.metadata)
+                .foregroundStyle(SeleneTheme.ink75)
+                .lineLimit(1)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(game.name)
+        .accessibilityValue(date.formatted(.dateTime.day().month().year().locale(locale.formatLocale)))
+        .help(game.name)
     }
 
     private var bars: some View {

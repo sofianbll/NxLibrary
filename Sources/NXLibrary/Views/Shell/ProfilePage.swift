@@ -306,24 +306,27 @@ struct ProfilePage: View {
         let tileWidth = max(0, (width - gap * CGFloat(count - 1)) / CGFloat(count))
         let items = data.games(for: card)
         return VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.small)) {
-            button(.card(card), data: data, radius: radius) {
-                HStack {
-                    Text(L10n.text(card.title)).seleneFont(.sectionTitle, .semibold)
-                    Spacer(minLength: 0)
-                    Image(systemName: "chevron.right").foregroundStyle(SeleneTheme.ink75)
+            HStack(spacing: canvas.u(SeleneTokens.Space.small)) {
+                Text(L10n.text(card.title)).seleneFont(.sectionTitle, .semibold)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer(minLength: 0)
+                let target = Focus.card(card)
+                SelenePillButton(title: "See all", icon: .chevron, iconSize: SeleneTokens.Space.control,
+                                 minWidth: 0, height: SeleneTokens.Space.group, horizontalPadding: SeleneTokens.Space.medium,
+                                 focused: focus == target, scalesOnFocus: false) {
+                    focus = target
+                    activate(target, data: data)
                 }
-                .padding(.vertical, canvas.u(SeleneTokens.Space.tight))
+                .accessibilityHint(L10n.text(card.title))
+                .modifier(FocusTarget(id: target))
             }
-            .accessibilityAddTraits(.isHeader)
             switch card {
             case .friends:
-                button(.card(card), data: data, radius: radius, tracked: false) {
-                    friendsList(data: data, limit: 4)
-                }
+                friendsList(data: data, limit: 4)
             case .achievements:
                 achievements(data, columns: count, tileWidth: tileWidth)
             case .week:
-                button(.card(card), data: data, radius: radius, tracked: false) { week(data) }
+                week(data)
             default:
                 if items.isEmpty {
                     empty("No games in this view.")
@@ -413,7 +416,7 @@ struct ProfilePage: View {
             let recent = data.achievements.flatMap { entry in entry.summary.rows(.unlocked).map { (entry.game, $0) } }
                 .sorted { ($0.1.unlockedAt ?? .distantPast) > ($1.1.unlockedAt ?? .distantPast) }
                 .prefix(2)
-            let progress = achievementProgress(unlocked: unlocked, total: total, data: data)
+            let progress = achievementProgress(unlocked: unlocked, total: total)
             let unlocks = ForEach(Array(recent.enumerated()), id: \.offset) { _, item in
                 achievementTile(item.1, game: item.0, data: data).frame(width: tileWidth)
             }
@@ -433,20 +436,18 @@ struct ProfilePage: View {
         }
     }
 
-    private func achievementProgress(unlocked: Int, total: Int, data: PageData) -> some View {
-        button(.card(.achievements), data: data, radius: radius, tracked: false) {
-            achievementSurface {
-                metadata(L10n.text("Overall progress"))
-                HStack(alignment: .firstTextBaseline, spacing: canvas.u(SeleneTokens.Space.compact)) {
-                    Text(unlocked, format: .number).seleneFont(.profileScreenTitle, .semibold)
-                    Text("/ \(total.formatted(.number.locale(locale.formatLocale)))").seleneFont(.sectionTitle)
-                        .foregroundStyle(SeleneTheme.ink60)
-                }
-                .monospacedDigit()
-                .accessibilityElement(children: .combine)
-                AchievementProgressBar(fraction: Double(unlocked) / Double(total), height: SeleneTokens.Space.compact,
-                                       track: SeleneTheme.ink25, fill: SeleneTheme.statusCloud)
+    private func achievementProgress(unlocked: Int, total: Int) -> some View {
+        achievementSurface {
+            metadata(L10n.text("Overall progress"))
+            HStack(alignment: .firstTextBaseline, spacing: canvas.u(SeleneTokens.Space.compact)) {
+                Text(unlocked, format: .number).seleneFont(.profileScreenTitle, .semibold)
+                Text("/ \(total.formatted(.number.locale(locale.formatLocale)))").seleneFont(.sectionTitle)
+                    .foregroundStyle(SeleneTheme.ink60)
             }
+            .monospacedDigit()
+            .accessibilityElement(children: .combine)
+            AchievementProgressBar(fraction: Double(unlocked) / Double(total), height: SeleneTokens.Space.compact,
+                                   track: SeleneTheme.ink25, fill: SeleneTheme.statusCloud)
         }
     }
 
@@ -595,7 +596,7 @@ struct ProfilePage: View {
             .background(SeleneTheme.glass, in: RoundedRectangle(cornerRadius: radius))
     }
 
-    private func button<Content: View>(_ id: Focus, data: PageData, radius: CGFloat, tracked: Bool = true, showsRowRing: Bool = true,
+    private func button<Content: View>(_ id: Focus, data: PageData, radius: CGFloat, showsRowRing: Bool = true,
                                        @ViewBuilder content: () -> Content) -> some View {
         Button {
             focus = id
@@ -604,15 +605,21 @@ struct ProfilePage: View {
             content().contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .seleneRowFocus(showsRowRing && tracked && focus == id, radius: radius)
-        .background {
-            if tracked {
+        .seleneRowFocus(showsRowRing && focus == id, radius: radius)
+        .modifier(FocusTarget(id: id))
+    }
+
+    private struct FocusTarget: ViewModifier {
+        let id: Focus
+
+        func body(content: Content) -> some View {
+            content.background {
                 GeometryReader { geometry in
                     Color.clear.preference(key: Frames.self, value: [id: geometry.frame(in: .named("profile-page"))])
                 }
             }
+            .id(id)
         }
-        .id(tracked ? id : nil)
     }
 
     private func activate(_ id: Focus, data: PageData) {

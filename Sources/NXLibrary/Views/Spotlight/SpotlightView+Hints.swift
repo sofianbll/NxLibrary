@@ -19,6 +19,10 @@ extension SpotlightView {
         }
     }
 
+    private var buildHistoryHint: HintItem {
+        HintItem(.x, settings.settings.showsRecentBuilds ? "Hide builds" : "Show builds") { handle(.secondaryAction) }
+    }
+
     func contextHints(_ model: Snapshot, _ state: SpotlightState) -> [HintItem] {
         if state.isLifted {
             return [HintItem(.move, "Move"), HintItem(.a, L10n.text("Drop")), HintItem(.b, L10n.text("Cancel"))]
@@ -39,7 +43,7 @@ extension SpotlightView {
         case .achievements:
             return [HintItem(.b, L10n.text("Back")), HintItem(.a, L10n.text("Open"))]
         case .topGames:
-            return [HintItem(.a, L10n.text("Show"))]
+            return [buildHistoryHint, HintItem(.a, L10n.text("Show"))]
         case .store:
             // On the sort bar A sorts, and only when the focused order is not the one shown already.
             guard storeHost.focus.kind == .sort else { return [HintItem(.b, L10n.text("Back")), HintItem(.a, L10n.text("View"))] }
@@ -51,6 +55,7 @@ extension SpotlightView {
                 if card == .inbox { return [HintItem(.a, L10n.text("Open"))] }
                 let more = [HintItem(.y, L10n.text("Card options"))]
                 return more + [HintItem(.a, card == .surprise ? L10n.text("Pick") : card == .mods ? L10n.text("Browse") : L10n.text("Open"))]
+                    + (card == .activity ? [buildHistoryHint] : [])
             case .game:
                 if let steam = model.selectedCatalogGame, steam.integration == .steam {
                     return [HintItem(.y, L10n.text("Options"))] + SteamPlayCoordinator.shared.hint(for: steam)

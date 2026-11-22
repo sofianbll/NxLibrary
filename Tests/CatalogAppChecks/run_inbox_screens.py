@@ -67,7 +67,7 @@ import SwiftUI
         let profile = LocalProfileStore(directory: support, settings: settings.settings, name: "Alex")
         try render("08-profile-no-account", page: LocalProfilePage(profile: profile.active!,
             nextendo: NextendoSettings(store: NextendoTokenStore(directory: support.appendingPathComponent("nextendo"))),
-            viewModel: app, settings: settings, history: PlaySessionStore(fileURL: support.appendingPathComponent("sessions.json")),
+            viewModel: app, settings: settings,
             onClose: {}, onUpdate: { _ in true }, onSwitch: {}), to: output, locale: locale, showsHints: false)
         let inputs = GameInbox.inputs(files)
         let metadata: [URL: PackageReading] = [
@@ -134,7 +134,8 @@ import SwiftUI
                 onSelect: { _ in }, onActivate: { _ in })
                 .frame(height: 190)
             SpotlightCardInfoView(card: .inbox, gameCount: 0, installedCount: 0, poolLabel: "",
-                activity: ActivitySummary(), topGames: [], focusedTop: nil, artwork: artwork, onTopGame: { _ in })
+                activity: ActivitySummary(), topGames: [], focusedTop: nil, artwork: artwork,
+                boxArt: app.boxArt, boxArtIndexVersion: app.boxArtIndexVersion, onTopGame: { _ in })
                 .padding(.leading, 58)
         }.padding(.top, 90), to: output, locale: locale)
         settings.settings.gameInboxEnabled = false

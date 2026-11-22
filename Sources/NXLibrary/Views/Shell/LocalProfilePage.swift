@@ -27,7 +27,6 @@ struct LocalProfilePage: View {
     let nextendo: NextendoSettings?
     @ObservedObject var viewModel: AppViewModel
     @ObservedObject var settings: AppSettingsStore
-    @ObservedObject var history: PlaySessionStore
     let onClose: () -> Void
     let onUpdate: (LocalProfile) -> Bool
     let onSwitch: () -> Void
@@ -66,7 +65,7 @@ struct LocalProfilePage: View {
     var body: some View {
         let _ = accountChanged
         ZStack {
-            ProfilePageLayout(profile: profile, presence: presence, games: recent, onClose: onClose, onSwitch: onSwitch,
+            ProfilePageLayout(profile: profile, presence: presence, onClose: onClose, onSwitch: onSwitch,
                               showsAccount: false, showsHints: canUsePage) {
                 if !isGuest {
                     SeleneButtonRow("Profile lock", buttonTitle: lockButtonTitle) { settingPIN = true }
@@ -136,13 +135,6 @@ struct LocalProfilePage: View {
     }
 
     @Environment(\.seleneReduceMotion) private var reduceMotion
-
-    private var recent: [ProfilePageLayout<EmptyView>.Recent] {
-        viewModel.visibleCatalogGames.compactMap { game -> ProfilePageLayout<EmptyView>.Recent? in
-            guard let last = history.lastPlayed(for: game.id) else { return nil }
-            return .init(id: game.id, name: game.name, last: last, duration: history.totalDuration(for: game.id))
-        }.sorted { ($0.last, $0.name) > ($1.last, $1.name) }.prefix(5).map { $0 }
-    }
 
     private func updateActions(_ updated: [SettingsRowAction]) {
         actions = updated
@@ -231,25 +223,15 @@ struct LocalProfilePage: View {
     }
 }
 
-struct ProfileRecentGame: Identifiable {
-    let id: UUID
-    let name: String
-    let last: Date
-    let duration: TimeInterval
-}
-
 struct ProfilePageLayout<Account: View>: View {
-    typealias Recent = ProfileRecentGame
     let profile: LocalProfile
     let presence: ProfilePresence
-    let games: [Recent]
     let onClose: () -> Void
     var onSwitch: (() -> Void)? = nil
     var showsAccount = true
     var showsHints = true
     @ViewBuilder let account: () -> Account
     @Environment(\.seleneCanvas) private var canvas
-    @Environment(\.nxAppLocale) private var locale
     @Environment(\.seleneFocusedRowID) private var row
 
     var body: some View {
@@ -263,19 +245,6 @@ struct ProfilePageLayout<Account: View>: View {
                             VStack(alignment: .leading, spacing: canvas.u(10)) {
                                 Text(profile.name).seleneFont(.profileScreenTitle).accessibilityAddTraits(.isHeader)
                                 SeleneStatusDot(text: L10n.text(presence.rawValue), color: presence.color)
-                            }
-                        }
-                        VStack(alignment: .leading, spacing: canvas.u(10)) {
-                            section("Recently played")
-                            if games.isEmpty {
-                                Text(L10n.text("No games played yet.")).seleneFont(.menuCaption).foregroundStyle(SeleneTheme.ink60)
-                            }
-                            ForEach(games) { game in
-                                SeleneOptionRow(icon: .gamepad, title: game.name,
-                                                about: game.last.formatted(.dateTime.day().month().locale(locale.formatLocale)),
-                                                focused: false) {
-                                    Text(LibraryPresentation.duration(game.duration)).seleneFont(.menuCaption)
-                                }
                             }
                         }
                         VStack(alignment: .leading, spacing: canvas.u(10)) {

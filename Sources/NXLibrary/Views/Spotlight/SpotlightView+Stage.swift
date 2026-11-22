@@ -248,7 +248,8 @@ extension SpotlightView {
             VStack(alignment: .leading, spacing: 0) {
                 SpotlightCardInfoView(
                     card: .mods, gameCount: 0, installedCount: 0, poolLabel: "", activity: ActivitySummary(),
-                    topGames: [], focusedTop: nil, artwork: artwork, onTopGame: { _ in },
+                    topGames: [], focusedTop: nil, artwork: artwork, boxArt: viewModel.boxArt,
+                    boxArtIndexVersion: viewModel.boxArtIndexVersion, onTopGame: { _ in },
                     modCounts: storeHost.counts)
                     .padding(.top, canvas.u(10))
                     .spotlightBlock(.head)
@@ -271,13 +272,22 @@ extension SpotlightView {
                 topGames: top,
                 focusedTop: state.focus == .topGames ? state.topGameIndex : nil,
                 artwork: artwork,
+                boxArt: viewModel.boxArt,
+                boxArtIndexVersion: viewModel.boxArtIndexVersion,
                 onTopGame: { index in
                     guard !state.isLifted, index < top.count else { return }
                     selectGame(top[index].id)
-                }
+                },
+                recentBuilds: card == .activity ? recentBuilds : nil
             )
             .padding(.top, canvas.u(10))
         }
+    }
+
+    var recentBuilds: [(game: PortedGame, date: Date)]? {
+        guard settings.settings.showsRecentBuilds else { return nil }
+        let games = viewModel.visibleCatalogGames.compactMap(\.nxnativeGame)
+        return Array(BuildRecord.recentGames(in: games).prefix(5))
     }
 
     static func poolLabel(_ pool: SurprisePool) -> String {
