@@ -172,6 +172,7 @@ struct OnlineBrowsePanel: View {
             }
             .scrollIndicators(.hidden)
             .frame(width: canvas.u(3 * 226))
+            .horizontalEdgeFade(0.06)
             .onChange(of: state.categoryIndex) { _, index in
                 withAnimation(reduceMotion ? nil : SeleneTheme.quick) { proxy.scrollTo(index, anchor: .center) }
             }

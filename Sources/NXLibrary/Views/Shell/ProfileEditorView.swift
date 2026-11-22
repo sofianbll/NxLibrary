@@ -172,13 +172,20 @@ struct ProfileEditorView: View {
         .modifier(TileFocus(focused: index == item && !nameFocused, radius: 16, scale: 1.1))
     }
 
+    private static let avatarSpacing: CGFloat = 210
+    private static let avatarOpacity: [Double] = [1, 0.7, 0.45, 0.25, 0.1, 0]
+
     private var avatarStep: some View {
         let count = itemCount
+        // Items keep their identity so they slide; the row spans the screen and fades out at both edges.
+        let reach = min(Int(ceil(canvas.size.width / 2 / canvas.u(Self.avatarSpacing))), (count - 1) / 2)
         return VStack(spacing: canvas.u(24)) {
             ZStack {
-                ForEach(-3...3, id: \.self) { offset in
-                    let item = (index + offset + count) % count
-                    let selected = item == index
+                ForEach((-reach...reach).map { (index + $0 + count) % count }, id: \.self) { item in
+                    let wrapped = (item - index + count) % count
+                    let offset = wrapped > count / 2 ? wrapped - count : wrapped
+                    let selected = offset == 0
+                    let distance = abs(offset)
                     let data = item < cachedPortraits.count ? cachedPortraits[item].image : item == presetCount && item < ownAvatar ? profile.portrait : nil
                     let face = LocalProfile(name: "", avatar: item - cachedPortraits.count, portrait: data, look: profile.look)
                     button(item, label: avatarLabel(item), action: {
@@ -194,14 +201,18 @@ struct ProfileEditorView: View {
                         }
                         .modifier(TileFocus(focused: selected, radius: 88, scale: 1.16))
                     }
-                    .offset(x: canvas.u(CGFloat(offset) * 210))
-                    .opacity(selected ? 1 : 0.81)
+                    // Neighbours shrink and fade with distance: 100 %, 70 %, 45 %, 25 %.
+                    .scaleEffect(selected ? 1 : max(0.5, 1 - 0.12 * CGFloat(distance)))
+                    .opacity(Self.avatarOpacity[min(distance, Self.avatarOpacity.count - 1)])
+                    .animation(reduceMotion ? .easeOut(duration: 0.15) : SeleneTheme.quick, value: index)
+                    .offset(x: canvas.u(CGFloat(offset) * Self.avatarSpacing))
+                    // Reduce Motion: the row stays put and only fades.
+                    .animation(reduceMotion ? nil : SeleneTheme.quick, value: index)
                     .zIndex(selected ? 1 : 0)
                 }
             }
-            .frame(width: canvas.u(1360), height: canvas.u(230))
-            .clipped()
-            .animation(reduceMotion ? nil : SeleneTheme.quick, value: index)
+            .frame(width: canvas.size.width, height: canvas.u(230))
+            .horizontalEdgeFade()
             Text(avatarLabel(index)).seleneFont(23).foregroundStyle(SeleneTheme.ink75)
         }
     }
@@ -271,6 +282,8 @@ struct ProfileEditorView: View {
                 }
                 .scrollIndicators(.hidden)
                 .frame(width: canvas.u(step == .theme ? 770 : 680), height: canvas.u(530), alignment: .top)
+                .mask(LinearGradient(stops: [.init(color: .black, location: 0.8), .init(color: .clear, location: 1)],
+                                     startPoint: .top, endPoint: .bottom))
                 .onChange(of: index) { _, target in scroll.scrollTo(target) }
             }
             VStack(alignment: .leading, spacing: canvas.u(12)) {

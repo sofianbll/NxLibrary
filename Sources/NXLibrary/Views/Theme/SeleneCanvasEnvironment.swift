@@ -51,6 +51,13 @@ extension View {
         modifier(SeleneFontModifier(size: size, weight: weight, design: design))
     }
 
+    /// Fades a scrolling row out over `fraction` of its width on each side, never a hard cut.
+    func horizontalEdgeFade(_ fraction: CGFloat = 0.15) -> some View {
+        mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: fraction),
+                                    .init(color: .black, location: 1 - fraction), .init(color: .clear, location: 1)],
+                            startPoint: .leading, endPoint: .trailing))
+    }
+
     /// Measures the available space and publishes it as `seleneCanvas`.
     func seleneCanvasRoot() -> some View {
         modifier(SeleneCanvasRoot())

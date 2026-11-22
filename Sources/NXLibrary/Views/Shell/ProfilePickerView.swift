@@ -121,6 +121,7 @@ struct ProfilePickerView: View {
                         .frame(minWidth: geometry.size.width, alignment: .center)
                     }
                     .scrollIndicators(.hidden)
+                    .horizontalEdgeFade()
                     .onChange(of: selection, initial: true) { _, id in
                         if let id { scroll.scrollTo(id, anchor: .center) }
                         else { scroll.scrollTo("add", anchor: .center) }
