@@ -42,6 +42,52 @@ final class LaunchServiceTests: XCTestCase {
         XCTAssertEqual(launcher.environment["DM_FPS_TARGET"], "30")
     }
 
+    func testOverlayOnlySendsSupportedDataAndLeavesEnvFileAlone() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("NXOverlay-\(UUID())")
+        let app = root.appendingPathComponent("Fixture.app")
+        let host = HomeMenu.hostExecutable(in: app)
+        try FileManager.default.createDirectory(at: host.deletingLastPathComponent(), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let launcher = FakeLauncher()
+        let service = LaunchService(launcher: launcher)
+        let title = "0100000000000001"
+        try service.writeEnvironment(settings: .init(), titleId: title, baseDirectory: root)
+        let env = root.appendingPathComponent("\(title)/env.txt")
+        let before = try Data(contentsOf: env)
+        let cover = root.appendingPathComponent("Cover art.png")
+        try Data().write(to: cover)
+        let palette = SelenePalette.fallback
+        XCTAssertEqual(GameOverlayLaunch(app: app).environment(palette: palette, playtime: 2599, cover: cover), [:])
+        try Data("DM_OVERLAY_THEME_V10\0DM_OVERLAY_PLAYTIME_MIN\0".utf8).write(to: host)
+        XCTAssertEqual(GameOverlayLaunch(app: app).environment(palette: palette, playtime: 2599, cover: cover),
+                       ["DM_OVERLAY_PLAYTIME_MIN": "43"])
+        try Data("DM_OVERLAY_THEME_V1\0DM_OVERLAY_PLAYTIME_MIN\0DM_OVERLAY_COVER\0".utf8).write(to: host)
+        let overlay = GameOverlayLaunch(app: app)
+        service.launch(appURL: app, environment: overlay.environment(palette: palette, playtime: 2599, cover: cover)) {
+            ok, _ in XCTAssertTrue(ok)
+        }
+        XCTAssertEqual(launcher.environment["DM_OVERLAY_THEME_V1"],
+                       "ink=#FFFFFFFF;surface=#14181FFF;scrim=#000000FF;focus=#FFFFFFFF;onFocus=#111111FF")
+        XCTAssertEqual(launcher.environment["DM_OVERLAY_PLAYTIME_MIN"], "43")
+        XCTAssertEqual(launcher.environment["DM_OVERLAY_COVER"], cover.path)
+        XCTAssertEqual(try Data(contentsOf: env), before)
+        XCTAssertFalse(String(decoding: before, as: UTF8.self).contains("DM_OVERLAY_"))
+        XCTAssertEqual(overlay.environment(palette: palette, playtime: .infinity, cover: root).count, 1)
+    }
+
+    func testOverlayThemeRejectsUnreadableColors() {
+        var palette = SelenePalette.fallback
+        palette.ink = palette.glass
+        XCTAssertNil(GameOverlayLaunch.theme(palette))
+        palette = .fallback
+        palette.onFocus = palette.focus
+        XCTAssertNil(GameOverlayLaunch.theme(palette))
+        palette = .fallback
+        palette.focus = palette.glass
+        palette.onFocus = palette.ink
+        XCTAssertNil(GameOverlayLaunch.theme(palette))
+    }
+
     func testLaunchFailureIsReported() throws {
         let launcher = FakeLauncher()
         launcher.shouldSucceed = false
