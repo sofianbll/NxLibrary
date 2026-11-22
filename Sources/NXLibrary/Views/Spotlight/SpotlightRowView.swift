@@ -163,10 +163,10 @@ struct SpotlightRowView: View {
     /// A tile at its own size; `TileGlide` places and grows it.
     private func tile(_ item: SpotlightItem, selected: Bool) -> some View {
         let native: PortedGame? = if case .game(let id) = item { gamesByID[id] } else { nil }
-        let cloudState = showsCloudBadges ? native.flatMap { cloud.states[$0.id] } : nil
+        let cloudState = native.flatMap { cloud.states[$0.id] }
         return ZStack(alignment: .topLeading) {
-            face(item, selected: selected)
-                .opacity(CloudLibraryTileBadge.artworkOpacity(cloudState))
+            face(item, selected: selected, cloudState: cloudState)
+                .opacity(CloudLibraryTileBadge.artworkOpacity(showsCloudBadges ? cloudState : nil))
                 .padding(canvas.u(SeleneTokens.Space.badge))
             SeleneTileRing(cornerRadius: canvas.u(SeleneTokens.Radius.spotlightFocus), active: selected)
                 .frame(width: canvas.u(Self.host), height: canvas.u(Self.host))
@@ -179,14 +179,14 @@ struct SpotlightRowView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title(of: item))
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
-        .modifier(CloudLibraryTileBadge(state: cloudState))
+        .modifier(CloudLibraryTileBadge(state: cloudState, showsCopyBadge: showsCloudBadges))
         .overlay(alignment: .bottomTrailing) {
             NextendoOnlineBadge(titleID: native?.titleId, compact: true).padding(canvas.u(SeleneTokens.Space.small))
         }
     }
 
     @ViewBuilder
-    private func face(_ item: SpotlightItem, selected: Bool) -> some View {
+    private func face(_ item: SpotlightItem, selected: Bool, cloudState: CloudLibraryState?) -> some View {
         let side = canvas.u(160)
         let face = RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.content), style: .continuous)
         ZStack {
@@ -197,7 +197,8 @@ struct SpotlightRowView: View {
                     if let game = gamesByID[id] {
                         SpotlightTileArtwork(game: game, side: side,
                                              artwork: artwork, ownIconFirst: true)
-                            .portingLook(tileLook(game), cornerRadius: canvas.u(SeleneTokens.Radius.content))
+                            .portingLook(cloudState?.coverLook(tileLook(game)) ?? tileLook(game),
+                                         cornerRadius: canvas.u(SeleneTokens.Radius.content))
                             .frame(width: side, height: side)
                             .clipShape(face)
                     } else if let game = catalogGamesByID[id] {

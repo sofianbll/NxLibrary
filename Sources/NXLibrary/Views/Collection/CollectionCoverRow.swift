@@ -66,13 +66,14 @@ struct CollectionCoverRow: View {
     private func cover(_ game: CatalogGame, selected: Bool) -> some View {
         let w = canvas.u(CollectionRow.coverWidth), h = canvas.u(CollectionRow.coverHeight)
         let face = RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.content), style: .continuous)
-        let cloudState = showsCloudBadges ? game.nxnativeGame.flatMap { cloud.states[$0.id] } : nil
+        let cloudState = game.nxnativeGame.flatMap { cloud.states[$0.id] }
         return ZStack {
             Group {
                 if let native = game.nxnativeGame {
             SwitchBoxArtCover(game: native, width: w, height: h, officialName: officialName(native),
                               boxArt: boxArt, artwork: artwork, indexVersion: boxArtIndexVersion)
-                .portingLook(tileLook(native), cornerRadius: canvas.u(SeleneTokens.Radius.content))
+                .portingLook(cloudState?.coverLook(tileLook(native)) ?? tileLook(native),
+                             cornerRadius: canvas.u(SeleneTokens.Radius.content))
                 .frame(width: w, height: h)
                 .clipShape(face)
                 // One picture that grows and slides whole: a drawn cover's title, a lock or build progress would
@@ -85,7 +86,7 @@ struct CollectionCoverRow: View {
                         .clipShape(face)
                 }
             }
-            .opacity(CloudLibraryTileBadge.artworkOpacity(cloudState))
+            .opacity(CloudLibraryTileBadge.artworkOpacity(showsCloudBadges ? cloudState : nil))
             if game.nxnativeGame == nil {
                 PortingDownloadMark(look: PortingTileLook.make(catalog: game), width: w, height: h)
             }
@@ -103,7 +104,7 @@ struct CollectionCoverRow: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(game.name)
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
-        .modifier(CloudLibraryTileBadge(state: cloudState))
+        .modifier(CloudLibraryTileBadge(state: cloudState, showsCopyBadge: showsCloudBadges))
         .overlay(alignment: .bottomTrailing) {
             NextendoOnlineBadge(titleID: game.nxnativeGame?.titleId, compact: true).padding(canvas.u(SeleneTokens.Space.tight))
         }

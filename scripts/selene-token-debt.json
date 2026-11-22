@@ -199,15 +199,10 @@
     ".seleneFont(40": 1
   },
   "Sources/NXLibrary/Views/Detail/CloudLibraryPanel.swift": {
-    ".padding(.horizontal,canvas.u(4": 1,
     ".padding(.top,canvas.u(18": 1,
-    ".padding(.vertical,canvas.u(2": 1,
-    ".padding(canvas.u(1": 1,
     ".padding(canvas.u(10": 1,
-    ".padding(canvas.u(2": 1,
-    ".seleneFont(11": 1,
     ".seleneFont(13": 3,
-    ".seleneFont(15": 4,
+    ".seleneFont(15": 3,
     ".seleneFont(17": 1
   },
   "Sources/NXLibrary/Views/Detail/CriticRatingValue.swift": {
@@ -702,9 +697,9 @@
   },
   "Sources/NXLibrary/Views/Spotlight/SpotlightInfoView.swift": {
     ".padding(.horizontal,canvas.u(14": 1,
-    ".padding(.leading,canvas.u(2": 3,
+    ".padding(.leading,canvas.u(2": 2,
     ".padding(.leading,canvas.u(4": 4,
-    ".padding(.top,canvas.u(12": 2,
+    ".padding(.top,canvas.u(12": 1,
     ".padding(.top,canvas.u(20": 2,
     ".padding(.top,canvas.u(24": 1,
     ".padding(.top,canvas.u(26": 1,

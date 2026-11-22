@@ -100,7 +100,7 @@ struct GameDetailView: View {
         let more = moreGames
         let blocked = toolchainBlocked
         let links = DetailsLink.links(app: game.url, store: p.storeURL, hltb: p.hltbURL, viewModel: viewModel,
-                                      cloudGame: settings.settings.showsCloudDetailsLink ? game : nil)
+                                      cloudGame: cloudManagementPlacement == .detailsLink ? game : nil)
         let facts = DetailsFacts.switchGame(game, metadata: metadata, folderName: DetailsLink.folderName(of: game.url))
         return Model(presentation: p, facts: facts, links: links, screenshots: urls,
                      screenshotsKnown: screenshotsKnown,
@@ -218,10 +218,15 @@ struct GameDetailView: View {
         .task(id: art.logoTaskKey(game, metadata: metadata)) {
             await art.loadLogo(game: game, metadata: metadata, artwork: artwork, personalizations: viewModel.personalizations)
         }
-        .task(id: game) { await viewModel.prefetchCloudLibrary(game) }
+        .task(id: viewModel.cloudLibrary.selectionCheck(for: game)) { await viewModel.prefetchCloudLibrary(game) }
     }
 
-    var showsCloudPill: Bool { settings.settings.showsCloudPlayIcon && viewModel.showsCloudLibrary(game) }
+    private var cloudManagementPlacement: CloudGameManagementPlacement? {
+        guard viewModel.showsCloudLibrary(game) else { return nil }
+        return .init(nextToPlay: settings.settings.showsCloudPlayIcon, detailsLink: settings.settings.showsCloudDetailsLink)
+    }
+
+    var showsCloudPill: Bool { cloudManagementPlacement == .primaryActions }
     var downloadsCloudApp: Bool {
         cloud.archive != nil && cloud.states[game.id]?.appIsCloudOnly == true && !runningGames.isRunning(game)
     }

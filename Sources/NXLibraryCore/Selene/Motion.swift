@@ -2,6 +2,18 @@ import SwiftUI
 
 /// State-driven curves. Rails use SwiftUI's replacing spring, not queued animations.
 public enum Motion {
+    public static func transfer(_ reduced: Bool) -> Animation? {
+        reduced ? nil : .easeOut(duration: 0.25)
+    }
+
+    public enum BuildArt: Double {
+        case fill = 0.9, stage = 0.8, steps = 0.6, label = 0.4
+    }
+
+    public static func buildArt(_ reduced: Bool, _ part: BuildArt) -> Animation? {
+        reduced ? nil : .easeInOut(duration: part.rawValue)
+    }
+
     public static let focusIn = Animation.timingCurve(0.22, 1, 0.36, 1, duration: 0.18)
     public static let focusOut = Animation.timingCurve(0.22, 1, 0.36, 1, duration: 0.20)
 

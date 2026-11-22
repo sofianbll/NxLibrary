@@ -75,7 +75,8 @@ extension SpotlightView {
         let facts = DetailsFacts.switchGame(game, metadata: store.storeMetadata[game.id],
                                             folderName: DetailsLink.folderName(of: game.url))
         let links = DetailsLink.links(app: game.url, store: presentation.storeURL, hltb: presentation.hltbURL,
-                                      viewModel: viewModel, cloudGame: settings.settings.showsCloudDetailsLink ? game : nil)
+                                      viewModel: viewModel,
+                                      cloudGame: cloudManagementPlacement(game) == .detailsLink ? game : nil)
         let ids = MoreLikeThis.pick(for: game, in: library,
                                     metadata: { store.storeMetadata[$0] }, limit: 6)
         let byID = Dictionary(library.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })

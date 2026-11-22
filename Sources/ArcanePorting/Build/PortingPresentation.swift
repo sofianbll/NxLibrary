@@ -102,6 +102,7 @@ public enum BuildStageCopy {
 
 /// What a game's art tile shows.
 public enum PortingTileLook: Equatable {
+    case transfer(Double)
     case normal
     /// Black and white, blurred, a thin "step/count" bar with the stage and its step in small type.
     case preparing(step: Int, count: Int, title: String, detail: String)

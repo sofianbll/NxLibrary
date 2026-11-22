@@ -40,7 +40,7 @@ import ArcanePorting
             L10n.setContext(locale)
             vm.screenRebuildNotice()
             let notice = vm.settingsNotice!
-            precondition(notice.choices == ["Download the cloud cache", "Rebuild with this Mac’s cache", "Rebuild without cache", "Cancel"])
+            precondition(notice.choices == ["CACHE_DOWNLOAD_CHOICE", "Rebuild with this Mac’s cache", "Rebuild without cache", "Cancel"])
             precondition(vm.settingsNoticeFocus == 0 && notice.cancelIndex == 3)
             try renderNotice(name, output, notice, width: 1440)
         }
@@ -50,6 +50,7 @@ import ArcanePorting
             viewModel: vm, model: model, settings: settings, advanced: .constant(false),
             onEdit: {}, onEditSources: {}, onActions: { _ in })
             .padding(24).frame(width: 1040))
+        // ADVANCED_SETTINGS
         let assistant = CloudSetupAssistant(viewModel: vm, model: model /* ENTRY */) {}
         // ASSISTANT_CHECK
         try render("assistant", output, assistant)
@@ -95,6 +96,7 @@ import ArcanePorting
                 showsCloudBadges: true, onSelect: { _ in }, onActivate: { _ in }),
             size: .init(width: 400, height: 440))
         // DOWNLOAD_FILL_CHECK
+        // TRANSFER_STATES
         // PLAY_TRANSFER_CHECK
         // TYPED_PATH_CHECK
         // MULTIPLAYER_CHECK
@@ -227,6 +229,57 @@ DOWNLOAD_FILL = r'''
         model.active = nil
         model.update(game.id) { $0.queued = true }
         checkDownloadFill(nil)
+'''
+
+TRANSFER_STATES = r'''
+        let fr = AppLocale(language: .french, region: "FR")
+        var installed = game
+        installed.status = .builtSourcesMissing
+        for phase in ["queued", "running", "verifying", "waiting", "ready", "failed"] {
+            vm.clearActivityForProbe(queuedRequest.token)
+            model.queue = phase == "queued" ? [queuedRequest] : []
+            let live = ["running", "verifying", "waiting"].contains(phase)
+            model.active = live ? (queuedRequest, Task {}) : nil
+            model.update(game.id) {
+                $0.action = live || phase == "queued" ? queuedRequest.action : nil
+                $0.queued = phase == "queued"
+                $0.progress = switch phase {
+                case "running": .init(.downloading, kind: .app,
+                    transfer: .init(bytesTransferred: 42_000_000, totalBytes: 100_000_000))
+                case "verifying": .init(.verifying, kind: .app, downloadComplete: true)
+                case "waiting": .init(.readyToInstall, kind: .app, downloadComplete: true)
+                default: nil
+                }
+                $0.copies[.app] = .screenFixture(phase == "ready" ? .synchronized : .cloudOnly, fileByFile: true)
+                $0.issue = phase == "failed" ? (.app, L10n.text("Cloud operation failed", context: fr), true) : nil
+                // TRANSFER_TERMINAL
+            }
+            if phase == "ready" || phase == "failed" {
+                vm.recordActivity(queuedRequest.token, job: .cloud(queuedRequest.entry), name: game.name,
+                    outcome: phase == "ready" ? .succeeded : .failed(L10n.text("Cloud operation failed", context: fr)))
+            }
+            let panel = CloudLibraryPanel(viewModel: vm, model: model, game: game)
+            let displayedGame = phase == "ready" ? installed : game
+            // CHECK_TRANSFER_CONTROLS
+            try render("state-\(phase)-panel", output, panel.environment(\.nxAppLocale, fr))
+            try render("state-\(phase)-tile", output,
+                CollectionCoverRow(games: [.init(nxnative: game)], selectedID: game.id,
+                    artwork: ArtworkStore(), boxArt: vm.boxArt, boxArtIndexVersion: 0,
+                    officialName: { _ in nil }, needsMetadata: { _ in }, cloud: model,
+                    showsCloudBadges: true, onSelect: { _ in }, onActivate: { _ in }).environment(\.nxAppLocale, fr),
+                size: .init(width: 400, height: 440))
+            try render("state-\(phase)-details", output,
+                DetailsTopBlock(game: displayedGame, logo: nil,
+                    presentation: .init(game: displayedGame, metadata: nil, totalPlaytime: 0, lastPlayed: nil),
+                    isRunning: false, focusedPill: 0, primaryEnabled: true, expanded: .constant(false),
+                    onPrimary: {}, onSecondary: {}, onFavorite: {}, onHoverPill: { _ in }, pillSet: .normal,
+                    cloud: model, showsCloudPill: true, downloadEnabled: true).environment(\.nxAppLocale, fr),
+                size: .init(width: 1120, height: 520))
+            try render("state-\(phase)-activity", output, activity.environment(\.nxAppLocale, fr),
+                size: .init(width: 1440, height: 800))
+        }
+        model.update(game.id) { $0.issue = nil }
+        vm.clearActivityForProbe(queuedRequest.token)
 '''
 
 PLAY_TRANSFER = r'''
@@ -534,6 +587,9 @@ def main():
         if before:
             archived = subprocess.check_output(["git", "-C", str(ROOT), "archive", "528f4fb", "Sources"])
             subprocess.run(["tar", "-xf", "-", "-C", str(package)], input=archived, check=True)
+        elif baseline := os.environ.get("ARCANE_CLOUD_SCREEN_BASE"):
+            archived = subprocess.check_output(["git", "-C", str(ROOT), "archive", baseline, "Sources"])
+            subprocess.run(["tar", "-xf", "-", "-C", str(package)], input=archived, check=True)
         else:
             shutil.copytree(ROOT / "Sources", package / "Sources")
         for name in ("NXLibraryCoreTests", "ArcanePortingTests"):
@@ -603,9 +659,70 @@ extension CloudDriveFolders.Listing {
         change(activity, r'                    }\n                    \.padding\(EdgeInsets.*?\.onChange\(of: focused\)[^\n]*\n                }\n', "")
         change(activity, r'        LazyVStack\(', '        VStack(')
         host = HOST.replace("/* NOTICE_LAYOUT */", "vertical: notice.vertical," if before else "cancelIndex: notice.cancelIndex,")
+        unified = (package / "Sources/ArcanePorting/Library/CloudTransferPresentation.swift").exists()
+        host = host.replace("CACHE_DOWNLOAD_CHOICE", "Download cache and rebuild" if unified else "Download the cloud cache")
         if before:
             host = re.sub(r'// REFERENCE_START.*?// REFERENCE_END', '', host, flags=re.S)
         if not before:
+            change(app / "Views/Components/SwitchBoxArtCover.swift", r'@State private var cover: NSImage\?',
+                r'''@State private var cover: NSImage? = {
+        let fixture = ImageRenderer(content: VStack(spacing: 0) {
+            Color.purple; Color.teal; Color.orange
+        }.frame(width: 180, height: 280))
+        return fixture.nsImage
+    }()''')
+            change(app / "ViewModels/AppViewModel+Activity.swift", r'    func clearActivity\(',
+                '''    func clearActivityForProbe(_ id: UUID) { activityResults.clear(id) }
+    func clearActivity(''')
+            gallery = TRANSFER_STATES
+            host = host.replace("// ADVANCED_SETTINGS", '''
+        try render("settings-advanced", output, SettingsCloudLibrarySection(
+            viewModel: vm, model: model, settings: settings, advanced: .constant(true),
+            onEdit: {}, onEditSources: {}, onActions: { _ in })
+            .padding(24).frame(width: 1040), size: .init(width: 1280, height: 1440))
+''')
+            if unified:
+                gallery = gallery.replace("// TRANSFER_TERMINAL", '''$0.completedItem = phase == "ready" ? .app : nil
+                $0.failedTransferID = phase == "failed" ? queuedRequest.token : nil''')
+                gallery = gallery.replace("// CHECK_TRANSFER_CONTROLS",
+                    '''panel.checkTransferControls(canCancel: live || phase == "queued", canRetry: phase == "failed")''')
+                with (app / "Views/Detail/CloudLibraryPanel.swift").open("a") as file:
+                    file.write('''
+extension CloudLibraryPanel {
+    func advancedForProbe() -> Self {
+        var copy = self
+        copy._advanced = State(initialValue: true)
+        return copy
+    }
+
+    func checkTransferControls(canCancel: Bool, canRetry: Bool) {
+        precondition(Set(controls).count == controls.count)
+        precondition(controls.contains(.cancel) == canCancel)
+        precondition(controls.contains { if case .retry = $0 { true } else { false } } == canRetry)
+        if canRetry { precondition(artifactControl(.app) == nil) }
+    }
+}
+''')
+                gallery += r'''
+        model.update(game.id) {
+            $0.copies = [.app: .screenFixture(.synchronized), .cache: .screenFixture(.synchronized)]
+            $0.referenceCopies[.app] = .init(downloadBytes: 26_000_000, totalBytes: 100_000_000,
+                legacy: false, updatesLocal: true)
+        }
+        precondition(model.states[game.id]?.appAvailabilityKeys == ["Copy in your cloud", "Update available"])
+        precondition(model.states[game.id]?.canUploadBoth == true && model.states[game.id]?.showsCombinedUpload == false)
+        try render("details-playable-update", output,
+            DetailsTopBlock(game: installed, logo: nil,
+                presentation: .init(game: installed, metadata: nil, totalPlaytime: 0, lastPlayed: nil),
+                isRunning: false, focusedPill: 0, primaryEnabled: true, expanded: .constant(false),
+                onPrimary: {}, onSecondary: {}, onFavorite: {}, onHoverPill: { _ in }, pillSet: .normal,
+                cloud: model, showsCloudPill: true, downloadEnabled: true).environment(\.nxAppLocale, fr),
+            size: .init(width: 1120, height: 520))
+        model.update(game.id) { $0.referenceCopies = [:] }
+        let advanced = CloudLibraryPanel(viewModel: vm, model: model, game: game).advancedForProbe()
+        try render("panel-advanced-migration", output, advanced.environment(\.nxAppLocale, fr))
+'''
+            host = host.replace("// TRANSFER_STATES", "do {\n" + gallery + "\n        }")
             # Capture Spotlight after its entrance, without running the reveal in ImageRenderer.
             change(app / "Views/Spotlight/SpotlightInfoView.swift",
                    r'        \.onAppear \{ reveal\(\) \}\n        \.onChange\(of: game.id\) \{ reveal\(\) \}\n', "")
@@ -761,12 +878,13 @@ extension CloudLibraryModel {
         with (package / "Sources/ArcanePorting/Library/CloudGameArchive.swift").open("a") as swift:
             swift.write('''
 extension CloudArtifactStatus {
-    public static func screenFixture(_ state: State, hasLocalCopy: Bool? = nil) -> Self {
+    public static func screenFixture(_ state: State, hasLocalCopy: Bool? = nil, fileByFile: Bool = false) -> Self {
         .init(state: state, hasLocalCopy: hasLocalCopy ?? (state == .synchronized), bytes: 100_000_000,
-              uploadedAt: Date(timeIntervalSince1970: 1_795_000_000), skippedRoots: [])
+              uploadedAt: Date(timeIntervalSince1970: 1_795_000_000), skippedRoots: []/* FILE_BY_FILE */)
     }
 }
-''')
+'''.replace("/* FILE_BY_FILE */", "" if before else
+            ', remoteFolder: fileByFile ? "Fixture [0100000000001000]/app/version" : nil'))
         font = ROOT / "Resources/Selene/Fonts/MaterialIcons-Regular.ttf"
         icon = ROOT / "Resources/AppIcon-Light.png"
         subprocess.run(["swift", "run", "--package-path", str(package), "NXLibrary", str(output), str(font), str(icon)],

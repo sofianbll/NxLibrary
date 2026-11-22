@@ -135,8 +135,8 @@ struct ActivityCenterView: View {
                             : (job.active ? SeleneTheme.ink : SeleneTheme.ink60)
                         let moving: Bool = if case .move = row { cloudLibrary.libraryMove?.isCancelling == false } else { false }
                         ActivityRow(title: job.title, detail: job.detail, fraction: job.fraction,
-                                    indeterminate: job.active && cloud && indicator?.status != .queued,
-                                    pulses: indicator?.isTransferring ?? moving,
+                                    indeterminate: indicator?.state.transfer()?.gauge(hasCover: false, hasDownloadPill: false) == .bar || moving,
+                                    pulses: moving,
                                     status: indicator?.label(context: localization) ?? text(job.active ? "In progress" : "Queued"),
                                     color: color, progressColor: cloud ? color : SeleneTheme.focus,
                                     focused: focused == row, open: row.opensPorting ? { onOpen(row) } : nil,
@@ -172,12 +172,12 @@ struct ActivityCenterView: View {
             return (title(.build(request), name: request.name), nil, nil, false)
         case .cloud:
             guard let request = cloudLibrary.active?.request else { return (text("Cloud"), nil, nil, true) }
-            let progress = cloudLibrary.states[request.id]?.progress
-            let fraction = CloudLibraryProgressView.fraction(progress)
-            let stage = text(progress.map(CloudLibraryProgressView.phaseKey) ?? "Preparing cloud operation…")
-            let estimate = CloudLibraryProgressView.estimate(progress, context: localization, compact: true)
+            let state = cloudLibrary.states[request.id]
+            let progress = state?.progress
+            let fraction = state?.transfer()?.gauge(hasCover: false, hasDownloadPill: false) == .bar
+                ? CloudTransferPresentation.fraction(progress) : nil
             return (title(.cloud(request.entry), name: request.name),
-                    fraction == nil ? nil : detail(stage, nil, estimate),
+                    CloudLibraryProgressView.bytesSummary(progress, context: localization),
                     fraction, true)
         case .queuedCloud(let token):
             guard let request = cloudLibrary.queue.first(where: { $0.token == token }) else {
@@ -202,6 +202,7 @@ struct ActivityCenterView: View {
         switch row {
         case .build: return viewModel.isBuilding && row.canCancel(isCancellingBuild: porting.isCancellingBuild)
         case .move: return cloudLibrary.libraryMove?.isCancelling == false
+        case .cloud, .queuedCloud: return transferIndicator(row)?.state.transfer()?.canCancel == true
         default: return row.canCancel(isCancellingBuild: porting.isCancellingBuild)
         }
     }
@@ -254,6 +255,7 @@ struct ActivityCenterView: View {
             if case .cloud(let request) = job, case .upload = request.action {
                 return ("Published", CloudLibraryStatus.synchronized.color, nil)
             }
+            if case .cloud = job { return ("Ready", CloudLibraryStatus.synchronized.color, nil) }
             return ("Succeeded", CloudLibraryStatus.synchronized.color, nil)
         case .failed(let reason): return ("Failed", CloudLibraryStatus.failed.color, reason)
         case .cancelled: return ("Cancelled", CloudLibraryStatus.unknown.color, nil)

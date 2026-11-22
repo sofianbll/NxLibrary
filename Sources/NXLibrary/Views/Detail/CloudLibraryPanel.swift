@@ -16,6 +16,7 @@ struct CloudLibraryPanel: View {
     let game: PortedGame
     @State private var focus: Control?
     @State private var refreshRevision = 0
+    @State private var advanced = false
     @State private var freeSelection: CloudFreeSelection?
     @State private var freeFocus: FreeControl = .cancel
 
@@ -26,8 +27,9 @@ struct CloudLibraryPanel: View {
 
     private enum Control: Hashable {
         case upload(CloudArtifactKind?), download(CloudArtifactKind), uploadSources, downloadSources
-        case free, cancel, refresh, settings, close
+        case free, cancel, refresh, settings, close, advanced
         case recover(CloudLibraryFailure, CloudLibraryItem?)
+        case retry(UUID)
     }
 
     private enum FreeControl: Equatable { case item(CloudLibraryItem), cancel, confirm }
@@ -66,7 +68,7 @@ struct CloudLibraryPanel: View {
     private var card: some View {
         VStack(alignment: .leading, spacing: canvas.u(14)) {
             VStack(alignment: .leading, spacing: canvas.u(3)) {
-                Text(text("Cloud library")).seleneFont(.panelTitle, .semibold)
+                Text(text("Manage game")).seleneFont(.panelTitle, .semibold)
                     .foregroundColor(SeleneTheme.ink).accessibilityAddTraits(.isHeader)
                 Text(game.name).seleneFont(.body).foregroundColor(SeleneTheme.ink75)
                     .lineLimit(1)
@@ -77,7 +79,7 @@ struct CloudLibraryPanel: View {
             if let unavailable {
                 Text(text(unavailable)).seleneFont(.body).foregroundColor(SeleneTheme.ink75)
             } else {
-                ForEach(CloudLibraryItem.allCases, id: \.self) { item in
+                ForEach(visibleItems, id: \.self) { item in
                     artifactRow(item)
                 }
             }
@@ -86,15 +88,16 @@ struct CloudLibraryPanel: View {
             } else if let failure = model.checkFailure, state.issue == nil, state.sourcesMessage == nil {
                 failureLine(text(failure.messageKey), failure: failure, item: nil)
             }
-            if controls.contains(where: { [.close, .settings, .refresh, .free, .upload(nil)].contains($0) }) {
+            if controls.contains(where: { [.close, .settings, .refresh, .free, .upload(nil), .advanced].contains($0) }) {
                 HStack(spacing: canvas.u(10)) {
                     if !showHints { button(.close, "Close") }
                     if controls.contains(.settings) { button(.settings, "Open settings") }
                     if controls.contains(.refresh) { button(.refresh, "Refresh") }
                     if controls.contains(.free) { button(.free, "Free up space") }
                     if controls.contains(.upload(nil)) {
-                        button(.upload(nil), state.needsCombinedUpload ? "Send app and build cache" : "Send update")
+                        button(.upload(nil), state.combinedUploadTitle)
                     }
+                    if controls.contains(.advanced) { button(.advanced, advanced ? "Hide" : "Advanced") }
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }
@@ -120,19 +123,19 @@ struct CloudLibraryPanel: View {
         let downloadFill = CloudLibraryProgressView.downloadFill(state, item: item)
         let downloading = CloudLibraryProgressView.isDownloading(state, item: item)
         let ready = downloading && state.progress?.phase == .readyToInstall
-        let downloadBytes = downloadFill == nil ? nil
-            : CloudLibraryProgressView.bytesSummary(state.progress, context: localization)
+        let downloadBytes = downloading ? CloudLibraryProgressView.bytesSummary(state.progress, context: localization) : nil
         let statusText = personalCopyIsOlder ? text("Your cloud copy is older") : indicator.label(context: localization)
         return VStack(alignment: .leading, spacing: canvas.u(8)) {
             HStack(spacing: canvas.u(12)) {
                 VStack(alignment: .leading, spacing: canvas.u(5)) {
                     Text(title).seleneFont(17, .semibold).foregroundColor(SeleneTheme.ink90)
                         .accessibilityAddTraits(.isHeader)
-                    SeleneStatusDot(text: downloadBytes ?? reference ?? statusText, color: indicator.status.color,
+                    SeleneStatusDot(text: downloadBytes.map { statusText + " · " + $0 } ?? reference ?? statusText,
+                                    color: indicator.status.color,
                                     labelColor: ready ? SeleneTheme.ink60
                                         : indicator.status == .failed ? PortingPillCopy.softRed : SeleneTheme.ink90,
                                     accessibilityTitle: title,
-                                    pulses: indicator.isTransferring)
+                                    pulses: false)
                 }
                 .multilineTextAlignment(.leading)
                 .layoutPriority(1)
@@ -160,6 +163,8 @@ struct CloudLibraryPanel: View {
                     if let control {
                         switch control {
                         case .cancel: artifactButton(control, "Cancel", icon: .close)
+                        case .upload(let kind) where kind.flatMap({ state.copies[$0] })?.canMigrateArchive == true:
+                            button(control, "Convert to the new format")
                         case .upload where personalCopyIsOlder: button(control, "Send")
                         case .upload, .uploadSources: artifactButton(control, "Send", icon: .cloudUpload)
                         default: downloadButton(control, fill: 0)
@@ -168,7 +173,7 @@ struct CloudLibraryPanel: View {
                 }
                 .frame(minWidth: canvas.u(44), minHeight: canvas.u(44), alignment: .trailing)
             }
-            if let path = cloudPath(item) {
+            if advanced, let path = cloudPath(item) {
                 Text(verbatim: path)
                     .seleneFont(13)
                     .foregroundColor(SeleneTheme.ink60)
@@ -178,8 +183,8 @@ struct CloudLibraryPanel: View {
                     .help(path)
             }
             if live {
-                if downloadFill == nil {
-                    CloudLibraryProgressView(progress: state.progress, status: indicator.status, showsSummary: false)
+                if state.transfer(for: item)?.gauge(hasCover: false, hasDownloadPill: downloading) == .bar {
+                    SeleneProgressBar(progress: CloudTransferPresentation.fraction(state.progress), color: indicator.status.color)
                 }
             } else if let issue = state.issue, issue.item == item {
                 if issue.failed { failureLine(issue.message, failure: state.transferFailure, item: item) }
@@ -228,7 +233,10 @@ struct CloudLibraryPanel: View {
     }
 
     private func artifactControl(_ item: CloudLibraryItem) -> Control? {
-        if state.activeItem == item { return .cancel }
+        if state.activeItem == item, state.transfer(for: item)?.canCancel == true { return .cancel }
+        if retryResult(for: item) != nil, state.transferFailure?.action == nil || state.transferFailure?.action == .retry {
+            return nil
+        }
         guard let kind = item.artifact else {
             if state.referenceSourceBytes != nil { return canChange(.downloadSources) ? .downloadSources : nil }
             switch state.sources?.state {
@@ -244,30 +252,44 @@ struct CloudLibraryPanel: View {
         return canChange(.upload(kind)) && state.canUpload(kind) ? .upload(kind) : nil
     }
 
+    private var visibleItems: [CloudLibraryItem] {
+        CloudLibraryItem.allCases.filter {
+            advanced || $0 == .app || $0 == state.activeItem || $0 == state.issue?.item || $0 == state.completedItem
+        }
+    }
+
     private var controls: [Control] {
         let close: [Control] = showHints ? [] : [.close]
         if model.archive == nil { return close + [.settings] }
         if unavailable != nil { return close }
-        let artifacts = CloudLibraryItem.allCases.compactMap(artifactControl)
-        if state.action != nil || state.refreshing { return artifacts + close }
-        var buttons = artifacts + close
+        let artifacts = visibleItems.compactMap(artifactControl)
+        if state.action != nil || state.refreshing { return artifacts + close + [.advanced] }
+        var buttons = artifacts + close + [.advanced]
         if let failure = state.failure ?? (state.message == nil && state.issue == nil && state.sourcesMessage == nil
                                            ? model.checkFailure : nil), canRecover(failure) {
             buttons.append(.recover(failure, nil))
         }
-        if let issue = state.issue, let failure = state.transferFailure, canRecover(failure) {
+        if let issue = state.issue, let failure = state.transferFailure,
+           failure.action != .retry, canRecover(failure) {
             buttons.append(.recover(failure, issue.item))
+        } else if let item = state.issue?.item, let retry = retryResult(for: item) {
+            buttons.append(.retry(retry))
         }
-        if state.issue?.item != .sources, let failure = state.sourceFailure, canRecover(failure) {
+        if advanced, state.issue?.item != .sources, let failure = state.sourceFailure, canRecover(failure) {
             buttons.append(.recover(failure, .sources))
         }
         if (state.message != nil && state.failure == nil) || (state.sourcesMessage != nil && state.sourceFailure == nil) {
             buttons.append(.settings)
         }
-        buttons.append(.refresh)
+        if advanced && !buttons.contains(where: {
+            if case .recover(let failure, _) = $0 { return failure.action == .retry }
+            return false
+        }) { buttons.append(.refresh) }
         let available = CloudFreeSelection(state: state).available
         if !available.isEmpty && canChange(.free(available)) { buttons.append(.free) }
-        if canChange(.upload(nil)) && state.canUploadBoth { buttons.append(.upload(nil)) }
+        if (advanced || state.needsCombinedUpload) && canChange(.upload(nil)) && state.showsCombinedUpload {
+            buttons.append(.upload(nil))
+        }
         return buttons
     }
 
@@ -283,9 +305,17 @@ struct CloudLibraryPanel: View {
             Text(message).seleneFont(15).foregroundColor(CloudLibraryStatus.failed.color)
                 .fixedSize(horizontal: false, vertical: true)
             if let failure, controls.contains(.recover(failure, item)) {
-                button(.recover(failure, item), failure.action.titleKey)
+                button(.recover(failure, item), failure.action == .retry ? "Refresh" : failure.action.titleKey)
+            } else if let item, let retry = retryResult(for: item), controls.contains(.retry(retry)) {
+                button(.retry(retry), "Retry")
             }
         }
+    }
+
+    private func retryResult(for item: CloudLibraryItem) -> UUID? {
+        guard state.issue?.item == item, let id = state.failedTransferID,
+              viewModel.activityResults.entries.contains(where: { $0.id == id && $0.canRetry }) else { return nil }
+        return id
     }
 
     private func button(_ control: Control, _ key: String) -> some View {
@@ -342,8 +372,11 @@ struct CloudLibraryPanel: View {
         case .download(let kind): viewModel.performCloudLibrary(.restore(kind), for: game)
         case .cancel: viewModel.cancelCloudLibrary(game)
         case .refresh:
-            model.update(game.id) { $0.issue = nil }
             refreshRevision += 1
+        case .advanced:
+            advanced.toggle()
+        case .retry(let id):
+            viewModel.retryActivity(id)
         case .recover(let failure, let item):
             let global = item == nil && state.failure == nil || model.checkFailure == failure && failure == .offline
             if failure.action == .retry, global {
@@ -351,7 +384,7 @@ struct CloudLibraryPanel: View {
             }
             if failure.action == .reconnect || failure.action == .chooseFolder || failure.action == .freeMacStorage { close() }
             viewModel.recoverCloud(failure.action, sourceFolder: item == .sources || (global && model.checkFailureOnSources)) {
-                choose(.refresh)
+                refreshRevision += 1
             }
         case .settings:
             close()
@@ -423,31 +456,40 @@ struct CloudLibraryPanel: View {
 }
 
 /// Same labelled progress and semantic color in Details and in the transfer panel.
-struct CloudLibraryProgressView: View {
+struct CloudGameStatus: View {
     @Environment(\.nxAppLocale) private var localization
     @Environment(\.seleneCanvas) private var canvas
-    let progress: CloudArchiveProgress?
-    var status: CloudLibraryStatus = .pending
-    var showsSummary = true
-    var showsBar = true
+    let state: CloudLibraryState
+    let playable: Bool
+    var hasCover = false
+    let hasDownloadPill: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: canvas.u(5)) {
-            if showsSummary {
-                let summary = showsBar ? Self.summary(progress, context: localization)
-                    : Self.downloadSummary(progress, context: localization)
-                Text(summary).seleneFont(15).monospacedDigit()
-                    .foregroundColor(showsBar ? SeleneTheme.ink90 : SeleneTheme.ink75)
+        let keys = (playable ? ["Playable on this Mac"] : []) + state.appAvailabilityKeys
+        let indicator = CloudLibraryIndicator(state: state)
+        VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.tight)) {
+            if !keys.isEmpty {
+                Text(keys.map { L10n.text($0, context: localization) }.joined(separator: " · "))
+                    .seleneFont(.metadata).foregroundColor(SeleneTheme.ink75)
             }
-            if showsBar {
-                SeleneProgressBar(progress: Self.fraction(progress), height: showsSummary ? 6 : 4, color: status.color)
+            if let transfer = state.transfer() {
+                let bytes = transfer.canCancel ? CloudLibraryProgressView.bytesSummary(state.progress, context: localization) : nil
+                let title = indicator.label(context: localization)
+                let message = transfer == .failed ? state.issue?.message : bytes
+                SeleneStatusDot(text: [title, message == title ? nil : message].compactMap { $0 }.joined(separator: " · "),
+                                color: indicator.status.color, labelColor: SeleneTheme.ink90)
+                if transfer.gauge(hasCover: hasCover, hasDownloadPill: hasDownloadPill) == .bar {
+                    SeleneProgressBar(progress: CloudTransferPresentation.fraction(state.progress), color: indicator.status.color)
+                }
             }
         }
+        .frame(maxWidth: canvas.u(SeleneTokens.Space.transferMeasure), alignment: .leading)
     }
+}
 
+enum CloudLibraryProgressView {
     static func fraction(_ progress: CloudArchiveProgress?) -> Double? {
-        guard let transfer = progress?.transfer, transfer.totalBytes > 0 else { return nil }
-        return min(1, max(0, Double(transfer.bytesTransferred) / Double(transfer.totalBytes)))
+        CloudTransferPresentation.fraction(progress)
     }
 
     static func isDownloading(_ state: CloudLibraryState, item: CloudLibraryItem) -> Bool {
@@ -546,7 +588,7 @@ struct CloudLibraryIndicator {
 
     private var showsAction: Bool {
         guard let active = state.activeItem else { return false }
-        return item.map { $0 == active } ?? (active != .sources)
+        return item.map { $0 == active } ?? true
     }
     var progress: Bool { showsAction && !state.queued }
     /// Cache preparation starts only after the app is published.
@@ -556,22 +598,6 @@ struct CloudLibraryIndicator {
     var queued: Bool { showsAction && state.queued }
     var copy: CloudArtifactStatus.State { state.copy(item ?? .app) ?? .unknown }
 
-    /// The Details and Spotlight pill: one Material glyph drawn like the favorite heart (white, dark when focused).
-    var pillIcon: MaterialIcon {
-        if queued { return .cloudQueue }
-        if progress {
-            switch state.action {
-            case .upload, .uploadSources: return .cloudUpload
-            default: return .cloudDownload
-            }
-        }
-        switch copy {
-        case .synchronized: return .cloudDone
-        case .cloudOnly: return .cloudDownload
-        case .newerOnThisMac: return .cloudUpload
-        case .notInCloud, .unknown: return .cloud
-        }
-    }
     var isTransferring: Bool {
         showsAction && !state.queued && (state.progress?.phase == .uploading || state.progress?.phase == .downloading)
     }
@@ -588,6 +614,7 @@ struct CloudLibraryIndicator {
         if appPublished { return .synchronized }
         if progress { return .pending }
         if failed { return .failed }
+        if state.transfer(for: item) == .ready { return .synchronized }
         if let item, item.artifact.flatMap({ state.referenceCopies[$0] }) != nil ||
             item == .sources && state.referenceSourceBytes != nil { return .pending }
         switch copy {
@@ -605,7 +632,15 @@ struct CloudLibraryIndicator {
     }
 
     var icon: MaterialIcon {
-        if queued { return .cloudQueue }
+        switch state.transfer(for: item) {
+        case .queued: return .cloudQueue
+        case .waitingForGame: return .schedule
+        case .verifying: return .checklist
+        case .ready: return .cloudDone
+        case .failed: return .info
+        default: break
+        }
+        if failed { return .info }
         if progress {
             switch state.action {
             case .upload, .uploadSources: return .cloudUpload
@@ -621,21 +656,16 @@ struct CloudLibraryIndicator {
         }
     }
 
-    func label(context: AppLocale, showingFailure: Bool = true) -> String {
-        if queued { return L10n.text("Queued", context: context) }
+    func label(context: AppLocale) -> String {
         if appPublished { return L10n.text("App published · sending build cache…", context: context) }
-        if progress {
-            if let fraction = CloudLibraryProgressView.fraction(state.progress) {
-                let key: String
-                switch state.action {
-                case .upload, .uploadSources: key = "Sending %@"
-                default: key = "Downloading %@"
-                }
-                return L10n.format(key, [CloudLibraryProgressView.percent(fraction, context: context)], context: context)
-            }
-            return L10n.text(state.progress.map(CloudLibraryProgressView.phaseKey) ?? "Preparing cloud operation…", context: context)
+        if let kind = item?.artifact, state.copies[kind]?.canMigrateArchive == true,
+           !showsAction, !failed {
+            return L10n.text("Copy in your cloud", context: context)
         }
-        if failed && showingFailure { return L10n.text("Cloud operation failed", context: context) }
+        if let transfer = state.transfer(for: item) {
+            return L10n.text(transfer.titleKey, context: context)
+        }
+        if failed { return L10n.text("Cloud operation failed", context: context) }
         let key: String
         switch copy {
         case .synchronized: key = "Synchronized"
@@ -653,13 +683,16 @@ struct CloudLibraryIndicator {
 /// A non-interactive tile overlay. The tile keeps its own accessible name and selection ring.
 struct CloudLibraryTileBadge: ViewModifier {
     let state: CloudLibraryState?
+    var showsCopyBadge = true
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.nxAppLocale) private var localization
 
     static func artworkOpacity(_ state: CloudLibraryState?) -> Double { state?.appIsCloudOnly == true ? 0.55 : 1 }
 
     func body(content: Content) -> some View {
-        let badge = state.map { CloudLibraryBadge(indicator: CloudLibraryIndicator(state: $0)) }
+        let badge = state.flatMap {
+            showsCopyBadge || $0.transfer() != nil ? CloudLibraryBadge(indicator: CloudLibraryIndicator(state: $0)) : nil
+        }
         content.overlay(alignment: .topTrailing) {
             if let badge, badge.isVisibleOnTile {
                 badge
@@ -669,18 +702,16 @@ struct CloudLibraryTileBadge: ViewModifier {
             }
         }
         .accessibilityValue(badge?.isVisibleOnTile == true
-                            ? badge?.indicator.label(context: localization, showingFailure: false) ?? "" : "")
+                            ? badge?.indicator.label(context: localization) ?? "" : "")
     }
 }
 
-/// Cloud mark and transfer ring on tiles.
+/// Static cloud mark on tiles; only the cover expresses progress.
 struct CloudLibraryBadge: View {
     let indicator: CloudLibraryIndicator
     @Environment(\.seleneCanvas) private var canvas
-    @Environment(\.nxAppLocale) private var localization
-
     var isVisibleOnTile: Bool {
-        if indicator.progress || indicator.queued { return true }
+        if indicator.state.transfer() != nil || indicator.failed { return true }
         switch indicator.copy {
         case .synchronized, .cloudOnly, .newerOnThisMac: return true
         case .notInCloud, .unknown: return false
@@ -688,35 +719,16 @@ struct CloudLibraryBadge: View {
     }
 
     var body: some View {
-        let fraction = CloudLibraryProgressView.fraction(indicator.state.progress)
-        return VStack(spacing: canvas.u(2)) {
-            ZStack(alignment: .bottomTrailing) {
-                Circle().fill(SeleneTheme.scrim.opacity(0.94))
-                if indicator.progress {
-                    Circle().strokeBorder(SeleneTheme.ink25, lineWidth: canvas.u(2))
-                    if let fraction {
-                        Circle().trim(from: 0, to: fraction)
-                            .stroke(SeleneTheme.ink, style: StrokeStyle(lineWidth: canvas.u(2), lineCap: .round))
-                            .rotationEffect(.degrees(-90))
-                            .padding(canvas.u(1))
-                    }
-                }
-                MaterialIconView(indicator.icon, size: 18)
-                    .foregroundColor(SeleneTheme.ink)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                SeleneStatusMark(color: indicator.status.color, pulses: indicator.isTransferring)
-                    .padding(canvas.u(2))
-            }
-            .frame(width: canvas.u(32), height: canvas.u(32))
-            .accessibilityHidden(true)
-            if indicator.progress, let fraction {
-                Text(CloudLibraryProgressView.percent(fraction, context: localization)).seleneFont(11, .semibold)
-                    .monospacedDigit().foregroundColor(SeleneTheme.ink)
-                    .padding(.horizontal, canvas.u(4)).padding(.vertical, canvas.u(2))
-                    .background(SeleneTheme.scrim.opacity(0.94), in: Capsule())
-                    .fixedSize()
-            }
+        ZStack(alignment: .bottomTrailing) {
+            Circle().fill(SeleneTheme.scrim.opacity(SeleneTokens.Effect.cloudBadgeOpacity))
+            MaterialIconView(indicator.icon, size: SeleneTokens.Space.control)
+                .foregroundColor(SeleneTheme.ink)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            SeleneStatusMark(color: indicator.status.color, pulses: false)
+                .padding(canvas.u(SeleneTokens.Space.seam))
         }
+        .frame(width: canvas.u(SeleneTokens.Space.section), height: canvas.u(SeleneTokens.Space.section))
+        .accessibilityHidden(true)
     }
 }
 
@@ -727,10 +739,9 @@ struct CloudLibraryPill: View {
     let action: () -> Void
 
     var body: some View {
-        // Same drawing as the favorite pill: the glyph follows the pill's focus colors (c9ed825).
-        SelenePillButton(title: nil, icon: indicator.pillIcon, iconSize: 20, minWidth: 52, height: 52,
-                         horizontalPadding: 0, focused: focused, action: action)
-            .accessibilityLabel(L10n.text("Cloud library", context: localization))
+        SelenePillButton(title: "Manage game", minWidth: SeleneTokens.Space.group,
+                         height: SeleneTokens.Space.group, horizontalPadding: SeleneTokens.Space.medium,
+                         focused: focused, action: action)
             .accessibilityValue(indicator.label(context: localization))
     }
 }

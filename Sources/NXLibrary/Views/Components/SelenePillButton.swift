@@ -103,7 +103,7 @@ struct SelenePillButton: View {
                         .overlay { label.foregroundColor(.black) }
                         // One moving edge clips both the white fill and the black glyphs.
                         .mask { DownloadFillMask(fraction: downloadFill) }
-                        .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: downloadFill)
+                        .animation(Motion.transfer(reduceMotion), value: downloadFill)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }

@@ -42,17 +42,22 @@ struct PortingArtLook: ViewModifier {
             }
             .frame(width: geo.size.width, height: geo.size.height)
         }
-        .animation(.easeInOut(duration: 0.9), value: fill)
-        .animation(.easeInOut(duration: 0.8), value: stage)
+        .animation(fillAnimation, value: fill)
+        .animation(Motion.buildArt(reduceMotion, .stage), value: stage)
     }
 
     // MARK: - Look
+
+    private var fillAnimation: Animation? {
+        if case .transfer = look { return Motion.transfer(reduceMotion) }
+        return Motion.buildArt(reduceMotion, .fill)
+    }
 
     private var fill: Double {
         switch look {
         case .normal: return 1
         case .preparing, .locked, .downloading: return 0
-        case .filling(let value): return min(max(value, 0), 1)
+        case .filling(let value), .transfer(let value): return min(max(value, 0), 1)
         }
     }
 
@@ -61,7 +66,7 @@ struct PortingArtLook: ViewModifier {
         switch look {
         case .preparing: return 0.02
         case .locked, .downloading: return 0.012
-        case .normal, .filling: return 0
+        case .normal, .filling, .transfer: return 0
         }
     }
 
@@ -70,7 +75,7 @@ struct PortingArtLook: ViewModifier {
 
     private var stage: Stage {
         switch look {
-        case .normal: return .none
+        case .normal, .transfer: return .none
         case .preparing: return .steps
         case .filling: return .percent
         case .locked: return .lock
@@ -138,7 +143,7 @@ struct PortingArtLook: ViewModifier {
                         .frame(width: width * fraction)
                 }
                 .frame(width: width, height: max(1.5, side * 0.014))
-                .animation(.easeInOut(duration: 0.6), value: fraction)
+                .animation(Motion.buildArt(reduceMotion, .steps), value: fraction)
                 VStack(spacing: side * 0.008) {
                     Text(title)
                         .font(.system(size: side * 0.06, weight: .medium))
@@ -152,7 +157,7 @@ struct PortingArtLook: ViewModifier {
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .frame(width: side * 0.84)
-                .animation(.easeInOut(duration: 0.4), value: title)
+                .animation(Motion.buildArt(reduceMotion, .label), value: title)
             }
             .shadow(color: .black.opacity(0.45), radius: side * 0.02)
         }

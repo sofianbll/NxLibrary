@@ -19,7 +19,8 @@ extension SettingsCatalog {
     }
 
     public static func opensCloudAdvanced(_ id: String) -> Bool {
-        ["cloudLibraryAdvanced", "cloudLibraryConnect", "cloudLibraryTool", "cloudLibraryTest", "cloudLibraryDisconnect"].contains(id)
+        ["cloudLibraryAdvanced", "cloudLibraryFolder", "cloudSourcesRoot", "cloudLibraryConnect",
+         "cloudLibraryTool", "cloudLibraryTest", "cloudLibraryDisconnect"].contains(id)
     }
 
     private static func visible(supportsNextendo: Bool, cloudConfigured: Bool) -> [SettingDescriptor] {
@@ -98,10 +99,10 @@ extension SettingsCatalog {
         action("cloudSourcesRoot", .cloudLibrary, "Game files folder", "Choose a path on the same cloud service. No files are moved."),
         action("cloudReferenceFolder", .cloudLibrary, "Reference library", "Follow a shared Google Drive folder in read-only mode."),
         action("cloudLibraryImport", .cloudLibrary, "Import games from the cloud", "Add missing games without downloading their apps."),
-        row("showsCloudPlayIcon", .cloudLibrary, "Icon next to Play", "Show the cloud icon by the play button.") { $0.showsCloudPlayIcon },
-        row("showsCloudDetailsLink", .cloudLibrary, "Link in Details", "Show the cloud library link in Details.") { $0.showsCloudDetailsLink },
+        row("showsCloudPlayIcon", .cloudLibrary, "Manage game next to Play", "Manage game") { $0.showsCloudPlayIcon },
+        row("showsCloudDetailsLink", .cloudLibrary, "Link in Details", "Manage game") { $0.showsCloudDetailsLink },
         row("cloudTileBadges", .cloudLibrary, "Tile badges", "Show cloud status on game covers.") { $0.cloudTileBadges },
-        action("cloudLibraryAdvanced", .cloudLibrary, "Connection tools", "Advanced"),
+        action("cloudLibraryAdvanced", .cloudLibrary, "Folders and connection tools", "Advanced"),
         action("cloudLibraryConnect", .cloudLibrary, "Change Google credentials", "Sign in with your own Google OAuth client in your browser."),
         action("cloudLibraryTool", .cloudLibrary, "Cloud tool", "Choose the executable or use the detected one."),
         action("cloudLibraryTest", .cloudLibrary, "Test connection", "Lists the cloud folder without changing its files."),

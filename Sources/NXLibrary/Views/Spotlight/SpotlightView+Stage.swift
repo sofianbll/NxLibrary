@@ -176,6 +176,7 @@ extension SpotlightView {
                     pillSet: spotlightPills(game),
                     cloud: viewModel.cloudLibrary,
                     showsCloudPill: showsCloudPill(game),
+                    cloudCoverVisible: rowOpacity > Self.unseenOpacity,
                     downloadsApp: downloadsCloudApp(game),
                     downloadEnabled: viewModel.canChangeCloudLibrary(.restore(.app), for: game),
                     canCheckCloudSources: viewModel.canCheckCloudSources(for: game),
