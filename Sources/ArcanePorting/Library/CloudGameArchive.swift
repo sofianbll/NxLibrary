@@ -390,9 +390,36 @@ public actor CloudGameArchive {
         leases.end(titleID.uppercased(), token: token)
     }
 
+    /// A rebuild always reuses this Mac's cache when it holds the shader chain the cloud's app has, whatever the
+    /// cloud copies say: a cancelled cache upload leaves a newer app beside an older cache, and the cloud's cache
+    /// then differs, but this Mac's is the current one.
     public func checkRebuild(_ game: CloudArchiveGame, sourcesAvailable: Bool, withoutCache: Bool,
                              lastSuccessfulBuild: ClosedRange<Date>? = nil, preferLocalCache: Bool = false,
                              appManifest: CloudGameManifest? = nil)
+        async throws -> (decision: CloudRebuildDecision, verifiedCache: URL?, hasUsableLocalCache: Bool) {
+        let local = withoutCache ? nil : (try? location(.cache, for: game)).flatMap { cache in
+            LocalBuildCache.chain(ofCache: cache).map { (cache, $0) }
+        }
+        let result: (decision: CloudRebuildDecision, verifiedCache: URL?, hasUsableLocalCache: Bool)
+        do {
+            result = try await decideRebuild(game, sourcesAvailable: sourcesAvailable, withoutCache: withoutCache,
+                                             lastSuccessfulBuild: lastSuccessfulBuild, preferLocalCache: preferLocalCache,
+                                             appManifest: appManifest)
+        } catch where !(error is CancellationError) && sourcesAvailable && local != nil {
+            // The cloud can't be read: this Mac's cache still serves.
+            return (.allowed, local?.0, true)
+        }
+        guard let (cache, chain) = local, result.verifiedCache == nil,
+              result.decision == .fullRebuild || result.decision == .downloadCache else { return result }
+        let manifest = try? await latest(titleID: game.titleID)
+        let reference = (appManifest ?? manifest)?.artifacts.first { $0.kind == .app }?.shaderChain
+            ?? manifest?.artifacts.first { $0.kind == .cache }?.shaderChain
+        return reference == nil || reference == chain ? (.allowed, cache, true) : result
+    }
+
+    private func decideRebuild(_ game: CloudArchiveGame, sourcesAvailable: Bool, withoutCache: Bool,
+                               lastSuccessfulBuild: ClosedRange<Date>?, preferLocalCache: Bool,
+                               appManifest: CloudGameManifest?)
         async throws -> (decision: CloudRebuildDecision, verifiedCache: URL?, hasUsableLocalCache: Bool) {
         try Task.checkCancellation()
         guard sourcesAvailable else { return (.missingSources, nil, false) }
@@ -1094,13 +1121,7 @@ public actor CloudGameArchive {
     }
 
     private func shaderChain(at source: URL, kind: CloudArtifactKind) -> String? {
-        let folder = source.appendingPathComponent(kind == .app ? "Contents/Resources/msl" : "shader/cache")
-        let matches = (try? FileManager.default.contentsOfDirectory(atPath: folder.path))?.compactMap { name -> String? in
-            guard name.hasPrefix("b-"), name.hasSuffix(".img") else { return nil }
-            let id = String(name.dropFirst(2).dropLast(4))
-            return Self.isHex(id, count: 12) ? id : nil
-        }
-        return matches?.count == 1 ? matches?.first : nil
+        LocalBuildCache.chain(in: source.appendingPathComponent(kind == .app ? "Contents/Resources/msl" : "shader/cache"))
     }
 
     private static func isHex(_ value: String, count: Int) -> Bool {

@@ -584,7 +584,7 @@ extension PortingModel {
                !target.url.standardizedFileURL.path.hasPrefix(old.standardizedFileURL.path) {
                 DispatchQueue.global(qos: .utility).async { try? FileManager.default.removeItem(at: old) }
             }
-            if verifiedCache == nil, !withoutCache {
+            if verifiedCache == nil, !withoutCache || target.buildCachePath == nil {
                 target.workspacePath = workspace.directory.path
                 target.buildCachePath = workspace.buildCache.path
             }
@@ -639,6 +639,8 @@ extension PortingModel {
         }
         let stagedCodeMods = try codeMods.map { try FileManager.default.contentsOfDirectory(atPath: $0.path).sorted() }
         let workDir = withoutCache ? tempRoot.appendingPathComponent("\(titleId)_build") : verifiedCache
+        // A successful build without the old cache leaves its work folder as the game's cache.
+        let cacheDestination = withoutCache ? target.buildCachePath.map(URL.init(fileURLWithPath:)) ?? workspace.buildCache : nil
         // With --work-dir alone nxnative can still copy a profile from the old cache.
         let freshProfile = withoutCache ? workDir.map { ["--profile-out", $0.appendingPathComponent("profile").path] } ?? [] : []
         let command = BuildCommandBuilder.make(
@@ -728,6 +730,7 @@ extension PortingModel {
                     guard let service, self?.buildService === service else { return }
                     self?.finishBuild(result, gameID: target.id,
                                       finalApp: finalApp, tempDir: tempRoot,
+                                      adoptingCache: workDir.flatMap { work in cacheDestination.map { (work, $0) } },
                                       nextendoRequested: nextendoRequested, stagedCodeMods: stagedCodeMods)
                 }
             }

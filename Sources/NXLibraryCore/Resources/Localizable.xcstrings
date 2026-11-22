@@ -562,6 +562,39 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "不使用编译缓存重新构建"}}
       }
     },
+    "This Mac’s cache · %@ shaders": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "This Mac’s cache · %@ shaders"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cache di questo Mac · %@ shader"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Cache de ce Mac · %@ shaders"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cache dieses Mac · %@ Shader"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Caché de este Mac · %@ shaders"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Cache deste Mac · %@ shaders"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "此 Mac 的缓存 · %@ 个着色器"}}
+      }
+    },
+    "This Mac’s cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "This Mac’s cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cache di questo Mac"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Cache de ce Mac"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cache dieses Mac"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Caché de este Mac"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Cache deste Mac"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "此 Mac 的缓存"}}
+      }
+    },
+    "The new build cache could not be kept: %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "The new build cache could not be kept: %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Impossibile conservare la nuova cache: %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Le nouveau cache n’a pas pu être conservé : %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Der neue Cache konnte nicht behalten werden: %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se pudo conservar la nueva caché: %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível manter o novo cache: %@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "无法保留新的缓存：%@"}}
+      }
+    },
     "Takes longer.": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Takes longer."}},

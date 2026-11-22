@@ -171,6 +171,80 @@ final class CloudGameArchiveTests: XCTestCase {
         XCTAssertNil(incompatible.verifiedCache)
     }
 
+    /// A cancelled cache upload leaves the cloud with a newer app beside an older cache, as after a rebuild on this
+    /// Mac. The cache of this Mac holds the app's shader chain, so a rebuild reuses it: no empty work folder.
+    private func cancelledCacheUpload(in f: Fixture, game: CloudArchiveGame) async throws {
+        let msl = f.app.appendingPathComponent("Contents/Resources/msl")
+        _ = try await f.service.upload(game)
+        try FileManager.default.moveItem(at: msl.appendingPathComponent("b-1234567890ab.img"),
+                                        to: msl.appendingPathComponent("b-1234567890ac.img"))
+        try command("/usr/bin/codesign", ["--force", "--sign", "-", f.app.path])
+        _ = try await f.service.upload(game, kinds: [.app])
+    }
+
+    private func addShaderImage(_ chain: String, to cache: URL) throws {
+        let shaders = cache.appendingPathComponent("shader/cache")
+        try FileManager.default.createDirectory(at: shaders, withIntermediateDirectories: true)
+        try Data([1]).write(to: shaders.appendingPathComponent("b-\(chain).img"))
+    }
+
+    func testRebuildReusesThisMacsCacheWhenTheCloudCacheUploadWasCancelled() async throws {
+        let f = try fixture(useSyntheticBackend: true)
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        try addShaderImage("1234567890ab", to: f.cache)
+        try await cancelledCacheUpload(in: f, game: f.game)
+        let other = try await f.service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false)
+        XCTAssertEqual(other.decision, .fullRebuild, "Another shader chain is not reused")
+        try FileManager.default.moveItem(at: f.cache.appendingPathComponent("shader/cache/b-1234567890ab.img"),
+                                        to: f.cache.appendingPathComponent("shader/cache/b-1234567890ac.img"))
+        let same = try await f.service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false)
+        XCTAssertEqual(same.decision, .allowed)
+        XCTAssertEqual(same.verifiedCache, f.cache)
+        let explicit = try await f.service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: true)
+        XCTAssertNil(explicit.verifiedCache, "Rebuild without cache still starts from nothing")
+    }
+
+    func testRebuildReusesTheCacheInAPlayersFolder() async throws {
+        let f = try fixture(useSyntheticBackend: true)
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let folder = f.root.appendingPathComponent("Games/Pokemon Legends Z-A [\(title)]", isDirectory: true)
+        let cache = folder.appendingPathComponent("\(title)_build", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try FileManager.default.moveItem(at: f.cache, to: cache)
+        XCTAssertFalse(BuildScratch.isManaged(folder, core: f.root.appendingPathComponent("NXLibrary")))
+        let game = CloudArchiveGame(titleID: title, locations: [.app: f.app, .cache: cache])
+        try addShaderImage("1234567890ac", to: cache)
+        try await cancelledCacheUpload(in: f, game: game)
+        let check = try await f.service.checkRebuild(game, sourcesAvailable: true, withoutCache: false)
+        XCTAssertEqual(check.decision, .allowed)
+        XCTAssertEqual(check.verifiedCache, cache)
+    }
+
+    /// The engine compiles each shader the work folder lacks. A fake one counts them.
+    private func fakeCompile(_ shaders: Int, in work: URL) throws -> Int {
+        let done = work.appendingPathComponent("shader/cache/done")
+        try FileManager.default.createDirectory(at: done, withIntermediateDirectories: true)
+        var compiled = 0
+        for index in 0..<shaders where !FileManager.default.fileExists(atPath: done.appendingPathComponent("\(index)").path) {
+            try Data().write(to: done.appendingPathComponent("\(index)"))
+            compiled += 1
+        }
+        return compiled
+    }
+
+    func testRebuildWithTheSameShaderChainCompilesNoShader() async throws {
+        let f = try fixture(useSyntheticBackend: true)
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        try addShaderImage("1234567890ac", to: f.cache)
+        XCTAssertEqual(try fakeCompile(40, in: f.cache), 40, "The first build compiles everything")
+        try await cancelledCacheUpload(in: f, game: f.game)
+        let check = try await f.service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false)
+        let work = try XCTUnwrap(check.verifiedCache)
+        XCTAssertEqual(try fakeCompile(40, in: work), 0)
+        let empty = f.root.appendingPathComponent("Temp/\(title)_build")
+        XCTAssertEqual(try fakeCompile(40, in: empty), 40, "The empty work folder of the bug compiles all again")
+    }
+
     private func assertAppPublishedDuringCache(cancel: Bool) async throws {
         let f = try fixture(useSyntheticBackend: true)
         defer { try? FileManager.default.removeItem(at: f.root) }

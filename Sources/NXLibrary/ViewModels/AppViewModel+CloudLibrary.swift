@@ -816,6 +816,11 @@ extension AppViewModel {
             var alternatives: [(title: String, run: () -> Void)] = []
             if hasLocalCache {
                 alternatives.append(("Rebuild with this Mac’s cache", { rebuild(false) }))
+                // The grey line under the button says which cache a rebuild would use.
+                details["Rebuild with this Mac’s cache"] = game.buildCachePath
+                    .flatMap { LocalBuildCache.shaderCount(ofCache: URL(fileURLWithPath: $0)) }
+                    .map { L10n.format("This Mac’s cache · %@ shaders", [NumberFormatter.localizedString(from: $0 as NSNumber, number: .decimal)]) }
+                    ?? L10n.text("This Mac’s cache")
                 details[download] = L10n.text("Keeps this Mac’s cache as a backup.")
             }
             alternatives.append((without, { rebuild(true) }))

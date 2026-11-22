@@ -138,8 +138,14 @@ extension PortingModel {
     }
 
     func finishBuild(_ result: BuildResult, gameID: UUID,
-                     finalApp: URL, tempDir: URL, nextendoRequested: Bool, stagedCodeMods: [String]?) {
+                     finalApp: URL, tempDir: URL, adoptingCache: (work: URL, cache: URL)? = nil,
+                     nextendoRequested: Bool, stagedCodeMods: [String]?) {
         stopStageElapsedTimer()
+        if let adoptingCache, result.success || result.installationFailed {
+            do { try LocalBuildCache.adopt(adoptingCache.work, as: adoptingCache.cache) }
+            catch { app.logs.append(LogEntry(level: .warning,
+                message: L10n.format("The new build cache could not be kept: %@", [error.localizedDescription]))) }
+        }
         currentBuildCacheURL = nil
         activeCloudBuildScope = nil
         app.portingProgress?.finish(success: result.success)
