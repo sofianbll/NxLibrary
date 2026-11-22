@@ -97,7 +97,7 @@ final class AppRouterTests: XCTestCase {
         router.movePowerMenu(by: 1)
         XCTAssertEqual(router.menuSelection.power, .sleep)
         router.moveMenu(by: -1)
-        XCTAssertEqual(router.menuSelection.selected, .activityCenter)
+        XCTAssertEqual(router.menuSelection.selected, .settings)
     }
 
     func testCloseMenuClosesPowerPills() {
@@ -111,29 +111,88 @@ final class AppRouterTests: XCTestCase {
 }
 
 final class MenuSelectionModelTests: XCTestCase {
-    func testMenuOrder() {
-        XCTAssertEqual(MenuAction.allCases,
-                       [.switchProfile, .editProfile, .theme, .addGame, .refreshLibrary, .settings, .console, .setupCheck, .manageSources, .activityCenter, .power])
-        XCTAssertEqual(MenuAction.allCases.map(\.title),
-                       ["Switch profile", "Edit profile", "Theme", "Add Game", "Library refresh", "Settings", "Console", "Setup check", "Manage sources", "Activity center", "Power"])
+    func testMenuHasFiveIconsWithCards() {
+        XCTAssertEqual(MenuAction.allCases, [.profile, .library, .activityCenter, .settings, .power])
+        XCTAssertEqual(MenuAction.allCases.map(\.title), ["Profile", "Library", "Activity center", "Settings", "Power"])
+        XCTAssertEqual(MenuAction.profile.entries, [.switchProfile, .editProfile, .theme])
+        XCTAssertEqual(MenuAction.library.entries, [.addGame, .manageSources, .refreshLibrary])
+        XCTAssertEqual(MenuEntry.allCases.map(\.title),
+                       ["Switch profile", "Edit profile", "Theme", "Add Game", "Manage sources", "Library refresh"])
+        // Console and the Setup check live in Settings; Activity and Settings act at once.
+        XCTAssertTrue(MenuAction.activityCenter.entries.isEmpty && MenuAction.settings.entries.isEmpty)
+        XCTAssertEqual(MenuAction.allCases.flatMap(\.entries).count, MenuEntry.allCases.count)
         XCTAssertEqual(PowerAction.allCases, [.quit, .sleep, .hide, .relaunch])
         XCTAssertEqual(PowerAction.allCases.map(\.title), ["Quit", "Sleep", "Hide", "Restart app"])
     }
 
     func testMoveClampsAtBothEnds() {
-        var model = MenuSelectionModel(selected: .switchProfile)
+        var model = MenuSelectionModel(selected: .profile)
         model.move(by: -1)
-        XCTAssertEqual(model.selected, .switchProfile)
+        XCTAssertEqual(model.selected, .profile)
         model.move(by: 10)
         XCTAssertEqual(model.selected, .power)
         model.move(by: 1)
         XCTAssertEqual(model.selected, .power)
     }
 
+    func testEveryMenuTitleIsTranslatedInSixLanguages() {
+        defer { L10n.setContext(AppLocale(language: .english, region: "US")) }
+        let english = MenuAction.allCases.map(\.title) + MenuEntry.allCases.map(\.title) + PowerAction.allCases.map(\.title)
+        for language in AppLanguage.allCases where language != .english && language != .automatic {
+            L10n.setContext(AppLocale(language: language, region: "FR"))
+            let translated = MenuAction.allCases.map(\.title) + MenuEntry.allCases.map(\.title) + PowerAction.allCases.map(\.title)
+            for (before, after) in zip(english, translated) {
+                XCTAssertNotEqual(before, after, "\(language.rawValue): \(before) is not translated")
+            }
+        }
+    }
+
+    func testCardOpensOnItsFirstEntryAndClamps() {
+        var model = MenuSelectionModel(selected: .library)
+        model.moveEntry(by: 1) // closed: nothing moves
+        XCTAssertEqual(model.entry, .switchProfile)
+        model.openEntries()
+        XCTAssertTrue(model.isEntryOpen && model.isSubmenuOpen)
+        XCTAssertEqual(model.entry, .addGame)
+        model.moveEntry(by: 5)
+        XCTAssertEqual(model.entry, .refreshLibrary)
+        model.moveEntry(by: -9)
+        XCTAssertEqual(model.entry, .addGame)
+        // An icon without a card never opens one.
+        var activity = MenuSelectionModel(selected: .activityCenter)
+        activity.openEntries()
+        XCTAssertFalse(activity.isEntryOpen)
+    }
+
+    func testBackClosesTheCardThenTheMenuAndKeepsTheFocus() {
+        let router = AppRouter()
+        router.isMenuPresented = true
+        router.menuSelection.selected = .profile
+        router.openEntryMenu()
+        router.moveEntryMenu(by: 2)
+        XCTAssertEqual(router.menuSelection.entry, .theme)
+        // Left and Right wait while the card is open.
+        router.moveMenu(by: 1)
+        XCTAssertEqual(router.menuSelection.selected, .profile)
+        router.closeEntryMenu()
+        XCTAssertTrue(router.isMenuPresented)
+        XCTAssertFalse(router.menuSelection.isEntryOpen)
+        XCTAssertEqual(router.menuSelection.selected, .profile)
+        router.closeMenu()
+        XCTAssertFalse(router.isMenuPresented)
+        XCTAssertEqual(router.menuSelection.selected, .profile)
+        // Closing the menu with a card open closes the card too.
+        router.isMenuPresented = true
+        router.openEntryMenu()
+        router.closeMenu()
+        XCTAssertFalse(router.menuSelection.isEntryOpen)
+        XCTAssertEqual(router.menuSelection.selected, .profile)
+    }
+
     func testActivityCenterUsesMenuLifetime() {
         let router = AppRouter()
         router.isMenuPresented = true
-        router.moveMenu(by: -1)
+        router.moveMenu(by: -2)
         XCTAssertEqual(router.menuSelection.selected, .activityCenter)
         router.activityCenterFocus = ActivityCenterFocus()
         router.closeMenu()

@@ -101,8 +101,6 @@ import ArcanePorting
                                    advanced: .constant(false), onActions: { _ in }, nextendo: nextendo)
             }, in: out, refs, "screenshots/activity.png")
         }
-        let router = AppRouter()
-        router.menuSelection.selected = .switchProfile
         func stage<Bar: View>(_ top: Bar, showsSort: Bool = true, player: LocalProfile? = nil) -> some View {
             ZStack(alignment: .top) {
                 SeleneBackdrop().still(true)
@@ -125,13 +123,33 @@ import ArcanePorting
             .environment(\.profilePortrait, showsSort ? player ?? alex : nil)
             .environment(\.onlinePlayersByTitle, [game.titleId!.lowercased(): 12])
         }
-        let after = stage(SpotlightTopBar(filter: .all, sort: current))
-        try render("07-top-bar", after, in: out, refs, "screenshots/home.png")
-        try render("09-menu", ZStack {
-            stage(SpotlightTopBar(filter: .all, sort: current), showsSort: false)
-            MenuOverlayView(router: router, cloudLibrary: vm.cloudLibrary, activeProfile: alex,
-                            hasBuildActivity: false, onSelect: { _ in }, onSelectPower: { _ in })
-        }, in: out, refs, "screenshots/menu.png")
+        let online = fakeAccount(data.appendingPathComponent("fixture-online"))
+        online.setPresenceFixture()
+        let after = stage(SpotlightTopBar(filter: .all, sort: current, nextendo: online))
+        try render("07-top-bar", after, in: out, refs, "screenshots/library.png")
+        try checkTopBar(in: out, profile: alex, accent: Color(hex: SelenePaletteCatalog.resolve(alex.look.theme, in: ThemeStore.shared.palettes).glyph))
+        func menu(_ name: String, _ prepare: (AppRouter) -> Void, lang: AppLocale? = nil) throws {
+            let router = AppRouter()
+            router.isMenuPresented = true
+            prepare(router)
+            if let lang { L10n.setContext(lang) }
+            try render(name, ZStack {
+                stage(SpotlightTopBar(filter: .all, sort: current, nextendo: online), showsSort: false)
+                MenuOverlayView(router: router, cloudLibrary: vm.cloudLibrary, activeProfile: alex,
+                                hasBuildActivity: true, onSelect: { _ in }, onSelectPower: { _ in })
+            }.environment(\.nxAppLocale, lang ?? .init(language: .english, region: "US")),
+                       in: out, refs, "screenshots/menu.png")
+            L10n.setContext(.init(language: .english, region: "US"))
+        }
+        let fr = AppLocale(language: .french, region: "FR")
+        try menu("09-menu", { $0.menuSelection.selected = .profile })
+        try menu("09-menu-profile-card", { $0.menuSelection.selected = .profile; $0.openEntryMenu(); $0.moveEntryMenu(by: 1) })
+        try menu("09-menu-library-card", { $0.menuSelection.selected = .library; $0.openEntryMenu() })
+        try menu("09-menu-activity", { $0.menuSelection.selected = .activityCenter })
+        try menu("09-menu-settings", { $0.menuSelection.selected = .settings })
+        try menu("09-menu-power", { $0.menuSelection.selected = .power; $0.openPowerMenu() })
+        try menu("09-menu-profile-card-fr", { $0.menuSelection.selected = .profile; $0.openEntryMenu() }, lang: fr)
+        try menu("09-menu-library-card-fr", { $0.menuSelection.selected = .library; $0.openEntryMenu(); $0.moveEntryMenu(by: 2) }, lang: fr)
         try render("10-online-tile", after, in: out, refs, "screenshots/library.png")
         precondition(profiles.update(sam))
         L10n.setContext(french)
@@ -147,6 +165,12 @@ import ArcanePorting
             SettingsView(initialSection: .profiles, viewModel: vm, settings: settings, router: AppRouter(), artwork: art)
         }.environment(\.nxAppLocale, french), in: out, refs, "screenshots/game-options.png")
         settings.settings.profileStartup = .ask
+        for (name, section) in [("21-settings-console", SettingsSection.console), ("22-settings-setup", .engine)] {
+            try render(name, ZStack {
+                SeleneBackdrop().still(true)
+                SettingsView(initialSection: section, viewModel: vm, settings: settings, router: AppRouter(), artwork: art)
+            }.environment(\.nxAppLocale, french), in: out, refs, "screenshots/game-options.png")
+        }
         L10n.setContext(.init(language: .english, region: "US"))
         try render("11-remove", picker(selected: sam.id, removing: sam), in: out, refs, "web/182-15.png")
         // Y on a profile: the wizard replaces the selector, with one bar of hints; closing it brings the selector back.
@@ -182,6 +206,13 @@ import ArcanePorting
             picker(selected: profiles.active?.id, overlay: true)
         }, in: out, refs, "web/reddit-showcase-who-05s.png")
         vm.profileOwnsInput = false
+        vm.librarySelection.query.filter = .notPlayed
+        try render("23-spotlight-not-played", ZStack {
+            SeleneBackdrop().still(true)
+            SpotlightView(viewModel: vm, router: AppRouter(), settings: settings, playSessions: historyStore,
+                          runningGames: RunningGameMonitor(), artwork: art, storeHost: ModStoreHost())
+        }.environment(\.profilePortrait, profiles.active), in: out, refs, "screenshots/library.png")
+        vm.librarySelection.query.filter = .all
         vm.applyCatalog(.init(games: [originalGame]))
         precondition(vm.catalogGames.first?.isFavorite == false)
         let revision = vm.catalogSnapshot.revision
@@ -226,6 +257,39 @@ import ArcanePorting
             return (Data(), HTTPURLResponse(url: request.url!, statusCode: 404, httpVersion: nil, headerFields: nil)!)
         }
         return NextendoSettings(store: store, service: .init(oauth: oauth))
+    }
+
+    /// The profile's portrait sits on the right beside the clock: its accent ring is in the right third of the
+    /// bar and nowhere in the left third (no portrait, no filter chip).
+    @MainActor static func checkTopBar(in out: URL, profile: LocalProfile, accent: Color) throws {
+        let size = CGSize(width: 1440, height: 810)
+        let bar = SpotlightTopBar(filter: .notPlayed, sort: .recent)
+            .environment(\.profilePortrait, profile)
+            .environment(\.seleneCanvas, SeleneCanvas(size: size))
+            .environment(\.seleneReduceMotion, true)
+            .frame(width: size.width, height: 110 * size.height / 1080 , alignment: .top)
+            .background(Color.black)
+        let image = try bitmap(bar)
+        let rep = NSBitmapImageRep(cgImage: image)
+        let ring = NSColor(accent).usingColorSpace(.deviceRGB)!
+        var columns: [Int] = []
+        for x in 0..<rep.pixelsWide {
+            for y in 0..<rep.pixelsHigh {
+                guard let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) else { continue }
+                if abs(c.redComponent - ring.redComponent) < 0.08, abs(c.greenComponent - ring.greenComponent) < 0.08,
+                   abs(c.blueComponent - ring.blueComponent) < 0.08 { columns.append(x); break }
+            }
+        }
+        precondition(!columns.isEmpty, "the profile ring is not drawn")
+        precondition(columns.allSatisfy { $0 > rep.pixelsWide * 2 / 3 }, "the profile ring is not on the right: \(columns.min()!)")
+        // Nothing but black in the left third: no portrait and no filter chip under it.
+        for x in 0..<rep.pixelsWide / 4 {
+            for y in 0..<rep.pixelsHigh {
+                let c = rep.colorAt(x: x, y: y)!.usingColorSpace(.deviceRGB)!
+                precondition(c.redComponent + c.greenComponent + c.blueComponent < 0.05, "something is drawn at the top left")
+            }
+        }
+        try save(image, to: out.appendingPathComponent("07-top-bar-position.png"))
     }
 
     @MainActor static func checkGIF(in root: URL) throws {
@@ -405,6 +469,7 @@ extension NextendoAccountSnapshot {
         with (app / "ViewModels/NextendoSettings.swift").open("a") as swift:
             swift.write(r'''
 extension NextendoSettings {
+    func setPresenceFixture() { presenceShared = true }
     func setScreenFixture(_ presence: ProfilePresence, second: Bool = false) {
         switch presence {
         case .connected:

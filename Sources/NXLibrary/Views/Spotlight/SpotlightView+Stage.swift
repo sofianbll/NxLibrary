@@ -61,7 +61,7 @@ extension SpotlightView {
         let items = model.items
         return ZStack(alignment: .topLeading) {
             SpotlightTopBar(filter: filter, sort: settings.settings.librarySort, showClock: settings.settings.showClock,
-                            profileFocused: profileFocused,
+                            profileFocused: profileFocused, nextendo: viewModel.profileNextendo,
                             onSelect: { if !state.isLifted { setFilter($0) } })
                 // Comes in last with the hints (`finishEntrance`).
                 .opacity(rowShown && controlsShown ? 1 : 0)
@@ -99,13 +99,6 @@ extension SpotlightView {
                 .opacity(rowOpacity)
                 .allowsHitTesting(rowShown && entrance.takesInput)
                 .onPreferenceChange(TileArtPendingKey.self, perform: tileArtPending)
-
-                SpotlightFilterPill(filter: pillFilter, count: model.rowGameCount)
-                    .offset(x: canvas.u(80), y: canvas.u(88))
-                    // Opacity fades always run, reduce motion or not.
-                    .opacity(pillVisible && !entrance.holdsHidden ? 1 : 0)
-                    .animation(.easeOut(duration: 0.2), value: pillVisible)
-                    .animation(entranceRise, value: entrance.holdsHidden)
 
                 info(model, state: state)
                     .offset(x: canvas.u(80), y: canvas.u(420))

@@ -48,6 +48,24 @@ final class ButtonPromptsTests: XCTestCase {
         XCTAssertNil(menuSym)
     }
 
+    func testStickClickIsNeverTheBareRShoulderGlyph() {
+        let shoulders = Set([PromptButton.lb, .rb].flatMap { button in
+            [ButtonNameStyle.nintendo, .xbox, .playstation].compactMap { ButtonPrompts.symbol(button, style: $0, connected: .none) }
+        })
+        for style in [ButtonNameStyle.nintendo, .xbox, .playstation] {
+            let symbol = ButtonPrompts.symbol(.rs, style: style, connected: .none)
+            XCTAssertNotNil(symbol)
+            XCTAssertFalse(symbol!.hasPrefix("r.joystick"), "\(style)")
+            XCTAssertFalse(shoulders.contains(symbol!), "\(style)")
+        }
+        XCTAssertEqual(ButtonPrompts.symbol(.rs, style: .xbox, connected: .none), "rsb.button.angledbottom.horizontal.right")
+        XCTAssertEqual(ButtonPrompts.symbol(.rs, style: .playstation, connected: .none), "r3.button.angledbottom.horizontal.right")
+        // A pad that reports the bare "R" stick disc gets its family's glyph instead.
+        XCTAssertEqual(ButtonPrompts.symbol(.rs, style: .automatic, connected: .xbox,
+                                            reported: [.rs: "r.joystick.press.down"]),
+                       "rsb.button.angledbottom.horizontal.right")
+    }
+
     func testGenericShapeDetection() {
         XCTAssertTrue(ButtonPrompts.isGenericShape("circle"))
         XCTAssertTrue(ButtonPrompts.isGenericShape("circle.fill"))

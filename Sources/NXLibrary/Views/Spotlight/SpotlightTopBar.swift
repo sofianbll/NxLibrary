@@ -2,7 +2,7 @@ import SwiftUI
 import NXLibraryCore
 
 /// Selene's top bar (Main.xaml HubTopBarBackground + HomeNav.RenderFilterTabs):
-/// 110 high, 64 side margins, LB · filter tabs · RB centered, clock on the right.
+/// 110 high, 64 side margins, LB · filter tabs · RB centered, profile avatar and clock on the right.
 /// Shared by Spotlight and Collection.
 struct SpotlightTopBar: View {
     @Environment(\.seleneCanvas) private var canvas
@@ -14,6 +14,8 @@ struct SpotlightTopBar: View {
     let sort: LibrarySort
     var showClock: Bool = true
     var profileFocused = false
+    /// The profile's Nextendo account: its presence dot shows while the profile is visible online.
+    var nextendo: NextendoSettings? = nil
     var onSelect: (LibraryFilter) -> Void = { _ in }
 
     @State private var popScale: CGFloat = 1
@@ -26,18 +28,10 @@ struct SpotlightTopBar: View {
                 ForEach(LibraryFilter.allCases) { tab($0) }
                 badge(.rb)
             }
-            HStack {
-                if let profile {
-                    Button(action: Self.openProfile) {
-                        ProfilePortrait(profile: profile, size: 44, ring: true)
-                            .modifier(TileFocus(focused: profileFocused, radius: 22, scale: 1.1))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(profile.name)
-                    .accessibilityHint(L10n.text("Open profile", context: locale))
-                    .accessibilityAddTraits(profileFocused ? .isSelected : [])
-                }
+            // Selene's order, right to left: the clock, then the profile's avatar just before it.
+            HStack(spacing: canvas.u(16)) {
                 Spacer()
+                if let profile { profileButton(profile) }
                 if showClock {
                     TimelineView(.everyMinute) { context in
                         Text(context.date, format: .dateTime.hour().minute())
@@ -52,6 +46,22 @@ struct SpotlightTopBar: View {
         .padding(.horizontal, canvas.u(64))
         .frame(height: canvas.u(110))
         .onChange(of: filter) { pop() }
+    }
+
+    private func profileButton(_ profile: LocalProfile) -> some View {
+        Button(action: Self.openProfile) {
+            ProfilePortrait(profile: profile, size: 44, ring: true)
+                .overlay(alignment: .bottomTrailing) {
+                    if let nextendo, profile.appearsOnline != false {
+                        OnlineDot(nextendo: nextendo).offset(x: canvas.u(2), y: canvas.u(2))
+                    }
+                }
+                .modifier(TileFocus(focused: profileFocused, radius: 22, scale: 1.1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(profile.name)
+        .accessibilityHint(L10n.text("Open profile", context: locale))
+        .accessibilityAddTraits(profileFocused ? .isSelected : [])
     }
 
     static func openProfile() { NotificationCenter.default.post(name: .nxOpenLocalProfile, object: nil) }
@@ -93,6 +103,21 @@ struct SpotlightTopBar: View {
         DispatchQueue.main.async {
             if !reduceMotion { withAnimation(SeleneTheme.cubicOut(0.2)) { popScale = 1 } }
             withAnimation(.linear(duration: 0.16)) { popOpacity = 1 }
+        }
+    }
+}
+
+/// The presence dot on the avatar: green while Nextendo shares this profile as online.
+private struct OnlineDot: View {
+    @ObservedObject var nextendo: NextendoSettings
+    @Environment(\.seleneCanvas) private var canvas
+
+    var body: some View {
+        if nextendo.presenceShared == true {
+            Circle().fill(SeleneTheme.statusOK)
+                .frame(width: canvas.u(12), height: canvas.u(12))
+                .overlay(Circle().strokeBorder(SeleneTheme.scrim, lineWidth: canvas.u(2)))
+                .accessibilityHidden(true)
         }
     }
 }

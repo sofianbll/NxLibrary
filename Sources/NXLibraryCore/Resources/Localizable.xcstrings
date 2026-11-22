@@ -42105,7 +42105,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Actualización de la biblioteca"
+            "value": "Actualizar la biblioteca"
           }
         },
         "pt-BR": {
@@ -63997,53 +63997,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "配置"
-          }
-        }
-      }
-    },
-    "Setup check": {
-      "comment": "MenuSelectionModel.swift",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Setup check"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Controllo di configurazione"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vérification de configuration"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Einrichtungsprüfung"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Comprobación inicial"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verificação de configuração"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "配置检查"
           }
         }
       }
@@ -90988,6 +90941,18 @@
         "es": {"stringUnit": {"state": "translated", "value": "¿Quién juega?"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Quem vai jogar?"}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "谁在玩？"}}
+      }
+    },
+    "Profile": {
+      "comment": "MenuSelectionModel.swift",
+      "localizations": {
+        "de": { "stringUnit": { "state": "translated", "value": "Profil" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Profile" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Perfil" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Profil" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Profilo" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Perfil" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "个人资料" } }
       }
     },
     "Profiles": {
