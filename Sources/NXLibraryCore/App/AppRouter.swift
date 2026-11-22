@@ -130,14 +130,16 @@ public final class AppRouter: ObservableObject {
         case .up: movePowerMenu(by: -1); moveEntryMenu(by: -1)
         case .down: movePowerMenu(by: 1); moveEntryMenu(by: 1)
         case .previous, .next:
-            let inPanel = menuSelection.isSubmenuOpen || activityCenterFocus != nil
-            // Settings leaves the control center; only an explicit confirm opens it.
-            let icons = MenuAction.allCases.filter { !inPanel || $0 != .settings }
-            guard let index = icons.firstIndex(of: menuSelection.selected) else { return .none }
             let delta = step == .previous ? -1 : 1
-            let next = icons[(index + delta + icons.count) % icons.count]
-            if inPanel { return .action(next) }
-            menuSelection.selected = next
+            guard menuSelection.isSubmenuOpen || activityCenterFocus != nil else {
+                moveMenu(by: delta)
+                return .none
+            }
+            // Settings leaves the control center; only an explicit confirm opens it.
+            let panels = MenuAction.allCases.filter { $0 != .settings }
+            if let index = panels.firstIndex(of: menuSelection.selected), panels.indices.contains(index + delta) {
+                return .action(panels[index + delta])
+            }
         case .confirm:
             if menuSelection.isPowerOpen { return .power(menuSelection.power) }
             if menuSelection.isEntryOpen { return .entry(menuSelection.entry) }

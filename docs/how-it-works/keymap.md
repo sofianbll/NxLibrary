@@ -23,7 +23,7 @@ Menu apre il centro di controllo al rilascio; a 500 ms apre invece Settings, con
 | Collection | View passa a Spotlight. B torna indietro quando c'è un livello da chiudere; non cambia la vista iniziale. X apre Details su un gioco giocabile o scaricabile, Y le opzioni. |
 | Details | B torna da dove arriva; Y apre le opzioni, X e View non fanno nulla. |
 | Settings / Add Game / Console | B chiude o torna al livello precedente. Menu apre il centro se nessun dialogo blocca l'input. |
-| Centro di controllo | LB/RB scorrono le icone o passano a un altro pannello aperto (Settings richiede conferma). A seleziona; B chiude un pannello o il centro. Menu corto non chiude il centro. |
+| Centro di controllo | LB/RB scorrono le icone o passano al pannello adiacente, fermandosi alle estremità. Settings richiede conferma. A seleziona; B chiude un pannello o il centro. Menu corto non chiude il centro. |
 | Settings | LB/RB cambiano sezione; non prendono le lettere da un campo di testo. |
 | Pagina profilo e Obiettivi | LB/RB spostano il focus nel profilo e nella raccolta della scheda. In Obiettivi cambiano filtro, o scorrono gli elementi nel dettaglio aperto. |
 | Selettore profili | A sceglie, Menu aggiunge, Y modifica; B o Home chiude la sovrapposizione e torna al focus precedente. |

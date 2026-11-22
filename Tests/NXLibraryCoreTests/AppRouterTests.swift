@@ -85,14 +85,16 @@ final class AppRouterTests: XCTestCase {
         let router = AppRouter()
         router.isMenuPresented = true
         XCTAssertEqual(router.menuStep(.next), .none)
-        XCTAssertEqual(router.menuSelection.selected, .profile)
-        XCTAssertEqual(router.menuStep(.previous), .none)
         XCTAssertEqual(router.menuSelection.selected, .power)
         XCTAssertEqual(router.menuStep(.previous), .none)
         XCTAssertEqual(router.menuSelection.selected, .settings)
         XCTAssertEqual(router.menuStep(.confirm), .action(.settings))
+        XCTAssertEqual(router.menuStep(.next), .none)
+        XCTAssertEqual(router.menuSelection.selected, .power)
 
         router.pressMenuIcon(.profile)
+        XCTAssertEqual(router.menuStep(.previous), .none)
+        XCTAssertEqual(router.menuStep(.confirm), .entry(.myProfile))
         XCTAssertEqual(router.menuStep(.next), .action(.library))
         router.pressMenuIcon(.library)
         XCTAssertEqual(router.menuStep(.confirm), .entry(.addGame))
@@ -102,6 +104,7 @@ final class AppRouterTests: XCTestCase {
         XCTAssertEqual(router.menuStep(.next), .action(.power))
         router.pressMenuIcon(.power)
         XCTAssertNil(router.activityCenterFocus)
+        XCTAssertEqual(router.menuStep(.next), .none)
         XCTAssertEqual(router.menuStep(.confirm), .power(.quit))
         XCTAssertEqual(router.menuStep(.previous), .action(.activityCenter))
     }
