@@ -59,7 +59,7 @@ public struct CloudArtifactStatus: Equatable, Sendable {
 }
 
 public struct CloudArchiveProgress: Equatable, Sendable {
-    public enum Phase: Equatable, Sendable { case preparing, uploading, verifying, downloading, restoring }
+    public enum Phase: Equatable, Sendable { case preparing, uploading, verifying, downloading, restoring, readyToInstall }
     public let phase: Phase
     public let kind: CloudArtifactKind?
     public let transfer: StorageProgress?
@@ -581,7 +581,8 @@ public actor CloudGameArchive {
         try await upload(game, kinds: Set(CloudArtifactKind.allCases), progress: progress)
     }
 
-    public func upload(_ game: CloudArchiveGame, kinds: Set<CloudArtifactKind>, progress: Progress? = nil) async throws -> CloudGameManifest {
+    public func upload(_ game: CloudArchiveGame, kinds: Set<CloudArtifactKind>, progress: Progress? = nil,
+                       beforePublication: @Sendable () throws -> Void = {}) async throws -> CloudGameManifest {
         guard (backend as? RcloneStorageBackend)?.isReference != true else { throw StorageBackendError.invalidConfiguration }
         let lease = try begin(game.titleID)
         defer { leases.end(game.titleID, token: lease) }
@@ -694,6 +695,7 @@ public actor CloudGameArchive {
         let timestamp = String(format: "%016lld", Int64(now.timeIntervalSince1970 * 1000))
         guard let gameFolder else { throw CloudArchiveError.unsafePath }
         let key = StorageObjectKey("\(gameFolder)/manifests/\(timestamp)-\(hashes["sha256"]!).json")
+        try beforePublication()
         try await put(file, object: StorageObject(key: key, size: Int64(data.count), hashes: hashes), progress: nil)
         return manifest
     }
@@ -759,7 +761,8 @@ public actor CloudGameArchive {
     @discardableResult
     package func restore(_ kind: CloudArtifactKind, for game: CloudArchiveGame, from manifest: CloudGameManifest?,
                          replacingCopyFrom older: CloudGameManifest? = nil,
-                         onlyIfMissing: Bool, progress: Progress?, beforeMutation: @Sendable () throws -> Void) async throws -> URL? {
+                         onlyIfMissing: Bool, progress: Progress?, beforeMutation: @Sendable () throws -> Void,
+                         beforeAppInstall: (@MainActor @Sendable () async throws -> Void)? = nil) async throws -> URL? {
         let lease = try begin(game.titleID)
         defer { leases.end(game.titleID, token: lease) }
         progress?(.init(.verifying, kind: kind))
@@ -832,14 +835,22 @@ public actor CloudGameArchive {
             _ = try await unpack(archive, to: incoming, kind: kind, titleID: game.titleID,
                                  listed: entries, fingerprint: artifact.inventorySHA256)
         }
-        try beforeMutation()
-        guard try sameDirectory(volume, at: parent),
-              try sameNode(previous, at: destination) else { throw CloudArchiveError.localChanged }
-        if replacingReference, let existing,
-           try CloudArchiveInventory.signature(destination, kind: kind).sha256 != existing.sha256 {
-            throw CloudArchiveError.localChanged
+        while true {
+            if kind == .app { try await beforeAppInstall?() }
+            guard try sameDirectory(volume, at: parent),
+                  try sameNode(previous, at: destination) else { throw CloudArchiveError.localChanged }
+            if replacingReference, let existing,
+               try CloudArchiveInventory.signature(destination, kind: kind).sha256 != existing.sha256 {
+                throw CloudArchiveError.localChanged
+            }
+            do { try beforeMutation() }
+            catch CloudArchiveError.busy where kind == .app && beforeAppInstall != nil {
+                // Finder may launch while the installed copy is being checked.
+                continue
+            }
+            try Task.checkCancellation()
+            break
         }
-        try Task.checkCancellation()
         let flags = previous == nil ? RENAME_EXCL : RENAME_SWAP
         try moving(existing?.skippedRoots ?? [], from: destination, to: incoming, keepStage: &keepStage) {
             guard renamex_np(incoming.path, destination.path, UInt32(flags)) == 0 else { throw CloudArchiveError.installFailed }

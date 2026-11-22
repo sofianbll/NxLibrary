@@ -35,6 +35,8 @@ extension AppShellView {
             viewModel.runningGameCount = ids.count
             // A game that quit lets the build that waited for it go in (after this change is published).
             DispatchQueue.main.async {
+                viewModel.cloudLibrary.appInstallWake?.yield(())
+                viewModel.porting.scheduleNextBuild()
                 viewModel.installPendingBuilds()
                 // An icon chosen while the game ran goes on once it quits.
                 viewModel.appIcon.syncPendingAppIcons()

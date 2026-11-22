@@ -136,7 +136,7 @@ struct ActivityCenterView: View {
                             : (job.active ? SeleneTheme.ink : SeleneTheme.ink60)
                         let moving: Bool = if case .move = row { cloudLibrary.libraryMove?.isCancelling == false } else { false }
                         ActivityRow(title: job.title, detail: job.detail, fraction: job.fraction,
-                                    indeterminate: job.active && cloud,
+                                    indeterminate: job.active && cloud && indicator?.status != .queued,
                                     pulses: indicator?.isTransferring ?? moving,
                                     status: indicator?.label(context: localization) ?? text(job.active ? "In progress" : "Queued"),
                                     color: color, progressColor: cloud ? color : SeleneTheme.focus,

@@ -33,7 +33,9 @@ struct CloudLibraryPanel: View {
     private enum FreeControl: Equatable { case item(CloudLibraryItem), cancel, confirm }
 
     private var state: CloudLibraryState { model.states[game.id] ?? CloudLibraryState() }
-    private var canChange: Bool { state.action == nil && !state.refreshing && viewModel.canChangeCloudLibrary(game) }
+    private func canChange(_ action: CloudLibraryAction) -> Bool {
+        state.action == nil && !state.refreshing && viewModel.canChangeCloudLibrary(action, for: game)
+    }
     private var unavailable: String? {
         if model.preference.remote == nil { return "No cloud service is configured." }
         if !model.preference.enabled { return "The cloud library is turned off." }
@@ -119,6 +121,7 @@ struct CloudLibraryPanel: View {
         let personalCopyIsOlder = !live && !state.queued && item.artifact.map(state.personalCopyIsOlder) == true
         let downloadFill = CloudLibraryProgressView.downloadFill(state, item: item)
         let downloading = CloudLibraryProgressView.isDownloading(state, item: item)
+        let ready = downloading && state.progress?.phase == .readyToInstall
         let downloadBytes = downloadFill == nil ? nil
             : CloudLibraryProgressView.bytesSummary(state.progress, context: localization)
         let statusText = personalCopyIsOlder ? text("Your cloud copy is older") : indicator.label(context: localization)
@@ -128,7 +131,8 @@ struct CloudLibraryPanel: View {
                     Text(title).seleneFont(17, .semibold).foregroundColor(SeleneTheme.ink90)
                         .accessibilityAddTraits(.isHeader)
                     SeleneStatusDot(text: downloadBytes ?? reference ?? statusText, color: indicator.status.color,
-                                    labelColor: indicator.status == .failed ? PortingPillCopy.softRed : SeleneTheme.ink90,
+                                    labelColor: ready ? SeleneTheme.ink60
+                                        : indicator.status == .failed ? PortingPillCopy.softRed : SeleneTheme.ink90,
                                     accessibilityTitle: title,
                                     pulses: indicator.isTransferring)
                 }
@@ -153,7 +157,7 @@ struct CloudLibraryPanel: View {
                 }
                 HStack(spacing: canvas.u(10)) {
                     if downloading, control == .cancel {
-                        downloadButton(nil, fill: downloadFill ?? 0)
+                        downloadButton(nil, fill: downloadFill ?? 0, ready: ready)
                     }
                     if let control {
                         switch control {
@@ -227,20 +231,19 @@ struct CloudLibraryPanel: View {
 
     private func artifactControl(_ item: CloudLibraryItem) -> Control? {
         if state.activeItem == item { return .cancel }
-        guard canChange else { return nil }
         guard let kind = item.artifact else {
-            if state.referenceSourceBytes != nil { return .downloadSources }
+            if state.referenceSourceBytes != nil { return canChange(.downloadSources) ? .downloadSources : nil }
             switch state.sources?.state {
-            case .notInCloud: return GameResourceState.sourcesAvailable(for: game) ? .uploadSources : nil
-            case .cloudOnly: return .downloadSources
+            case .notInCloud:
+                return canChange(.uploadSources) && GameResourceState.sourcesAvailable(for: game) ? .uploadSources : nil
+            case .cloudOnly: return canChange(.downloadSources) ? .downloadSources : nil
             default: return nil
             }
         }
-        if state.referenceCopies[kind] != nil { return .download(kind) }
-        switch state.copies[kind]?.state {
-        case .cloudOnly: return .download(kind)
-        default: return state.canUpload(kind) ? .upload(kind) : nil
+        if state.referenceCopies[kind] != nil || state.copies[kind]?.state == .cloudOnly {
+            return canChange(.restore(kind)) ? .download(kind) : nil
         }
+        return canChange(.upload(kind)) && state.canUpload(kind) ? .upload(kind) : nil
     }
 
     private var controls: [Control] {
@@ -264,8 +267,9 @@ struct CloudLibraryPanel: View {
             buttons.append(.settings)
         }
         buttons.append(.refresh)
-        if canChange && !CloudFreeSelection(state: state).available.isEmpty { buttons.append(.free) }
-        if canChange && state.canUploadBoth { buttons.append(.upload(nil)) }
+        let available = CloudFreeSelection(state: state).available
+        if !available.isEmpty && canChange(.free(available)) { buttons.append(.free) }
+        if canChange(.upload(nil)) && state.canUploadBoth { buttons.append(.upload(nil)) }
         return buttons
     }
 
@@ -299,8 +303,8 @@ struct CloudLibraryPanel: View {
             .onHover { if $0 { focus = control } }
     }
 
-    private func downloadButton(_ control: Control?, fill: Double) -> some View {
-        SelenePillButton(title: "Download", icon: .cloudDownload, iconSize: 20, minWidth: 0, height: 44,
+    private func downloadButton(_ control: Control?, fill: Double, ready: Bool = false) -> some View {
+        SelenePillButton(title: ready ? "Ready to install" : "Download", icon: .cloudDownload, iconSize: 20, minWidth: 0, height: 44,
                          horizontalPadding: 14, focused: false, downloadFill: fill, passive: control == nil) {
             if let control { choose(control) }
         }
@@ -519,6 +523,7 @@ struct CloudLibraryProgressView: View {
         case (.downloading, nil): return "Downloading game files"
         case (.restoring, .app): return "Restoring app"
         case (.restoring, _): return "Restoring build cache"
+        case (.readyToInstall, _): return "Update ready · applied when you quit the game"
         }
     }
 
@@ -583,7 +588,7 @@ struct CloudLibraryIndicator {
     }
 
     var status: CloudLibraryStatus {
-        if queued { return .queued }
+        if queued || (progress && state.progress?.phase == .readyToInstall) { return .queued }
         if progress { return .pending }
         if failed { return .failed }
         if let item, item.artifact.flatMap({ state.referenceCopies[$0] }) != nil ||

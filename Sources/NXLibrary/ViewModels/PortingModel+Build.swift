@@ -356,6 +356,7 @@ extension PortingModel {
 
     private func buildTitleBusy(_ game: PortedGame) -> Bool {
         app.appIcon.appIconsInFlight.contains(game.id)
+            || RunningGameMonitor.runningApplication(for: game) != nil
             || app.cloudLibrary.conflicts(with: buildScope(for: game))
             || game.titleId.map { app.saveGate.isBusy(titleID: $0) } == true
     }
@@ -452,6 +453,7 @@ extension PortingModel {
 
     private func checkBuildIdle(for game: PortedGame) throws {
         guard !app.isBuilding else { throw NXLibraryError.buildAlreadyRunning }
+        guard RunningGameMonitor.runningApplication(for: game) == nil else { throw CloudArchiveError.busy }
         guard !app.cloudLibrary.isChangingConnection,
               !app.cloudLibrary.isWorking || !app.cloudLibrary.conflicts(with: buildScope(for: game)) else {
             throw CloudArchiveError.busy

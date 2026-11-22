@@ -289,6 +289,7 @@ final class AppViewModel: ObservableObject {
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.hasActiveSaveOperations = self.saveGate.hasActiveOperations
+                self.cloudLibrary.appInstallWake?.yield(())
                 self.porting.scheduleNextBuild()
             }
         }

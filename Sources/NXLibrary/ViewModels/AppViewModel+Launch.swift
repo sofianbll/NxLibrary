@@ -10,6 +10,13 @@ extension AppViewModel {
     func launchGame(_ game: PortedGame, acceptsLocalFallback: Bool = false) {
         // One launch at a time: the launch screen covers the library, and input reaching it changes nothing.
         guard launchingGameId == nil, launchOverlay == nil else { return }
+        if let title = game.titleId, cloudLibrary.appInstall?.title == title.uppercased() {
+            cloudLibrary.playAfterAppInstall = { [weak self] in
+                guard let self, let current = self.libraryGames.first(where: { $0.id == game.id }) else { return }
+                self.launchGame(current, acceptsLocalFallback: acceptsLocalFallback)
+            }
+            return
+        }
         // A running game is brought forward, never started a second time.
         if let running = RunningGameMonitor.runningApplication(for: game) {
             if let runningGameMonitor { Task { @MainActor in runningGameMonitor.resume(game) } }

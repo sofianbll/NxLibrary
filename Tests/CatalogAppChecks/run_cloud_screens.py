@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 HOST = r'''
 import AppKit
+import Combine
 import CoreText
 import SwiftUI
 import NXLibraryCore
@@ -94,6 +95,7 @@ import ArcanePorting
                 showsCloudBadges: true, onSelect: { _ in }, onActivate: { _ in }),
             size: .init(width: 400, height: 440))
         // DOWNLOAD_FILL_CHECK
+        // PLAY_TRANSFER_CHECK
         // TYPED_PATH_CHECK
         // MULTIPLAYER_CHECK
         // REFERENCE_START
@@ -212,8 +214,168 @@ DOWNLOAD_FILL = r'''
         model.update(game.id) { $0.progress = .init(.verifying, kind: .app, downloadComplete: true) }
         checkDownloadFill(1)
         precondition(CloudLibraryProgressView.fraction(model.states[game.id]?.progress) == nil)
+        model.update(game.id) { $0.progress = .init(.readyToInstall, kind: .app, downloadComplete: true) }
+        checkDownloadFill(1)
+        let waiting = CloudLibraryIndicator(state: model.states[game.id]!, item: .app)
+        precondition(waiting.status == .queued && !waiting.isTransferring)
+        precondition(waiting.label(context: fr) == "Mise à jour prête · appliquée quand tu quittes le jeu")
+        try render("panel-update-ready", output,
+            CloudLibraryPanel(viewModel: vm, model: model, game: game).environment(\.nxAppLocale, fr))
+        model.active = (queuedRequest, Task {})
+        try render("activity-update-ready", output, activity.environment(\.nxAppLocale, fr),
+            size: .init(width: 1440, height: 800))
+        model.active = nil
         model.update(game.id) { $0.queued = true }
         checkDownloadFill(nil)
+'''
+
+PLAY_TRANSFER = r'''
+extension CloudScreenProbe {
+    @MainActor static func checkPlayDuringTransfer(in root: URL) async throws {
+        let fm = FileManager.default
+        let folder = root.appendingPathComponent("transfer-fixture")
+        let app = folder.appendingPathComponent("Running.app")
+        let remote = folder.appendingPathComponent("personal")
+        let shared = folder.appendingPathComponent("reference")
+        let config = folder.appendingPathComponent("rclone.conf")
+        let title = "0100000000009000", bundleID = "local.arcane.screen-game"
+        for directory in [app.appendingPathComponent("Contents/MacOS"), remote, shared] {
+            try fm.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
+        try Data("[fixture]\ntype = alias\nremote = :local:\(shared.path)\n".utf8).write(to: config)
+        let backend = RcloneStorageBackend(remote: ":local:", root: remote.path, config: config)
+        let referenceWrite = RcloneStorageBackend(remote: ":local:", root: shared.path, config: config)
+        let referenceRead = RcloneStorageBackend(remote: "fixture", root: "", config: config).reference(folderID: "1-fixture")!
+        let plist = app.appendingPathComponent("Contents/Info.plist")
+        func sign(_ version: String) throws {
+            let info: [String: String] = ["CFBundleIdentifier": bundleID, "CFBundleExecutable": "Fixture",
+                "CFBundlePackageType": "APPL", "CFBundleShortVersionString": version, "DMTitleID": title]
+            try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0).write(to: plist)
+            let command = Process()
+            command.executableURL = URL(fileURLWithPath: "/usr/bin/codesign")
+            command.arguments = ["--force", "--sign", "-", app.path]
+            try command.run()
+            command.waitUntilExit()
+            precondition(command.terminationStatus == 0)
+        }
+        func version() throws -> String? {
+            let info = try PropertyListSerialization.propertyList(from: Data(contentsOf: plist), format: nil)
+            return (info as? [String: String])?["CFBundleShortVersionString"]
+        }
+        func until(_ predicate: () -> Bool) async throws {
+            for _ in 0..<1_000 {
+                if predicate() { return }
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            throw CocoaError(.fileReadUnknown, userInfo: [NSDebugDescriptionErrorKey: "Timed out in play-transfer fixture"])
+        }
+        try fm.copyItem(at: URL(fileURLWithPath: "/usr/bin/true"), to: app.appendingPathComponent("Contents/MacOS/Fixture"))
+        try sign("1.0")
+        var game = PortedGame(name: "Fixture", url: app, platform: .macApp, sizeBytes: 0,
+                              modificationDate: .now, bundleId: bundleID, titleId: title)
+        game.status = .builtSourcesMissing
+        let repository = CatalogRepository(store: .init(directory: root))
+        _ = try repository.mergeNXNative(scanned: [game], enableSource: true)
+        let settings = AppSettingsStore(fileURL: root.appendingPathComponent("settings.json"))
+        func makeModel() throws -> AppViewModel {
+            let catalog = try repository.load()
+            let vm = AppViewModel(settingsStore: settings, catalog: catalog, repository: repository)
+            vm.applyCatalog(catalog)
+            vm.cloudLibrary.installScreenArchives(backend)
+            return vm
+        }
+
+        var vm = try makeModel()
+        let monitor = RunningGameMonitor(center: NotificationCenter())
+        monitor.setGames([game])
+        RunningGameMonitor.screenRunning.withLock { $0 = bundleID }
+        monitor.start(sessions: PlaySessionStore(), engineFolder: { "" })
+        let watch = monitor.$runningGameIDs.sink { _ in vm.cloudLibrary.appInstallWake?.yield(()) }
+        defer { watch.cancel(); monitor.stop() }
+        precondition(monitor.runningGameIDs == [game.id])
+        vm.restoreCloudQueue()
+        try await until { vm.cloudLibrary.hasRestoredQueue }
+        vm.cloudLibrary.update(game.id) {
+            $0.copies = [.app: .screenFixture(.notInCloud, hasLocalCopy: true),
+                         .cache: .screenFixture(.notInCloud, hasLocalCopy: false)]
+        }
+        precondition(vm.canChangeCloudLibrary(.upload(.app), for: game))
+        for action: CloudLibraryAction in [.upload(.cache), .upload(nil), .restore(.cache), .free([.app])] {
+            precondition(!vm.canChangeCloudLibrary(action, for: game))
+        }
+        do {
+            try vm.porting.beginBuild(for: game)
+            preconditionFailure("Rebuild started during play")
+        } catch CloudArchiveError.busy {}
+        vm.performCloudLibrary(.upload(.app), for: game)
+        guard let sending = vm.cloudLibrary.active?.task else {
+            throw CocoaError(.fileWriteUnknown, userInfo: [NSDebugDescriptionErrorKey: "App upload was not queued"])
+        }
+        await sending.value
+        let archive = vm.cloudLibrary.archive!
+        let manifest = try await archive.latest(titleID: title)
+        let sentVersion = try version()
+        precondition(manifest?.artifacts.map(\.kind) == [.app] && sentVersion == "1.0",
+                     vm.cloudLibrary.states[game.id]?.issue?.message ?? "App upload did not publish")
+        precondition(monitor.runningGameIDs == [game.id] && !vm.saveGate.isBusy(titleID: title))
+        try await until { vm.cloudLibrary.states[game.id]?.refreshing != true }
+
+        // Personal download: the running process can be a Finder copy elsewhere, while this path is absent.
+        try fm.removeItem(at: app)
+        vm.cloudLibrary.update(game.id) { $0.copies[.app] = .screenFixture(.cloudOnly) }
+        vm.performCloudLibrary(.restore(.app), for: game)
+        try await until { vm.cloudLibrary.states[game.id]?.progress?.phase == .readyToInstall }
+        precondition(!fm.fileExists(atPath: app.path))
+        let quitting = vm.cloudLibrary.stopForQuit()
+        await quitting?.value
+        let contents = try fm.contentsOfDirectory(atPath: folder.path)
+        precondition(!contents.contains { $0.hasPrefix(".arcane-cloud-") && !$0.hasPrefix(".arcane-cloud-files-") })
+        precondition(!fm.fileExists(atPath: app.path))
+
+        // Startup resumes the same queue request without publishing while the game is still running.
+        vm = try makeModel()
+        vm.restoreCloudQueue()
+        try await until { vm.cloudLibrary.states[game.id]?.progress?.phase == .readyToInstall }
+        precondition(!fm.fileExists(atPath: app.path))
+        var launchedVersion: String?
+        vm.screenPlay = { _ in launchedVersion = try! version() }
+        let launchAtSwap = vm.cloudLibrary.$states.sink { states in
+            if vm.cloudLibrary.appInstall != nil && states[game.id]?.progress?.phase == .restoring {
+                vm.launchGame(game)
+                precondition(launchedVersion == nil && vm.cloudLibrary.playAfterAppInstall != nil)
+            }
+        }
+        RunningGameMonitor.screenRunning.withLock { $0 = nil }
+        monitor.refresh()
+        await vm.cloudLibrary.active?.task.value
+        launchAtSwap.cancel()
+        precondition(monitor.runningGameIDs.isEmpty && launchedVersion == "1.0")
+        try await until { vm.cloudLibrary.states[game.id]?.refreshing != true }
+
+        // Reference may replace an installed, older bundle, but never while it's running.
+        let older = folder.appendingPathComponent("previous")
+        try fm.copyItem(at: app, to: older)
+        try await Task.sleep(for: .seconds(1))
+        try sign("2.0")
+        _ = try await CloudGameArchive(backend: referenceWrite).upload(.init(titleID: title, locations: [.app: app]), kinds: [.app])
+        try fm.removeItem(at: app)
+        try fm.moveItem(at: older, to: app)
+        vm.cloudLibrary.installScreenReference(referenceRead)
+        let selected = vm.libraryGames.first { $0.id == game.id }!
+        RunningGameMonitor.screenRunning.withLock { $0 = bundleID }
+        monitor.refresh()
+        vm.performCloudLibrary(.restore(.app), for: selected)
+        try await until { vm.cloudLibrary.states[game.id]?.progress?.phase == .readyToInstall }
+        let versionDuringPlay = try version()
+        precondition(versionDuringPlay == "1.0")
+        RunningGameMonitor.screenRunning.withLock { $0 = nil }
+        monitor.refresh()
+        await vm.cloudLibrary.active?.task.value
+        let applied = try version()
+        precondition(applied == "2.0")
+        print("Play during app upload, personal restart and reference swap verified with local fixtures.")
+    }
+}
 '''
 
 MULTIPLAYER = r'''
@@ -445,6 +607,20 @@ extension CloudDriveFolders.Listing {
             change(app / "Views/Spotlight/SpotlightInfoView.swift",
                    r'        \.onAppear \{ reveal\(\) \}\n        \.onChange\(of: game.id\) \{ reveal\(\) \}\n', "")
             host = host.replace("// DOWNLOAD_FILL_CHECK", "do {\n" + DOWNLOAD_FILL + "\n        }")
+            host = host.replace("// PLAY_TRANSFER_CHECK", "try await checkPlayDuringTransfer(in: data)") + PLAY_TRANSFER
+            monitor = app / "Services/RunningGameMonitor.swift"
+            change(monitor, r'import AppKit', "import AppKit\nimport os")
+            change(monitor, r'    nonisolated static func runningApplication\(bundleID: String\).*?\n    }', '''
+    nonisolated static let screenRunning = OSAllocatedUnfairLock<String?>(initialState: nil)
+    nonisolated static func runningApplication(bundleID: String) -> NSRunningApplication? {
+        screenRunning.withLock { $0 == bundleID } ? .current : nil
+    }'''.lstrip("\n"))
+            change(monitor, r'        Set\(NSWorkspace.shared.runningApplications[^\n]*',
+                   '        screenRunning.withLock { Set([$0].compactMap { $0 }) }')
+            change(app / "ViewModels/AppViewModel.swift", r'    let saveGate =',
+                   '    var screenPlay: ((PortedGame) -> Void)?\n    let saveGate =')
+            change(app / "ViewModels/AppViewModel+Launch.swift", r'        guard savesPermitPlay\(game\) else \{ return \}',
+                   '        if let screenPlay { screenPlay(game); return }\n        guard savesPermitPlay(game) else { return }')
         if "onEditLibrary:" in section.read_text():
             host = host.replace("onEdit: {}, onEditSources:", "onEdit: {}, onEditLibrary: {}, onEditSources:")
             host = host.replace("/* ENTRY */", ", entry: .sources")
@@ -556,6 +732,12 @@ extension AppViewModel {
     }
 }
 extension CloudLibraryModel {
+    func installScreenArchives(_ fixture: RcloneStorageBackend) {
+        backend = fixture
+        archive = CloudGameArchive(backend: fixture)
+        sourceArchive = nil
+        referenceArchive = nil
+    }
     func installScreenReference(_ reference: RcloneStorageBackend) {
         referenceBackend = reference
         referenceArchive = CloudGameArchive(backend: reference)

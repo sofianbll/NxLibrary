@@ -22,6 +22,10 @@ public enum CloudLibraryAction: Codable, Equatable, Sendable {
     case uploadSources
     case downloadSources
 
+    public var allowsPlay: Bool {
+        self == .upload(.app) || self == .restore(.app)
+    }
+
     public func resumableFree(synchronized: Set<CloudLibraryItem>) -> Self? {
         guard case .free(let items) = self else { return nil }
         let remaining = items.intersection(synchronized)

@@ -299,7 +299,7 @@ struct GameDetailView: View {
                             etaText: viewModel.portingETAText,
                             cloud: cloud,
                             showsCloudPill: showsCloudPill,
-                            downloadEnabled: viewModel.canChangeCloudLibrary(game),
+                            downloadEnabled: viewModel.canChangeCloudLibrary(.restore(.app), for: game),
                             canCheckCloudSources: viewModel.canCheckCloudSources(for: game),
                             onPill: { pressPill($0) },
                             onOpenLog: { viewModel.revealLog(for: game) })

@@ -90813,6 +90813,28 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "来源：参考游戏库"}}
       }
     },
+    "Update ready · applied when you quit the game": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Update ready · applied when you quit the game"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Aggiornamento pronto · si applica quando chiudi il gioco"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mise à jour prête · appliquée quand tu quittes le jeu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Update bereit · wird beim Beenden des Spiels installiert"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Actualización lista · se aplica cuando sales del juego"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Atualização pronta · será aplicada quando você sair do jogo"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "更新已就绪 · 退出游戏时应用"}}
+      }
+    },
+    "Ready to install": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Ready"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Pronta"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Prête"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Bereit"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Lista"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Pronta"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "就绪"}}
+      }
+    },
     "Update this Mac from the reference · %@ of %@": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Update this Mac from the reference · %@ of %@"}},
