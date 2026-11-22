@@ -22,7 +22,9 @@ Non si distribuiscono salvataggi Nintendo. [TrophyNX](https://github.com/Imp3r1u
   Arcane Dev non legge salvataggi reali. Percorsi personalizzati, recuperi pendenti e cartelle
   con più utenti nxnative non si leggono.
 - La scheda Spotlight e la schermata Obiettivi usano il riepilogo condiviso con Steam,
-  senza una rarità fittizia. Il toast compare quando Arcane torna davanti. Al Play seguente
+  senza una rarità fittizia. La schermata rispetta Riduci movimento anche nei filtri, nelle
+  righe, nella transizione del dettaglio e nella sfumatura della lista. Il toast compare
+  quando Arcane torna davanti, con un titolo al singolare o al plurale. Al Play seguente
   l’overlay compatibile riceve l’ultimo snapshot, solo con totale, sbloccati e titoli recenti.
   L’host fissato a `99224562` non dichiara `DM_OVERLAY_DATA`; l’overlay richiede una build
   del gioco con un host compatibile.

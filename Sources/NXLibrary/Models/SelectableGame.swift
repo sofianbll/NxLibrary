@@ -20,7 +20,7 @@ struct SelectableGame: Identifiable, Equatable {
     }
 
     var formattedSize: String {
-        ByteCountFormatter.string(fromByteCount: totalSizeBytes, countStyle: .file)
+        seleneBytes(totalSizeBytes)
     }
 
     var baseFile: GameFileItem? {

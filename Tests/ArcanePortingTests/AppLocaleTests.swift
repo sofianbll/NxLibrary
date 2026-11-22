@@ -111,6 +111,11 @@ final class AppLocaleTests: XCTestCase {
             let result = GameDetailPresentation(game: game, metadata: nil, totalPlaytime: 0, lastPlayed: nil)
             XCTAssertTrue(result.size.contains(decimal), result.size)
         }
+        L10n.setContext(AppLocale(language: .french, region: "US"))
+        XCTAssertTrue(game.formattedSize.hasSuffix("Go"), game.formattedSize)
+        var smallerGame = game
+        smallerGame.sizeBytes = 42_000_000
+        XCTAssertTrue(smallerGame.formattedSize.hasSuffix("Mo"), smallerGame.formattedSize)
     }
 
     func testSaveSafetyCopyUsesTheSelectedLanguage() {
@@ -174,6 +179,17 @@ final class AppLocaleTests: XCTestCase {
         XCTAssertEqual(L10n.count("%lld games found.", 1, context: context), "1 game found.")
         XCTAssertEqual(L10n.count("%lld games found.", 0, context: context), "0 games found.")
         XCTAssertEqual(L10n.count("Detected %lld games in %@.", 2, arguments: ["My games"], context: context), "Detected 2 games in My games.")
+    }
+
+    func testAchievementToastUsesCatalogPluralForms() {
+        for (language, singular, plural): (AppLanguage, String, String) in [
+            (.english, "1 achievement unlocked", "3 achievements unlocked"),
+            (.french, "1 succès débloqué", "3 succès débloqués")
+        ] {
+            let context = AppLocale(language: language, region: "US")
+            XCTAssertEqual(L10n.count("%lld achievements unlocked", 1, context: context), singular)
+            XCTAssertEqual(L10n.count("%lld achievements unlocked", 3, context: context), plural)
+        }
     }
 
     func testTranslationsAndFallbackPreserveUserData() {

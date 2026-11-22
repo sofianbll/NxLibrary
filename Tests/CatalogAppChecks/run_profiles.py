@@ -387,6 +387,7 @@ import ArcanePorting
                                onFocus: { _ in }, onOpen: {}, onCloseDetail: {}, onClose: {})
         }
         L10n.setContext(fr)
+        precondition(LibrarySortMenu.hint(.recent, action: {}).hold == "Récents")
         try render("27-local-achievements", achievementScreen(), in: out, refs, "none")
         _ = achievementModel.handle(.confirm, summary: achievements)
         try render("28-local-achievement-detail", achievementScreen(), in: out, refs, "none")
@@ -394,6 +395,7 @@ import ArcanePorting
             SeleneBackdrop().still(true)
             AchievementUnlockToast(names: achievements.rows(.unlocked).map(\.name)).padding(24)
         }, in: out, refs, "none")
+        try await checkSessionCard(game: .init(nxnative: zelda), art: art, in: out, refs)
         try render("29-local-achievement-card", ZStack {
             SeleneBackdrop().still(true)
             DetailsAchievementsCard(summary: achievements, appID: 0, focused: false, onOpen: {})
@@ -468,6 +470,40 @@ import ArcanePorting
             panel(NSImage(contentsOf: beforeImage)!, "Arcane · avant")
             panel(NSImage(contentsOf: afterImage)!, "Arcane · après")
         }), to: out.appendingPathComponent("15-sort-avant-apres.png"))
+    }
+
+    @MainActor static func checkSessionCard(game: CatalogGame, art: ArtworkStore, in out: URL, _ refs: URL) async throws {
+        let end = Date()
+        let play = PlaySession(gameID: game.id, titleID: "fixture", bundleID: nil,
+                               startedAt: end.addingTimeInterval(-60), endedAt: end, lastHeartbeatAt: end)
+        let summary = SessionSummary(session: play, game: game, total: 60)!
+        var active = false
+        let presenter = SessionCardPresenter(isActive: { active })
+        let soundEnabled = SoundEffectService.shared.isSoundEnabled
+        SoundEffectService.shared.isSoundEnabled = false
+        defer { SoundEffectService.shared.isSoundEnabled = soundEnabled }
+
+        presenter.ended(summary, enabled: true)
+        presenter.profileDidChange()
+        active = true
+        presenter.becameActive()
+        try await Task.sleep(nanoseconds: SessionCardPresenter.delay + 500_000_000)
+        precondition(presenter.shown == nil, "A pending session card must not follow a profile switch")
+
+        presenter.ended(summary, enabled: true)
+        try await Task.sleep(nanoseconds: SessionCardPresenter.delay + 500_000_000)
+        precondition(presenter.shown == summary, "The new session card should appear")
+        func layer() -> some View {
+            ZStack {
+                SeleneBackdrop().still(true)
+                SessionCardLayer(presenter: presenter, game: { _ in nil }, metadata: [:], artwork: art)
+            }
+        }
+        try render("29-session-before-profile-switch", layer(), in: out, refs, "none")
+        presenter.profileDidChange()
+        precondition(presenter.shown == nil, "A visible session card must disappear on profile switch")
+        try render("29-session-after-profile-switch", layer(), in: out, refs, "none")
+        print("Session card profile reset passed")
     }
 
     @MainActor static func checkQueuedBackup(_ vm: AppViewModel, profiles: LocalProfileStore,

@@ -16,12 +16,17 @@ final class SessionCardPresenter: ObservableObject {
     private var achievementTask: Task<Void, Never>?
     private var pending: SessionSummary?
     private var task: Task<Void, Never>?
+    private let isActive: @MainActor () -> Bool
+
+    init(isActive: @escaping @MainActor () -> Bool = { @MainActor in NSApp?.isActive == true }) {
+        self.isActive = isActive
+    }
 
     /// A game closed; `enabled` is the Session card switch.
     func ended(_ summary: SessionSummary?, enabled: Bool) {
         guard enabled, let summary else { return }
         pending = summary
-        if NSApp.isActive { schedule() }
+        if isActive() { schedule() }
     }
 
     /// Arcane came forward: a waiting card shows.
@@ -32,10 +37,11 @@ final class SessionCardPresenter: ObservableObject {
 
     func unlocked(_ names: [String]) {
         pendingAchievements.append(contentsOf: names)
-        if NSApp.isActive { scheduleAchievements() }
+        if isActive() { scheduleAchievements() }
     }
 
-    func clearAchievements() {
+    func profileDidChange() {
+        clear()
         achievementTask?.cancel()
         pendingAchievements = []
         achievementNames = []
@@ -45,7 +51,7 @@ final class SessionCardPresenter: ObservableObject {
         achievementTask?.cancel()
         achievementTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: Self.delay)
-            guard let self, !Task.isCancelled, NSApp.isActive else { return }
+            guard let self, !Task.isCancelled, self.isActive() else { return }
             self.achievementNames = self.pendingAchievements
             self.pendingAchievements = []
             try? await Task.sleep(nanoseconds: Self.hold)
@@ -66,7 +72,7 @@ final class SessionCardPresenter: ObservableObject {
         task?.cancel()
         task = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: Self.delay)
-            guard let self, !Task.isCancelled, NSApp.isActive, let summary = self.pending else { return }
+            guard let self, !Task.isCancelled, self.isActive(), let summary = self.pending else { return }
             self.pending = nil
             self.shown = summary
             SoundEffectService.shared.play(.success)
@@ -88,7 +94,7 @@ struct AchievementUnlockToast: View {
                 .foregroundColor(SeleneTheme.ink)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.hairline)) {
-                Text(L10n.text("Achievement unlocked"))
+                Text(L10n.count("%lld achievements unlocked", names.count))
                     .seleneFont(.compactCaption, .semibold)
                     .foregroundColor(SeleneTheme.ink60)
                 Text(names.formatted(.list(type: .and).locale(L10n.context.formatLocale)))

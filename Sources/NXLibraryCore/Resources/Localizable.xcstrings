@@ -328,7 +328,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Game files points to a different folder"}},
         "it": {"stringUnit": {"state": "translated", "value": "File di gioco punta a un'altra cartella"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Fichiers de jeu ne pointe pas vers le dossier attendu"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Le dossier des fichiers de jeu ne correspond pas au dossier attendu"}},
         "de": {"stringUnit": {"state": "translated", "value": "Spieldateien verweist auf einen anderen Ordner"}},
         "es": {"stringUnit": {"state": "translated", "value": "Archivos de juego apunta a otra carpeta"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Arquivos de jogos aponta para outra pasta"}},
@@ -1252,7 +1252,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Copy in your cloud"}},
         "it": {"stringUnit": {"state": "translated", "value": "Copia nel tuo cloud"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Copie dans ton cloud"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Copie dans votre cloud"}},
         "de": {"stringUnit": {"state": "translated", "value": "Kopie in deiner Cloud"}},
         "es": {"stringUnit": {"state": "translated", "value": "Copia en tu nube"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Cópia na sua nuvem"}},
@@ -1978,7 +1978,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Move stopped. Try again to move the remaining files."}},
         "it": {"stringUnit": {"state": "translated", "value": "Spostamento interrotto. Riprova per spostare i file rimasti."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Déplacement arrêté. Réessaie pour déplacer les fichiers restants."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Déplacement arrêté. Réessayez pour déplacer les fichiers restants."}},
         "de": {"stringUnit": {"state": "translated", "value": "Verschieben gestoppt. Versuche es erneut, um die übrigen Dateien zu verschieben."}},
         "es": {"stringUnit": {"state": "translated", "value": "Traslado detenido. Vuelve a intentarlo para mover los archivos restantes."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Transferência interrompida. Tente de novo para mover os arquivos restantes."}},
@@ -1989,7 +1989,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Could not finish moving games. Try again to move the remaining files."}},
         "it": {"stringUnit": {"state": "translated", "value": "Spostamento incompleto. Riprova per spostare i file rimasti."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Déplacement incomplet. Réessaie pour déplacer les fichiers restants."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Déplacement incomplet. Réessayez pour déplacer les fichiers restants."}},
         "de": {"stringUnit": {"state": "translated", "value": "Verschieben fehlgeschlagen. Versuche es erneut, um die übrigen Dateien zu verschieben."}},
         "es": {"stringUnit": {"state": "translated", "value": "No se completó el traslado. Vuelve a intentarlo para mover los archivos restantes."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível concluir a transferência. Tente de novo para mover os arquivos restantes."}},
@@ -2022,7 +2022,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Use ZeroTier in Local communication, LAN, or Automatic with VPN on. Nextendo is not affected."}},
         "it": {"stringUnit": {"state": "translated", "value": "Usa ZeroTier in Comunicazione locale, in LAN o in Automatico con VPN attiva. Nextendo non cambia."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Utilise ZeroTier en Communication locale, en LAN ou en Automatique si le VPN est activé. Nextendo ne change pas."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Utilisez ZeroTier en Communication locale, en LAN ou en Automatique si le VPN est activé. Nextendo ne change pas."}},
         "de": {"stringUnit": {"state": "translated", "value": "Nutze ZeroTier für lokale Kommunikation, LAN oder Automatisch mit aktivem VPN. Nextendo bleibt unverändert."}},
         "es": {"stringUnit": {"state": "translated", "value": "Usa ZeroTier en Comunicación local, LAN o Automático con la VPN activada. Nextendo no cambia."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Use ZeroTier em Comunicação local, LAN ou Automático com VPN ativada. O Nextendo não muda."}},
@@ -2154,7 +2154,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Quitting stops it. Your files and cloud copies stay intact; the queue resumes the next time you open Arcane."}},
         "it": {"stringUnit": {"state": "translated", "value": "Uscire interrompe il trasferimento. I tuoi file e le copie nel cloud restano intatti; la coda riprende al prossimo avvio."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Quitter l'arrête. Tes fichiers et le cloud restent intacts ; la file reprendra au prochain lancement."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Quitter arrête le transfert. Vos fichiers et vos copies cloud restent intacts ; la file reprendra au prochain lancement."}},
         "de": {"stringUnit": {"state": "translated", "value": "Beim Beenden wird die Übertragung gestoppt. Deine Dateien und Cloud-Kopien bleiben erhalten; die Warteschlange wird beim nächsten Start fortgesetzt."}},
         "es": {"stringUnit": {"state": "translated", "value": "Salir detiene la transferencia. Tus archivos y las copias en la nube se conservan; la cola se reanuda al volver a abrir Arcane."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Sair interrompe a transferência. Seus arquivos e as cópias na nuvem ficam intactos; a fila continua na próxima vez que você abrir o Arcane."}},
@@ -2220,7 +2220,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Moves to the Trash. Empty it to reclaim space. Everything stays available to download."}},
         "it": {"stringUnit": {"state": "translated", "value": "Va nel Cestino. Svuotalo per recuperare spazio. Tutto resta scaricabile."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Va dans la Corbeille. L’espace revient quand tu la vides. Tout reste téléchargeable."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Les éléments sélectionnés sont placés dans la Corbeille. Videz-la pour libérer de l’espace. Tout reste téléchargeable."}},
         "de": {"stringUnit": {"state": "translated", "value": "Kommt in den Papierkorb. Leere ihn, um Speicherplatz freizugeben. Alles bleibt zum Download verfügbar."}},
         "es": {"stringUnit": {"state": "translated", "value": "Va a la papelera. Vacíala para recuperar espacio. Todo sigue disponible para descargar."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Vai para o Lixo. Esvazie-o para liberar espaço. Tudo continua disponível para baixar."}},
@@ -2396,7 +2396,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Install rclone: brew install rclone"}},
         "it": {"stringUnit": {"state": "translated", "value": "Installa rclone: brew install rclone"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Installe rclone : brew install rclone"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Installez rclone : brew install rclone"}},
         "de": {"stringUnit": {"state": "translated", "value": "rclone installieren: brew install rclone"}},
         "es": {"stringUnit": {"state": "translated", "value": "Instala rclone: brew install rclone"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Instale o rclone: brew install rclone"}},
@@ -2462,7 +2462,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Use an ID ending in .apps.googleusercontent.com"}},
         "it": {"stringUnit": {"state": "translated", "value": "Usa un ID che termina con .apps.googleusercontent.com"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Utilise un ID qui se termine par .apps.googleusercontent.com"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Utilisez un ID qui se termine par .apps.googleusercontent.com"}},
         "de": {"stringUnit": {"state": "translated", "value": "Die ID muss auf .apps.googleusercontent.com enden"}},
         "es": {"stringUnit": {"state": "translated", "value": "Usa un ID que termine en .apps.googleusercontent.com"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Use um ID que termine em .apps.googleusercontent.com"}},
@@ -3717,7 +3717,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Nach der Prüfung legt Arcane die Spiel-App in den Papierkorb. Lade sie zum Spielen erneut. Spielstände bleiben auf diesem Mac."}},
         "en": {"stringUnit": {"state": "translated", "value": "After verification, Arcane moves this app to the Trash. Download it again to play. Saves stay on this Mac."}},
         "es": {"stringUnit": {"state": "translated", "value": "Tras verificar la copia, Arcane mueve la app a la Papelera. Descárgala de nuevo para jugar. Las partidas guardadas se quedan en este Mac."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Après vérification, Arcane met l’app à la Corbeille. Télécharge-la de nouveau pour jouer. Les sauvegardes restent sur ce Mac."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Après vérification, Arcane met l’app à la Corbeille. Téléchargez-la de nouveau pour jouer. Les sauvegardes restent sur ce Mac."}},
         "it": {"stringUnit": {"state": "translated", "value": "Dopo la verifica, Arcane sposta l’app nel Cestino. Scaricala di nuovo per giocare. I salvataggi restano su questo Mac."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Após a verificação, Arcane move o app para o Lixo. Baixe-o de novo para jogar. Os dados salvos ficam neste Mac."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "验证后，Arcane 会将此应用移到废纸篓。要游玩，请重新下载。存档会保留在此 Mac 上。"}}
@@ -3783,7 +3783,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Fehlende Spiele hinzufügen, ohne ihre Apps herunterzuladen."}},
         "en": {"stringUnit": {"state": "translated", "value": "Add missing games without downloading their apps."}},
         "es": {"stringUnit": {"state": "translated", "value": "Añade los juegos que faltan sin descargar sus apps."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Ajoute les jeux manquants sans télécharger leurs apps."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ajoutez les jeux manquants sans télécharger leurs apps."}},
         "it": {"stringUnit": {"state": "translated", "value": "Aggiungi i giochi mancanti senza scaricare le app."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Adicione os jogos ausentes sem baixar seus apps."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "添加缺少的游戏，不下载其应用。"}}
@@ -3794,7 +3794,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Neue Spiele aus der Cloud sind in deiner Bibliothek."}},
         "en": {"stringUnit": {"state": "translated", "value": "New cloud games are in your library."}},
         "es": {"stringUnit": {"state": "translated", "value": "Ya tienes nuevos juegos de la nube en tu biblioteca."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Les nouveaux jeux du cloud sont dans ta bibliothèque."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Les nouveaux jeux du cloud sont dans votre bibliothèque."}},
         "it": {"stringUnit": {"state": "translated", "value": "I nuovi giochi dal cloud sono nella libreria."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Os novos jogos da nuvem estão na sua biblioteca."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "新的云端游戏已添加到游戏库。"}}
@@ -3816,7 +3816,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Der Cloud-Speicher ist nicht verfügbar. Prüfe rclone und versuche es erneut."}},
         "en": {"stringUnit": {"state": "translated", "value": "Cloud storage is unavailable. Check rclone and try again."}},
         "es": {"stringUnit": {"state": "translated", "value": "El almacenamiento en la nube no está disponible. Comprueba rclone y vuelve a intentarlo."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Le stockage cloud est indisponible. Vérifie rclone et réessaie."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Le stockage cloud est indisponible. Vérifiez rclone et réessayez."}},
         "it": {"stringUnit": {"state": "translated", "value": "Lo spazio cloud non è disponibile. Controlla rclone e riprova."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "O armazenamento na nuvem está indisponível. Verifique o rclone e tente novamente."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "云端存储不可用。请检查 rclone 后重试。"}}
@@ -3926,7 +3926,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Schließe das Spiel und warte, bis andere Vorgänge abgeschlossen sind."}},
         "en": {"stringUnit": {"state": "translated", "value": "Close the game and wait for other operations to finish."}},
         "es": {"stringUnit": {"state": "translated", "value": "Cierra el juego y espera a que terminen las demás operaciones."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Ferme le jeu et attends la fin des autres opérations."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Fermez le jeu et attendez la fin des autres opérations."}},
         "it": {"stringUnit": {"state": "translated", "value": "Chiudi il gioco e attendi la fine delle altre operazioni."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Feche o jogo e aguarde o fim das outras operações."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "请关闭游戏，并等待其他操作完成。"}}
@@ -3959,7 +3959,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Beschädigte Dateien oder unbekannte Version: Lade die App über Arcane herunter"}},
         "en": {"stringUnit": {"state": "translated", "value": "Damaged files or unknown version: download it from Arcane"}},
         "es": {"stringUnit": {"state": "translated", "value": "Archivos dañados o versión desconocida: descárgala desde Arcane"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Fichiers abîmés ou version inconnue : télécharge-la depuis Arcane"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Fichiers abîmés ou version inconnue : téléchargez l’app depuis Arcane"}},
         "it": {"stringUnit": {"state": "translated", "value": "File danneggiati o versione sconosciuta: scaricala da Arcane"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Arquivos danificados ou versão desconhecida: baixe o app pelo Arcane"}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "文件已损坏或版本未知：请通过 Arcane 下载"}}
@@ -3992,7 +3992,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Die lokale Kopie hat sich geändert. Prüfe sie, bevor du es erneut versuchst."}},
         "en": {"stringUnit": {"state": "translated", "value": "The local copy changed. Check it before trying again."}},
         "es": {"stringUnit": {"state": "translated", "value": "La copia local ha cambiado. Compruébala antes de volver a intentarlo."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "La copie locale a changé. Vérifie-la avant de réessayer."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "La copie locale a changé. Vérifiez-la avant de réessayer."}},
         "it": {"stringUnit": {"state": "translated", "value": "La copia locale è cambiata. Controllala prima di riprovare."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "A cópia local mudou. Verifique-a antes de tentar novamente."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "本机副本已更改。请检查后重试。"}}
@@ -4003,7 +4003,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Die App hat sich beim Hochladen geändert (%@). Versuche es erneut."}},
         "en": {"stringUnit": {"state": "translated", "value": "The app changed during upload (%@). Try again."}},
         "es": {"stringUnit": {"state": "translated", "value": "La app cambió durante el envío (%@). Inténtalo de nuevo."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "L’app a changé pendant l’envoi (%@). Réessaie."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "L’app a changé pendant l’envoi (%@). Réessayez."}},
         "it": {"stringUnit": {"state": "translated", "value": "L’app è cambiata durante l’invio (%@). Riprova."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "O app mudou durante o envio (%@). Tente novamente."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "应用在上传期间发生变化（%@）。请重试。"}}
@@ -4014,7 +4014,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Der Build-Cache hat sich beim Hochladen geändert (%@). Versuche es erneut."}},
         "en": {"stringUnit": {"state": "translated", "value": "The build cache changed during upload (%@). Try again."}},
         "es": {"stringUnit": {"state": "translated", "value": "La caché de compilación cambió durante el envío (%@). Inténtalo de nuevo."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Le cache de compilation a changé pendant l’envoi (%@). Réessaie."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Le cache de compilation a changé pendant l’envoi (%@). Réessayez."}},
         "it": {"stringUnit": {"state": "translated", "value": "La cache di compilazione è cambiata durante l’invio (%@). Riprova."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "O cache de compilação mudou durante o envio (%@). Tente novamente."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "构建缓存在上传期间发生变化（%@）。请重试。"}}
@@ -4069,7 +4069,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Die Aktion konnte nicht bestätigt werden. Prüfe den Status, bevor du es erneut versuchst."}},
         "en": {"stringUnit": {"state": "translated", "value": "Could not confirm the friend action. Check status before trying again."}},
         "es": {"stringUnit": {"state": "translated", "value": "No se pudo confirmar la acción. Comprueba el estado antes de volver a intentarlo."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Impossible de confirmer l’action. Vérifie l’état avant de réessayer."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Impossible de confirmer l’action. Vérifiez l’état avant de réessayer."}},
         "it": {"stringUnit": {"state": "translated", "value": "Impossibile confermare l’azione. Controlla lo stato prima di riprovare."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível confirmar a ação. Verifique o status antes de tentar novamente."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "无法确认好友操作。请先检查状态再重试。"}}
@@ -4080,7 +4080,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Die Listen konnten nicht aktualisiert werden. Wähle „Status prüfen“."}},
         "en": {"stringUnit": {"state": "translated", "value": "Could not refresh the lists. Use Check status."}},
         "es": {"stringUnit": {"state": "translated", "value": "No se pudieron actualizar las listas. Elige «Comprobar estado»."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Impossible d’actualiser les listes. Sélectionne « Vérifier l’état »."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Impossible d’actualiser les listes. Sélectionnez « Vérifier l’état »."}},
         "it": {"stringUnit": {"state": "translated", "value": "Impossibile aggiornare gli elenchi. Scegli «Controlla stato»."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível atualizar as listas. Selecione «Verificar status»."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "无法刷新列表。请使用“检查状态”。"}}
@@ -4102,7 +4102,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Gib einen zwölfstelligen Freundescode ein."}},
         "en": {"stringUnit": {"state": "translated", "value": "Enter a 12-digit friend code."}},
         "es": {"stringUnit": {"state": "translated", "value": "Introduce un código de amigo de 12 dígitos."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Saisis un code ami à 12 chiffres."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Saisissez un code ami à 12 chiffres."}},
         "it": {"stringUnit": {"state": "translated", "value": "Inserisci un codice amico di 12 cifre."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Digite um código de amigo de 12 dígitos."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "输入 12 位好友代码。"}}
@@ -4289,7 +4289,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Du kannst deinen eigenen Freundescode nicht hinzufügen."}},
         "en": {"stringUnit": {"state": "translated", "value": "You can’t add your own friend code."}},
         "es": {"stringUnit": {"state": "translated", "value": "No puedes añadir tu propio código de amigo."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Tu ne peux pas ajouter ton propre code ami."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vous ne pouvez pas ajouter votre propre code ami."}},
         "it": {"stringUnit": {"state": "translated", "value": "Non puoi aggiungere il tuo codice amico."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Não é possível adicionar seu próprio código de amigo."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "不能添加自己的好友代码。"}}
@@ -4372,7 +4372,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Einen Ordner mit ExeFS-Patches kopieren. Das Original bleibt erhalten."}},
         "en": {"stringUnit": {"state": "translated", "value": "Copy a folder with exefs patches. The original stays in place."}},
         "es": {"stringUnit": {"state": "translated", "value": "Copia una carpeta con parches exefs. La original se conserva."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Copie un dossier contenant des correctifs exefs. L’original reste en place."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Copiez un dossier contenant des correctifs exefs. L’original reste en place."}},
         "it": {"stringUnit": {"state": "translated", "value": "Copia una cartella con patch exefs. L’originale resta al suo posto."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Copia uma pasta com patches exefs. A original fica no lugar."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "复制包含 exefs 补丁的文件夹。原文件夹保留在原处。"}}
@@ -4432,7 +4432,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Nextendo-Online-Modus: Code-Mods werden nicht geladen. Stelle Netzwerk auf Offline, um sie zu verwenden."}},
         "en": {"stringUnit": {"state": "translated", "value": "Nextendo online mode: Code mods don't load. Set Network to Offline to use them."}},
         "es": {"stringUnit": {"state": "translated", "value": "Modo en línea de Nextendo: los mods de código no se cargan. Cambia Red a Sin conexión para usarlos."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Mode en ligne Nextendo : les mods de code ne se chargent pas. Passe le réseau en Hors ligne pour les utiliser."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mode en ligne Nextendo : les mods de code ne se chargent pas. Passez le réseau en Hors ligne pour les utiliser."}},
         "it": {"stringUnit": {"state": "translated", "value": "Modalità online Nextendo: le mod di codice non vengono caricate. Imposta Rete su Offline per usarle."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Modo online do Nextendo: os mods de código não são carregados. Defina a Rede como Offline para usá-los."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "Nextendo 联机模式不会加载代码模组。若要使用，请将网络设为“离线”。"}}
@@ -4480,7 +4480,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Wähle, wie sich dieses Spiel verbindet."}},
         "en": {"stringUnit": {"state": "translated", "value": "Choose how this game connects."}},
         "es": {"stringUnit": {"state": "translated", "value": "Elige cómo se conecta este juego."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Choisis comment ce jeu se connecte."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez comment ce jeu se connecte."}},
         "it": {"stringUnit": {"state": "translated", "value": "Scegli come si connette questo gioco."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha como este jogo se conecta."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "选择此游戏的连接方式。"}}
@@ -4552,7 +4552,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Öffne den Mods-Ordner für RomFS-Mods oder importiere einen Code-Mod."}},
         "en": {"stringUnit": {"state": "translated", "value": "Open the mods folder to add RomFS mods, or import a code mod."}},
         "es": {"stringUnit": {"state": "translated", "value": "Abre la carpeta de mods para añadir mods RomFS o importa un mod de código."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Ouvre le dossier des mods pour ajouter un mod RomFS, ou importe un mod de code."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ouvrez le dossier des mods pour ajouter un mod RomFS, ou importez un mod de code."}},
         "it": {"stringUnit": {"state": "translated", "value": "Apri la cartella delle mod per aggiungere mod RomFS oppure importa una mod di codice."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Abra a pasta de mods para adicionar mods RomFS ou importe um mod de código."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "打开模组文件夹以添加 RomFS 模组，或导入代码模组。"}}
@@ -4600,7 +4600,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Die gewählte Engine kann keine Code-Mods bauen. Wechsle die Engine oder schalte die Mods aus."}},
         "en": {"stringUnit": {"state": "translated", "value": "The selected engine cannot build code mods. Switch engines or turn them off."}},
         "es": {"stringUnit": {"state": "translated", "value": "El motor seleccionado no compila mods de código. Cambia de motor o desactiva esos mods."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Le moteur sélectionné ne compile pas les mods de code. Change de moteur ou désactive-les."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Le moteur sélectionné ne compile pas les mods de code. Changez de moteur ou désactivez-les."}},
         "it": {"stringUnit": {"state": "translated", "value": "Il motore selezionato non compila le mod di codice. Cambia motore o disattiva le mod."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "O motor selecionado não compila mods de código. Troque de motor ou desative os mods."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "所选引擎无法构建代码模组。请更换引擎或停用这些模组。"}}
@@ -4624,7 +4624,7 @@
         "de": {"stringUnit": {"state": "translated", "value": "Verwende einen einzelnen Mod für dieses Spiel, mit romfs und exefs nebeneinander, falls beide vorhanden sind. Ersatzdateien für Code werden nicht unterstützt."}},
         "en": {"stringUnit": {"state": "translated", "value": "Use one mod for this game, with romfs and exefs side by side if it has both. Replacement code files aren't supported."}},
         "es": {"stringUnit": {"state": "translated", "value": "Usa un solo mod para este juego, con romfs y exefs al mismo nivel si tiene ambos. No se admiten archivos que sustituyan código."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Utilise un seul mod pour ce jeu, avec romfs et exefs au même niveau s’il contient les deux. Les fichiers qui remplacent le code ne sont pas pris en charge."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Utilisez un seul mod pour ce jeu, avec romfs et exefs au même niveau s’il contient les deux. Les fichiers qui remplacent le code ne sont pas pris en charge."}},
         "it": {"stringUnit": {"state": "translated", "value": "Usa una sola mod per questo gioco, con romfs ed exefs allo stesso livello se sono entrambe presenti. I file che sostituiscono il codice non sono supportati."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Use um único mod para este jogo, com romfs e exefs no mesmo nível se houver os dois. Arquivos que substituem código não são compatíveis."}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "此游戏请使用一个模组；如果同时包含 romfs 和 exefs，请将两个文件夹并列放置。不支持替换用的代码文件。"}}
@@ -11365,16 +11365,37 @@
         "zh-Hans": {"stringUnit":{"state":"translated","value":"%d / %d"}}
       }
     },
-    "Achievement unlocked": {
-      "comment": "Heading for the toast after confirming local achievements.",
+    "%lld achievements unlocked": {
+      "comment": "Heading for the toast after confirming one or more local achievements.",
       "localizations": {
-        "en": {"stringUnit":{"state":"translated","value":"Achievement unlocked"}},
-        "it": {"stringUnit":{"state":"translated","value":"Obiettivo sbloccato"}},
-        "fr": {"stringUnit":{"state":"translated","value":"Succès débloqué"}},
-        "de": {"stringUnit":{"state":"translated","value":"Erfolg freigeschaltet"}},
-        "es": {"stringUnit":{"state":"translated","value":"Logro desbloqueado"}},
-        "pt-BR": {"stringUnit":{"state":"translated","value":"Conquista desbloqueada"}},
-        "zh-Hans": {"stringUnit":{"state":"translated","value":"成就已解锁"}}
+        "en": {"variations":{"plural":{
+          "one":{"stringUnit":{"state":"translated","value":"%lld achievement unlocked"}},
+          "other":{"stringUnit":{"state":"translated","value":"%lld achievements unlocked"}}
+        }}},
+        "it": {"variations":{"plural":{
+          "one":{"stringUnit":{"state":"translated","value":"%lld obiettivo sbloccato"}},
+          "other":{"stringUnit":{"state":"translated","value":"%lld obiettivi sbloccati"}}
+        }}},
+        "fr": {"variations":{"plural":{
+          "one":{"stringUnit":{"state":"translated","value":"%lld succès débloqué"}},
+          "other":{"stringUnit":{"state":"translated","value":"%lld succès débloqués"}}
+        }}},
+        "de": {"variations":{"plural":{
+          "one":{"stringUnit":{"state":"translated","value":"%lld Erfolg freigeschaltet"}},
+          "other":{"stringUnit":{"state":"translated","value":"%lld Erfolge freigeschaltet"}}
+        }}},
+        "es": {"variations":{"plural":{
+          "one":{"stringUnit":{"state":"translated","value":"%lld logro desbloqueado"}},
+          "other":{"stringUnit":{"state":"translated","value":"%lld logros desbloqueados"}}
+        }}},
+        "pt-BR": {"variations":{"plural":{
+          "one":{"stringUnit":{"state":"translated","value":"%lld conquista desbloqueada"}},
+          "other":{"stringUnit":{"state":"translated","value":"%lld conquistas desbloqueadas"}}
+        }}},
+        "zh-Hans": {"variations":{"plural":{
+          "one":{"stringUnit":{"state":"translated","value":"已解锁 %lld 项成就"}},
+          "other":{"stringUnit":{"state":"translated","value":"已解锁 %lld 项成就"}}
+        }}}
       }
     },
     "Arcane · local": {
@@ -91396,7 +91417,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Enter a Google Drive folder link or a valid folder ID."}},
         "it": {"stringUnit": {"state": "translated", "value": "Inserisci un link a una cartella di Google Drive o un ID valido."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Saisis un lien de dossier Google Drive ou un ID valide."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Saisissez un lien de dossier Google Drive ou un ID valide."}},
         "de": {"stringUnit": {"state": "translated", "value": "Gib einen Google-Drive-Ordnerlink oder eine gültige Ordner-ID ein."}},
         "es": {"stringUnit": {"state": "translated", "value": "Introduce un enlace a una carpeta de Google Drive o un ID válido."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Insira o link de uma pasta do Google Drive ou um ID válido."}},
@@ -91484,7 +91505,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Update ready · applied when you quit the game"}},
         "it": {"stringUnit": {"state": "translated", "value": "Aggiornamento pronto · si applica quando chiudi il gioco"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Mise à jour prête · appliquée quand tu quittes le jeu"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mise à jour prête · appliquée à la fermeture du jeu"}},
         "de": {"stringUnit": {"state": "translated", "value": "Update bereit · wird beim Beenden des Spiels installiert"}},
         "es": {"stringUnit": {"state": "translated", "value": "Actualización lista · se aplica cuando sales del juego"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Atualização pronta · será aplicada quando você sair do jogo"}},
@@ -91517,7 +91538,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Your cloud copy is older"}},
         "it": {"stringUnit": {"state": "translated", "value": "La tua copia cloud è meno recente"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Ta copie cloud est plus ancienne"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Votre copie cloud est plus ancienne"}},
         "de": {"stringUnit": {"state": "translated", "value": "Deine Cloud-Kopie ist älter"}},
         "es": {"stringUnit": {"state": "translated", "value": "Tu copia en la nube es más antigua"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Sua cópia na nuvem é mais antiga"}},
@@ -91639,7 +91660,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "What should we call you?"}},
         "it": {"stringUnit": {"state": "translated", "value": "Come ti chiami?"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Comment t’appelles-tu ?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Comment vous appelez-vous ?"}},
         "de": {"stringUnit": {"state": "translated", "value": "Wie sollen wir dich nennen?"}},
         "es": {"stringUnit": {"state": "translated", "value": "¿Cómo te llamas?"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Como podemos chamar você?"}},
@@ -91650,7 +91671,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "This is the name on your profile. Type, or use the keys below."}},
         "it": {"stringUnit": {"state": "translated", "value": "È il nome che appare sul tuo profilo. Digitalo oppure usa i tasti qui sotto."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Ce nom s’affiche sur ton profil. Saisis-le ou utilise les touches ci-dessous."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ce nom s’affiche sur votre profil. Saisissez-le ou utilisez les touches ci-dessous."}},
         "de": {"stringUnit": {"state": "translated", "value": "Dieser Name steht in deinem Profil. Tippe ihn ein oder nutze die Tasten unten."}},
         "es": {"stringUnit": {"state": "translated", "value": "Este nombre aparecerá en tu perfil. Escríbelo con tu teclado o con las teclas de abajo."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Esse nome aparece no seu perfil. Digite-o ou use as teclas abaixo."}},
@@ -91661,7 +91682,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Choose your avatar"}},
         "it": {"stringUnit": {"state": "translated", "value": "Scegli il tuo avatar"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Choisis ton avatar"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez votre avatar"}},
         "de": {"stringUnit": {"state": "translated", "value": "Wähle deinen Avatar"}},
         "es": {"stringUnit": {"state": "translated", "value": "Elige tu avatar"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha seu avatar"}},
@@ -91672,7 +91693,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Pick one, or use your own picture."}},
         "it": {"stringUnit": {"state": "translated", "value": "Scegline uno o usa una tua immagine."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Choisis-en un ou utilise ta propre image."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez-en un ou utilisez votre propre image."}},
         "de": {"stringUnit": {"state": "translated", "value": "Wähle einen aus oder verwende ein eigenes Bild."}},
         "es": {"stringUnit": {"state": "translated", "value": "Elige uno o usa tu propia imagen."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha um ou use sua própria imagem."}},
@@ -91683,7 +91704,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Choose the picture behind your library."}},
         "it": {"stringUnit": {"state": "translated", "value": "Scegli l’immagine di sfondo della tua libreria."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Choisis l’image de fond de ta bibliothèque."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez l’image de fond de votre bibliothèque."}},
         "de": {"stringUnit": {"state": "translated", "value": "Wähle das Hintergrundbild deiner Bibliothek."}},
         "es": {"stringUnit": {"state": "translated", "value": "Elige la imagen de fondo de tu biblioteca."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha a imagem de fundo da sua biblioteca."}},
@@ -91694,7 +91715,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Enter a name of 1 to 32 characters."}},
         "it": {"stringUnit": {"state": "translated", "value": "Inserisci un nome da 1 a 32 caratteri."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Saisis un nom de 1 à 32 caractères."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Saisissez un nom de 1 à 32 caractères."}},
         "de": {"stringUnit": {"state": "translated", "value": "Gib einen Namen mit 1 bis 32 Zeichen ein."}},
         "es": {"stringUnit": {"state": "translated", "value": "Introduce un nombre de 1 a 32 caracteres."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Digite um nome de 1 a 32 caracteres."}},
@@ -91826,7 +91847,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Remove this friend from your Nextendo account?"}},
         "it": {"stringUnit": {"state": "translated", "value": "Rimuovere questo amico dal tuo account Nextendo?"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Retirer cette personne de ta liste d’amis Nextendo ?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Retirer cette personne de votre liste d’amis Nextendo ?"}},
         "de": {"stringUnit": {"state": "translated", "value": "Diese Person aus deiner Nextendo-Freundesliste entfernen?"}},
         "es": {"stringUnit": {"state": "translated", "value": "¿Eliminar a esta persona de tus amistades de Nextendo?"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Remover esta pessoa da sua lista de amigos do Nextendo?"}},
@@ -91903,7 +91924,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Pick one, or use your own picture. A GIF keeps moving."}},
         "it": {"stringUnit": {"state": "translated", "value": "Scegline uno o usa una tua immagine. Le GIF restano animate."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Choisis-en un, ou utilise ta propre image. Un GIF reste animé."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez-en un ou utilisez votre propre image. Un GIF reste animé."}},
         "de": {"stringUnit": {"state": "translated", "value": "Wähle einen Avatar oder verwende dein eigenes Bild. GIFs bleiben animiert."}},
         "es": {"stringUnit": {"state": "translated", "value": "Elige uno o usa tu propia imagen. Los GIF siguen animados."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha um ou use sua própria imagem. GIFs continuam animados."}},
@@ -91914,7 +91935,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Your own picture"}},
         "it": {"stringUnit": {"state": "translated", "value": "La tua immagine"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Ta propre image"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Votre propre image"}},
         "de": {"stringUnit": {"state": "translated", "value": "Dein eigenes Bild"}},
         "es": {"stringUnit": {"state": "translated", "value": "Tu propia imagen"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Sua própria imagem"}},
@@ -91936,7 +91957,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Frame your picture"}},
         "it": {"stringUnit": {"state": "translated", "value": "Inquadra l’immagine"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Recadre ton image"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Recadrez votre image"}},
         "de": {"stringUnit": {"state": "translated", "value": "Rahme dein Bild ein"}},
         "es": {"stringUnit": {"state": "translated", "value": "Encuadra tu imagen"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Enquadre sua imagem"}},
