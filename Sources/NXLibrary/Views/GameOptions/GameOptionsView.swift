@@ -9,8 +9,8 @@ import ArcanePorting
 /// `GameOptionsPresentation`; this view only draws them and runs the actions.
 ///
 /// Input: Up/Down move (clamped), Left/Right change values, A activates, B (or Esc)
-/// steps back: out of a dialog, then out of Edit details, then closes. Mouse: the
-/// pointer alone never moves the focus; the wheel or trackpad scrolls the list
+/// steps back: out of a dialog, then out of Edit details, then closes. The
+/// wheel or trackpad scrolls the list
 /// freely and, once it stops, the focus moves to the nearest row in view without
 /// moving the list. A click activates.
 /// What Game options reads from the game's files when it opens. The view holds it as a `@StateObject`, built once
@@ -96,6 +96,7 @@ struct GameOptionsView: View {
     /// The row whose explanation is open beside its info button (a click on it, or Y on the focused row).
     @State var infoRow: GameOptionsRow?
     @State var keyMonitor: Any?
+    @State var hover = SeleneHoverFocus()
     /// Row frames in the list's viewport, written while scrolling without redrawing.
     @State var scrollBox = OptionsScrollBox()
 
@@ -167,13 +168,8 @@ struct GameOptionsView: View {
 
     var body: some View {
         let p = presentation
-        return ZStack {
+        return SeleneOverlay(style: .options, onOutside: back) {
             // A light shade: the screen behind is blurred (AppShellView), so the options read without darkening it much.
-            SeleneTheme.scrim45
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .onTapGesture { back() }
-
             VStack(spacing: 0) {
                 column(p)
                 // Where the screen underneath had its hints (which hide while this is open).
@@ -183,7 +179,7 @@ struct GameOptionsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             // A panel (Change artwork, Change metadata, Cheats) takes the screen; the list never shows through.
             .opacity(panelOpen ? 0 : 1)
-            .allowsHitTesting(!panelOpen)
+            .seleneOverlayOwnership(!panelOpen && confirm == nil)
 
             if artworkOpen {
                 ChangeArtworkView(viewModel: viewModel, subject: PersonalizationSubject(current, viewModel: viewModel)) { artworkOpen = false }
@@ -243,8 +239,8 @@ struct GameOptionsView: View {
                     .zIndex(1)
             }
         }
-        .animation(reduceMotion ? nil : SeleneTheme.quick, value: confirm)
-        .animation(reduceMotion ? nil : SeleneTheme.quick, value: panelOpen)
+        .animation(Motion.overlay(reduceMotion), value: confirm)
+        .animation(Motion.overlay(reduceMotion), value: panelOpen)
         .onAppear {
             installKeyMonitor()
             multiplayerAdapters = .current()

@@ -22,6 +22,7 @@ struct SteamOptionsView: View {
     @State private var artworkOpen = false
     @State private var metadataOpen = false
     @State private var keyMonitor: Any?
+    @State private var hover = SeleneHoverFocus()
 
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneReduceMotion) private var reduceMotion
@@ -50,12 +51,7 @@ struct SteamOptionsView: View {
 
     var body: some View {
         let p = presentation
-        return ZStack {
-            SeleneTheme.scrim45
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .onTapGesture { back() }
-
+        return SeleneOverlay(style: .options, onOutside: back) {
             VStack(spacing: 0) {
                 column(p)
                 SeleneHintsBar(left: [HintItem(.b, L10n.text("Back"))], right: [HintItem(.a, L10n.text("Select"))],
@@ -63,7 +59,7 @@ struct SteamOptionsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .opacity(panelOpen ? 0 : 1)
-            .allowsHitTesting(!panelOpen)
+            .seleneOverlayOwnership(!panelOpen)
 
             if artworkOpen {
                 ChangeArtworkView(viewModel: viewModel, subject: PersonalizationSubject(steam: current)) { artworkOpen = false }
@@ -76,7 +72,7 @@ struct SteamOptionsView: View {
                     .zIndex(2)
             }
         }
-        .animation(reduceMotion ? nil : SeleneTheme.quick, value: panelOpen)
+        .animation(Motion.overlay(reduceMotion), value: panelOpen)
         .onAppear(perform: installKeyMonitor)
         .onDisappear(perform: removeKeyMonitor)
         .onReceive(NotificationCenter.default.publisher(for: .nxGameOptionsGamepadAction)) { note in
@@ -127,6 +123,7 @@ struct SteamOptionsView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { activate(row) }
+            .onHover { if rows.contains(row), hover.moved($0) { pickedRow = row } }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(row.title)
             .accessibilityHint(p.about(row) ?? "")

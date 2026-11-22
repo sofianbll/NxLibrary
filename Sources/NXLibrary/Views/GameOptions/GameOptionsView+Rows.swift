@@ -138,6 +138,11 @@ extension GameOptionsView {
         })
         .contentShape(Rectangle())
         .onTapGesture { activate(row) }
+        .onHover {
+            guard rows.contains(row), row != focusedRow, hover.moved($0) else { return }
+            scrollBox.holdScroll = true
+            setFocus(row)
+        }
         .id(row.rawValue)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)

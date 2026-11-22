@@ -251,6 +251,20 @@ import ArcanePorting
             SpotlightView(viewModel: vm, router: AppRouter(), settings: settings, playSessions: historyStore,
                           runningGames: RunningGameMonitor(), artwork: art, storeHost: ModStoreHost())
         }.environment(\.profilePortrait, profiles.active), in: out, refs, "screenshots/library.png")
+        try render("24-collection", ZStack {
+            SeleneBackdrop().still(true)
+            CollectionView(viewModel: vm, router: AppRouter(), settings: settings, playSessions: historyStore,
+                           artwork: art)
+        }, in: out, refs, "none")
+        try render("25-search", ZStack {
+            stage(SpotlightTopBar(filter: .all, sort: current), showsSort: false)
+            FindGameView(router: AppRouter(), viewModel: vm, playSessions: historyStore, artwork: art)
+        }, in: out, refs, "none")
+        try render("26-game-options", ZStack {
+            details(blur: 10)
+            GameOptionsView(viewModel: vm, game: game, origin: .details,
+                            onClose: {}, onShowBuild: {}, onMove: {})
+        }, in: out, refs, "none")
         vm.librarySelection.query.filter = .all
         vm.applyCatalog(.init(games: [originalGame]))
         precondition(vm.catalogGames.first?.isFavorite == false)
@@ -497,6 +511,10 @@ def main():
         replace(app / "Views/Shell/MenuOverlayView.swift", r"var presented = false", "var presented = true")
         replace(app / "Views/Theme/ThemeStore.swift", r"static let shared = ThemeStore\(\)",
                 f'static let shared = ThemeStore(palettesURL: URL(fileURLWithPath: "{ROOT}/Resources/Selene/palettes.json"))')
+        replace(app / "Views/Search/FindGameView.swift",
+                r'TextField\(L10n.text\("Find a game"\), text: \$query\).*?\.onSubmit \{ pick\(results.first\) \}',
+                'Text(L10n.text("Find a game")).seleneFont(.panelBody).foregroundColor(SeleneTheme.ink)'
+                '.frame(maxWidth: .infinity, alignment: .leading)')
         replace(app / "Views/Theme/SeleneBackdrop.swift",
                 r"tint: modsTint \? 1 : 0, moving: moving,\n",
                 "tint: modsTint ? 1 : 0, moving: false, asImage: true,\n")

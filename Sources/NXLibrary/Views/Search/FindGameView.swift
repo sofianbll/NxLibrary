@@ -21,6 +21,7 @@ struct FindGameView: View {
     /// nil while the field has focus; otherwise the result under focus.
     @State private var focused: Int?
     @State private var keyMonitor: Any?
+    @State private var hover = SeleneHoverFocus()
     @FocusState private var fieldFocused: Bool
 
     private static let columns = 6
@@ -34,18 +35,14 @@ struct FindGameView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .top) {
-            SeleneTheme.scrim.opacity(0.82)
-                .background(.ultraThinMaterial)
-                .ignoresSafeArea()
-                .onTapGesture { close() }
+        SeleneOverlay(style: .search, alignment: .top, onOutside: close) {
             VStack(spacing: canvas.u(40)) {
                 field
                 grid
                 Spacer(minLength: 0)
             }
-            .padding(.top, canvas.u(110))
-            .padding(.horizontal, canvas.u(120))
+            .padding(.top, canvas.u(SeleneTokens.Space.stageHeader))
+            .padding(.horizontal, canvas.u(SeleneTokens.Space.stageGutter))
             VStack {
                 Spacer()
                 SeleneHintsBar(right: [
@@ -73,7 +70,7 @@ struct FindGameView: View {
                 .foregroundColor(SeleneTheme.ink60)
             TextField(L10n.text("Find a game"), text: $query)
                 .textFieldStyle(.plain)
-                .seleneFont(19)
+                .seleneFont(.panelBody)
                 .foregroundColor(SeleneTheme.ink)
                 .focused($fieldFocused)
                 .onSubmit { pick(results.first) }
@@ -83,8 +80,8 @@ struct FindGameView: View {
         .padding(.trailing, canvas.u(26))
         .padding(.bottom, canvas.u(13))
         .frame(width: canvas.u(720))
-        .background(RoundedRectangle(cornerRadius: canvas.u(22), style: .continuous).fill(SeleneTheme.glass))
-        .overlay(RoundedRectangle(cornerRadius: canvas.u(22), style: .continuous)
+        .background(RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.field), style: .continuous).fill(SeleneTheme.glass))
+        .overlay(RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.field), style: .continuous)
             .strokeBorder(focused == nil ? SeleneTheme.focus : SeleneTheme.ink15, lineWidth: max(1, canvas.u(2))))
     }
 
@@ -92,7 +89,7 @@ struct FindGameView: View {
         let games = results
         if !query.isEmpty && games.isEmpty {
             Text(L10n.text("No games match."))
-                .seleneFont(19)
+                .seleneFont(.panelBody)
                 .foregroundColor(SeleneTheme.ink60)
         } else {
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(canvas.u(160)), spacing: canvas.u(28)),
@@ -101,6 +98,12 @@ struct FindGameView: View {
                 ForEach(Array(games.enumerated()), id: \.element.id) { index, game in
                     tile(game, selected: focused == index)
                         .onTapGesture { pick(game) }
+                        .onHover {
+                            guard hover.moved($0), focused != index else { return }
+                            fieldFocused = false
+                            focused = index
+                        }
+                        .accessibilityAction { pick(game) }
                 }
             }
         }
@@ -113,12 +116,12 @@ struct FindGameView: View {
                 else { CatalogNativeArtwork(game: game, role: .square) }
             }
                 .frame(width: canvas.u(160), height: canvas.u(160))
-                .clipShape(RoundedRectangle(cornerRadius: canvas.u(12), style: .continuous))
-                .overlay(SeleneTileRing(cornerRadius: canvas.u(12), active: selected))
+                .clipShape(RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.content), style: .continuous))
+                .overlay(SeleneTileRing(cornerRadius: canvas.u(SeleneTokens.Radius.content), active: selected))
                 .scaleEffect(selected && !reduceMotion ? 1.06 : 1)
-                .animation(reduceMotion ? nil : SeleneTheme.quick, value: selected)
+                .animation(Motion.focus(reduceMotion), value: selected)
             Text(game.name)
-                .seleneFont(15, selected ? .semibold : .regular)
+                .seleneFont(.compactCaption, selected ? .semibold : .regular)
                 .foregroundColor(selected ? SeleneTheme.ink : SeleneTheme.ink60)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)

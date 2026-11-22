@@ -201,6 +201,12 @@ per font, padding e raggi. Rimuovere dalla baseline le occorrenze sostituite con
 Il rail di Spotlight e Collection ripunta la molla critica alla nuova selezione;
 con Riduci movimento la posizione e gli interruttori cambiano direttamente.
 
+`SeleneOverlay` fornisce il velo e il clic esterno per menu, ricerca, opzioni,
+profili, conferme e Cloud. La shell applica il blur associato allo stile e
+nasconde input del puntatore, VoiceOver e suggerimenti dei livelli coperti.
+Router e pannelli continuano a gestire gli stessi comandi e identità di focus;
+`ProfileLayers` decide quale strato dei profili resta attivo.
+
 - `AppRouter` gestisce schermata corrente, cronologia di ritorno e richieste di selezione. `SpotlightState`, `LibrarySelectionState`, `DetailsFocus`, `MenuSelectionModel` e `FocusIndex` descrivono il focus indipendentemente dal disegno SwiftUI. `LibraryQuery` applica ricerca, filtri e ordinamento a qualunque gioco che dia `LibraryQueryRecord` (id, nome, preferito, nascosto, installato, termini di ricerca); le entrate per `PortedGame` di filtro, selezione e Surprise me sono estensioni in `ArcanePorting/Library/`.
 - Le viste principali sono Spotlight, Collection e Details. Ricerca, Add Game, Console, Game Options e Settings si raggiungono dalla shell e dalle azioni del router. Le estensioni `…+Input.swift` traducono tastiera, mouse e controller in modifiche ai modelli di focus.
 - **Righe di tessere.**

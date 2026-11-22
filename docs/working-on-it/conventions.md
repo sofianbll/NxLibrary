@@ -60,7 +60,7 @@ Esempi: `AchievementsScreen` con `AchievementsScreenModel` (schermata intera), `
 - **Componenti condivisi prima di tutto** (`Views/Components`):
   - `SeleneOptionRow`, `SeleneRow`, `SeleneToggleRow`, `SeleneValueRow`, `SeleneCycleRow` (in `SeleneSettingsRow.swift`);
   - `SelenePillButton`, `SeleneSwitch`, `SeleneValueChip`, `SeleneStatusDot` (stato in testo con punto decorativo: Cloud e Nextendo);
-  - `SeleneConfirmDialog`, `SeleneSuccessNotice`;
+  - `SeleneOverlay` per il velo e il clic esterno, `SeleneConfirmDialog` e `SeleneSuccessNotice` per le carte;
   - `SeleneHintsBar`, `GamePrimaryActions`, `DetailsPanel`.
 
   Un componente nuovo nasce solo se nessuno di questi va bene.

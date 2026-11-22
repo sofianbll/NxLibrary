@@ -44,16 +44,13 @@ struct CloudLibraryPanel: View {
     }
 
     var body: some View {
-        ZStack {
-            SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle())
-                .onTapGesture(perform: close)
+        SeleneOverlay(style: .dialog, onOutside: close) {
             VStack(spacing: 0) {
                 card.frame(maxWidth: .infinity, maxHeight: .infinity)
                 SeleneHintsBar(left: [HintItem(.b, "Close", action: close)],
                                right: controls.isEmpty ? [] : [HintItem(.a, "Select")])
             }
-            .allowsHitTesting(freeSelection == nil)
-            .accessibilityHidden(freeSelection != nil)
+            .seleneOverlayOwnership(freeSelection == nil)
             if let freeSelection { freeDialog(freeSelection) }
         }
         .task(id: ReadRequest(game: game, revision: refreshRevision)) { await viewModel.refreshCloudLibrary(game) }
@@ -364,9 +361,7 @@ struct CloudLibraryPanel: View {
     }
 
     private func freeDialog(_ selection: CloudFreeSelection) -> some View {
-        ZStack {
-            SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle())
-                .onTapGesture { freeSelection = nil }
+        SeleneOverlay(style: .dialog, onOutside: { freeSelection = nil }) {
             SeleneConfirmDialog(title: "Free up space",
                 message: text("Moves to the Trash. Empty it to reclaim space. Everything stays available to download."),
                 confirmTitle: "Free up space", confirmEnabled: !selection.selected.isEmpty,

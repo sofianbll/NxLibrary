@@ -164,22 +164,19 @@ struct AppShellView: View {
     }
 
     /// The profile picker over the screen: Selene's Captures blur (40) under its 65 % veil.
-    static let profileOverlayBlur: CGFloat = 40
+    static let profileOverlayBlur = SeleneOverlayStyle.deep.backdropBlur
 
     var contentBlur: CGFloat {
         if let flow = profileFlow, flow.page != .detail, !flow.atStartup { return Self.profileOverlayBlur }
         // A card or the Power pills open over the control center: the page behind must not read through them.
         if router.isMenuPresented, router.menuSelection.isSubmenuOpen { return Self.profileOverlayBlur }
-        return !viewModel.isGameOptionsOpen && !router.route.isOverlay ? 0 : 10
+        return !viewModel.isGameOptionsOpen && !router.route.isOverlay ? 0 : SeleneOverlayStyle.options.backdropBlur
     }
 
     var currentBackdropCover: ShellBackdropCover {
         .resolve(setup: viewModel.showSetupCheck, welcome: showsWelcome,
                  themePicker: router.isMenuPresented && router.isThemePickerOpen)
     }
-
-    /// The control center or the profile screen draws its own hints over the screen and the full-page overlays.
-    var hintsCovered: Bool { router.isMenuPresented || profileFlow != nil }
 
     var fullScreenCover: Bool { currentBackdropCover.covers(0) }
 

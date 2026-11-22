@@ -18,10 +18,8 @@ extension AppShellView {
                 .blur(radius: contentBlur)
                 // Keep artwork/tiles drawn and warm, as during Spotlight's entrance, while the full page covers them.
                 .opacity(fullScreenCover ? 0.001 : 1)
-                .allowsHitTesting(!fullScreenCover && !router.route.isOverlay && !viewModel.isGameOptionsOpen
-                                  && viewModel.cloudLibraryGameID == nil && router.activityCenterFocus == nil && profileFlow == nil)
-                .accessibilityHidden(router.activityCenterFocus != nil || profileFlow != nil)
-                .environment(\.seleneHintsCovered, hintsCovered)
+                .seleneOverlayOwnership(!fullScreenCover && !router.route.isOverlay && !viewModel.isGameOptionsOpen
+                                        && !isCloseGameOpen && !router.isMenuPresented && !router.isSearchPresented && profileFlow == nil)
             if router.route == .addGame {
                 AddGameView(viewModel: viewModel,
                             router: router,
@@ -29,9 +27,7 @@ extension AppShellView {
                             showsHints: settings.settings.showButtonHints,
                             reviewSelectionID: setupSourceEntryID)
                     .opacity(opacityBelowCover(0.8))
-                    .allowsHitTesting(!currentBackdropCover.covers(0.8) && router.activityCenterFocus == nil && profileFlow == nil)
-                    .accessibilityHidden(router.activityCenterFocus != nil || profileFlow != nil)
-                    .environment(\.seleneHintsCovered, hintsCovered)
+                    .seleneOverlayOwnership(!currentBackdropCover.covers(0.8) && !router.isMenuPresented && profileFlow == nil && !isCloseGameOpen)
                     .transition(overlayTransition)
                     .zIndex(0.8)
             }
@@ -39,9 +35,7 @@ extension AppShellView {
                 ConsoleView(viewModel: viewModel, router: router,
                             showsHints: settings.settings.showButtonHints)
                     .opacity(opacityBelowCover(0.8))
-                    .allowsHitTesting(!currentBackdropCover.covers(0.8) && router.activityCenterFocus == nil && profileFlow == nil)
-                    .accessibilityHidden(router.activityCenterFocus != nil || profileFlow != nil)
-                    .environment(\.seleneHintsCovered, hintsCovered)
+                    .seleneOverlayOwnership(!currentBackdropCover.covers(0.8) && !router.isMenuPresented && profileFlow == nil && !isCloseGameOpen)
                     .transition(overlayTransition)
                     .zIndex(0.8)
             }
@@ -49,8 +43,7 @@ extension AppShellView {
                 FindGameView(router: router, viewModel: viewModel, playSessions: playSessions,
                              artwork: artwork)
                     .opacity(opacityBelowCover(0.5))
-                    .allowsHitTesting(!currentBackdropCover.covers(0.5) && router.activityCenterFocus == nil && profileFlow == nil)
-                    .accessibilityHidden(router.activityCenterFocus != nil || profileFlow != nil)
+                    .seleneOverlayOwnership(!currentBackdropCover.covers(0.5) && !router.isMenuPresented && profileFlow == nil && !isCloseGameOpen)
                     .transition(.opacity)
                     .zIndex(0.5)
             }
@@ -93,32 +86,38 @@ extension AppShellView {
             }
             if let game = viewModel.gameToClose {
                 closeGameOverlay(game)
+                    .seleneOverlayOwnership(!viewModel.cloudQuitRequested)
                     .transition(.opacity)
                     .zIndex(3)
             }
             if let game = viewModel.gameToRemove {
                 removeGameOverlay(game)
+                    .seleneOverlayOwnership(!viewModel.cloudQuitRequested)
                     .transition(.opacity)
                     .zIndex(3)
             }
             if showsUpdateOffer {
                 updateOfferOverlay()
+                    .seleneOverlayOwnership(!viewModel.cloudQuitRequested)
                     .transition(.opacity)
                     .zIndex(3)
             }
             if showsInstallFailure, let game = viewModel.gameWithInstallFailure {
                 installFailureOverlay(game)
+                    .seleneOverlayOwnership(!viewModel.cloudQuitRequested)
                     .transition(.opacity)
                     .zIndex(3)
             }
             if let id = viewModel.cloudLibraryGameID,
                let game = viewModel.libraryGames.first(where: { $0.id == id }) {
                 CloudLibraryPanel(viewModel: viewModel, model: viewModel.cloudLibrary, game: game)
-                    .allowsHitTesting(!showsSettingsNotice && !showsUpdateOffer && !showsInstallFailure)
-                    .zIndex(showsUpdateOffer || showsInstallFailure ? 2.9 : 3.1)
+                    .seleneOverlayOwnership(!showsSettingsNotice && !showsUpdateOffer && !showsInstallFailure
+                                            && viewModel.gameToClose == nil && viewModel.gameToRemove == nil && !viewModel.cloudQuitRequested)
+                    .zIndex(showsUpdateOffer || showsInstallFailure || viewModel.gameToClose != nil || viewModel.gameToRemove != nil ? 2.9 : 3.1)
             }
             if showsSettingsNotice, let notice = viewModel.settingsNotice {
                 settingsNoticeOverlay(notice)
+                    .seleneOverlayOwnership(!viewModel.cloudQuitRequested)
                     .transition(.opacity)
                     .zIndex(4)
             }
@@ -150,12 +149,12 @@ extension AppShellView {
                     }
                 }
                 .opacity(opacityBelowCover(ShellBackdropCover.themePicker.priority))
-                .allowsHitTesting(!currentBackdropCover.covers(ShellBackdropCover.themePicker.priority) && profileFlow == nil)
-                .accessibilityHidden(profileFlow != nil)
+                .seleneOverlayOwnership(!currentBackdropCover.covers(ShellBackdropCover.themePicker.priority)
+                                        && profileFlow == nil && !isCloseGameOpen)
                 .zIndex(ShellBackdropCover.themePicker.priority)
             }
             if profileFlow != nil, !showsWelcome, !viewModel.showSetupCheck {
-                profileLayer.transition(.opacity).zIndex(2.5)
+                profileLayer.seleneOverlayOwnership(!isCloseGameOpen).transition(.opacity).zIndex(2.5)
             }
             if let game = viewModel.gameForSettingsSheet {
                 GameOptionsView(
@@ -174,8 +173,8 @@ extension AppShellView {
                     opensMods: viewModel.gameOptionsOpensMods
                 )
                 .opacity(opacityBelowCover(2))
-                .allowsHitTesting(!currentBackdropCover.covers(2) && profileFlow == nil)
-                .accessibilityHidden(profileFlow != nil)
+                .seleneOverlayOwnership(!currentBackdropCover.covers(2) && profileFlow == nil
+                                        && !router.isMenuPresented && !isCloseGameOpen)
                 .transition(overlayTransition)
                 .zIndex(2)
             }
@@ -191,8 +190,8 @@ extension AppShellView {
                     }
                 )
                 .opacity(opacityBelowCover(2))
-                .allowsHitTesting(!currentBackdropCover.covers(2) && profileFlow == nil)
-                .accessibilityHidden(profileFlow != nil)
+                .seleneOverlayOwnership(!currentBackdropCover.covers(2) && profileFlow == nil
+                                        && !router.isMenuPresented && !isCloseGameOpen)
                 .id(game.id)
                 .transition(overlayTransition)
                 .zIndex(2)
@@ -230,27 +229,21 @@ extension AppShellView {
         .modifier(SoundCueHooks(router: router, viewModel: viewModel))
         // Inside the canvas root so the sheet inherits the window's canvas units.
         .seleneCanvasRoot()
-        .animation(reduceMotion ? nil : SeleneTheme.screen,
-                   value: viewModel.optionsGameID)
-        .animation(reduceMotion ? nil : SeleneTheme.quick,
-                   value: router.isMenuPresented)
-        .animation(reduceMotion ? .easeOut(duration: 0.15) : SeleneTheme.quick, value: router.menuSelection.isSubmenuOpen)
-        .animation(reduceMotion ? nil : SeleneTheme.screen, value: router.isThemePickerOpen)
-        // The veil and the blur fade in; under Reduce Motion it is a plain short fade.
-        .animation(reduceMotion ? .easeOut(duration: 0.15) : SeleneTheme.quick, value: profileFlow != nil)
-        .animation(SeleneTheme.quick, value: router.isSearchPresented)
-        .animation(reduceMotion ? nil : SeleneTheme.screen, value: viewModel.showSetupCheck)
-        .animation(reduceMotion ? nil : SeleneTheme.screen, value: viewModel.firstRunSetup.page)
-        .animation(reduceMotion ? nil : SeleneTheme.screen, value: router.route == .addGame)
-        .animation(reduceMotion ? nil : SeleneTheme.screen, value: router.route == .console)
-        .animation(reduceMotion ? nil : SeleneTheme.quick,
-                   value: viewModel.gameToClose?.id)
-        .animation(reduceMotion ? nil : SeleneTheme.quick,
-                   value: viewModel.gameToRemove?.id)
-        .animation(reduceMotion ? nil : SeleneTheme.quick,
-                   value: viewModel.gameWithInstallFailure?.id)
-        .animation(reduceMotion ? nil : SeleneTheme.quick, value: viewModel.settingsNotice?.id)
-        .animation(reduceMotion ? nil : SeleneTheme.quick, value: showsUpdateOffer)
+        .animation(Motion.screen(reduceMotion), value: viewModel.optionsGameID)
+        .animation(Motion.overlay(reduceMotion), value: router.isMenuPresented)
+        .animation(Motion.anchoredCard(reduceMotion), value: router.menuSelection.isSubmenuOpen)
+        .animation(Motion.screen(reduceMotion), value: router.isThemePickerOpen)
+        .animation(Motion.overlay(reduceMotion), value: profileFlow != nil)
+        .animation(Motion.overlay(reduceMotion), value: router.isSearchPresented)
+        .animation(Motion.screen(reduceMotion), value: viewModel.showSetupCheck)
+        .animation(Motion.screen(reduceMotion), value: viewModel.firstRunSetup.page)
+        .animation(Motion.screen(reduceMotion), value: router.route == .addGame)
+        .animation(Motion.screen(reduceMotion), value: router.route == .console)
+        .animation(Motion.overlay(reduceMotion), value: viewModel.gameToClose?.id)
+        .animation(Motion.overlay(reduceMotion), value: viewModel.gameToRemove?.id)
+        .animation(Motion.overlay(reduceMotion), value: viewModel.gameWithInstallFailure?.id)
+        .animation(Motion.overlay(reduceMotion), value: viewModel.settingsNotice?.id)
+        .animation(Motion.overlay(reduceMotion), value: showsUpdateOffer)
         .environment(\.seleneReduceMotion, reduceMotion)
         .environment(\.seleneBackdropStyle, backdropStyle)
         .environment(\.seleneSharesBackdrop, true)

@@ -8,11 +8,7 @@ extension GameOptionsView {
 
     func confirmOverlay(_ target: ConfirmTarget) -> some View {
         let copy = confirmCopy(target)
-        return ZStack {
-            SeleneTheme.scrim45
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .onTapGesture { dismissConfirm() }
+        return SeleneOverlay(style: .dialog, onOutside: dismissConfirm) {
             SeleneConfirmDialog(title: copy.title,
                                 message: copy.message,
                                 confirmTitle: copy.confirm,
