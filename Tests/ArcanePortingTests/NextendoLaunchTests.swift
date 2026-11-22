@@ -20,9 +20,14 @@ final class NextendoLaunchTests: XCTestCase {
         XCTAssertEqual(snapshot.multiplayerModes, [.offline, .local, .online])
         let local = GameSettingsSnapshot(settings: [try networkSetting(online: false)], values: [:], fixed: [])
         XCTAssertEqual(local.multiplayerModes, [.offline, .local])
-        XCTAssertEqual(GameOptionsPresentation(supportsRenderScale: false, isPlayable: true, sourcesDetached: false,
-                                               settings: local).focusableRows(level: .main, origin: .details).first,
-                       .multiplayer)
+        for (settings, onlineRiskMods) in [(local, false), (snapshot, true)] {
+            let presentation = GameOptionsPresentation(supportsRenderScale: false, isPlayable: true, sourcesDetached: false,
+                                                       settings: settings, onlineRiskMods: onlineRiskMods)
+            let rows = presentation.focusableRows(level: .main, origin: .details)
+            XCTAssertEqual(Array(rows.prefix(2)), [.play, .multiplayer])
+            XCTAssertEqual(GameOptionsFocus(row: nil, in: rows).row(in: rows), .play)
+            XCTAssertTrue(rows.contains(.favorite))
+        }
         XCTAssertNil(NextendoLaunch.networkSetting(in: []))
     }
 
@@ -76,6 +81,7 @@ final class NextendoLaunchTests: XCTestCase {
         XCTAssertEqual(SettingsCatalog.search("Nextendo", supportsNextendo: true).map(\.id).filter(nextendoRows.contains), nextendoRows)
         XCTAssertTrue(SettingsCatalog.search("Nextendo", supportsNextendo: true).filter { nextendoRows.contains($0.id) }
             .allSatisfy { $0.group == .multiplayer })
+        XCTAssertEqual(SettingsCatalog.all.filter { $0.group == .apiServices }.map(\.id), ["igdb", "steamGridDB"])
         XCTAssertEqual(SettingsCatalog.changed(in: settings, supportsNextendo: true).map(\.id), ["nextendoClientID"])
     }
 }

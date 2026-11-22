@@ -103,12 +103,19 @@ extension GameOptionsView {
             : row == .mods && multiplayerMode == .online ? L10n.text("Code mods off")
             : checking ? nil : downloadsSources && !p.toolchainBlocked
             ? L10n.text("Arcane checks the cloud for missing game files.") : p.about(row)
-        return SeleneOptionRow(icon: row.icon,
+        return SeleneOptionRow(icon: row == .multiplayer ? nil : row.icon,
                         title: title,
                         about: about,
                         focused: focused == row,
                         destructive: row.isDestructive,
-                        enabled: checking || (downloadsSources ? !p.toolchainBlocked : !p.isDimmed(row))) {
+                        enabled: checking || (downloadsSources ? !p.toolchainBlocked : !p.isDimmed(row)),
+                        leading: row == .multiplayer ? AnyView(
+                            Image(systemName: "person.2.fill")
+                                .seleneFont(20)
+                                .foregroundColor(p.isDimmed(row) ? SeleneTheme.ink60 : SeleneTheme.rowIcon)
+                                .frame(width: canvas.u(24))
+                                .accessibilityHidden(true)
+                        ) : nil) {
             HStack(spacing: canvas.u(12)) {
                 if checking {
                     SeleneProgressBar(progress: nil).frame(width: canvas.u(96))

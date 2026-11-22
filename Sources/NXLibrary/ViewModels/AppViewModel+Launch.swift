@@ -114,7 +114,7 @@ extension AppViewModel {
     func showMultiplayerVPNFallback(_ proceed: @escaping () -> Void) {
         showSettingsNotice(title: "VPN unavailable",
                            message: L10n.text("This game can start on your local network instead. Players on the VPN will not be reachable."),
-                           actionTitle: "Play on the local network", cancelTitle: "Cancel", retry: proceed)
+                           actionTitle: "Play on the local network", cancelTitle: "Cancel", primaryFirst: true, retry: proceed)
     }
 
     private func startGame(_ game: PortedGame, titleId: String, token saveLaunchToken: UUID,

@@ -346,9 +346,9 @@ public struct GameOptionsPresentation: Equatable {
     public func entries(level: GameOptionsLevel, origin: GameOptionsOrigin) -> [GameOptionsEntry] {
         switch level {
         case .main:
-            var entries: [GameOptionsEntry] = []
+            var entries: [GameOptionsEntry] = [.row(.play)]
             if buildSettings?.visible.contains("DM_NETWORK") == true { entries.append(.row(.multiplayer)) }
-            entries += [.row(.play), .row(.editDetails), .row(.cheats), .row(.mods)]
+            entries += [.row(.editDetails), .row(.cheats), .row(.mods)]
             if onlineRiskMods { entries.append(.row(.disableOnlineRiskMods)) }
             entries.append(.row(.openSaves))
             if origin == .spotlight { entries.append(.row(.move)) }

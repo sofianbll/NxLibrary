@@ -75,8 +75,17 @@ struct SettingsSidebar: View {
         } label: {
             HStack(spacing: canvas.u(16)) {
                 // Selene's section icons take the row's ink, like the title.
-                MaterialIconView(section.icon, size: 24)
-                    .foregroundColor(lit ? SeleneTheme.onFocus : SeleneTheme.ink)
+                Group {
+                    if section == .multiplayer {
+                        Image(systemName: "person.2.fill")
+                            .seleneFont(20)
+                            .frame(width: canvas.u(24))
+                            .accessibilityHidden(true)
+                    } else {
+                        MaterialIconView(section.icon, size: 24)
+                    }
+                }
+                .foregroundColor(lit ? SeleneTheme.onFocus : SeleneTheme.ink)
                 Text(section.title(in: context))
                     .seleneFont(21, .medium)
                     .foregroundColor(lit ? SeleneTheme.onFocus : SeleneTheme.ink)

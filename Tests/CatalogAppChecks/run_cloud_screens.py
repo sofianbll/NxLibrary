@@ -145,13 +145,16 @@ MULTIPLAYER_STATES = r'''
         try render("multiplayer-vpn-disconnected", output, settingsPage(), size: .init(width: 1920, height: 1080))
         vm.showMultiplayerVPNFallback {}
         let warning = vm.settingsNotice!
-        precondition(warning.choices == ["Cancel", "Play on the local network"])
+        precondition(warning.choices == ["Play on the local network", "Cancel"])
+        precondition(vm.settingsNoticeFocus == 0 && warning.cancelIndex == 1 && warning.vertical)
         try render("multiplayer-vpn-warning", output,
                    SeleneChoiceDialog(title: warning.title, message: warning.message, choices: warning.choices,
                                       focus: .constant(warning.initialFocus), vertical: warning.vertical, onChoose: { _ in })
                        .environment(\.nxAppLocale, frLocale), size: .init(width: 1100, height: 630))
         func gameOptions() -> some View {
-            GameOptionsView(viewModel: vm, game: game, origin: .details, onClose: {}, onShowBuild: {}, onMove: {})
+            var installed = game
+            installed.status = .built
+            return GameOptionsView(viewModel: vm, game: installed, origin: .details, onClose: {}, onShowBuild: {}, onMove: {})
                 .environment(\.nxAppLocale, frLocale)
         }
         ScreenVPN.connected = true
@@ -240,7 +243,7 @@ enum ScreenVPN {
     change(rows, r'            ScrollViewReader \{ proxy in\n                ScrollView \{\n', '')
     change(rows, r'                }\n                \.scrollIndicators\(\.hidden\).*?\n            }\n            \.id\(level\)\n', '')
     change(rows, r'let entries = p\.entries\(level: level, origin: origin\)',
-           'let entries = p.entries(level: level, origin: origin).prefix(7)')
+           'let entries = p.entries(level: level, origin: origin).prefix(ScreenVPN.mods ? 8 : 7)')
     return host.replace("// MULTIPLAYER_CHECK", MULTIPLAYER.replace("// MULTIPLAYER_STATES", MULTIPLAYER_STATES))
 
 

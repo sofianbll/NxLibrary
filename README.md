@@ -254,7 +254,7 @@ Cheats change values while you play, for one game version only. New items, looks
 
 ### Multiplayer
 
-Open **Settings → General → Play together** to choose a default: **Offline**, **Local** or **Online**. The first row in **Game Options** overrides it for that game. Older builds without network settings do not show the row. Existing per-game network choices carry over.
+Open **Settings → General → Play together** to choose a default: **Offline**, **Local** or **Online**. In **Game Options**, the **Play together** row below **Play** overrides it for that game. Older builds without network settings do not show the row. Existing per-game network choices carry over.
 
 - **Local** uses your local network or your selected VPN: ZeroTier, Tailscale or NetBird. If Arcane cannot select an adapter, it asks before starting on the local network instead. Use **Advanced** to select an adapter, or to force LAN or local wireless. Automatic uses both local modes on builds without Nextendo and local wireless on Nextendo builds, where the engine's automatic mode also enables online services. For a VPN that does not carry room discovery, `DM_NET_DISCOVERY_PEER` in the player's `env.txt` can point to the host's VPN IPv4 address.
 - **Online** requires a Nextendo-enabled game build and an account. Nextendo is a free community service, not a Nintendo service. Sign in from **Play together**. Use **Friends** to add by code, manage requests or add recent players when their code is available. Building does not require signing in: a compatible engine needs a public client ID from **Advanced** or the Arcane bundle. Rebuild a game that does not offer Online. The engine pin does not change.
