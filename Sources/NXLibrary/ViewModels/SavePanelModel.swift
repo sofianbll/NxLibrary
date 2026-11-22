@@ -38,12 +38,36 @@ final class SavePanelModel: ObservableObject {
     let game: PortedGame
     private let viewModel: AppViewModel
     private let store: SaveSnapshotStore
+    private let profileID: UUID?
     private var lease: UUID?
     private var abandoned = false
     var canMutate: Bool { !busy && !running && !recoveryRequired && context != nil && context?.cloudReason == nil }
     init(viewModel: AppViewModel, game: PortedGame) {
         self.viewModel = viewModel; self.game = game
         self.store = SaveSnapshotStore(root: viewModel.saveBackupRoot)
+        self.profileID = viewModel.secondarySaveProfile
+    }
+    var saveCopySources: [LocalProfile] {
+        guard let profileID else { return [] }
+        return viewModel.localProfiles?.profiles.filter { $0.id != profileID } ?? []
+    }
+    func copySaves(from profile: LocalProfile) {
+        guard let profileID, profileID == viewModel.secondarySaveProfile, canMutate,
+              acquire(activity: .importSave) else { return }
+        do {
+            let source = try viewModel.profileSaveLocation(for: game, profileID: profile.id)
+            let destination = try viewModel.profileSaveLocation(for: game, profileID: profileID)
+            viewModel.saveQueue.async {
+                do {
+                    try self.transaction().copyProfileSaves(from: source, to: destination,
+                                                             identity: self.viewModel.saveIdentity(for: self.game))
+                    DispatchQueue.main.async {
+                        self.release()
+                        self.refresh(resultMessage: L10n.text("Imported successfully"))
+                    }
+                } catch { self.finishFailure(error) }
+            }
+        } catch { finishFailure(error) }
     }
     var importAction: SavePresentation.ImportAction {
         SavePresentation.importAction(available: context != nil, busy: busy, running: running,
@@ -58,7 +82,7 @@ final class SavePanelModel: ObservableObject {
         issue = Issue(title: activity.failureTitle, message: error.localizedDescription)
     }
     private func acquire(activity: Activity = .refresh, recovering: Bool = false) -> Bool {
-        guard !busy, lease == nil, let tid = game.titleId,
+        guard profileID == viewModel.secondarySaveProfile, !busy, lease == nil, let tid = game.titleId,
               let token = viewModel.saveGate.begin(titleID: tid, recovering: recovering) else {
             report(SaveFailure.busy, during: activity)
             return false
@@ -75,6 +99,9 @@ final class SavePanelModel: ObservableObject {
     private func transaction() -> SaveTransaction {
         SaveTransaction(store: store, isRunning: { RunningGameMonitor.runningApplication(for: self.game) != nil },
             validateAccess: {
+                let selected = Thread.isMainThread ? self.viewModel.secondarySaveProfile
+                    : DispatchQueue.main.sync { self.viewModel.secondarySaveProfile }
+                guard selected == self.profileID else { throw SaveFailure.changed }
                 try self.viewModel.saveContext(for: self.game).requireWrites()
             })
     }

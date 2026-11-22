@@ -76338,6 +76338,28 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "无法保存构建队列。退出后可能无法继续构建。"}}
       }
     },
+    "Copy saves from another profile": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Copy saves from another profile"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Copia i salvataggi da un altro profilo"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Copier les sauvegardes d’un autre profil"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spielstände aus einem anderen Profil kopieren"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Copiar partidas guardadas de otro perfil"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Copiar saves de outro perfil"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "从其他玩家档案复制存档"}}
+      }
+    },
+    "Only an empty profile can receive a copy of this game's saves.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Only an empty profile can receive a copy of this game's saves."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Solo un profilo senza salvataggi di questo gioco può riceverne una copia."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "La copie n’est possible que si ce profil n’a aucune sauvegarde de ce jeu."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Eine Kopie ist nur möglich, wenn dieses Profil keine Spielstände für das Spiel hat."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Solo se puede copiar si este perfil no tiene partidas guardadas de este juego."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Só é possível copiar se este perfil não tiver saves deste jogo."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "只有尚无此游戏存档的玩家档案才能接收副本。"}}
+      }
+    },
     "Move to Trash: %@. The installed app, saves and logs stay. Rebuilds will be disabled until you attach the sources again.": {
       "comment": "Source removal safety copy. User paths/names remain verbatim.",
       "localizations": {

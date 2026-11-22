@@ -13,13 +13,25 @@ extension AppViewModel {
     }
 
     var saveBackupRoot: URL {
-        AppData.supportRoot.appendingPathComponent("SaveBackups")
+        let base = AppData.supportRoot.appendingPathComponent("SaveBackups")
+        return secondarySaveProfile.map { base.appendingPathComponent("Profiles/\($0)") } ?? base
+    }
+    var secondarySaveProfile: UUID? {
+        guard let profiles = localProfiles, let active = profiles.active, active.id != profiles.originalID else { return nil }
+        return active.id
+    }
+    func profileSaveLocation(for game: PortedGame, profileID: UUID) throws -> SaveLocation {
+        if profileID == localProfiles?.originalID { return try legacySaveLocation(for: game) }
+        return try SaveLocation.profileLocation(titleID: game.titleId ?? "", profileID: profileID, in: AppData.supportRoot)
+    }
+    func legacySaveLocation(for game: PortedGame) throws -> SaveLocation {
+        try SaveLocation.defaultLocation(titleID: game.titleId ?? "", home: FileManager.default.homeDirectoryForCurrentUser)
     }
     func saveContext(for game: PortedGame) throws -> SaveContext {
         guard let id = game.titleId else { throw SaveFailure.invalidTitleID }
-        let libraryFolder: String? = Thread.isMainThread
-            ? settingsStore?.settings.cloudSaves.folderURL()?.path
-            : DispatchQueue.main.sync { self.settingsStore?.settings.cloudSaves.folderURL()?.path }
+        let (scoped, libraryFolder) = Thread.isMainThread
+            ? (secondarySaveProfile, settingsStore?.settings.cloudSaves.folderURL()?.path)
+            : DispatchQueue.main.sync { (self.secondarySaveProfile, self.settingsStore?.settings.cloudSaves.folderURL()?.path) }
         var gameCloud: String?
         if let domain = game.effectiveBundleId {
             CFPreferencesAppSynchronize(domain as CFString)
@@ -36,6 +48,10 @@ extension AppViewModel {
               SaveLocation.validID(installedID), installedID.uppercased() == id.uppercased() else {
             throw SaveFailure.invalidTitleID
         }
+        if let scoped {
+            return SaveContext(location: try SaveLocation.profileLocation(titleID: id, profileID: scoped, in: AppData.supportRoot),
+                               cloudReason: nil)
+        }
         return try SaveLocation.inspect(titleID: id, appURL: game.url,
             home: FileManager.default.homeDirectoryForCurrentUser, environment: ProcessInfo.processInfo.environment,
             gameCloudFolder: gameCloud, libraryCloudFolder: libraryFolder)
@@ -45,7 +61,9 @@ extension AppViewModel {
                      version: game.versionString, buildID: CheatLocator.buildID(appURL: game.url))
     }
     func defaultSaveLocation(for game: PortedGame) throws -> SaveLocation {
-        try SaveLocation.defaultLocation(titleID: game.titleId ?? "", home: FileManager.default.homeDirectoryForCurrentUser)
+        let scoped = Thread.isMainThread ? secondarySaveProfile : DispatchQueue.main.sync { self.secondarySaveProfile }
+        if let scoped { return try SaveLocation.profileLocation(titleID: game.titleId ?? "", profileID: scoped, in: AppData.supportRoot) }
+        return try legacySaveLocation(for: game)
     }
     /// Covers the complete replace operation, also when a successful build arrives from its background queue.
     func acquireSaveInstallLease(for game: PortedGame) -> (() -> Void)? {
@@ -59,6 +77,10 @@ extension AppViewModel {
     }
     func savesPermitPlay(_ game: PortedGame) -> Bool {
         guard let tid = game.titleId else { return true }
+        if localProfiles?.failed == true {
+            alertMessage = SaveFailure.unreadableConfiguration.localizedDescription
+            return false
+        }
         if let location = try? defaultSaveLocation(for: game), SaveTransaction.needsRecovery(location: location) {
             recoverSavesAtStartup()
             alertMessage = "This game's save needs recovery. Wait for recovery to finish, then press Play again. Backups are in \(saveBackupRoot.path)."

@@ -79,6 +79,21 @@ public final class SaveTransaction {
             desired: { preview.staging.appendingPathComponent($0.fileName) },
             revalidate: { try self.store.validateRestore(preview, location: location) })
     }
+    /// A profile copy seeds an empty destination only, using the normal verified restore journal.
+    public func copyProfileSaves(from source: SaveLocation, to destination: SaveLocation, identity: SaveIdentity) throws {
+        try check(destination)
+        guard source.titleID == destination.titleID, source != destination,
+              !Self.needsRecovery(location: source), !SaveFiles.exists(source.cloudPullJournal),
+              !Self.needsRecovery(location: destination), try SaveFiles.inventory(destination).isEmpty else {
+            throw SaveFailure.changed
+        }
+        let snapshot = try store.create(location: source, identity: identity, reason: .manual)
+        guard snapshot.entries.contains(where: { !$0.isDirectory }) else { throw SaveFailure.emptyImport }
+        let preview = try store.stageRestore(snapshot, location: destination)
+        defer { try? store.discardRestore(preview, location: destination) }
+        guard try SaveFiles.inventory(destination).isEmpty else { throw SaveFailure.changed }
+        try restore(preview, location: destination, identity: identity)
+    }
     private func replace(location: SaveLocation, identity: SaveIdentity, reason: SaveSnapshotReason, slots: [SaveSlot],
                          desired: (SaveSlot) -> URL, revalidate: () throws -> Void) throws -> SaveSnapshot {
         guard !Self.needsRecovery(location: location) else { throw SaveFailure.recoveryRequired }

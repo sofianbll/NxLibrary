@@ -587,7 +587,7 @@ Cartella `Sources/ArcanePorting/Saves/`.
 
 | File | Responsabilità |
 |---|---|
-| [Sources/ArcanePorting/Saves/SaveLocation.swift](../../Sources/ArcanePorting/Saves/SaveLocation.swift) | Percorsi e identità dei salvataggi; account/device, utenti locali aggiuntivi e file registro; cloud effettivo. |
+| [Sources/ArcanePorting/Saves/SaveLocation.swift](../../Sources/ArcanePorting/Saves/SaveLocation.swift) | Percorsi storici e separati per profilo, ambiente di avvio, account/device, utenti aggiuntivi, registro e cloud effettivo. |
 | [Sources/ArcanePorting/Saves/CloudSaves.swift](../../Sources/ArcanePorting/Saves/CloudSaves.swift) | Descrive scelta cloud, cartelle iCloud o personalizzate e passaggi fra le opzioni. |
 | [Sources/ArcanePorting/Saves/CloudSavesPreferences.swift](../../Sources/ArcanePorting/Saves/CloudSavesPreferences.swift) | Prepara la cartella e riapplica la scelta cloud ai domini dei giochi prima di ogni avvio, anche Off. |
 | [Sources/ArcanePorting/Saves/RyujinxSaveFolder.swift](../../Sources/ArcanePorting/Saves/RyujinxSaveFolder.swift) | Riconosce contenitori Ryujinx, controlla il title ID e seleziona l’intero albero committed 0. |
@@ -596,7 +596,7 @@ Cartella `Sources/ArcanePorting/Saves/`.
 | [Sources/ArcanePorting/Saves/SaveFileIO.swift](../../Sources/ArcanePorting/Saves/SaveFileIO.swift) | Copie, hash e xattr portabili; inventario di directory e registro regolare limitato, controlli dei percorsi e scritture durevoli. |
 | [Sources/ArcanePorting/Saves/SaveSnapshotStore.swift](../../Sources/ArcanePorting/Saves/SaveSnapshotStore.swift) | Backup completi degli utenti locali e registro, formati storici compatibili, staging e import User/Device. |
 | [Sources/ArcanePorting/Saves/SaveRestorePreview.swift](../../Sources/ArcanePorting/Saves/SaveRestorePreview.swift) | Staging e validazione dei pezzi registrati nel backup, compreso il file utenti, con rilevamento dei cambiamenti concorrenti. |
-| [Sources/ArcanePorting/Saves/SaveTransaction.swift](../../Sources/ArcanePorting/Saves/SaveTransaction.swift) | Sostituzioni con ambito esplicito, backup completo e journal 1/2; verifica originali, recovery e pulizia parziale riprendibili con intento durevole. |
+| [Sources/ArcanePorting/Saves/SaveTransaction.swift](../../Sources/ArcanePorting/Saves/SaveTransaction.swift) | Sostituzioni e copia fra profili con backup e journal 1/2; staging di rollback ricreabile dopo una copia parziale. |
 | [Sources/ArcanePorting/Saves/SaveOperationGate.swift](../../Sources/ArcanePorting/Saves/SaveOperationGate.swift) | Assegna lease per titolo e un’esclusione globale per l’updater; coordina salvataggi, Play, installazioni e recuperi. |
 | [Sources/ArcanePorting/Saves/SaveFailure.swift](../../Sources/ArcanePorting/Saves/SaveFailure.swift) | Errori delle operazioni sui salvataggi, con i testi per il giocatore. |
 | [Sources/ArcanePorting/Saves/SaveFiles.swift](../../Sources/ArcanePorting/Saves/SaveFiles.swift) | Controlli dei percorsi dei salvataggi con lstat: nessun link sostituito e solo cartelle e file normali. |
