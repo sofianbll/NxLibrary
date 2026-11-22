@@ -46,7 +46,7 @@ public enum ShellBackdropCover: Equatable {
 }
 
 /// A press on the control center, whatever device it came from.
-public enum MenuStep { case left, right, up, down, confirm, back }
+public enum MenuStep { case left, right, up, down, previous, next, confirm, back }
 
 /// What the shell runs after a `confirm`: the focused icon, card entry or Power pill.
 public enum MenuOutcome: Equatable {
@@ -129,6 +129,15 @@ public final class AppRouter: ObservableObject {
         case .right: moveMenu(by: 1)
         case .up: movePowerMenu(by: -1); moveEntryMenu(by: -1)
         case .down: movePowerMenu(by: 1); moveEntryMenu(by: 1)
+        case .previous, .next:
+            let inPanel = menuSelection.isSubmenuOpen || activityCenterFocus != nil
+            // Settings leaves the control center; only an explicit confirm opens it.
+            let icons = MenuAction.allCases.filter { !inPanel || $0 != .settings }
+            guard let index = icons.firstIndex(of: menuSelection.selected) else { return .none }
+            let delta = step == .previous ? -1 : 1
+            let next = icons[(index + delta + icons.count) % icons.count]
+            if inPanel { return .action(next) }
+            menuSelection.selected = next
         case .confirm:
             if menuSelection.isPowerOpen { return .power(menuSelection.power) }
             if menuSelection.isEntryOpen { return .entry(menuSelection.entry) }
@@ -144,6 +153,7 @@ public final class AppRouter: ObservableObject {
     /// A press on a row icon, by pointer or by A: the focus lands on it, and its card or Power's pills open, or close
     /// when they were already open on it. The submenu of another icon closes first; the other icons hold none.
     public func pressMenuIcon(_ action: MenuAction) {
+        activityCenterFocus = nil
         let wasFocused = menuSelection.selected == action
         menuSelection.selected = action
         switch action {

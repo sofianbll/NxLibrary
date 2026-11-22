@@ -115,6 +115,18 @@ struct Probe: View {
                 require(model.scroll.state.offset > 1000, label + ": viewport follows selection")
             }
             settle()
+            let model = owner.model!
+            _ = model.handle(.tabNext, summary: summary)
+            require(model.state.filter == .unlocked, "RB changes the achievement filter")
+            _ = model.handle(.tabPrevious, summary: summary)
+            require(model.state.filter == .all, "LB returns to all achievements")
+            _ = model.handle(.confirm, summary: summary)
+            _ = model.handle(.tabNext, summary: summary)
+            require(model.state.isDetailOpen && model.state.index == 1 && model.state.filter == .all,
+                    "RB in a detail advances to the next achievement, not the next filter")
+            _ = model.handle(.tabPrevious, summary: summary)
+            require(model.state.isDetailOpen && model.state.index == 0, "LB returns to the previous detail")
+            _ = model.handle(.cancel, summary: summary)
             walk("First open")
 
             owner.model!.focus(0)

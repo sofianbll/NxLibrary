@@ -128,7 +128,8 @@ extension AppShellView {
                                            onFocus: { router.activityCenterFocus?.selected = $0 },
                                            onOpen: { openActivityCenterRow($0, router: router, viewModel: viewModel) },
                                            onCancel: { cancelActivityCenterRow($0, viewModel: viewModel) },
-                                           onClose: { router.closeMenu() })
+                                           onClose: { router.closeMenu() },
+                                           onTab: { menuInput($0 < 0 ? .tabPrevious : .tabNext) })
                             .transition(.opacity)
                     } else if router.isThemePickerOpen {
                         ThemePickerView(viewModel: viewModel, router: router, settings: settings, games: viewModel.libraryGames)
@@ -143,7 +144,8 @@ extension AppShellView {
                                 || !viewModel.buildQueue.isEmpty || !viewModel.activityResults.entries.isEmpty,
                             onSelect: { runMenuAction($0) },
                             onSelectPower: { runPower($0) },
-                            onSelectEntry: { runMenuEntry($0) }
+                            onSelectEntry: { runMenuEntry($0) },
+                            onTab: { menuInput($0 < 0 ? .tabPrevious : .tabNext) }
                         )
                         .transition(.opacity)
                     }

@@ -18,7 +18,8 @@ public final class NSWorkspaceLauncher: AppLaunching {
         }
         var merged = ProcessInfo.processInfo.environment
         // Arcane's host handoff is per launch, never inherited from the launcher environment.
-        for key in GameOverlayLaunch.keys + [HomeMenu.launcherKey, HomeMenu.bundleIDKey, NextendoLaunch.loginDirectoryKey] {
+        for key in GameOverlayLaunch.keys + [HomeMenu.launcherKey, HomeMenu.bundleIDKey, NextendoLaunch.loginDirectoryKey,
+                                            LaunchService.overlayHomeSwapKey] {
             merged[key] = nil
         }
         for (key, value) in environment { merged[key] = value }
@@ -85,21 +86,29 @@ public final class LaunchService {
     /// Set for every game Arcane starts: Game options are its settings window, so the engine's own
     /// (dm/mac/launcher.c: DM_LAUNCHER=0) does not show; the game takes Arcane's settings and starts.
     public static let launchEnvironment = ["DM_LAUNCHER": "0"]
+    static let overlayHomeSwapKey = "DM_OVERLAY_HOME_SWAP"
 
     public func launch(appURL: URL, environment: [String: String] = [:],
+                       homeButton: InGameHomeButton = .auto,
                        overlay: GameOverlayLaunch? = nil, snapshot: GameOverlaySnapshot? = nil,
                        onExit: (() -> Void)? = nil,
                        completion: @escaping (Bool, String?) -> Void) {
-        launch(appURL: appURL, environment: environment, overlay: overlay, snapshot: snapshot,
+        launch(appURL: appURL, environment: environment, homeButton: homeButton, overlay: overlay, snapshot: snapshot,
                temporaryDirectory: FileManager.default.temporaryDirectory, onExit: onExit, completion: completion)
     }
 
     func launch(appURL: URL, environment: [String: String] = [:],
+                homeButton: InGameHomeButton = .auto,
                 overlay: GameOverlayLaunch?, snapshot: GameOverlaySnapshot?, temporaryDirectory: URL,
                 onExit: (() -> Void)? = nil,
                 completion: @escaping (Bool, String?) -> Void) {
         var values = environment.merging(Self.launchEnvironment) { _, fixed in fixed }
         values[GameOverlayLaunch.dataKey] = nil
+        values[Self.overlayHomeSwapKey] = switch homeButton {
+        case .auto: nil
+        case .fullOverlay: "0"
+        case .quickAccess: "1"
+        }
         var cleanup: (() -> Void)?
         if let overlay, let snapshot, let file = try? overlay.writeSnapshot(snapshot, in: temporaryDirectory) {
             values[GameOverlayLaunch.dataKey] = file.path

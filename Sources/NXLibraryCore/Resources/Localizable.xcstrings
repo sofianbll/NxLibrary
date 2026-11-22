@@ -1,6 +1,21 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Home button in games": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Home button in games"}}, "it": {"stringUnit":{"state":"translated","value":"Tasto Home in gioco"}}, "fr": {"stringUnit":{"state":"translated","value":"Bouton Home en jeu"}}, "de": {"stringUnit":{"state":"translated","value":"Home-Taste im Spiel"}}, "es": {"stringUnit":{"state":"translated","value":"Botón Home en el juego"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Botão Home no jogo"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"游戏内 Home 键"}}
+    }},
+    "Auto uses the game's own setting.": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Auto uses the game's own setting."}}, "it": {"stringUnit":{"state":"translated","value":"Auto usa l’impostazione del gioco."}}, "fr": {"stringUnit":{"state":"translated","value":"Auto conserve le réglage du jeu."}}, "de": {"stringUnit":{"state":"translated","value":"Auto übernimmt die Einstellung des Spiels."}}, "es": {"stringUnit":{"state":"translated","value":"Auto respeta el ajuste del juego."}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Auto mantém a configuração do jogo."}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"自动使用游戏内设置。"}}
+    }},
+    "Auto": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Auto"}}, "it": {"stringUnit":{"state":"translated","value":"Auto"}}, "fr": {"stringUnit":{"state":"translated","value":"Auto"}}, "de": {"stringUnit":{"state":"translated","value":"Auto"}}, "es": {"stringUnit":{"state":"translated","value":"Auto"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Auto"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"自动"}}
+    }},
+    "Short press = full overlay": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Short press = full overlay"}}, "it": {"stringUnit":{"state":"translated","value":"Breve = overlay completo"}}, "fr": {"stringUnit":{"state":"translated","value":"Court = overlay complet"}}, "de": {"stringUnit":{"state":"translated","value":"Kurz = vollständiges Overlay"}}, "es": {"stringUnit":{"state":"translated","value":"Pulsación corta = menú completo"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Toque curto = overlay completo"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"短按 = 完整叠加层"}}
+    }},
+    "Short press = quick access": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Short press = quick access"}}, "it": {"stringUnit":{"state":"translated","value":"Breve = accesso rapido"}}, "fr": {"stringUnit":{"state":"translated","value":"Court = accès rapide"}}, "de": {"stringUnit":{"state":"translated","value":"Kurz = Schnellzugriff"}}, "es": {"stringUnit":{"state":"translated","value":"Pulsación corta = acceso rápido"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Toque curto = acesso rápido"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"短按 = 快速访问"}}
+    }},
     "Profile page cards": {"localizations": {
       "en": {"stringUnit":{"state":"translated","value":"Profile page cards"}}, "it": {"stringUnit":{"state":"translated","value":"Schede della pagina profilo"}}, "fr": {"stringUnit":{"state":"translated","value":"Cartes de la page profil"}}, "de": {"stringUnit":{"state":"translated","value":"Karten der Profilseite"}}, "es": {"stringUnit":{"state":"translated","value":"Tarjetas de la página de perfil"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Cartões da página de perfil"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"个人资料页卡片"}}
     }},

@@ -92,7 +92,7 @@ flowchart TD
     E --> F["CloudSavesPreferences applica la scelta cloud"]
     F --> M["ModStore riconcilia le cartelle prima di Play"]
     M --> O["GameOverlayLaunch: palette e dati locali<br/>snapshot temporaneo del profilo se il dmhost lo dichiara"]
-    O --> G["LaunchService apre l'app (NSWorkspace)<br/>DM_MODS_OFF controlla il gruppo ExeFS già nel bundle"]
+    O --> G["LaunchService apre l'app (NSWorkspace)<br/>DM_MODS_OFF controlla ExeFS; DM_OVERLAY_HOME_SWAP si aggiunge solo per una scelta esplicita"]
     G --> H["LaunchCoverWindow + LaunchMotion<br/>finché LaunchReadinessProbe vede una finestra"]
     H --> I["RunningGameMonitor · PlaySessionStore (heartbeat)"]
     I -->|"Home → Back to console mode (build compatibile)"| PZ["Notifica del PID di dmhost → Arcane davanti nella schermata corrente"]
@@ -274,7 +274,7 @@ Settings → Profiles → At startup passa da «Chi gioca?» a «Ultimo profilo�
 
 Il carosello degli avatar usa artwork già nella cache, con ritaglio sul volto rilevato o al centro, e simboli neutri del sistema. L’ultima tessera apre la scelta di una foto, con assi e zoom per inquadrarla; B o Esc annulla. Per le GIF si conservano i fotogrammi e i tempi; con Riduci movimento si vede solo il primo.
 
-Home e Cambia profilo aprono il selettore. La carta Attività di Spotlight, il ritratto a destra e Profilo → Il mio profilo aprono la pagina profilo anche senza conto. Settings → Profiles → Profile page cards attiva e riordina le schede del profilo corrente. Le anteprime dei giochi aprono i dettagli, i titoli delle schede di gioco aprono Collection filtrata e B torna alla scheda. Il centro attività per trasferimenti e compilazioni resta distinto. Il pannello del conto offre anche il codice del profilo. Un profilo bloccato chiede il PIN o Touch ID, se disponibile; Touch ID riconosce l’utente macOS, non distingue i profili Arcane. Senza codice né Touch ID si può scegliere un altro profilo; non c’è un ripristino dal servizio online.
+Home e Cambia profilo aprono il selettore. La carta Attività di Spotlight, il ritratto a destra e Profilo → Il mio profilo aprono la pagina profilo anche senza conto. Settings → Profiles → Profile page cards attiva e riordina le schede del profilo corrente. Le anteprime dei giochi aprono i dettagli; i titoli aprono Collection nell'ordine proprio della scheda, senza toccare le preferenze globali. B torna al profilo. Il centro attività per trasferimenti e compilazioni resta distinto. Il pannello del conto offre anche il codice del profilo. Un profilo bloccato chiede il PIN o Touch ID, se disponibile; Touch ID riconosce l’utente macOS, non distingue i profili Arcane. Senza codice né Touch ID si può scegliere un altro profilo; non c’è un ripristino dal servizio online.
 
 Passare a un altro profilo con un gioco aperto chiede conferma. Arcane chiude i giochi Switch e aspetta che finiscano; i giochi Steam si chiudono manualmente. L’ospite gioca a Switch offline senza conto né cloud dei salvataggi. Entrare e uscire richiede conferma; i dati salvati rimangono separati sul Mac, senza ripresa dal selettore per il prossimo ospite. I giochi Steam non partono come ospite perché Arcane non può separarne le partite.
 

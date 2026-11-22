@@ -162,7 +162,9 @@ struct ProfilePage: View {
             }
             if ownsPage && !showFriends && achievementScreen == nil {
                 SeleneHintsBar(left: [HintItem(.b, "Back", action: router.back)],
-                               right: (isGuest ? [] : [HintItem(.y, "Edit profile", action: onEdit)])
+                               right: [HintItem(.lb, "Previous") { handle(.tabPrevious, data: data) },
+                                       HintItem(.rb, "Next") { handle(.tabNext, data: data) }]
+                               + (isGuest ? [] : [HintItem(.y, "Edit profile", action: onEdit)])
                                + [HintItem(.a, "Open", action: { activate(focus ?? defaultFocus, data: data) })])
             }
         }
@@ -558,7 +560,9 @@ struct ProfilePage: View {
                 }
             }
             SeleneHintsBar(left: [HintItem(.b, "Back", action: { showFriends = false })],
-                           right: [HintItem(.a, "Nextendo settings", action: onAccount)])
+                           right: [HintItem(.lb, "Previous") { handle(.tabPrevious, data: data) },
+                                   HintItem(.rb, "Next") { handle(.tabNext, data: data) },
+                                   HintItem(.a, "Nextendo settings", action: onAccount)])
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(SeleneTheme.scrim)
@@ -624,8 +628,6 @@ struct ProfilePage: View {
         })
         case .achievement(let id, let row): openAchievements(data.achievements.first { $0.game.id == id }, row: row)
         case .card(let card):
-            viewModel.librarySelection.query.filter = .all
-            viewModel.librarySelection.query.searchText = ""
             router.navigate(to: .profileCollection(card))
         case .game(_, let id):
             guard let game = data.games.first(where: { $0.id == id }) else { return }
@@ -654,9 +656,12 @@ struct ProfilePage: View {
         if showFriends {
             if action == .cancel { showFriends = false }
             if action == .confirm { onAccount() }
-            if action == .navigateUp || action == .navigateDown {
-                friendIndex = min(max(0, friendIndex + (action == .navigateUp ? -1 : 1)),
-                                  max(0, (account?.friends?.count ?? 0) - 1))
+            switch action {
+            case .navigateUp, .navigateDown, .tabPrevious, .tabNext:
+                let delta = action == .navigateUp || action == .tabPrevious ? -1 : 1
+                let next = min(max(0, friendIndex + delta), max(0, (account?.friends?.count ?? 0) - 1))
+                if friendIndex != next { friendIndex = next; SoundEffectService.shared.play(.focus) }
+            default: break
             }
             return
         }
@@ -671,7 +676,10 @@ struct ProfilePage: View {
             let ordered = frames.sorted { ($0.value.minY, $0.value.minX) < ($1.value.minY, $1.value.minX) }.map(\.key)
             guard let index = ordered.firstIndex(of: current) else { return }
             let next = index + (action == .tabNext ? 1 : -1)
-            if ordered.indices.contains(next) { focus = ordered[next] }
+            if ordered.indices.contains(next) {
+                focus = ordered[next]
+                SoundEffectService.shared.play(.focus)
+            }
         case .navigateUp, .navigateDown, .navigateLeft, .navigateRight:
             guard let origin = frames[current] else { focus = defaultFocus; return }
             let vertical = action == .navigateUp || action == .navigateDown

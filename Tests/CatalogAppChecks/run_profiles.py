@@ -132,7 +132,7 @@ import ArcanePorting
         let pageHistory = PlaySessionStore(fileURL: data.appendingPathComponent("profile-page-sessions.json"), now: { date })
         for (index, item) in profileGames.prefix(5).reversed().enumerated() {
             precondition(pageHistory.start(gameID: item.id, sourceID: item.personalizationKey, announces: false))
-            date.addTimeInterval(index == 4 ? 5_400 : 900)
+            date.addTimeInterval(index == 0 ? 5_400 : 900)
             _ = pageHistory.end(gameID: item.id)
         }
         for item in profileGames {
@@ -151,6 +151,25 @@ import ArcanePorting
         precondition(pageRouter.route == .profile)
         pageRouter.back()
         precondition(pageRouter.route == .library)
+        let query = LibraryQuery(filter: .favorites, searchText: "no matches", sort: .recent)
+        vm.librarySelection = .init(query: query)
+        pageRouter.navigate(to: .profile)
+        pageRouter.navigate(to: .profileCollection(.mostPlayed))
+        let card = CollectionView(viewModel: vm, router: pageRouter, settings: settings, playSessions: pageHistory, artwork: art)
+        precondition(card.games.count == 5 && card.games.first?.id == profileGames[4].id)
+        card.reconcile()
+        precondition(vm.librarySelection.selectedGameID == profileGames[4].id)
+        card.handle(.tabNext)
+        precondition(vm.librarySelection.selectedGameID == card.games[1].id)
+        card.handle(.jumpToEnd)
+        precondition(vm.librarySelection.selectedGameID == card.games.last?.id)
+        card.handle(.rightStickPress)
+        precondition(vm.librarySelection.query == query)
+        card.handle(.jumpToStart)
+        try render("profile-most-played", card.environment(\.nxAppLocale, french), in: out, refs, "none")
+        pageRouter.back()
+        precondition(pageRouter.route == .profile)
+        vm.librarySelection = .init()
         L10n.setContext(french)
         for (name, size, account) in [
             ("16-9-linked", CGSize(width: 1440, height: 810), linked),
@@ -168,6 +187,13 @@ import ArcanePorting
         try render("profile-page-cards-settings", SettingsView(initialSection: .profiles, viewModel: vm, settings: settings,
                    router: pageRouter, artwork: art).environment(\.nxAppLocale, french),
                    in: out, refs, "none")
+        for choice in InGameHomeButton.allCases {
+            settings.settings.inGameHomeButton = choice
+            try render("settings-home-\(choice)", SettingsView(initialSection: .controllers, viewModel: vm, settings: settings,
+                       router: pageRouter, artwork: art).environment(\.nxAppLocale, french),
+                       in: out, refs, "none", size: .init(width: 1440, height: 810))
+        }
+        settings.settings.inGameHomeButton = .auto
         L10n.setContext(.init(language: .english, region: "US"))
         let switchToSam = ProfileFlow.Change(target: sam, startsGuest: false, step: .confirm)
         precondition(switchToSam.requiresConfirmation(current: alex.id, running: true, endsGuest: false))
@@ -226,13 +252,20 @@ import ArcanePorting
             try render(name, ZStack {
                 stage(SpotlightTopBar(filter: .all, sort: current, nextendo: online), showsSort: false)
                 MenuOverlayView(router: router, cloudLibrary: vm.cloudLibrary, activeProfile: alex,
-                                hasBuildActivity: true, onSelect: { _ in }, onSelectPower: { _ in })
+                                hasBuildActivity: true, onSelect: { _ in }, onSelectPower: { _ in }, onTab: { _ in })
             }.environment(\.nxAppLocale, lang ?? .init(language: .english, region: "US")),
                        in: out, refs, "screenshots/menu.png", names: names)
             L10n.setContext(.init(language: .english, region: "US"))
         }
         let fr = AppLocale(language: .french, region: "FR")
         try menu("09-menu", { $0.menuSelection.selected = .profile })
+        try menu("09-menu-fr", { $0.menuSelection.selected = .profile }, lang: fr)
+        L10n.setContext(fr)
+        try render("09-menu-open-activity-fr", ActivityCenterView(viewModel: vm, porting: vm.porting,
+                   cloudLibrary: vm.cloudLibrary, focus: .init(), onFocus: { _ in }, onOpen: { _ in },
+                   onCancel: { _ in }, onClose: {}, onTab: { _ in }).environment(\.nxAppLocale, fr),
+                   in: out, refs, "none")
+        L10n.setContext(.init(language: .english, region: "US"))
         try menu("09-menu-profile-card", { $0.menuSelection.selected = .profile; $0.openEntryMenu(); $0.moveEntryMenu(by: 1) })
         try menu("09-menu-library-card", { $0.menuSelection.selected = .library; $0.openEntryMenu() })
         try menu("09-menu-activity", { $0.menuSelection.selected = .activityCenter })
@@ -268,7 +301,8 @@ import ArcanePorting
                     try render("10-details-\(submenu)-\(tag)-\(downs + 1)", ZStack {
                         details(blur: AppShellView.profileOverlayBlur)
                         MenuOverlayView(router: router, cloudLibrary: vm.cloudLibrary, activeProfile: alex,
-                                        hasBuildActivity: false, onSelect: { _ in }, onSelectPower: { _ in })
+                                        hasBuildActivity: false, onSelect: { _ in }, onSelectPower: { _ in },
+                                        onTab: { _ in })
                     }.environment(\.nxAppLocale, locale), in: out, refs, "none")
                 }
             }
@@ -372,9 +406,9 @@ import ArcanePorting
                                onFocus: { _ in }, onOpen: {}, onCloseDetail: {}, onClose: {})
         }
         L10n.setContext(fr)
-        try render("27-local-achievements", achievementScreen(), in: out, refs, "none")
+        try render("27-local-achievements", achievementScreen().environment(\.nxAppLocale, fr), in: out, refs, "none")
         _ = achievementModel.handle(.confirm, summary: achievements)
-        try render("28-local-achievement-detail", achievementScreen(), in: out, refs, "none")
+        try render("28-local-achievement-detail", achievementScreen().environment(\.nxAppLocale, fr), in: out, refs, "none")
         try render("29-local-achievement-toast", ZStack(alignment: .topTrailing) {
             SeleneBackdrop().still(true)
             AchievementUnlockToast(names: achievements.rows(.unlocked).map(\.name)).padding(24)
@@ -741,6 +775,9 @@ def main():
                 r'public static var preferences: UserDefaults \{ \.standard \}',
                 f'public static let preferences = UserDefaults(suiteName: "local.arcane.{package.name}")!')
         replace(app / "Views/Shell/MenuOverlayView.swift", r"var presented = false", "var presented = true")
+        activity = app / "Views/Shell/ActivityCenterView.swift"
+        replace(activity, r"                ScrollViewReader \{ scroll in\n                    ScrollView \{\n", "")
+        replace(activity, r"                    }\n                    \.padding\(EdgeInsets.*?\.onChange\(of: focused\)[^\n]*\n                }\n", "")
         replace(app / "Views/Theme/ThemeStore.swift", r"static let shared = ThemeStore\(\)",
                 f'static let shared = ThemeStore(palettesURL: URL(fileURLWithPath: "{ROOT}/Resources/Selene/palettes.json"))')
         replace(app / "Views/Search/FindGameView.swift",

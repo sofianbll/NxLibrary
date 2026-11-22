@@ -86,6 +86,9 @@ struct SettingsView: View {
             .padding(.top, canvas.u(SeleneTokens.Space.stageHeader))
             .frame(maxHeight: .infinity, alignment: .top)
             SeleneHintsBar(right: commandHints)
+                .seleneOverlaidHints(showingControls || localePicker != nil || showingCloudAssistant
+                    || viewModel.isEditingSteamGridDBKey || igdb.isEditing
+                    || nextendo.isEditingClient || nextendo.friendToRemove != nil)
         }
         .id(theme.palette.id)
         .overlay(alignment: .bottom) {
@@ -272,7 +275,9 @@ struct SettingsView: View {
     }
 
     private var commandHints: [HintItem] {
-        var hints = [HintItem(.b, L10n.text("Back")) { handleBack() }]
+        var hints = [HintItem(.lb, "Previous") { moveSection(by: -1) },
+                     HintItem(.rb, "Next") { moveSection(by: 1) },
+                     HintItem(.b, L10n.text("Back")) { handleBack() }]
         if canResetSection {
             hints.append(HintItem(.x, L10n.text("Reset group")) { resetSection() })
         }
@@ -362,12 +367,17 @@ struct SettingsView: View {
     private func moveFocus(by delta: Int) {
         switch focusArea {
         case .sidebar:
-            let all = SettingsSection.allCases
-            section = all.stepped(from: section, delta) ?? section
-            SoundEffectService.shared.play(.focus)
+            moveSection(by: delta)
         case .rows:
             rowFocus.move(by: delta, count: rowActions.count)
         }
+    }
+
+    private func moveSection(by delta: Int) {
+        guard !(NSApp.keyWindow?.firstResponder is NSText) else { return }
+        focusArea = .sidebar
+        section = SettingsSection.allCases.stepped(from: section, delta) ?? section
+        SoundEffectService.shared.play(.focus)
     }
 
     private func moveSideways(_ delta: Int) {
@@ -439,6 +449,9 @@ struct SettingsView: View {
             case 124:
                 if typing { return event }
                 action = .navigateRight
+            case 12, 14:
+                if typing { return event }
+                action = event.keyCode == 12 ? .tabPrevious : .tabNext
             case 36, 76:
                 if typing { return event }
                 action = .confirm
@@ -489,6 +502,8 @@ struct SettingsView: View {
         case .navigateDown: moveFocus(by: 1)
         case .navigateLeft: moveSideways(-1)
         case .navigateRight: moveSideways(1)
+        case .tabPrevious: moveSection(by: -1)
+        case .tabNext: moveSection(by: 1)
         case .confirm:
             if focusArea == .sidebar {
                 enterSection()

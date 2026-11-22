@@ -20,13 +20,16 @@ extension CollectionView {
             }
         }
         var moved = false
-        let all = catalogScope
         switch action {
-        case .navigateLeft, .navigateRight:
+        case .navigateLeft, .navigateRight, .tabPrevious, .tabNext:
+            let step = action == .navigateLeft || action == .tabPrevious ? -1 : 1
+            if profileCard == nil, action == .tabPrevious || action == .tabNext {
+                setFilter(filter.shifted(by: step))
+                return
+            }
             let before = viewModel.librarySelection.selectedGameID
-            viewModel.librarySelection.moveCatalog(by: action == .navigateLeft ? -1 : 1,
-                                            in: all, history: playSessions)
-            moved = viewModel.librarySelection.selectedGameID != before
+            let ids = games.map(\.id)
+            moved = viewModel.librarySelection.moveIDs(ids, by: step) != before
         case .navigateUp:
             if profile != nil, profileCard == nil {
                 profileFocused = true
@@ -35,14 +38,10 @@ extension CollectionView {
         case .navigateDown: break
         case .jumpToStart, .jumpToEnd:
             let before = viewModel.librarySelection.selectedGameID
-            viewModel.librarySelection.jumpCatalog(toEnd: action == .jumpToEnd, in: all, history: playSessions)
-            moved = viewModel.librarySelection.selectedGameID != before
-        case .tabPrevious:
-            if profileCard == nil { setFilter(filter.shifted(by: -1)) }
-        case .tabNext:
-            if profileCard == nil { setFilter(filter.shifted(by: 1)) }
+            let ids = games.map(\.id)
+            moved = viewModel.librarySelection.jumpIDs(ids, toEnd: action == .jumpToEnd) != before
         case .rightStickPress:
-            openSort()
+            if profileCard == nil { openSort() }
         case .confirm:
             if let record = selectedCatalogGame {
                 activateCatalog(record)
