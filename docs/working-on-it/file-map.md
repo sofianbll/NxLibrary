@@ -645,8 +645,6 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Sources/NXLibrary/Views/AddGame/AddGameAction.swift](../../Sources/NXLibrary/Views/AddGame/AddGameAction.swift) | Identifica le azioni navigabili dei passaggi del wizard. |
 | [Sources/NXLibrary/Views/AddGame/AddGameStepThreeView.swift](../../Sources/NXLibrary/Views/AddGame/AddGameStepThreeView.swift) | Mostra progresso, log, cancellazione ed esito del porting, con nuovo tentativo d’installazione per una build già pronta. |
 | [Sources/NXLibrary/Views/Porting/GameInboxView.swift](../../Sources/NXLibrary/Views/Porting/GameInboxView.swift) | Pagina Selene con rilascio file, anteprima o motivo del blocco per riga e azioni singole o in gruppo. |
-| [Sources/NXLibrary/Views/Porting/PersonalStoreView.swift](../../Sources/NXLibrary/Views/Porting/PersonalStoreView.swift) | My library: schede Apps e ROM, filtri, righe Selene, immagine della selezione, pulsante Cloud e budget prima della conferma. |
-| [Sources/NXLibrary/Views/Porting/PersonalStoreView+Input.swift](../../Sources/NXLibrary/Views/Porting/PersonalStoreView+Input.swift) | Navigazione, ritorno alla tessera, conferma e inoltro alle azioni esistenti. |
 | [Sources/NXLibrary/Views/Porting/GameInboxView+Input.swift](../../Sources/NXLibrary/Views/Porting/GameInboxView+Input.swift) | Traduce tastiera e controller in focus e azioni dell'Inbox. |
 
 ## UI · Spotlight
@@ -780,7 +778,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Sources/NXLibrary/Views/Components/PortingArtLook.swift](../../Sources/NXLibrary/Views/Components/PortingArtLook.swift) | Applica alla tile desaturazione, riempimento e barra di avanzamento del porting. |
 | [Sources/NXLibrary/Views/Components/ScreenshotViewer.swift](../../Sources/NXLibrary/Views/Components/ScreenshotViewer.swift) | Mostra screenshot a schermo pieno e navigazione fra le immagini. |
 | [Sources/NXLibrary/Views/Components/SeleneBottomScrim.swift](../../Sources/NXLibrary/Views/Components/SeleneBottomScrim.swift) | Definisce sfumatura inferiore, posizione condivisa dei comandi (32 unità dal fondo) e fascia libera dai contenuti. |
-| [Sources/NXLibrary/Views/Components/SeleneConfirmDialog.swift](../../Sources/NXLibrary/Views/Components/SeleneConfirmDialog.swift) | Card e aiuto condivisi, conferma a sinistra e annullamento a destra, scelte multiple con note e SeleneSuccessNotice. |
+| [Sources/NXLibrary/Views/Components/SeleneConfirmDialog.swift](../../Sources/NXLibrary/Views/Components/SeleneConfirmDialog.swift) | Card e aiuto condivisi, conferma a sinistra e annullamento a destra, scelte multiple con testo a larghezza definita e note, SeleneSuccessNotice. |
 | [Sources/NXLibrary/Views/Components/AppUpdateDialog.swift](../../Sources/NXLibrary/Views/Components/AppUpdateDialog.swift) | Presenta controllo aggiornamenti, note di release, errori e progresso nel dialogo dell’app. |
 | [Sources/NXLibrary/Views/Components/SeleneHintsBar.swift](../../Sources/NXLibrary/Views/Components/SeleneHintsBar.swift) | Disegna i suggerimenti contestuali: ogni voce ha un glifo o un'etichetta di tasto; ⌘F appare senza manetta. |
 | [Sources/NXLibrary/Views/Components/SeleneHomeChrome.swift](../../Sources/NXLibrary/Views/Components/SeleneHomeChrome.swift) | Rende elementi condivisi della cornice e dei controlli della home Selene; trattiene gli hint durante l’entrata. |

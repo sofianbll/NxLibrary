@@ -253,7 +253,7 @@ contenere anche i titoli e i messaggi su più righe.
 Regole della barra:
 - Porting è l'unico gruppo di piattaforma (`isPlatform`): Search, Changed e il titolo di pagina chiamano le sue sezioni col nome del gruppo ("Porting · New games").
 - `SettingsSection` dichiara i casi nell'ordine della barra, quindi `allCases` la percorre come è disegnata. I `rawValue` sono identità e non cambiano: `sources` è la pagina Sources, `library` e `games` sono Game folders e New games di Porting; `cloudSaves` e `cloudLibrary` sono distinti.
-- La barra dei comandi mette B (Back) a sinistra e X/A a destra.
+- La barra dei comandi mette B (Back) a sinistra e LB/RB, X e A a destra.
 - Ogni riga di `SettingsCatalog` tiene il suo `rowID` quando cambia sezione.
 - Dove stanno le righe che si potrebbero cercare altrove:
   - schermata di lancio, Surprise me e card della sessione in Library → Games, perché valgono per ogni fonte; Hidden game apps elenca solo le app portate nascoste;
