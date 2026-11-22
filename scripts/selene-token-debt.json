@@ -628,11 +628,9 @@
     ".seleneFont(46": 1
   },
   "Sources/NXLibrary/Views/Shell/ActivityCenterView.swift": {
-    ".padding(.vertical,canvas.u(4": 1,
     ".seleneFont(12": 1,
-    ".seleneFont(15": 2,
-    ".seleneFont(17": 1,
-    ".seleneFont(30": 1
+    ".seleneFont(15": 1,
+    ".seleneFont(17": 1
   },
   "Sources/NXLibrary/Views/Shell/AppShellView+Layers.swift": {
     ".padding(.horizontal,canvas.u(16": 1,

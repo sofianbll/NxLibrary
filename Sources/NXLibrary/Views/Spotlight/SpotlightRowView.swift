@@ -95,7 +95,9 @@ struct SpotlightRowView: View {
             }
         }
         // The camera: the one slide of the whole row, on the tiles' own glide.
-        .modifier(CameraGlide(position: position, unit: canvas.u(1)))
+        .modifier(RailCamera(position: position - CGFloat(SpotlightState.anchorSlot),
+                             maximum: CGFloat(SpotlightState.scrollOffset(selectedIndex: items.count - 1)),
+                             pitch: canvas.u(SpotlightRowGeometry.pitch)))
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .frame(height: canvas.u(260), alignment: .topLeading)
         .animation(Motion.rail(reduceMotion, .spotlight), value: selectedKey)
@@ -295,21 +297,6 @@ private struct TileGlide: GeometryEffect {
         // The 1u is the item's start margin.
         let x = (SpotlightRowGeometry.place(of: index, at: position) + 1) * unit
         return ProjectionTransform(CGAffineTransform(a: scale, b: 0, c: 0, d: scale, tx: x, ty: rise * unit))
-    }
-}
-
-/// The row's camera on the tiles' own glide.
-private struct CameraGlide: GeometryEffect {
-    var position: CGFloat
-    let unit: CGFloat
-
-    var animatableData: CGFloat {
-        get { position }
-        set { position = newValue }
-    }
-
-    func effectValue(size: CGSize) -> ProjectionTransform {
-        ProjectionTransform(CGAffineTransform(translationX: SpotlightRowGeometry.camera(at: position) * unit, y: 0))
     }
 }
 

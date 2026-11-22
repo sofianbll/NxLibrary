@@ -1,4 +1,5 @@
 import SwiftUI
+import NXLibraryCore
 
 /// Moves a block as one while something above it glides.
 ///
@@ -12,5 +13,22 @@ import SwiftUI
 struct GlideGroup: ViewModifier {
     func body(content: Content) -> some View {
         content.geometryGroup()
+    }
+}
+
+/// Clamp the rendered position, not just the target: a retargeted spring retains its velocity.
+struct RailCamera: GeometryEffect {
+    var position: CGFloat
+    let maximum: CGFloat
+    let pitch: CGFloat
+
+    var animatableData: CGFloat {
+        get { position }
+        set { position = newValue }
+    }
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        let offset = Motion.railOffset(position, maximum: maximum)
+        return ProjectionTransform(CGAffineTransform(translationX: -offset * pitch, y: 0))
     }
 }

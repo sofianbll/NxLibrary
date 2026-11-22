@@ -2,29 +2,6 @@ import AppKit
 import SwiftUI
 import NXLibraryCore
 
-/// The shell applies the matching blur to its live backdrop, not to the foreground controls.
-enum SeleneOverlayStyle: Equatable {
-    case menu, deep, options, search, dialog, profileRemoval
-
-    var backdropBlur: CGFloat {
-        switch self {
-        case .deep: SeleneTokens.Effect.deepBlurPoints
-        case .options: SeleneTokens.Effect.panelBlurPoints
-        default: 0
-        }
-    }
-
-    var veil: Color {
-        switch self {
-        case .menu: SeleneTheme.scrim.opacity(SeleneTokens.Effect.menuVeil)
-        case .deep: SeleneTheme.scrim65
-        case .options, .dialog: SeleneTheme.scrim45
-        case .search: SeleneTheme.scrim.opacity(SeleneTokens.Effect.searchVeil)
-        case .profileRemoval: SeleneTheme.scrim.opacity(SeleneTokens.Effect.profileRemovalVeil)
-        }
-    }
-}
-
 /// The shared modal frame. Only the backdrop accepts outside clicks. Content keeps its
 /// own stable row IDs and existing keyboard/controller commands, including Back.
 struct SeleneOverlay<Content: View>: View {
@@ -46,10 +23,11 @@ struct SeleneOverlay<Content: View>: View {
     }
 
     @ViewBuilder private var veil: some View {
+        let tint = SeleneTheme.scrim.opacity(style.veilOpacity)
         if style == .search {
-            style.veil.background(.ultraThinMaterial)
+            tint.background(.ultraThinMaterial)
         } else {
-            style.veil
+            tint
         }
     }
 }

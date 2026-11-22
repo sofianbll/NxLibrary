@@ -251,9 +251,9 @@ struct SpotlightView: View {
             },
             stage: { stage(model, state: state) })
         .overlay(viewerOverlay)
-        .animation(.easeOut(duration: 0.2), value: viewer != nil)
+        .animation(Motion.viewer(reduceMotion), value: viewer != nil)
         .overlay(achievementsOverlay(model))
-        .animation(SeleneTheme.screen, value: achievementsScreen != nil)
+        .animation(Motion.screen(reduceMotion), value: achievementsScreen != nil)
         .overlay(model.selectedGame.map { ModsBandOverlay(host: modsHost, find: modsHost.find, game: $0) })
         .overlay(storeOverlay(model))
         .accessibilityHidden(sortMenu != nil)

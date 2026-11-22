@@ -46,7 +46,9 @@ struct CollectionCoverRow: View {
         // Covers made, and art arriving, during the slide ride it with the rest (`GlideGroup`).
         .modifier(GlideGroup())
         // The camera: the one slide of the whole row.
-        .offset(x: canvas.u(-CGFloat(offset) * CollectionRow.pitch))
+        .modifier(RailCamera(position: CGFloat(offset),
+                             maximum: CGFloat(CollectionRow.scrollOffset(selectedIndex: games.count - 1)),
+                             pitch: canvas.u(CollectionRow.pitch)))
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .frame(height: canvas.u(CollectionRow.bandHeight), alignment: .topLeading)
         .animation(Motion.rail(reduceMotion, .collection), value: selectedID)

@@ -15,6 +15,10 @@ public enum Motion {
         reduced ? nil : .spring(response: rail == .spotlight ? 0.32 : 0.18, dampingFraction: 1)
     }
 
+    public static func railOffset(_ position: CGFloat, maximum: CGFloat) -> CGFloat {
+        min(max(0, position), max(0, maximum))
+    }
+
     public static let screenDuration = 0.32
     public static let screen = Animation.timingCurve(0.32, 0.72, 0, 1, duration: screenDuration)
 

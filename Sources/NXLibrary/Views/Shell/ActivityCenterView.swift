@@ -14,6 +14,7 @@ struct ActivityCenterView: View {
 
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.nxAppLocale) private var localization
+    @State private var hover = SeleneHoverFocus()
 
     static func rows(_ viewModel: AppViewModel) -> [ActivityCenterFocus.Row] {
         let cloud = viewModel.cloudLibrary
@@ -34,11 +35,9 @@ struct ActivityCenterView: View {
     var body: some View {
         let rows = Self.rows(viewModel)
         let focused = focus.current(in: rows)
-        ZStack(alignment: .bottom) {
-            SeleneTheme.scrim65.ignoresSafeArea().contentShape(Rectangle())
-                .onTapGesture(perform: onClose)
-            VStack(alignment: .leading, spacing: canvas.u(20)) {
-                Text(text("Activity center")).seleneFont(30, .semibold)
+        SeleneOverlay(style: .activity, alignment: .bottom, onOutside: onClose) {
+            VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.panel)) {
+                Text(text("Activity center")).seleneFont(.panelTitle, .semibold)
                     .accessibilityAddTraits(.isHeader)
                 // The list takes its own height up to the cap, then scrolls; the inset keeps focus glows unclipped.
                 ScrollViewReader { scroll in
@@ -65,7 +64,7 @@ struct ActivityCenterView: View {
     }
 
     private func sections(_ rows: [ActivityCenterFocus.Row], focused: ActivityCenterFocus.Row) -> some View {
-        VStack(alignment: .leading, spacing: canvas.u(20)) {
+        VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.panel)) {
             section("Compilation", empty: "No compilation", rows: rows.filter(\.opensPorting), focused: focused)
             section("Cloud", empty: "No cloud transfer", rows: rows.filter {
                 switch $0 { case .cloud, .queuedCloud, .move: return true; default: return false }
@@ -101,8 +100,8 @@ struct ActivityCenterView: View {
                     .textCase(.uppercase).foregroundColor(SeleneTheme.ink60)
                     .accessibilityAddTraits(.isHeader)
                 if rows.isEmpty, let empty {
-                    Text(text(empty)).seleneFont(15).foregroundColor(SeleneTheme.ink60)
-                        .padding(.vertical, canvas.u(4))
+                    Text(text(empty)).seleneFont(.compactCaption).foregroundColor(SeleneTheme.ink60)
+                        .padding(.vertical, canvas.u(SeleneTokens.Space.hairline))
                 } else {
                     rowList(rows, focused: focused)
                 }
@@ -145,7 +144,7 @@ struct ActivityCenterView: View {
                     }
                 }
                 .id(row)
-                .onHover { if $0 { onFocus(row) } }
+                .onHover { if hover.moved($0) { onFocus(row) } }
             }
         }
     }
