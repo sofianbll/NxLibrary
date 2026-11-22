@@ -275,6 +275,8 @@ Nel menu rapido, Theme apre prima i colori con anteprima viva; A applica la pale
 
 Settings → Profiles → At startup passa da «Chi gioca?» a «Ultimo profilo» e poi ai nomi dei singoli profili. Il vecchio interruttore acceso equivale a «Chi gioca?», spento a «Ultimo profilo». Un profilo fisso rimosso riporta a «Chi gioca?». Un profilo bloccato apre il selettore con il suo ritratto a fuoco, anziché entrare automaticamente. Nel selettore `+` aggiunge, Y modifica, X apre una conferma con Keep a fuoco, quando l’azione è disponibile. Il selettore di avvio non è annullabile. Si salva solo dopo nome, avatar, tema e sfondo; l’anteprima non cambia l’aspetto già salvato. Una nuova immagine di sfondo si copia alla conferma.
 
+La rimozione non è disponibile per il profilo originale: conserva l'accesso a preferiti e attività storici.
+
 Il carosello degli avatar usa artwork già nella cache, con ritaglio sul volto rilevato o al centro, e simboli neutri del sistema. L’ultima tessera apre la scelta di una foto, con assi e zoom per inquadrarla; B o Esc annulla. Per le GIF si conservano i fotogrammi e i tempi; con Riduci movimento si vede solo il primo.
 
 Home e Cambia profilo aprono il selettore. Il ritratto a destra e Profilo → Il mio profilo aprono l’attività locale, anche senza conto, e offrono il codice del profilo. Un profilo bloccato chiede il PIN o Touch ID, se disponibile; Touch ID riconosce l’utente macOS, non distingue i profili Arcane. Senza codice né Touch ID si può scegliere un altro profilo; non c’è un ripristino dal servizio online.

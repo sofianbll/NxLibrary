@@ -878,7 +878,7 @@ I percorsi sono relativi alla home. `Application Support/NXLibrary` è `~/Librar
 | `Application Support/NXLibrary/library.json` e `.bak` | Input del formato precedente, conservati intatti dopo la conversione da `CatalogStore`. |
 | `Application Support/NXLibrary/catalog.json` e `.bak` | Catalogo comune e copia valida, gestiti da `CatalogStore` attraverso `CatalogRepository`. |
 | `Application Support/NXLibrary/settings.json` | Impostazioni globali, gestite da `AppSettingsStore`. |
-| `Application Support/NXLibrary/profiles.json` e `profiles-active` | Identità, avatar, aspetto, preferiti aggiuntivi e scelta del profilo attivo; cambiare profilo scrive soltanto il suo UUID. |
+| `Application Support/NXLibrary/profiles.json` e `profiles-active` | Identità, avatar, aspetto, preferiti aggiuntivi e scelta del profilo attivo; cambiare profilo scrive soltanto il suo UUID. Il profilo originale non si può rimuovere perché dà accesso ai preferiti e alle sessioni precedenti ai profili. |
 | `Application Support/NXLibrary/profiles-migration-backup/` | Copia privata e immutata dei file esistenti al primo avvio con la migrazione di profili. |
 | `Application Support/NXLibrary/play-sessions.json` | Ultime 200 sessioni, con identificatore facoltativo del profilo. Le versioni senza profili leggono l’array ma non separano i giocatori. |
 | `Application Support/NXLibrary/play-sessions-totals.json` | Tempo e ultima partita delle sessioni oltre le 200, per gioco: `totalDuration(for:)` e `lastPlayed(for:)` li sommano alle sessioni recenti. |

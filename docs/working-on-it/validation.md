@@ -21,6 +21,7 @@ Come si aggiorna:
 | Backup manuale in coda | in attesa | Con due profili di prova e salvataggi diversi, avviare Back up now e cambiare profilo: la copia resta nella cartella del profilo che ha chiesto il backup, con il suo salvataggio. |
 | Cronologia illeggibile | in attesa | Su un profilo di prova, con una copia dello storico, provare Play e verificare che il file illeggibile non cambi. Ripristinare la copia valida e riaprire Arcane: le nuove sessioni tornano a essere salvate. |
 | Il mio profilo, ospite, cambio sicuro e PIN | in attesa | Provare ritratto e centro di controllo senza conto e offline; Home e annullamento in gioco, poi chiusura prima di cambiare. Con due profili e due ospiti, verificare progressi distinti e uscita senza cancellazione. Provare simboli, PIN errato, avvio bloccato, Touch ID e focus con controller, tastiera e VoiceOver. Con conti di prova verificare le due opzioni Nextendo e l’host meno recente. |
+| Profilo originale protetto | in attesa | Con due profili di prova, verificare che Remove non compaia e X non apra la conferma per il primo profilo; la rimozione del secondo resta disponibile. |
 | Pin del motore nel bundle e aggiornamento perso | in attesa | Dal Mac del giocatore controllare l'offerta, le note e il riavvio; in Setup provare Clone su una cartella nuova e Update o Switch su un checkout pulito con `origin` upstream. Verificare SHA raggiunto, `origin` invariato, checkout sporco intatto e un gioco esistente ancora giocabile. |
 
 ## 0.2.1 (pubblicata il 20 nov 2026)

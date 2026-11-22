@@ -247,6 +247,7 @@ import ArcanePorting
             }.environment(\.nxAppLocale, french), in: out, refs, "screenshots/game-options.png")
         }
         L10n.setContext(.init(language: .english, region: "US"))
+        try render("11-original-protected", picker(selected: alex.id), in: out, refs, "none")
         try render("11-remove", picker(selected: sam.id, removing: sam), in: out, refs, "web/182-15.png")
         // Y on a profile: the wizard replaces the selector, with one bar of hints; closing it brings the selector back.
         try render("21-picker-y-wizard", picker(selected: sam.id, editing: sam, overlay: true), in: out, refs,

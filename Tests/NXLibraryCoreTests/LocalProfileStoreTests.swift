@@ -101,6 +101,20 @@ final class LocalProfileStoreTests: XCTestCase {
         }
     }
 
+    func testOriginalProfileCannotBeRemovedWhileAnotherIsActive() throws {
+        try withDirectory { url in
+            let store = LocalProfileStore(directory: url, settings: .init(), name: "Original")
+            let original = try XCTUnwrap(store.active)
+            let other = LocalProfile(name: "Jade", look: .init(AppSettings()))
+            XCTAssertTrue(store.update(other))
+            XCTAssertTrue(store.choose(other.id))
+            XCTAssertFalse(store.remove(original.id))
+            let reopened = LocalProfileStore(directory: url, settings: .init(), name: "Unused")
+            XCTAssertTrue(reopened.profiles.contains(original))
+            XCTAssertEqual(reopened.active?.id, other.id)
+        }
+    }
+
     func testStartupPreferenceMigratesAndPersists() throws {
         let decoder = JSONDecoder()
         for (json, expected): (String, ProfileStartup) in [

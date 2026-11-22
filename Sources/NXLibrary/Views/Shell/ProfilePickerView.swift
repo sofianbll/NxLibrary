@@ -170,7 +170,7 @@ struct ProfilePickerView: View {
         (canClose ? [HintItem(.b, "Back", action: onClose)] : [])
         + [HintItem(.menu, "Add", keyboard: .text("+"), action: add)]
         + (selectedProfile.map(canEdit) == true ? [HintItem(.y, "Edit profile", action: edit)] : [])
-        + (profiles.profiles.count > 1 && selectedProfile.map(canRemove) == true ? [HintItem(.x, "Remove", action: askRemoval)] : [])
+        + (selectedProfile.map(canRemoveProfile) == true ? [HintItem(.x, "Remove", action: askRemoval)] : [])
     }
 
     private func tile(_ profile: LocalProfile?) -> some View {
@@ -263,14 +263,18 @@ struct ProfilePickerView: View {
         return true
     }
 
+    private func canRemoveProfile(_ profile: LocalProfile) -> Bool {
+        profiles.profiles.count > 1 && profile.id != profiles.originalID && canRemove(profile)
+    }
+
     private func askRemoval() {
-        guard profiles.profiles.count > 1, let selectedProfile, canRemove(selectedProfile) else { return }
+        guard let selectedProfile, canRemoveProfile(selectedProfile) else { return }
         removalFocus = .cancel
         removing = selectedProfile
     }
 
     private func remove() {
-        guard let removing, canRemove(removing), let index = profiles.profiles.firstIndex(where: { $0.id == removing.id }),
+        guard let removing, canRemoveProfile(removing), let index = profiles.profiles.firstIndex(where: { $0.id == removing.id }),
               profiles.remove(removing.id) else { return }
         selected = profiles.profiles[min(index, profiles.profiles.count - 1)].id
         self.removing = nil
