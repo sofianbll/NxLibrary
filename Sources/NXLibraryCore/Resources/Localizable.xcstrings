@@ -1234,6 +1234,105 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "云端连接更改结束后可用。"}}
       }
     },
+    "Manage game": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Manage game"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Gestisci gioco"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Gérer le jeu"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spiel verwalten"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Gestionar juego"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Gerenciar jogo"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "管理游戏"}}
+      }
+    },
+    "Manage game next to Play": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Manage game next to Play"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Gestisci gioco accanto a Gioca"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Gérer le jeu à côté de Jouer"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spiel verwalten neben Spielen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Gestionar juego junto a Jugar"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Gerenciar jogo ao lado de Jogar"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "在「游玩」旁显示「管理游戏」"}}
+      }
+    },
+    "Folders and connection tools": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Folders and connection tools"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cartelle e strumenti di connessione"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Dossiers et outils de connexion"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Ordner und Verbindungswerkzeuge"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Carpetas y herramientas de conexión"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Pastas e ferramentas de conexão"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "文件夹和连接工具"}}
+      }
+    },
+    "Playable on this Mac": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Playable on this Mac"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Giocabile su questo Mac"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Jouable sur ce Mac"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Auf diesem Mac spielbar"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Se puede jugar en este Mac"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Jogável neste Mac"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "可在此 Mac 上游玩"}}
+      }
+    },
+    "Copy in your cloud": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Copy in your cloud"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Copia nel tuo cloud"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Copie dans ton cloud"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Kopie in deiner Cloud"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Copia en tu nube"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Cópia na sua nuvem"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "你的云端有副本"}}
+      }
+    },
+    "Update available": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Update available"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Aggiornamento disponibile"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mise à jour disponible"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Update verfügbar"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Actualización disponible"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Atualização disponível"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "有可用更新"}}
+      }
+    },
+    "Verifying": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Verifying"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Verifica in corso"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vérification"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wird geprüft"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Verificando"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Verificando"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在验证"}}
+      }
+    },
+    "Convert to the new format": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Convert to the new format"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Converti al nuovo formato"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Convertir au nouveau format"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Ins neue Format konvertieren"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Convertir al nuevo formato"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Converter para o novo formato"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "转换为新格式"}}
+      }
+    },
+    "Download cache and rebuild": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Download cache and rebuild"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scarica la cache e ricompila"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Télécharger le cache et recompiler"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cache laden und neu kompilieren"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Descargar caché y recompilar"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Baixar cache e recompilar"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "下载缓存并重新编译"}}
+      }
+    },
     "Available after the cloud transfers.": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Available after the cloud transfers."}},

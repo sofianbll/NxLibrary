@@ -117,15 +117,6 @@ struct SettingsCloudLibrarySection: View {
                     .disabled(!editable)
             }
 
-            SettingsSubheading("Folders")
-            HStack(spacing: canvas.u(8)) {
-                SeleneButtonRow("Library folder", id: "cloudLibraryFolder", subtitle: selection.storage,
-                                verbatimSubtitle: true, truncateSubtitleInMiddle: true, buttonTitle: "Edit", action: onEditLibrary)
-                SeleneButtonRow("Game files folder", id: "cloudSourcesRoot", subtitle: selection.sourcesStorage,
-                                verbatimSubtitle: true, truncateSubtitleInMiddle: true, buttonTitle: "Edit", action: onEditSources)
-            }
-            .disabled(!editable || selection.remote == nil)
-
             if selection.remote != nil {
                 SeleneButtonRow("Reference library", id: "cloudReferenceFolder",
                                 subtitle: "Follow a shared Google Drive folder in read-only mode.",
@@ -154,12 +145,12 @@ struct SettingsCloudLibrarySection: View {
             if model.importTask != nil { SeleneProgressBar(progress: nil, color: CloudLibraryStatus.pending.color) }
 
             SettingsSubheading("Appearance")
-            SeleneToggleRow("Icon next to Play", isOn: $settings.settings.showsCloudPlayIcon)
+            SeleneToggleRow("Manage game next to Play", isOn: $settings.settings.showsCloudPlayIcon)
             SeleneToggleRow("Link in Details", isOn: $settings.settings.showsCloudDetailsLink)
             SeleneCycleRow("Tile badges", value: settings.settings.cloudTileBadges.titleKey, cycle: stepBadges)
 
             SettingsSubheading("Advanced")
-            SeleneButtonRow("Connection tools", buttonTitle: advanced ? "Hide" : "Show", action: toggleAdvanced)
+            SeleneButtonRow("Folders and connection tools", buttonTitle: advanced ? "Hide" : "Show", action: toggleAdvanced)
                 .accessibilityValue(text(advanced ? "Expanded" : "Collapsed"))
             if advanced { advancedRows }
         }
@@ -179,6 +170,13 @@ struct SettingsCloudLibrarySection: View {
     private var advancedRows: some View {
         Group {
             if selection.remote != nil {
+                HStack(spacing: canvas.u(SeleneTokens.Space.compact)) {
+                    SeleneButtonRow("Library folder", id: "cloudLibraryFolder", subtitle: selection.storage,
+                                    verbatimSubtitle: true, truncateSubtitleInMiddle: true, buttonTitle: "Edit", action: onEditLibrary)
+                    SeleneButtonRow("Game files folder", id: "cloudSourcesRoot", subtitle: selection.sourcesStorage,
+                                    verbatimSubtitle: true, truncateSubtitleInMiddle: true, buttonTitle: "Edit", action: onEditSources)
+                }
+                .disabled(!editable)
                 SeleneButtonRow("Change Google credentials", id: "cloudLibraryConnect", buttonTitle: "Edit", action: onEdit)
                     .disabled(!editable)
             }
@@ -210,7 +208,7 @@ struct SettingsCloudLibrarySection: View {
     }
 
     private func toggleAdvanced() {
-        withAnimation(reduceMotion ? nil : SeleneTheme.quick) { advanced.toggle() }
+        withAnimation(Motion.focus(reduceMotion)) { advanced.toggle() }
     }
 
     private func stepBadges(_ step: Int) {
@@ -222,10 +220,6 @@ struct SettingsCloudLibrarySection: View {
         if selection.remote != nil {
             actions = [
                 .init(id: "cloudLibraryEnabled", title: "Enable cloud library", isEnabled: editable) { setEnabled(!selection.enabled) },
-                .init(id: "cloudLibraryFolder", title: "Library folder", rowID: "cloudLibraryFolder",
-                      isEnabled: editable, activate: onEditLibrary),
-                .init(id: "cloudSourcesRoot", title: "Game files folder", rowID: "cloudSourcesRoot",
-                      isEnabled: editable, activate: onEditSources),
                 .init(id: "cloudReferenceFolder", title: "Reference library", rowID: "cloudReferenceFolder",
                       isEnabled: canFollow, activate: onEditReference),
                 .init(id: "cloudLibraryImport", title: "Import games from the cloud", isEnabled: canImport, activate: importGames),
@@ -242,13 +236,17 @@ struct SettingsCloudLibrarySection: View {
             actions = [.init(id: "cloudLibrarySetup", title: "Configure cloud library", isEnabled: editable, activate: onEdit)]
         }
         actions += [
-            .init(id: "showsCloudPlayIcon", title: "Icon next to Play") { settings.settings.showsCloudPlayIcon.toggle() },
+            .init(id: "showsCloudPlayIcon", title: "Manage game next to Play") { settings.settings.showsCloudPlayIcon.toggle() },
             .init(id: "showsCloudDetailsLink", title: "Link in Details") { settings.settings.showsCloudDetailsLink.toggle() },
             .value("cloudTileBadges", "Tile badges", cycle: stepBadges),
-            .init(id: "cloudLibraryAdvanced", title: "Connection tools", activate: toggleAdvanced),
+            .init(id: "cloudLibraryAdvanced", title: "Folders and connection tools", activate: toggleAdvanced),
         ]
         if advanced {
             if selection.remote != nil {
+                actions.append(.init(id: "cloudLibraryFolder", title: "Library folder", rowID: "cloudLibraryFolder",
+                                     isEnabled: editable, activate: onEditLibrary))
+                actions.append(.init(id: "cloudSourcesRoot", title: "Game files folder", rowID: "cloudSourcesRoot",
+                                     isEnabled: editable, activate: onEditSources))
                 actions.append(.init(id: "cloudLibraryConnect", title: "Change Google credentials", rowID: "cloudLibraryConnect",
                                      isEnabled: editable, activate: onEdit))
             }

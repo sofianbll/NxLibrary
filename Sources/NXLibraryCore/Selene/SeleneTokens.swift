@@ -49,6 +49,7 @@ public enum SeleneTokens {
         public static let inboxPageInset: CGFloat = 62
         public static let emptyStateInset: CGFloat = 25
         public static let toastTop: CGFloat = 112
+        public static let transferMeasure: CGFloat = 700
     }
 
     public enum Radius {
@@ -84,6 +85,7 @@ public enum SeleneTokens {
         public static let profileRemovalVeil = 0.72
         public static let bandBlur: CGFloat = 12
         public static let bandOpacity = 0.55
+        public static let cloudBadgeOpacity = 0.94
     }
 }
 

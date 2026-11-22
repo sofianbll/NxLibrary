@@ -199,7 +199,12 @@ struct SpotlightView: View {
     }
 
     func showsCloudPill(_ game: PortedGame) -> Bool {
-        settings.settings.showsCloudPlayIcon && viewModel.showsCloudLibrary(game)
+        cloudManagementPlacement(game) == .primaryActions
+    }
+
+    func cloudManagementPlacement(_ game: PortedGame) -> CloudGameManagementPlacement? {
+        guard viewModel.showsCloudLibrary(game) else { return nil }
+        return .init(nextToPlay: settings.settings.showsCloudPlayIcon, detailsLink: settings.settings.showsCloudDetailsLink)
     }
 
     func spotlightPills(_ game: PortedGame) -> PortingPills {
@@ -384,7 +389,7 @@ struct SpotlightView: View {
             if model.selectedCatalogGame?.integration == .steam, !Task.isCancelled { modsBackdrop = false }
         }
         .task(id: art.logoTaskKey(model.selectedGame, metadata: model.selectedGame.flatMap { store.storeMetadata[$0.id] })) { await loadLogo(model.selectedGame) }
-        .task(id: model.selectedGame) { await viewModel.prefetchCloudLibrary(model.selectedGame) }
+        .task(id: cloud.selectionCheck(for: model.selectedGame)) { await viewModel.prefetchCloudLibrary(model.selectedGame) }
     }
 
 }

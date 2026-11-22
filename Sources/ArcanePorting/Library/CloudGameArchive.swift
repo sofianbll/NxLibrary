@@ -717,7 +717,7 @@ public actor CloudGameArchive {
                 try checkUpload(source, parent: parent, snapshot: snapshot, kind: kind)
                 throw error
             }
-            progress?(.init(.verifying, kind: kind))
+            progress?(.init(.verifying, kind: kind, transfer: .init(bytesTransferred: bytes, totalBytes: bytes)))
             try checkUpload(source, parent: parent, snapshot: snapshot, kind: kind)
             try await tree.verify(on: uploader)
             timestamp = max(timestamp + 1, Self.publicationTimestamp)

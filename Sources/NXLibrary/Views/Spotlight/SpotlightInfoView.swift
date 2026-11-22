@@ -24,6 +24,7 @@ struct SpotlightGameInfoView: View {
     var pillSet: PortingPills = .normal
     @ObservedObject var cloud: CloudLibraryModel
     var showsCloudPill = false
+    var cloudCoverVisible = false
     var downloadsApp = false
     var downloadEnabled = false
     var canCheckCloudSources = false
@@ -74,13 +75,11 @@ struct SpotlightGameInfoView: View {
                 }
                     .padding(.leading, canvas.u(2))
                     .padding(.top, canvas.u(pillSet.isFailed ? 10 : 18))
-                if showsDownloadPill, let state = cloud.states[game.id],
-                   CloudLibraryProgressView.isDownloading(state, item: .app) {
-                    CloudLibraryProgressView(progress: state.progress,
-                        showsBar: CloudLibraryProgressView.downloadFill(state, item: .app) == nil)
-                        .frame(maxWidth: canvas.u(700), alignment: .leading)
-                        .padding(.leading, canvas.u(2))
-                        .padding(.top, canvas.u(12))
+                if let state = cloud.states[game.id] {
+                    CloudGameStatus(state: state, playable: game.isPlayableLocally || isRunning,
+                        hasCover: cloudCoverVisible, hasDownloadPill: showsDownloadPill && state.activeItem == .app)
+                        .padding(.leading, canvas.u(SeleneTokens.Space.seam))
+                        .padding(.top, canvas.u(SeleneTokens.Space.small))
                 }
                 portingNote
                     .padding(.leading, canvas.u(4))
@@ -166,7 +165,7 @@ struct SpotlightGameInfoView: View {
                                : pillSet.unavailableReason == nil),
                            primaryQueued: pillSet == .queued,
                            primaryDownloadFill: showsDownloadPill
-                               ? CloudLibraryProgressView.downloadFill(state, item: .app) ?? 0 : nil,
+                               ? (cloudCoverVisible ? 0 : CloudLibraryProgressView.downloadFill(state, item: .app) ?? 0) : nil,
                            cloud: showsCloudPill ? CloudLibraryIndicator(state: state) : nil,
                            onAction: onPill, onHover: onHoverPill)
     }
