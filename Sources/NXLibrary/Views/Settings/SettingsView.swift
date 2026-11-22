@@ -113,6 +113,10 @@ struct SettingsView: View {
         .onReceive(profiles?.objectWillChange.eraseToAnyPublisher() ?? Empty().eraseToAnyPublisher()) { _ in
             profileRevision.toggle()
         }
+        .onChange(of: profiles?.active?.id) {
+            cancelPIN()
+            editingProfileName = false
+        }
         .onAppear {
             if AppData.profile.isDevelopment {
                 Logger(subsystem: "local.nxlibrary.development", category: "backdrop-transition")
