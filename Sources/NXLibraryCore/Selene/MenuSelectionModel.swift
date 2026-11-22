@@ -105,6 +105,12 @@ public struct MenuSelectionModel: Equatable {
     public private(set) var isPowerOpen = false
     public private(set) var isEntryOpen = false
 
+    var gameInboxEnabled = true {
+        didSet { if !gameInboxEnabled, entry == .gameInbox { entry = .personalStore } }
+    }
+
+    public var entries: [MenuEntry] { selected.entries.filter { gameInboxEnabled || $0 != .gameInbox } }
+
     /// Opens on Power, as Selene's menu does.
     public init(selected: MenuAction = .power) { self.selected = selected }
 
@@ -137,13 +143,13 @@ public struct MenuSelectionModel: Equatable {
 
     /// Opens the selected icon's card with its first entry focused; nothing happens for an icon without one.
     public mutating func openEntries() {
-        guard let first = selected.entries.first else { return }
+        guard let first = entries.first else { return }
         entry = first
         isEntryOpen = true
     }
 
     public mutating func moveEntry(by delta: Int) {
-        let all = selected.entries
+        let all = entries
         guard isEntryOpen, let index = all.firstIndex(of: entry) else { return }
         entry = all[min(max(index + delta, 0), all.count - 1)]
     }

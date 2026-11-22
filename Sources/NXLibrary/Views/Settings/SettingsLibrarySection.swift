@@ -60,6 +60,10 @@ struct SettingsLibrarySection: View {
                 }
             }
 
+            SeleneToggleRow("Sort incoming files",
+                            subtitle: "Check the Inbox for Switch files to sort.",
+                            isOn: $settings.settings.gameInboxEnabled)
+
             SeleneButtonRow("Scan game apps",
                             subtitle: viewModel.isScanningLibrary
                                 ? "Scanning game apps…" : "Find existing nxnative builds and refresh the library.",
@@ -108,6 +112,9 @@ struct SettingsLibrarySection: View {
             },
             .init(id: "romChoose", title: GameFoldersCopy.sourcesTitle) {
                 porting.selectGameFolder()
+            },
+            .init(id: "gameInboxEnabled", title: "Sort incoming files") {
+                settings.settings.gameInboxEnabled.toggle()
             },
             .init(id: "refresh", title: "Scan game apps", isEnabled: !viewModel.isScanningLibrary) {
                 viewModel.importExistingBuilds()

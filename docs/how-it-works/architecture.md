@@ -378,7 +378,9 @@ Regole della barra:
 
 ## Sorgenti e porting
 
-L'Inbox (`GameInboxView`, `GameInboxModel`) si apre da Libreria o da una card Spotlight quando ci sono file in arrivo. La destinazione è `~/Games/Switch/Games/`; se **Game files** è diverso, la pagina propone la correzione con conferma. `GameInbox` produce una riga per pacchetto da `EnginePackageReader`, senza i raggruppamenti di Add Game. I nomi provengono dalle cartelle esistenti, dal profilo del motore o dai dati locali del catalogo; se non sono certi, il file resta dov'è. La copia nella libreria è una scelta distinta dal porting, che continua a collegare le sorgenti senza copiarle.
+L'Inbox (`GameInboxView`, `GameInboxModel`) si apre da Libreria o da una card Spotlight quando ci sono file in arrivo. **Settings → Porting → Game folders → Sort incoming files** è attivo anche per i vecchi profili; se disattivato, Arcane non avvia letture dell'Inbox, nasconde voce e card e blocca la route, anche al ritorno. Il reset della sezione riattiva l'Inbox senza modificare i percorsi.
+
+La destinazione è `~/Games/Switch/Games/`; se **Game files** è diverso, la pagina propone la correzione con conferma. `GameInbox` produce una riga per pacchetto da `EnginePackageReader`, senza i raggruppamenti di Add Game. I nomi provengono dalle cartelle esistenti, dal profilo del motore o dai dati locali del catalogo; se non sono certi, il file resta dov'è. La copia nella libreria è una scelta distinta dal porting, che continua a collegare le sorgenti senza copiarle.
 
 Il percorso completo è in [flows.md](flows.md#5-costruire-un-gioco-switch-add-game).
 

@@ -182,6 +182,7 @@ public struct AppSettings: Codable, Equatable {
     public var startInFullscreen: Bool
     public var checkEngineAtLaunch: Bool
     public var refreshLibraryAtLaunch: Bool
+    public var gameInboxEnabled = true
     public var lastSelectedGameID: UUID?
     public var colorThemeID: String
     public var buttonNames: ButtonNameStyle
@@ -320,6 +321,7 @@ public struct AppSettings: Codable, Equatable {
         case multiplayerVPN, multiplayerDefault, multiplayerLocalMode, multiplayerAdapter
         case backgroundShade, readableText, reduceMotion, showButtonHints, showClock
         case restoreLastGame, checkEngineAtLaunch, refreshLibraryAtLaunch, lastSelectedGameID
+        case gameInboxEnabled
         case startInFullscreen
         case colorThemeID, buttonNames
         case spotlightCards, showsModsCard, spotlightOrder, startingTab, surprisePool
@@ -353,6 +355,7 @@ public struct AppSettings: Codable, Equatable {
         self.startInFullscreen = try container.decodeIfPresent(Bool.self, forKey: .startInFullscreen) ?? false
         self.checkEngineAtLaunch = try container.decodeIfPresent(Bool.self, forKey: .checkEngineAtLaunch) ?? true
         self.refreshLibraryAtLaunch = try container.decodeIfPresent(Bool.self, forKey: .refreshLibraryAtLaunch) ?? true
+        self.gameInboxEnabled = try container.decodeIfPresent(Bool.self, forKey: .gameInboxEnabled) ?? true
         self.lastSelectedGameID = try container.decodeIfPresent(UUID.self, forKey: .lastSelectedGameID)
         self.colorThemeID = try container.decodeIfPresent(String.self, forKey: .colorThemeID) ?? "selene"
         self.buttonNames = try container.decodeIfPresent(ButtonNameStyle.self, forKey: .buttonNames) ?? .automatic
@@ -410,6 +413,7 @@ public struct AppSettings: Codable, Equatable {
         try c.encode(restoreLastGame, forKey: .restoreLastGame)
         try c.encode(checkEngineAtLaunch, forKey: .checkEngineAtLaunch)
         try c.encode(refreshLibraryAtLaunch, forKey: .refreshLibraryAtLaunch)
+        try c.encode(gameInboxEnabled, forKey: .gameInboxEnabled)
         try c.encodeIfPresent(lastSelectedGameID, forKey: .lastSelectedGameID)
         try c.encode(startInFullscreen, forKey: .startInFullscreen)
         try c.encode(colorThemeID, forKey: .colorThemeID)

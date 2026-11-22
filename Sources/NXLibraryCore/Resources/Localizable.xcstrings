@@ -530,6 +530,17 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "整理收到的文件"}}
       }
     },
+    "Check the Inbox for Switch files to sort.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Check the Inbox for Switch files to sort."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cerca nell’Inbox i file Switch da ordinare."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Chercher les fichiers Switch à trier dans le dossier de réception."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Den Eingang nach Switch-Dateien zum Sortieren durchsuchen."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Buscar archivos de Switch para ordenar en la bandeja de entrada."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Procurar arquivos do Switch para organizar na caixa de entrada."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "检查收件箱中是否有待整理的 Switch 文件。"}}
+      }
+    },
     "Incoming files are ready to review.": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Incoming files are ready to review."}},

@@ -49,7 +49,7 @@ final class AppShellState {
         sources = CatalogSourcesModel(repository: repository, initialConfiguration: catalog.source(.steam) ?? .init(integration: .steam)) { [weak model] document in
             model?.applyCatalog(document)
         }
-        let router = AppRouter()
+        let router = AppRouter(settings: settings)
         router.setInitialRoute(AppRouter.initialRoute(for: settings.settings.startOn, last: settings.settings.lastHome))
         self.router = router
         opensWithWelcome = ArcaneWelcome.shouldShow(setupCompleted: model.setupCompleted,

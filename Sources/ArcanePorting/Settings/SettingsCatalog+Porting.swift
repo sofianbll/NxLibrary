@@ -62,6 +62,8 @@ extension SettingsCatalog {
         action("boxCovers", .library, "Box covers", "Open GameTDB for box covers."),
         action("gameFolder", .library, GameFoldersCopy.sourcesTitle, "Game sources: NSP, XCI, NSZ and XCZ files, or Switch 2 NUP files and extracted folders, for builds. Optional for existing apps."),
         action("libraryFolder", .library, GameFoldersCopy.appsTitle, "Choose where to find existing nxnative game apps and install new builds."),
+        row("gameInboxEnabled", .library, "Sort incoming files",
+            "Check the Inbox for Switch files to sort.") { $0.gameInboxEnabled },
         action("libraryRefresh", .library, "Scan game apps", "Find existing nxnative builds and refresh the library."),
         row("notifyPortingEnds", .library, "Notify when a porting ends",
             "A notification when a porting finishes while Arcane is in the background.") { $0.notifyPortingEnds },

@@ -68,8 +68,20 @@ public final class AppRouter: ObservableObject {
     @Published public var pendingSpotlightSelect: UUID?
 
     private var history: [AppRoute] = []
+    private var inboxSetting: AnyCancellable?
 
-    public init() {}
+    public init(settings: AppSettingsStore? = nil) {
+        inboxSetting = settings?.$settings.map(\.gameInboxEnabled).removeDuplicates().sink { [weak self] enabled in
+            guard let self else { return }
+            self.menuSelection.gameInboxEnabled = enabled
+            if !enabled {
+                self.history.removeAll { $0 == .gameInbox }
+                if self.route == .gameInbox {
+                    if self.history.isEmpty { self.showLibrary() } else { self.back() }
+                }
+            }
+        }
+    }
 
     /// The route the app opens on for the Start on setting.
     public static func initialRoute(for startOn: StartScreen, last: StartScreen) -> AppRoute {
@@ -82,6 +94,7 @@ public final class AppRouter: ObservableObject {
 
     /// Opens on `route` with nothing to go back to.
     public func setInitialRoute(_ route: AppRoute) {
+        guard route != .gameInbox || menuSelection.gameInboxEnabled else { return }
         isReturningFromBack = false
         history.removeAll()
         self.route = route
@@ -153,7 +166,7 @@ public final class AppRouter: ObservableObject {
     }
 
     public func navigate(to route: AppRoute) {
-        guard route != self.route else { return }
+        guard route != self.route, route != .gameInbox || menuSelection.gameInboxEnabled else { return }
         isReturningFromBack = false
         history.append(self.route)
         self.route = route

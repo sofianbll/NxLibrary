@@ -40,7 +40,7 @@ final class SettingsCatalogTests: XCTestCase {
         "hiddenGames", "gameDefaults.fullscreen", "gameDefaults.enable60FPS", "gameDefaults.isDockedMode",
         "gameDefaults.enableMetalFXUpscale", "gameDefaults.enableMetalHUD", "gameDefaults.language",
         "gameDefaults.renderScale", "controllerStatus", "buttonLayout", "controllerDeadzone", "gameDefaults.rumble",
-        "gameDefaults.rumbleGain", "gameFolder", "libraryFolder", "libraryRefresh", "notifyPortingEnds",
+        "gameDefaults.rumbleGain", "gameFolder", "libraryFolder", "gameInboxEnabled", "libraryRefresh", "notifyPortingEnds",
         "steamSource", "steamRefresh", "steamFolder", "steamInBackground", "storageUsage", "buildCaches", "logs",
         "metadataCache", "artworkCache", "saveBackups", "console", "engineFolder", "engineStatus",
         "toolchainOverride", "upstream", "newestEngine", "compare", "keys", "setup", "diagnostics", "appUpdates",
@@ -62,6 +62,7 @@ final class SettingsCatalogTests: XCTestCase {
         XCTAssertEqual(groups["gameDefaults.rumble"], .games)
         XCTAssertEqual(groups["gameDefaults.rumbleGain"], .games)
         XCTAssertEqual(groups["keys"], .keys)
+        XCTAssertEqual(groups["gameInboxEnabled"], .library)
         XCTAssertEqual(groups["buildCaches"], .portingStorage)
         XCTAssertEqual(groups["console"], .console)
         XCTAssertEqual(groups["logs"], .storage)
@@ -162,7 +163,7 @@ final class SettingsCatalogTests: XCTestCase {
         "surprisePool", "showsSessionCard", "hiddenGames", "storageUsage", "logs", "metadataCache", "artworkCache",
         "saveBackups", "checkEngineAtLaunch", "engineFolder", "engineStatus", "toolchainOverride", "upstream",
         "newestEngine", "compare", "setup", "keys", "refreshLibraryAtLaunch", "boxCovers", "gameFolder",
-        "libraryFolder", "libraryRefresh", "notifyPortingEnds", "gameDefaults.fullscreen",
+        "libraryFolder", "gameInboxEnabled", "libraryRefresh", "notifyPortingEnds", "gameDefaults.fullscreen",
         "gameDefaults.enable60FPS", "gameDefaults.isDockedMode", "gameDefaults.enableMetalFXUpscale",
         "gameDefaults.enableMetalHUD", "gameDefaults.language", "gameDefaults.renderScale", "gameDefaults.rumble",
         "gameDefaults.rumbleGain", "cloudSaves", "cloudSavesPickedFolder", "cloudLibrarySetup", "cloudLibraryEnabled",

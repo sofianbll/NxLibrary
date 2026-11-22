@@ -26,58 +26,67 @@ final class GameInboxModel: ObservableObject {
         app.porting.gameFilesFolder?.standardizedFileURL.path != Self.gamesRoot.standardizedFileURL.path
     }
 
+    private var isEnabled: Bool { app.settingsStore?.settings.gameInboxEnabled ?? true }
+
     func updateAvailability() async {
+        guard isEnabled, !Task.isCancelled else { return }
         let folder = folder
-        let hasFiles = await Task.detached(priority: .utility) { !((try? GameInbox.files(in: folder)) ?? []).isEmpty }.value
-        guard !Task.isCancelled, folder == self.folder, !busy else { return }
+        let probe = Task.detached(priority: .utility) {
+            !Task.isCancelled && !((try? GameInbox.files(in: folder)) ?? []).isEmpty
+        }
+        let hasFiles = await withTaskCancellationHandler { await probe.value } onCancel: { probe.cancel() }
+        guard isEnabled, !Task.isCancelled, folder == self.folder, !busy else { return }
         hasWaitingFiles = hasFiles || !dropped.isEmpty
     }
 
     func chooseFolder() {
-        guard !busy else { return }
+        guard isEnabled, !busy else { return }
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.canCreateDirectories = true
         panel.directoryURL = folder
         panel.prompt = L10n.text("Choose folder")
-        guard panel.runModal() == .OK, let path = panel.url else { return }
+        guard panel.runModal() == .OK, isEnabled, let path = panel.url else { return }
         AppData.preferences.set(path.path, forKey: Self.folderKey)
         folder = path
         refresh()
     }
 
     func offerGameFilesCorrection() {
+        guard isEnabled else { return }
         let root = Self.gamesRoot
         app.showSettingsNotice(title: L10n.text("Change Game files?"),
                                message: L10n.format("Use %@ as the Game files folder. No files will move.", [root.path]),
                                actionTitle: L10n.text("Change folder"), cancelTitle: L10n.text("Cancel"), primaryFirst: true) { [weak self] in
-            guard let self, !self.busy else { return }
+            guard let self, self.isEnabled, !self.busy else { return }
             AppData.preferences.set(root.path, forKey: PortingModel.savedGameFolderKey)
             self.refresh()
         }
     }
 
     func accept(_ urls: [URL]) -> Bool {
-        guard !busy, urls.contains(where: \.isFileURL) else { return false }
+        guard isEnabled, !busy, urls.contains(where: \.isFileURL) else { return false }
         dropped.append(contentsOf: urls.filter(\.isFileURL))
         refresh()
         return true
     }
 
     func refresh() {
-        guard !busy else { return }
+        guard isEnabled, !busy else { return }
         message = nil
         beginScan()
     }
 
     private func beginScan() {
+        guard isEnabled else { busy = false; return }
         busy = true
         let folder = folder, dropped = dropped, root = Self.gamesRoot
         let repo = URL(fileURLWithPath: app.setup.nxnativePath)
         let reader = packageReader()
         let installed = app.libraryGames
         Task {
+            guard isEnabled else { busy = false; return }
             let result = await Task.detached(priority: .userInitiated) {
                 Result {
                     let inputs = GameInbox.inputs(try GameInbox.files(in: folder) + dropped)
@@ -124,7 +133,7 @@ final class GameInboxModel: ObservableObject {
     }
 
     func confirm(_ requested: [GameInbox.Entry]) {
-        guard !busy, !needsGameFilesCorrection, !requested.isEmpty,
+        guard isEnabled, !busy, !needsGameFilesCorrection, !requested.isEmpty,
               requested.allSatisfy({ $0.destination != nil && entries.contains($0) }) else { return }
         let copy = Self.confirmation(for: requested)
         app.showSettingsNotice(title: copy.title, message: copy.message, actionTitle: L10n.text("Sort and move to Trash"),
@@ -134,7 +143,7 @@ final class GameInboxModel: ObservableObject {
     }
 
     private func store(_ requested: [GameInbox.Entry]) {
-        guard !busy, !needsGameFilesCorrection, let reader = packageReader() else { return }
+        guard isEnabled, !busy, !needsGameFilesCorrection, let reader = packageReader() else { return }
         guard app.canAdoptLocalApp, app.buildQueue.isEmpty, !app.porting.isScanningGameFolder else {
             message = L10n.text("Wait for porting and transfers to finish before sorting.")
             return

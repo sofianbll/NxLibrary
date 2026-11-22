@@ -155,7 +155,7 @@ struct SpotlightView: View {
         return SpotlightRow.build(gameIDs: ids,
                                   enabledCards: settings.settings.visibleSpotlightCards.filter { $0 != .inbox && $0 != .personalStore }
                                     + [.personalStore]
-                                    + (gameInbox.hasWaitingFiles ? [.inbox] : []),
+                                    + (settings.settings.gameInboxEnabled && gameInbox.hasWaitingFiles ? [.inbox] : []),
                                   order: viewModel.spotlight.lift?.order ?? settings.settings.spotlightOrder,
                                   front: SpotlightRow.leaders(porting: viewModel.frontGameID,
                                                               downloads: viewModel.sessionDownloads.ids, row: ids),
@@ -330,8 +330,10 @@ struct SpotlightView: View {
         .onChange(of: viewModel.catalogSourceConfigurations) { gamesChanged() }
         .onChange(of: filter) { reconcile() }
         .onChange(of: settings.settings.visibleSpotlightCards) { reconcile() }
+        .onChange(of: settings.settings.gameInboxEnabled) { reconcile() }
         .onChange(of: gameInbox.hasWaitingFiles) { reconcile() }
-        .task {
+        .task(id: settings.settings.gameInboxEnabled) {
+            guard settings.settings.gameInboxEnabled else { return }
             while !Task.isCancelled {
                 await gameInbox.updateAvailability()
                 try? await Task.sleep(for: .seconds(10))
