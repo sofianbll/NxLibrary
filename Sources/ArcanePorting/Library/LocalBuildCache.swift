@@ -17,6 +17,12 @@ public enum LocalBuildCache {
         chain(in: cache.appendingPathComponent("shader/cache"))
     }
 
+    /// The game's cache folder when it holds a finished shader image: the one a rebuild falls back on when the
+    /// cloud can't be read or its cache download failed. A missing, empty or ambiguous folder is not a cache.
+    public static func usable(atPath path: String?) -> URL? {
+        path.map { URL(fileURLWithPath: $0) }.flatMap { chain(ofCache: $0) == nil ? nil : $0 }
+    }
+
     /// Shaders the cache holds, from the engine's own "28,603 of 28,603 shaders ready" line.
     public static func shaderCount(ofCache cache: URL) -> Int? {
         guard let chain = chain(ofCache: cache),

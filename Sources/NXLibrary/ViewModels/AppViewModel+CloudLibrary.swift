@@ -695,6 +695,16 @@ extension AppViewModel {
                 } catch is CancellationError {
                     throw CancellationError()
                 } catch {
+                    try Task.checkCancellation()
+                    // The cloud can't be checked (or its cache didn't come): a valid cache on this Mac serves, an empty
+                    // work folder never replaces it.
+                    if !cloudLibrary.isQuitting, !withoutCache, let cache = LocalBuildCache.usable(atPath: target.buildCachePath),
+                       canStart?(target) != false {
+                        try porting.beginBuild(for: target, extraArguments: extraArguments, verifiedCache: cache,
+                                               releaseCloudBuild: release)
+                        onStarted?()
+                        return
+                    }
                     await release()
                     try Task.checkCancellation()
                     if request != nil { porting.finishActivityBuild(.failed(cloudMessage(for: error))) }
