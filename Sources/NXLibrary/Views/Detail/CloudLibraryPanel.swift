@@ -66,16 +66,16 @@ struct CloudLibraryPanel: View {
     private var card: some View {
         VStack(alignment: .leading, spacing: canvas.u(14)) {
             VStack(alignment: .leading, spacing: canvas.u(3)) {
-                Text(text("Cloud library")).seleneFont(30, .semibold)
+                Text(text("Cloud library")).seleneFont(.panelTitle, .semibold)
                     .foregroundColor(SeleneTheme.ink).accessibilityAddTraits(.isHeader)
-                Text(game.name).seleneFont(17).foregroundColor(SeleneTheme.ink75)
+                Text(game.name).seleneFont(.body).foregroundColor(SeleneTheme.ink75)
                     .lineLimit(1)
                 if !state.referenceKinds.isEmpty || state.referenceSources != nil {
-                    Text(text("Source: reference library")).seleneFont(14).foregroundColor(SeleneTheme.ink75)
+                    Text(text("Source: reference library")).seleneFont(.metadata).foregroundColor(SeleneTheme.ink75)
                 }
             }
             if let unavailable {
-                Text(text(unavailable)).seleneFont(17).foregroundColor(SeleneTheme.ink75)
+                Text(text(unavailable)).seleneFont(.body).foregroundColor(SeleneTheme.ink75)
             } else {
                 ForEach(CloudLibraryItem.allCases, id: \.self) { item in
                     artifactRow(item)

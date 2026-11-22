@@ -43,7 +43,7 @@ struct SpotlightTopBar: View {
             }
         }
         .accessibilityValue(L10n.text(sort.title, context: locale))
-        .padding(.horizontal, canvas.u(64))
+        .padding(.horizontal, canvas.u(SeleneTokens.Space.chromeGutter))
         .frame(height: canvas.u(110))
         .onChange(of: filter) { pop() }
     }
@@ -69,17 +69,17 @@ struct SpotlightTopBar: View {
     private func tab(_ item: LibraryFilter) -> some View {
         let on = item == filter
         return Text(L10n.text(item.rawValue))
-            .seleneFont(19, on ? .semibold : .regular)
+            .seleneFont(.panelBody, on ? .semibold : .regular)
             .foregroundColor(on ? SeleneTheme.onFocus : SeleneTheme.ink.opacity(0.7))
             .padding(EdgeInsets(top: canvas.u(5), leading: canvas.u(18),
                                 bottom: canvas.u(7), trailing: canvas.u(20)))
             .background(
-                RoundedRectangle(cornerRadius: canvas.u(18), style: .continuous)
+                RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.anchoredCard), style: .continuous)
                     .fill(on ? SeleneTheme.focus.opacity(0.95) : .clear)
             )
             .scaleEffect(on ? popScale : 1)
             .opacity(on ? popOpacity : 1)
-            .padding(.horizontal, canvas.u(2))
+            .padding(.horizontal, canvas.u(SeleneTokens.Space.seam))
             .contentShape(Rectangle())
             .onTapGesture { onSelect(item) }
             .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
@@ -87,7 +87,7 @@ struct SpotlightTopBar: View {
 
     private func badge(_ button: PromptButton) -> some View {
         SelenePromptBadge(button: button, height: 26)
-            .padding(.horizontal, canvas.u(8))
+            .padding(.horizontal, canvas.u(SeleneTokens.Space.compact))
             .accessibilityHidden(true)
     }
 
@@ -134,7 +134,7 @@ struct LibrarySortMenu: View {
         ZStack(alignment: .bottomTrailing) {
             Color.black.opacity(0.24).contentShape(Rectangle()).onTapGesture(perform: close)
             VStack(alignment: .leading, spacing: canvas.u(8)) {
-                Text(L10n.text("Sort games")).seleneFont(19, .semibold)
+                Text(L10n.text("Sort games")).seleneFont(.panelBody, .semibold)
                     .foregroundStyle(SeleneTheme.ink75)
                     .accessibilityAddTraits(.isHeader)
                     .padding(.horizontal, canvas.u(15))
@@ -144,9 +144,9 @@ struct LibrarySortMenu: View {
                         .accessibilityAddTraits(sort == current ? .isSelected : [])
                 }
             }
-            .padding(canvas.u(16))
-            .background(RoundedRectangle(cornerRadius: canvas.u(18)).fill(SeleneTheme.glassCard))
-            .padding(.trailing, canvas.u(64))
+            .padding(canvas.u(SeleneTokens.Space.medium))
+            .background(RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.anchoredCard)).fill(SeleneTheme.glassCard))
+            .padding(.trailing, canvas.u(SeleneTokens.Space.chromeGutter))
             .padding(.bottom, canvas.u(117))
             .accessibilityAction(named: Text(L10n.text("Back")), close)
         }

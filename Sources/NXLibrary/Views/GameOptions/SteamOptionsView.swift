@@ -89,27 +89,27 @@ struct SteamOptionsView: View {
         let focused = focusedRow
         return VStack(alignment: .leading, spacing: 0) {
             Text(L10n.text("GAME OPTIONS"))
-                .seleneFont(15, .semibold)
+                .seleneFont(.compactCaption, .semibold)
                 .foregroundColor(SeleneTheme.ink60)
-                .padding(.leading, canvas.u(8))
+                .padding(.leading, canvas.u(SeleneTokens.Space.compact))
             Text(current.name)
-                .seleneFont(40)
+                .seleneFont(.screenTitle)
                 .foregroundColor(SeleneTheme.ink)
                 .lineLimit(1)
-                .padding(.leading, canvas.u(6))
-                .padding(.bottom, canvas.u(14))
+                .padding(.leading, canvas.u(SeleneTokens.Space.tight))
+                .padding(.bottom, canvas.u(SeleneTokens.Space.line))
             VStack(spacing: canvas.u(8)) {
                 ForEach(Array(p.entries(level: level, origin: origin).enumerated()), id: \.offset) { _, entry in
                     entryView(entry, p, focused: focused)
                 }
             }
-            .padding(.top, canvas.u(6))
+            .padding(.top, canvas.u(SeleneTokens.Space.tight))
             .id(level)
         }
         .frame(width: canvas.u(1040), alignment: .leading)
         .frame(maxHeight: .infinity, alignment: .top)
         .padding(.top, canvas.u(90))
-        .padding(.bottom, canvas.u(110))
+        .padding(.bottom, canvas.u(SeleneTokens.Space.stageHeader))
         .contentShape(Rectangle())
     }
 
@@ -132,11 +132,11 @@ struct SteamOptionsView: View {
             .accessibilityAction { activate(row) }
         case .heading(let text):
             Text(L10n.text(text))
-                .seleneFont(17, .semibold)
+                .seleneFont(.body, .semibold)
                 .foregroundColor(SeleneTheme.ink75)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading, canvas.u(26))
-                .padding(.top, canvas.u(16))
+                .padding(.top, canvas.u(SeleneTokens.Space.medium))
         case .note, .gap:
             EmptyView()
         }

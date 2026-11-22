@@ -38,6 +38,18 @@ public enum Motion {
         reduced ? overlay(true) : .easeOut(duration: 0.30)
     }
 
+    public static func detailBand(_ reduced: Bool) -> Animation? {
+        reduced ? nil : .timingCurve(0.215, 0.61, 0.355, 1, duration: screenDuration)
+    }
+
+    public static func detailArt(_ reduced: Bool) -> Animation? {
+        reduced ? overlay(true) : .easeInOut(duration: 0.40)
+    }
+
+    public static func viewer(_ reduced: Bool) -> Animation? {
+        reduced ? overlay(true) : .easeOut(duration: 0.20)
+    }
+
     public static func menuIcon(_ reduced: Bool, index: Int) -> Animation? {
         reduced ? overlay(true) : .timingCurve(0.215, 0.61, 0.355, 1, duration: 0.26)
             .delay(Double(index) * 0.025)

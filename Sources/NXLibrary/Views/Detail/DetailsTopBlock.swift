@@ -48,24 +48,24 @@ struct DetailsTopBlock: View {
             logoArea
             if let developer = presentation.developerLine {
                 Text(developer)
-                    .seleneFont(17)
+                    .seleneFont(.body)
                     .foregroundColor(SeleneTheme.ink90)
-                    .padding(.leading, canvas.u(2))
-                    .padding(.top, canvas.u(16))
+                    .padding(.leading, canvas.u(SeleneTokens.Space.seam))
+                    .padding(.top, canvas.u(SeleneTokens.Space.medium))
             }
             if case .failed(let failure) = pillSet {
                 Text(failure == .cancelled ? L10n.text("Porting cancelled") : L10n.text("Porting failed"))
-                    .seleneFont(19, .semibold)
+                    .seleneFont(.panelBody, .semibold)
                     .foregroundColor(PortingPillCopy.softRed)
-                    .padding(.leading, canvas.u(4))
-                    .padding(.top, canvas.u(22))
+                    .padding(.leading, canvas.u(SeleneTokens.Space.hairline))
+                    .padding(.top, canvas.u(SeleneTokens.Space.titleGap))
             }
             if let reason = pillSet.unavailableReason, !downloadsApp {
                 Text(reason.title)
-                    .seleneFont(19, .semibold)
+                    .seleneFont(.panelBody, .semibold)
                     .foregroundColor(SeleneTheme.ink75)
-                    .padding(.leading, canvas.u(4))
-                    .padding(.top, canvas.u(22))
+                    .padding(.leading, canvas.u(SeleneTokens.Space.hairline))
+                    .padding(.top, canvas.u(SeleneTokens.Space.titleGap))
             }
             HStack(spacing: canvas.u(14)) {
                 pills
@@ -77,23 +77,23 @@ struct DetailsTopBlock: View {
                 CloudLibraryProgressView(progress: state.progress,
                     showsBar: !showsDownloadPill || CloudLibraryProgressView.downloadFill(state, item: .app) == nil)
                     .frame(maxWidth: canvas.u(700), alignment: .leading)
-                    .padding(.top, canvas.u(12))
+                    .padding(.top, canvas.u(SeleneTokens.Space.small))
             } else if let issue = cloud.states[game.id]?.issue, issue.item != .sources {
-                Text(issue.message).seleneFont(15)
+                Text(issue.message).seleneFont(.compactCaption)
                     .foregroundColor((issue.failed ? CloudLibraryStatus.failed : .unknown).color)
-                    .padding(.top, canvas.u(12))
+                    .padding(.top, canvas.u(SeleneTokens.Space.small))
             }
             portingNote
-                .padding(.leading, canvas.u(4))
-                .padding(.top, canvas.u(12))
+                .padding(.leading, canvas.u(SeleneTokens.Space.hairline))
+                .padding(.top, canvas.u(SeleneTokens.Space.small))
             stats
-                .padding(.top, canvas.u(28))
+                .padding(.top, canvas.u(SeleneTokens.Space.feature))
             if !presentation.genres.isEmpty {
                 genres
-                    .padding(.top, canvas.u(22))
+                    .padding(.top, canvas.u(SeleneTokens.Space.titleGap))
             }
             description
-                .padding(.top, canvas.u(18))
+                .padding(.top, canvas.u(SeleneTokens.Space.control))
         }
         .frame(width: canvas.u(1060), alignment: .topLeading)
         .shadow(color: .black.opacity(0.45), radius: canvas.u(4))
@@ -112,7 +112,7 @@ struct DetailsTopBlock: View {
                     .shadow(color: .black.opacity(0.35), radius: canvas.u(8))
             } else {
                 Text(game.name)
-                    .seleneFont(62)
+                    .seleneFont(.heroTitle)
                     .foregroundColor(SeleneTheme.ink)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
@@ -133,27 +133,27 @@ struct DetailsTopBlock: View {
             EmptyView()
         case .porting:
             if let etaText {
-                Text(etaText).seleneFont(16).foregroundColor(SeleneTheme.ink75)
+                Text(etaText).seleneFont(.caption).foregroundColor(SeleneTheme.ink75)
             }
         case .normalAfterFailure(let failure):
             Button(action: onOpenLog) {
                 Text(PortingPillCopy.lastFailure(failure, reason: game.portingFailureReason))
-                    .seleneFont(15).foregroundColor(SeleneTheme.ink60)
+                    .seleneFont(.compactCaption).foregroundColor(SeleneTheme.ink60)
             }
             .buttonStyle(.plain)
         case .failed(let failure):
             if failure == .failed, let reason = game.portingFailureReason {
-                Text(reason.title).seleneFont(15).foregroundColor(SeleneTheme.ink60)
+                Text(reason.title).seleneFont(.compactCaption).foregroundColor(SeleneTheme.ink60)
             }
         case .unavailable(let reason) where !downloadsApp:
-            Text(reason.detail).seleneFont(15).foregroundColor(SeleneTheme.ink60)
+            Text(reason.detail).seleneFont(.compactCaption).foregroundColor(SeleneTheme.ink60)
         case .normal, .unavailable:
             if downloadsApp {
                 EmptyView()
             } else if !canCheckCloudSources && !game.sources.isEmpty && !GameResourceState.sourcesAvailable(for: game) {
-                Text(L10n.text("Game files not found · Rebuild unavailable")).seleneFont(15).foregroundColor(SeleneTheme.ink60)
+                Text(L10n.text("Game files not found · Rebuild unavailable")).seleneFont(.compactCaption).foregroundColor(SeleneTheme.ink60)
             } else if !game.isPlayableLocally {
-                Text(L10n.text("Not built yet")).seleneFont(15).foregroundColor(SeleneTheme.ink60)
+                Text(L10n.text("Not built yet")).seleneFont(.compactCaption).foregroundColor(SeleneTheme.ink60)
             }
         }
     }
@@ -248,7 +248,7 @@ struct DetailsTopBlock: View {
         }
         items.append(SeleneStat.platform(presentation.console))
         return SeleneStatsRow(items: items, gap: 28)
-            .padding(.leading, canvas.u(4))
+            .padding(.leading, canvas.u(SeleneTokens.Space.hairline))
     }
 
     // MARK: - Genres
@@ -257,17 +257,17 @@ struct DetailsTopBlock: View {
         HStack(spacing: 0) {
             ForEach(Array(presentation.genres.prefix(6)), id: \.self) { genre in
                 Text(genre)
-                    .seleneFont(15)
+                    .seleneFont(.compactCaption)
                     .foregroundColor(SeleneTheme.ink90)
-                    .padding(.horizontal, canvas.u(12))
-                    .padding(.vertical, canvas.u(4))
-                    .background(RoundedRectangle(cornerRadius: canvas.u(14), style: .continuous)
+                    .padding(.horizontal, canvas.u(SeleneTokens.Space.small))
+                    .padding(.vertical, canvas.u(SeleneTokens.Space.hairline))
+                    .background(RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.badge), style: .continuous)
                         .fill(SeleneTheme.ink15))
-                    .padding(.trailing, canvas.u(8))
-                    .padding(.bottom, canvas.u(8))
+                    .padding(.trailing, canvas.u(SeleneTokens.Space.compact))
+                    .padding(.bottom, canvas.u(SeleneTokens.Space.compact))
             }
         }
-        .padding(.leading, canvas.u(2))
+        .padding(.leading, canvas.u(SeleneTokens.Space.seam))
     }
 
     // MARK: - Description
@@ -278,13 +278,13 @@ struct DetailsTopBlock: View {
         VStack(alignment: .leading, spacing: canvas.u(6)) {
             if text.isEmpty {
                 Text(L10n.text("No description for this game yet."))
-                    .seleneFont(17)
+                    .seleneFont(.body)
                     .foregroundColor(SeleneTheme.ink60)
             } else {
                 if let wikipedia {
                     WikipediaCredit(pageURL: wikipedia.pageURL)
                 } else if let note = presentation.descriptionLanguageNote {
-                    Text(note).seleneFont(14).foregroundColor(SeleneTheme.ink60)
+                    Text(note).seleneFont(.metadata).foregroundColor(SeleneTheme.ink60)
                 }
                 if expanded {
                     ScrollView(.vertical, showsIndicators: false) {
@@ -301,18 +301,18 @@ struct DetailsTopBlock: View {
                 if text.count > Self.readMoreThreshold {
                     Button(expanded ? L10n.text("Show less") : L10n.text("Read more")) { expanded.toggle() }
                         .buttonStyle(.plain)
-                        .seleneFont(15, .semibold)
+                        .seleneFont(.compactCaption, .semibold)
                         .foregroundColor(SeleneTheme.glyph)
                 }
             }
         }
-        .padding(.leading, canvas.u(2))
+        .padding(.leading, canvas.u(SeleneTokens.Space.seam))
         .frame(minWidth: canvas.u(700), maxWidth: canvas.u(1034), alignment: .leading)
     }
 
     private func descriptionText(_ text: String) -> some View {
         Text(text)
-            .seleneFont(17)
+            .seleneFont(.body)
             .lineSpacing(canvas.u(3))
             .foregroundColor(SeleneTheme.ink90)
             .fixedSize(horizontal: false, vertical: true)

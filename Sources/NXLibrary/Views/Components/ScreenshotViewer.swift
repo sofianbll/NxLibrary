@@ -8,6 +8,7 @@ import NXLibraryCore
 /// it as an overlay inside the canvas root so the canvas scaling applies.
 struct ScreenshotViewer: View {
     @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.seleneReduceMotion) private var reduceMotion
 
     let titleID: String
     let urls: [URL]
@@ -67,8 +68,7 @@ struct ScreenshotViewer: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // Opacity animations always run, reduce motion or not.
-        .animation(.easeOut(duration: 0.2), value: shown)
+        .animation(Motion.viewer(reduceMotion), value: shown)
         .task(id: state.index) {
             let current = state.index
             await load(current)

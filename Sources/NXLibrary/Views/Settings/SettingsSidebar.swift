@@ -37,11 +37,11 @@ struct SettingsSidebar: View {
             ForEach(SettingsSidebarGroup.all) { group in
                 if let heading = group.title(in: context) {
                     Text(heading)
-                        .seleneFont(15, .semibold)
+                        .seleneFont(.compactCaption, .semibold)
                         .foregroundColor(SeleneTheme.ink60)
-                        .padding(.leading, canvas.u(20))
-                        .padding(.top, canvas.u(18))
-                        .padding(.bottom, canvas.u(2))
+                        .padding(.leading, canvas.u(SeleneTokens.Space.panel))
+                        .padding(.top, canvas.u(SeleneTokens.Space.control))
+                        .padding(.bottom, canvas.u(SeleneTokens.Space.seam))
                         .accessibilityAddTraits(.isHeader)
                 }
                 ForEach(group.sections) { section in groupRow(section).id(section) }
@@ -58,10 +58,10 @@ struct SettingsSidebar: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: canvas.u(2)) {
                 Text(AppIdentity.name)
-                    .seleneFont(28, .semibold)
+                    .seleneFont(.title, .semibold)
                     .foregroundColor(SeleneTheme.ink)
                 Text(version)
-                    .seleneFont(16)
+                    .seleneFont(.caption)
                     .foregroundColor(SeleneTheme.ink.opacity(0.55))
             }
         }
@@ -87,14 +87,14 @@ struct SettingsSidebar: View {
                 }
                 .foregroundColor(lit ? SeleneTheme.onFocus : SeleneTheme.ink)
                 Text(section.title(in: context))
-                    .seleneFont(21, .medium)
+                    .seleneFont(.rowTitle, .medium)
                     .foregroundColor(lit ? SeleneTheme.onFocus : SeleneTheme.ink)
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, canvas.u(20))
-            .padding(.vertical, canvas.u(14))
+            .padding(.horizontal, canvas.u(SeleneTokens.Space.panel))
+            .padding(.vertical, canvas.u(SeleneTokens.Space.line))
             .background(
-                RoundedRectangle(cornerRadius: canvas.u(14), style: .continuous)
+                RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.badge), style: .continuous)
                     .fill(lit ? SeleneTheme.focus : (selected ? SeleneTheme.glass : Color.clear))
             )
             .contentShape(Rectangle())

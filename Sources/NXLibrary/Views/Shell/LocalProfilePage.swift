@@ -176,20 +176,20 @@ struct ProfilePageLayout<Account: View>: View {
                         HStack(spacing: canvas.u(26)) {
                             ProfilePortrait(profile: profile, size: 106, ring: true)
                             VStack(alignment: .leading, spacing: canvas.u(10)) {
-                                Text(profile.name).seleneFont(44).accessibilityAddTraits(.isHeader)
+                                Text(profile.name).seleneFont(.profileScreenTitle).accessibilityAddTraits(.isHeader)
                                 SeleneStatusDot(text: L10n.text(presence.rawValue), color: presence.color)
                             }
                         }
                         VStack(alignment: .leading, spacing: canvas.u(10)) {
                             section("Recently played")
                             if games.isEmpty {
-                                Text(L10n.text("No games played yet.")).seleneFont(18).foregroundStyle(SeleneTheme.ink60)
+                                Text(L10n.text("No games played yet.")).seleneFont(.menuCaption).foregroundStyle(SeleneTheme.ink60)
                             }
                             ForEach(games) { game in
                                 SeleneOptionRow(icon: .gamepad, title: game.name,
                                                 about: game.last.formatted(.dateTime.day().month().locale(locale.formatLocale)),
                                                 focused: false) {
-                                    Text(LibraryPresentation.duration(game.duration)).seleneFont(18)
+                                    Text(LibraryPresentation.duration(game.duration)).seleneFont(.menuCaption)
                                 }
                             }
                         }
@@ -216,6 +216,6 @@ struct ProfilePageLayout<Account: View>: View {
     }
 
     private func section(_ key: String) -> some View {
-        Text(L10n.text(key)).seleneFont(26, .semibold).accessibilityAddTraits(.isHeader)
+        Text(L10n.text(key)).seleneFont(.sectionTitle, .semibold).accessibilityAddTraits(.isHeader)
     }
 }

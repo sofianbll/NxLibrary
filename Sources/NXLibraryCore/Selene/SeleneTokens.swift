@@ -13,21 +13,34 @@ public enum SeleneTokens {
         case dialogTitle = 34
         case panelTitle = 30
         case profileTitle = 24
+        case sectionTitle = 26
         case selectionTitle = 22
+        case rowTitle = 21
         case panelBody = 19
         case menuCaption = 18
         case compactCaption = 15
+        case heroTitle = 62
     }
 
     public enum Space {
         public static let hairline: CGFloat = 4
+        public static let seam: CGFloat = 2
         public static let tight: CGFloat = 6
+        public static let badge: CGFloat = 7
         public static let compact: CGFloat = 8
         public static let small: CGFloat = 12
+        public static let line: CGFloat = 14
         public static let medium: CGFloat = 16
+        public static let control: CGFloat = 18
+        public static let panel: CGFloat = 20
         public static let large: CGFloat = 24
+        public static let titleGap: CGFloat = 22
+        public static let feature: CGFloat = 28
         public static let section: CGFloat = 32
         public static let group: CGFloat = 48
+        public static let chromeGutter: CGFloat = 64
+        public static let settingsHintsClearance: CGFloat = 100
+        public static let settingsInfoClearance: CGFloat = 60
         public static let stageGutter: CGFloat = 120
         public static let stageHeader: CGFloat = 110
     }
@@ -42,7 +55,8 @@ public enum SeleneTokens {
         public static let dialog: CGFloat = 28
         public static let collectionFocus: CGFloat = 18
         public static let spotlightFocus: CGFloat = 19
-        public static let spotlightPlaceholder: CGFloat = 14
+        public static let badge: CGFloat = 14
+        public static let anchoredCard: CGFloat = 18
     }
 
     public enum Color {
@@ -62,5 +76,7 @@ public enum SeleneTokens {
         public static let panelVeil = 0.45
         public static let searchVeil = 0.82
         public static let profileRemovalVeil = 0.72
+        public static let bandBlur: CGFloat = 12
+        public static let bandOpacity = 0.55
     }
 }

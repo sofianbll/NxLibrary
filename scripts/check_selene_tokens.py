@@ -8,7 +8,6 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = ROOT / "scripts/selene-token-debt.json"
-SOURCES = ("Sources/NXLibrary/Views", "Sources/NXLibraryCore/Selene")
 TOKENS = {"Sources/NXLibraryCore/Selene/SeleneTokens.swift"}
 NUMBER = r"[+-]?(?:\d[\d_]*(?:\.[\d_]+)?|\.\d+)(?:[eE][+-]?\d+)?\b"
 CALL = re.compile(
@@ -37,8 +36,7 @@ def literals(text):
 def scan(root=ROOT):
     return {
         path.relative_to(root).as_posix(): list(literals(path.read_text()))
-        for source in SOURCES
-        for path in sorted((root / source).rglob("*.swift"))
+        for path in sorted((root / "Sources").rglob("*.swift"))
         if path.relative_to(root).as_posix() not in TOKENS
     }
 

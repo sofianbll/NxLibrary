@@ -125,7 +125,7 @@ struct ProfilePickerView: View {
     private var selector: some View {
         GeometryReader { geometry in
             VStack(spacing: canvas.u(60)) {
-                Text(L10n.text("Who's playing?")).seleneFont(44).accessibilityAddTraits(.isHeader)
+                Text(L10n.text("Who's playing?")).seleneFont(.profileScreenTitle).accessibilityAddTraits(.isHeader)
                 ScrollViewReader { scroll in
                     ScrollView(.horizontal) {
                         HStack(spacing: canvas.u(56)) {
@@ -134,7 +134,7 @@ struct ProfilePickerView: View {
                             }
                             tile(nil).id("add")
                         }
-                        .padding(canvas.u(18))
+                        .padding(canvas.u(SeleneTokens.Space.control))
                         .frame(minWidth: geometry.size.width, alignment: .center)
                     }
                     .scrollIndicators(.hidden)
@@ -144,7 +144,7 @@ struct ProfilePickerView: View {
                         else { scroll.scrollTo("add", anchor: .center) }
                     }
                 }
-                if profiles.failed { Text(L10n.text("Profiles could not be saved.")).seleneFont(19) }
+                if profiles.failed { Text(L10n.text("Profiles could not be saved.")).seleneFont(.panelBody) }
             }
             .foregroundStyle(SeleneTheme.ink)
             .padding(.top, geometry.size.height * 0.28)
@@ -190,7 +190,7 @@ struct ProfilePickerView: View {
                     }
                 }
                 .scaleEffect(isFocused && !reduceMotion ? 1.1 : 1)
-                Text(title).seleneFont(24).lineLimit(1)
+                Text(title).seleneFont(.profileTitle).lineLimit(1)
                     .foregroundStyle(isFocused ? SeleneTheme.ink : SeleneTheme.ink60)
                     .frame(width: canvas.u(170))
             }
