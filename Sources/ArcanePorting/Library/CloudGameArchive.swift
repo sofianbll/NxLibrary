@@ -322,22 +322,46 @@ public actor CloudGameArchive {
     public func checkRebuild(_ game: CloudArchiveGame, sourcesAvailable: Bool, withoutCache: Bool,
                              lastSuccessfulBuild: ClosedRange<Date>? = nil, preferLocalCache: Bool = false)
         async throws -> (decision: CloudRebuildDecision, verifiedCache: URL?, hasUsableLocalCache: Bool) {
+        try Task.checkCancellation()
         guard sourcesAvailable else { return (.missingSources, nil, false) }
         guard !withoutCache else { return (.allowed, nil, false) }
         guard let manifest = try await latest(titleID: game.titleID) else { return (.allowed, nil, false) }
+        try Task.checkCancellation()
         guard let artifact = manifest.artifacts.first(where: { $0.kind == .cache }) else { return (.fullRebuild, nil, false) }
-        guard let cache = try? location(.cache, for: game),
-              let snapshot = try? CloudArchiveInventory.scan(cache, kind: .cache),
-              !snapshot.hasExcludedFiles, !snapshot.isSkippedOnly else { return (.downloadCache, nil, false) }
-        let matches = Fingerprint(signature: "", sha256: snapshot.sha256,
-                                  withoutRootMtime: snapshot.withoutRootMtime).matches(artifact)
-        // A divergent fingerprint alone says nothing about age; the successful build must have written this cache.
-        let newer = snapshot.latestFileWrite.map {
-            $0 > manifest.createdAt && lastSuccessfulBuild?.contains($0) == true
-        } ?? false
-        let usable = snapshot.entries.count > 1
-        if matches || usable && (newer || preferLocalCache) { return (.allowed, cache, usable) }
-        return (.downloadCache, nil, usable)
+        guard let cache = try? location(.cache, for: game) else { return (.downloadCache, nil, false) }
+        let key = CloudArchiveInventory.fingerprintKey(cache, kind: .cache)
+        let cached = await fingerprints.entries()[key]
+        let worker = Task.detached(priority: .utility) { () throws -> (CloudRebuildDecision, Bool, Fingerprint?) in
+            do {
+                let signature = try CloudArchiveInventory.signature(cache, kind: .cache)
+                guard !signature.hasExcludedFiles, !signature.isSkippedOnly else { return (.downloadCache, false, nil) }
+                let usable = signature.entries.count > 1
+                // A recent build record alone does not prove it wrote this cache.
+                let newer = signature.latestFileWrite.map {
+                    $0 > manifest.createdAt && lastSuccessfulBuild?.contains($0) == true
+                } ?? false
+                if usable && newer { return (.allowed, true, nil) }
+                if let cached, cached.signature == signature.sha256 {
+                    return (cached.matches(artifact) || usable && preferLocalCache ? .allowed : .downloadCache, usable, nil)
+                }
+                let snapshot = try CloudArchiveInventory.scan(cache, kind: .cache)
+                let after = try CloudArchiveInventory.signature(cache, kind: .cache)
+                guard !snapshot.hasExcludedFiles, !after.hasExcludedFiles, after.sha256 == signature.sha256 else {
+                    throw CloudArchiveError.localChanged
+                }
+                let fresh = Fingerprint(signature: signature.sha256, sha256: snapshot.sha256,
+                                        withoutRootMtime: snapshot.withoutRootMtime)
+                return (fresh.matches(artifact) || usable && preferLocalCache ? .allowed : .downloadCache, usable, fresh)
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                return (.downloadCache, false, nil)
+            }
+        }
+        let (decision, usable, fresh) = try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
+        try Task.checkCancellation()
+        if let fresh { await fingerprints.save([key: fresh]) }
+        return (decision, decision == .allowed ? cache : nil, usable)
     }
 
     public func latestManifests() async throws -> [CloudGameManifest] {

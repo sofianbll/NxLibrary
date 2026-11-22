@@ -97,14 +97,21 @@ extension GameOptionsView {
     private func rowView(_ row: GameOptionsRow, _ p: GameOptionsPresentation,
                          focused: GameOptionsRow?) -> some View {
         let downloadsSources = row == .rebuild && p.sourcesDetached && viewModel.canCheckCloudSources(for: current)
+        let checking = row == .rebuild && checkingRebuild
+        let title = checking ? L10n.text("Checking the build cache…") : row.title
+        let about = checking ? nil : downloadsSources && !p.toolchainBlocked
+            ? L10n.text("Arcane checks the cloud for missing game files.") : p.about(row)
         return SeleneOptionRow(icon: row.icon,
-                        title: row.title,
-                        about: downloadsSources && !p.toolchainBlocked ? L10n.text("Arcane checks the cloud for missing game files.") : p.about(row),
+                        title: title,
+                        about: about,
                         focused: focused == row,
                         destructive: row.isDestructive,
-                        enabled: downloadsSources ? !p.toolchainBlocked : !p.isDimmed(row)) {
+                        enabled: checking || (downloadsSources ? !p.toolchainBlocked : !p.isDimmed(row))) {
             HStack(spacing: canvas.u(12)) {
-                if let info = p.info(row) {
+                if checking {
+                    SeleneProgressBar(progress: nil).frame(width: canvas.u(96))
+                    Text(L10n.text("Cancel")).seleneFont(17).foregroundColor(SeleneTheme.ink75)
+                } else if let info = p.info(row) {
                     SeleneInfoTip(info, isShowing: Binding(
                         get: { infoRow == row },
                         set: { show in
@@ -112,10 +119,10 @@ extension GameOptionsView {
                             infoRow = show ? row : (infoRow == row ? nil : infoRow)
                         }))
                 }
-                trailing(row)
+                if !checking { trailing(row) }
             }
         }
-        .help(p.info(row) ?? "")
+        .help(checking ? L10n.text("Cancel") : p.info(row) ?? "")
         .background(GeometryReader { geometry in
             Color.clear.preference(key: OptionRowFrames.self,
                                    value: [row: geometry.frame(in: .named(OptionsScrollBox.space))])
@@ -124,8 +131,8 @@ extension GameOptionsView {
         .onTapGesture { activate(row) }
         .id(row.rawValue)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(row.title)
-        .accessibilityHint(p.about(row) ?? "")
+        .accessibilityLabel(title)
+        .accessibilityHint(checking ? L10n.text("Cancel") : about ?? "")
         .accessibilityValue(accessibilityValue(row) ?? "")
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { activate(row) }
@@ -133,6 +140,7 @@ extension GameOptionsView {
 
     /// Y opens the focused row's explanation, when it has one.
     func rightHints(_ p: GameOptionsPresentation) -> [HintItem] {
+        if confirm == nil, focusedRow == .rebuild, checkingRebuild { return [HintItem(.a, L10n.text("Cancel"))] }
         guard confirm == nil, let row = focusedRow, p.info(row) != nil else { return [HintItem(.a, L10n.text("Select"))] }
         return [HintItem(.y, infoRow == row ? L10n.text("Hide info") : L10n.text("Info")), HintItem(.a, L10n.text("Select"))]
     }

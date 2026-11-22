@@ -33,6 +33,18 @@ import ArcanePorting
         }
         // CONNECTION_FIXTURE
         try render("panel", output, CloudLibraryPanel(viewModel: vm, model: model, game: game))
+        L10n.setContext(.init(language: .french, region: "FR"))
+        vm.screenRebuildNotice()
+        let notice = vm.settingsNotice!
+        precondition(notice.choices == ["Download the cloud cache", "Rebuild with this Mac’s cache", "Rebuild without cache", "Cancel"])
+        precondition(vm.settingsNoticeFocus == 0 && notice.cancelIndex == 3 && notice.vertical)
+        try render("rebuild", output, SeleneChoiceDialog(title: notice.title, message: notice.message,
+            choices: notice.choices, focus: .constant(vm.settingsNoticeFocus), vertical: notice.vertical,
+            details: notice.choiceDetails, onChoose: { _ in })
+            .environment(\.nxAppLocale, L10n.context),
+            size: .init(width: 900, height: 620))
+        L10n.setContext(.init(language: .english, region: "US"))
+        vm.settingsNotice = nil
         try render("settings", output, SettingsCloudLibrarySection(
             viewModel: vm, model: model, settings: settings, advanced: .constant(false),
             onEdit: {}, onEditSources: {}, onActions: { _ in })
@@ -251,6 +263,18 @@ extension CloudSetupAssistant {
             change(assistant, r'@State private var selectingSources = false', '@State private var selectingSources = true')
             change(assistant, r'@State private var sourcesPath = ""', '@State private var sourcesPath = "Games/GameFiles"')
         (app / "CloudScreenProbe.swift").write_text(host)
+        with (app / "ViewModels/AppViewModel+CloudLibrary.swift").open("a") as swift:
+            swift.write('''
+extension AppViewModel {
+    @MainActor func screenRebuildNotice() {
+        let game = PortedGame(name: "Pokémon Legends: Z-A", url: AppData.supportRoot.appendingPathComponent("Fixture.app"),
+                             platform: .macApp, sizeBytes: 0, modificationDate: .now)
+        let archive = CloudGameArchive(backend: RcloneStorageBackend(remote: "fixture", root: "Games"))
+        showCloudBuildNotice(for: game, archive: archive, extraArguments: [], onStarted: nil,
+                             canDownload: true, hasLocalCache: true)
+    }
+}
+''')
         with (package / "Sources/ArcanePorting/Library/CloudGameArchive.swift").open("a") as swift:
             swift.write('''
 extension CloudArtifactStatus {

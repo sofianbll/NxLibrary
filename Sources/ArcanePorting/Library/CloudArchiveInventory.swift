@@ -181,11 +181,11 @@ enum CloudArchiveInventory {
                               link: link, mode: Int(st.st_mode & 0o777))
             entries.append(entry)
             fingerprint.entry(entry, mtime: st.st_mtimespec)
+            if type == "F", kind == .cache {
+                let mtime = Date(timeIntervalSince1970: Double(st.st_mtimespec.tv_sec) + Double(st.st_mtimespec.tv_nsec) / 1e9)
+                latestFileWrite = max(latestFileWrite ?? mtime, mtime)
+            }
             if includeContents {
-                if type == "F" {
-                    let mtime = Date(timeIntervalSince1970: Double(st.st_mtimespec.tv_sec) + Double(st.st_mtimespec.tv_nsec) / 1e9)
-                    latestFileWrite = max(latestFileWrite ?? mtime, mtime)
-                }
                 let attributes = attributeDigests(try SaveFiles.attributes(url))
                 fingerprint.contents(attributes: attributes,
                                      fileSHA256: type == "F" ? try hashes(at: url, includeMD5: false)["sha256"] : nil)

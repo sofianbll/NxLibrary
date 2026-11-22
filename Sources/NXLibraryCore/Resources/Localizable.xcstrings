@@ -232,9 +232,42 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在检查云端编译缓存…"}}
       }
     },
-    "Rebuild with this Mac’s build cache": {
+    "Rebuild %@": {
       "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "Rebuild with this Mac’s build cache"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Rebuild %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ricompila %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Recompiler %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "%@ neu bauen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Recompilar %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Recompilar %@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "重新构建 %@"}}
+      }
+    },
+    "Checking the build cache…": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Checking the build cache…"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Verifica della cache…"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vérification du cache…"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Build-Cache wird geprüft…"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Comprobando la caché…"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Verificando o cache…"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在检查编译缓存…"}}
+      }
+    },
+    "Download the cloud cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Download the cloud cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scarica la cache dal cloud"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Télécharger le cache du cloud"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Cloud-Cache herunterladen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Descargar la caché de la nube"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Baixar o cache da nuvem"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "下载云端缓存"}}
+      }
+    },
+    "Rebuild with this Mac’s cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Rebuild with this Mac’s cache"}},
         "it": {"stringUnit": {"state": "translated", "value": "Ricompila con la cache di questo Mac"}},
         "fr": {"stringUnit": {"state": "translated", "value": "Recompiler avec le cache de ce Mac"}},
         "de": {"stringUnit": {"state": "translated", "value": "Mit dem Build-Cache dieses Mac neu bauen"}},
@@ -243,15 +276,70 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "使用此 Mac 的编译缓存重新构建"}}
       }
     },
-    "Rebuild without build cache": {
+    "Rebuild without cache": {
       "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "Rebuild without build cache"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Ricompila senza cache di compilazione"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Recompiler sans le cache de compilation"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Rebuild without cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ricompila senza cache"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Recompiler sans cache"}},
         "de": {"stringUnit": {"state": "translated", "value": "Ohne Build-Cache neu bauen"}},
         "es": {"stringUnit": {"state": "translated", "value": "Recompilar sin caché de compilación"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Recompilar sem cache de compilação"}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "不使用编译缓存重新构建"}}
+      }
+    },
+    "Takes longer.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Takes longer."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Richiede più tempo."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Prend plus de temps."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Dauert länger."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Tarda más."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Leva mais tempo."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "耗时更长。"}}
+      }
+    },
+    "Keeps this Mac’s cache as a backup.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Keeps this Mac’s cache as a backup."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Conserva una copia della cache di questo Mac."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Conserve une copie du cache de ce Mac."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Sichert den Cache dieses Mac als Kopie."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Conserva una copia de la caché de este Mac."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Mantém uma cópia do cache deste Mac."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "保留此 Mac 上的缓存作为备份。"}}
+      }
+    },
+    "The cloud cache differs from this Mac’s cache.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "The cloud cache differs from this Mac’s cache."}},
+        "it": {"stringUnit": {"state": "translated", "value": "La cache nel cloud è diversa da quella di questo Mac."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Le cache du cloud diffère de celui de ce Mac."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Der Cloud-Cache unterscheidet sich vom Cache dieses Mac."}},
+        "es": {"stringUnit": {"state": "translated", "value": "La caché de la nube difiere de la de este Mac."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O cache da nuvem difere do cache deste Mac."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "云端缓存与此 Mac 上的缓存不同。"}}
+      }
+    },
+    "There’s no verified copy of the cloud cache on this Mac.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "There’s no verified copy of the cloud cache on this Mac."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Su questo Mac non c’è una copia verificata della cache cloud."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ce Mac n’a pas de copie vérifiée du cache du cloud."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Auf diesem Mac gibt es keine geprüfte Kopie des Cloud-Caches."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No hay una copia verificada de la caché de la nube en este Mac."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não há uma cópia verificada do cache da nuvem neste Mac."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "此 Mac 上没有经验证的云端缓存副本。"}}
+      }
+    },
+    "Arcane couldn’t verify the cloud cache.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Arcane couldn’t verify the cloud cache."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Arcane non ha potuto verificare la cache cloud."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Arcane n’a pas pu vérifier le cache du cloud."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Arcane konnte den Cloud-Cache nicht prüfen."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Arcane no pudo verificar la caché de la nube."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O Arcane não pôde verificar o cache da nuvem."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "Arcane 无法验证云端缓存。"}}
       }
     },
     "Build needs a verified build cache.": {

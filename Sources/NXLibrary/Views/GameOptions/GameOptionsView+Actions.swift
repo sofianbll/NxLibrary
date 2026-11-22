@@ -172,9 +172,14 @@ extension GameOptionsView {
     /// through the usual alert; a build that starts opens Add Game with its progress.
     func rebuild(_ game: PortedGame) {
         SoundEffectService.shared.play(.click)
+        if viewModel.porting.cancelCloudBuildCheck(for: game.id) { return }
         viewModel.porting.startBuild(for: game) {
             onClose()
             onShowBuild()
         }
+    }
+
+    var checkingRebuild: Bool {
+        viewModel.isCheckingCloudBuild && viewModel.porting.checkingCloudBuild?.id == current.id
     }
 }

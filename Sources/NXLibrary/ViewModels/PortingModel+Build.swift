@@ -412,26 +412,42 @@ extension PortingModel {
         }
         checkingCloudBuild = (target.id, buildScope(for: target))
         app.isCheckingCloudBuild = true
-        Task { @MainActor in
+        cloudBuildCheckTask = Task { @MainActor in
+            guard !Task.isCancelled else {
+                if request != nil { finishActivityBuild(.cancelled) }
+                finishCloudBuildCheck()
+                return
+            }
             if let afterSourcesDownloaded, GameResourceState.sourcesAvailable(for: target) {
-                checkingCloudBuild = nil
-                app.isCheckingCloudBuild = false
+                finishCloudBuildCheck()
                 afterSourcesDownloaded()
                 return
             }
             defer {
                 if request?.id == activeBuildRequest?.id, request != nil, !app.isBuilding {
-                    finishActivityBuild(.failed(L10n.text("Build needs your attention.")))
+                    finishActivityBuild(Task.isCancelled ? .cancelled : .failed(L10n.text("Build needs your attention.")))
                 }
-                checkingCloudBuild = nil
-                app.isCheckingCloudBuild = false
-                scheduleNextBuild()
+                finishCloudBuildCheck()
             }
             await app.startCloudBuild(for: game, archive: archive, extraArguments: extraArguments,
                                       onStarted: onStarted, withoutCache: withoutCache,
                                       queuedName: queuedName, request: request, canStart: canStart,
                                       afterSourcesDownloaded: afterSourcesDownloaded)
         }
+    }
+
+    private func finishCloudBuildCheck() {
+        cloudBuildCheckTask = nil
+        checkingCloudBuild = nil
+        app.isCheckingCloudBuild = false
+        scheduleNextBuild()
+    }
+
+    @discardableResult
+    func cancelCloudBuildCheck(for id: UUID) -> Bool {
+        guard checkingCloudBuild?.id == id, let cloudBuildCheckTask else { return false }
+        cloudBuildCheckTask.cancel()
+        return true
     }
 
     private func checkBuildIdle(for game: PortedGame) throws {

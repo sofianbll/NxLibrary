@@ -204,6 +204,7 @@ struct SeleneChoiceDialog: View {
     let choices: [String]
     @Binding var focus: Int
     var vertical = false
+    var details: [String: String] = [:]
     let onChoose: (Int) -> Void
 
     var body: some View {
@@ -222,9 +223,19 @@ struct SeleneChoiceDialog: View {
                 : AnyLayout(HStackLayout(spacing: canvas.u(18)))
             layout {
                 ForEach(Array(choices.enumerated()), id: \.offset) { index, choice in
-                    SelenePillButton(title: choice, focused: focus == index) { onChoose(index) }
-                        .onHover { if $0 { focus = index } }
-                        .accessibilityLabel(choice)
+                    VStack(spacing: canvas.u(4)) {
+                        SelenePillButton(title: choice, focused: focus == index) { onChoose(index) }
+                            .onHover { if $0 { focus = index } }
+                            .accessibilityLabel(L10n.text(choice))
+                            .accessibilityHint(details[choice] ?? "")
+                        if let detail = details[choice] {
+                            Text(detail)
+                                .seleneFont(15)
+                                .foregroundColor(SeleneTheme.ink60)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityHidden(true)
+                        }
+                    }
                 }
             }
             .padding(.top, canvas.u(34))

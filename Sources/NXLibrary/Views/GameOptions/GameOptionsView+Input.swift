@@ -125,6 +125,8 @@ extension GameOptionsView {
             infoRow = nil
         } else if confirm != nil {
             dismissConfirm()
+        } else if focusedRow == .rebuild, viewModel.porting.cancelCloudBuildCheck(for: current.id) {
+            return
         } else if level == .editDetails {
             leaveEditDetails()
         } else {

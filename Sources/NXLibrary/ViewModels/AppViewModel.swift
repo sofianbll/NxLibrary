@@ -15,16 +15,20 @@ struct SettingsNotice: Identifiable {
     var actionTitle = "Retry"
     var cancelTitle = "Back"
     var alternatives: [(title: String, run: () -> Void)] = []
-    var cancelIndex: Int { alternatives.isEmpty ? 0 : choices.count - 1 }
+    var primaryFirst = false
+    var choiceDetails: [String: String] = [:]
+    var vertical: Bool { primaryFirst || !alternatives.isEmpty }
+    var initialFocus: Int { primaryFirst && retry != nil ? 0 : cancelIndex }
+    var cancelIndex: Int { vertical ? choices.count - 1 : 0 }
     var choices: [String] {
         let actions = (retry == nil ? [] : [actionTitle]) + alternatives.map(\.title)
-        return alternatives.isEmpty ? [cancelTitle] + actions : actions + [cancelTitle]
+        return vertical ? actions + [cancelTitle] : [cancelTitle] + actions
     }
 
     func runChoice(_ index: Int?) {
         guard let index, index != cancelIndex else { return }
         let actions = (retry.map { [$0] } ?? []) + alternatives.map(\.run)
-        let action = alternatives.isEmpty ? index - 1 : index
+        let action = vertical ? index : index - 1
         if actions.indices.contains(action) { actions[action]() }
     }
 }
@@ -66,10 +70,12 @@ final class AppViewModel: ObservableObject {
 
     func showSettingsNotice(title: String, message: String, actionTitle: String = "Retry",
                             cancelTitle: String = "Back", alternatives: [(title: String, run: () -> Void)] = [],
+                            primaryFirst: Bool = false, choiceDetails: [String: String] = [:],
                             retry: (() -> Void)? = nil) {
         let notice = SettingsNotice(title: title, message: message, retry: retry,
-                                    actionTitle: actionTitle, cancelTitle: cancelTitle, alternatives: alternatives)
-        settingsNoticeFocus = notice.cancelIndex
+                                    actionTitle: actionTitle, cancelTitle: cancelTitle, alternatives: alternatives,
+                                    primaryFirst: primaryFirst, choiceDetails: choiceDetails)
+        settingsNoticeFocus = notice.initialFocus
         settingsNotice = notice
     }
 

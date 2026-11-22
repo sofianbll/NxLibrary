@@ -15,6 +15,7 @@ final class PortingModel: ObservableObject {
     var hasBuildQueueWrites = false
     var activeBuildRequest: BuildRequest?
     var checkingCloudBuild: (id: UUID, scope: CloudWorkScope)?
+    var cloudBuildCheckTask: Task<Void, Never>?
     var checkingCloudBuildScope: CloudWorkScope? { checkingCloudBuild?.scope }
     var activeCloudBuildScope: CloudWorkScope?
     var cloudBuildScope: CloudWorkScope? { activeCloudBuildScope ?? checkingCloudBuildScope }

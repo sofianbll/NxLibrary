@@ -575,8 +575,12 @@ extension AppViewModel {
                     check = try await archive.checkRebuild(locations, sourcesAvailable: true, withoutCache: withoutCache,
                                                            lastSuccessfulBuild: lastBuild,
                                                            preferLocalCache: request?.preferLocalCache == true)
+                    try Task.checkCancellation()
+                } catch is CancellationError {
+                    throw CancellationError()
                 } catch {
                     await release()
+                    try Task.checkCancellation()
                     if request != nil { porting.finishActivityBuild(.failed(cloudMessage(for: error))) }
                     guard !cloudLibrary.isQuitting else { return }
                     showCloudBuildNotice(for: target, archive: archive, extraArguments: extraArguments,
@@ -588,6 +592,7 @@ extension AppViewModel {
                     throw NXLibraryError.missingSources
                 case .downloadCache:
                     await release()
+                    try Task.checkCancellation()
                     if request != nil { porting.finishActivityBuild(.failed(L10n.text("Build needs a verified build cache."))) }
                     guard !cloudLibrary.isQuitting else { return }
                     showCloudBuildNotice(for: target, archive: archive, extraArguments: extraArguments,
@@ -610,6 +615,8 @@ extension AppViewModel {
                 await release()
                 throw error
             }
+        } catch where Task.isCancelled || error is CancellationError {
+            if request != nil { porting.finishActivityBuild(.cancelled) }
         } catch {
             reportCloudBuildError(error, queuedName: queuedName, request: request)
         }
@@ -638,6 +645,7 @@ extension AppViewModel {
         let status = try await sources.status(folderName: files.folderName, files: files.files)
         guard status.state == .cloudOnly else { throw NXLibraryError.missingSources }
         let bytes = try await sources.downloadSize(folderName: files.folderName, files: files.files)
+        try Task.checkCancellation()
         guard bytes > 0 else { throw NXLibraryError.missingSources }
         guard !cloudLibrary.isQuitting else { return }
         if request != nil { porting.finishActivityBuild(.failed(L10n.text("Game files not found"))) }
@@ -666,39 +674,37 @@ extension AppViewModel {
     @MainActor private func showCloudBuildNotice(for game: PortedGame, archive: CloudGameArchive,
                                                   extraArguments: [String], onStarted: (() -> Void)?, canDownload: Bool,
                                                   hasLocalCache: Bool = false) {
-        let title = L10n.text("Rebuild")
-        let confirmOverride: () -> Void = { [weak self] in
-            self?.showSettingsNotice(title: title,
-                message: L10n.text("Rebuild from the original game files without using the existing cache? This can take much longer."),
-                actionTitle: "Rebuild without build cache", cancelTitle: "Cancel") { [weak self] in
-                    guard let self else { return }
-                    guard self.cloudLibrary.archive === archive else {
-                        self.porting.presentBuildError(CloudArchiveError.busy)
-                        return
-                    }
-                    self.porting.submitBuild(for: game, extraArguments: extraArguments, onStarted: onStarted, withoutCache: true)
-                }
+        let title = L10n.format("Rebuild %@", [game.name])
+        let without = "Rebuild without cache"
+        let download = "Download the cloud cache"
+        var details = [without: L10n.text("Takes longer.")]
+        let rebuild: (Bool) -> Void = { [weak self] withoutCache in
+            guard let self else { return }
+            guard self.cloudLibrary.archive === archive else {
+                self.porting.presentBuildError(CloudArchiveError.busy)
+                return
+            }
+            self.porting.submitBuild(for: game, extraArguments: extraArguments, onStarted: onStarted,
+                                     withoutCache: withoutCache, preferLocalCache: !withoutCache)
         }
         if canDownload {
             var alternatives: [(title: String, run: () -> Void)] = []
             if hasLocalCache {
-                alternatives.append(("Rebuild with this Mac’s build cache", { [weak self] in
+                alternatives.append(("Rebuild with this Mac’s cache", { rebuild(false) }))
+                details[download] = L10n.text("Keeps this Mac’s cache as a backup.")
+            }
+            alternatives.append((without, { rebuild(true) }))
+            showSettingsNotice(title: title,
+                message: hasLocalCache
+                    ? L10n.text("The cloud cache differs from this Mac’s cache.")
+                    : L10n.text("There’s no verified copy of the cloud cache on this Mac."),
+                actionTitle: download, cancelTitle: "Cancel", alternatives: alternatives,
+                primaryFirst: true, choiceDetails: details) { [weak self] in
                     guard let self else { return }
                     guard self.cloudLibrary.archive === archive else {
                         self.porting.presentBuildError(CloudArchiveError.busy)
                         return
                     }
-                    self.porting.submitBuild(for: game, extraArguments: extraArguments, onStarted: onStarted,
-                                             preferLocalCache: true)
-                }))
-            }
-            alternatives.append(("Rebuild without build cache", confirmOverride))
-            showSettingsNotice(title: title,
-                message: hasLocalCache
-                    ? L10n.text("This Mac’s build cache differs from the cloud copy.\nDownloading keeps the local cache as a backup.")
-                    : L10n.text("The build cache in the cloud has no verified local copy. Download it before rebuilding. Any existing cache is kept as a backup."),
-                actionTitle: "Download build cache", cancelTitle: "Cancel", alternatives: alternatives) { [weak self] in
-                    guard let self else { return }
                     self.performCloudLibrary(.restoreBuildCache, for: game)
                     if self.cloudLibrary.states[game.id]?.action == .restoreBuildCache {
                         self.cloudLibraryGameID = game.id
@@ -708,8 +714,8 @@ extension AppViewModel {
                 }
         } else {
             showSettingsNotice(title: title,
-                message: L10n.text("Arcane could not check the cloud manifest. Check rclone and try again."),
-                actionTitle: "Rebuild without build cache", cancelTitle: "Cancel", retry: confirmOverride)
+                message: L10n.text("Arcane couldn’t verify the cloud cache."),
+                actionTitle: without, cancelTitle: "Cancel", primaryFirst: true, choiceDetails: details) { rebuild(true) }
         }
     }
 

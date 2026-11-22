@@ -38,7 +38,7 @@ extension AppShellView {
                 .onTapGesture { finishSettingsNotice() }
             SeleneChoiceDialog(title: notice.title, message: notice.message,
                                choices: notice.choices,
-                               focus: $viewModel.settingsNoticeFocus, vertical: !notice.alternatives.isEmpty,
+                               focus: $viewModel.settingsNoticeFocus, vertical: notice.vertical, details: notice.choiceDetails,
                                onChoose: { finishSettingsNotice(choice: $0) })
         }
     }

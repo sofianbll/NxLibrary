@@ -609,10 +609,34 @@ final class CloudGameArchiveTests: XCTestCase {
         }
     }
 
-    func testRebuildKeepsNewerLocalCache() async throws {
-        let f = try fixture()
+    func testRebuildLatencyProbe() async throws {
+        guard ProcessInfo.processInfo.environment["ARCANE_REBUILD_PROBE"] == "1" else { return }
+        let f = try fixture(useSyntheticBackend: true)
         defer { try? FileManager.default.removeItem(at: f.root) }
         let service = f.service
+        let manifest = try await service.upload(f.game)
+        let file = f.cache.appendingPathComponent("large.bin")
+        try Data().write(to: file)
+        let handle = try FileHandle(forWritingTo: file)
+        try handle.truncate(atOffset: 16_000_000_000)
+        try handle.close()
+        let start = manifest.createdAt.addingTimeInterval(60)
+        try FileManager.default.setAttributes([.modificationDate: start.addingTimeInterval(30)], ofItemAtPath: file.path)
+        for _ in 0..<3 {
+            let clock = ContinuousClock()
+            let t = clock.now
+            let check = try await service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false,
+                                                       lastSuccessfulBuild: start...start.addingTimeInterval(60))
+            print("rebuild fixture: \(t.duration(to: clock.now))")
+            XCTAssertEqual(check.decision, .allowed)
+        }
+    }
+
+    func testRebuildKeepsNewerLocalCache() async throws {
+        let f = try fixture(useSyntheticBackend: true)
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let fingerprints = CloudArchiveFingerprintCache()
+        let service = CloudGameArchive(backend: f.backend, trash: { _ in }, fingerprints: fingerprints)
         let manifest = try await service.upload(f.game)
         let file = f.cache.appendingPathComponent("run.key")
         try Data("different local cache".utf8).write(to: file)
@@ -629,9 +653,12 @@ final class CloudGameArchiveTests: XCTestCase {
         XCTAssertEqual(explicit.verifiedCache, f.cache)
 
         try FileManager.default.setAttributes([.modificationDate: start.addingTimeInterval(30)], ofItemAtPath: file.path)
+        let before = await fingerprints.entries().mapValues(\.signature)
         let newer = try await service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false, lastSuccessfulBuild: build)
+        let after = await fingerprints.entries().mapValues(\.signature)
         XCTAssertEqual(newer.decision, .allowed)
         XCTAssertEqual(newer.verifiedCache, f.cache)
+        XCTAssertEqual(before, after, "A recent cache does not need a new content fingerprint")
 
         try Data().write(to: f.cache.appendingPathComponent("prod.keys"))
         let excluded = try await service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false,
@@ -643,6 +670,48 @@ final class CloudGameArchiveTests: XCTestCase {
         let missing = try await service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false, lastSuccessfulBuild: build)
         XCTAssertEqual(missing.decision, .downloadCache)
         XCTAssertFalse(missing.hasUsableLocalCache)
+    }
+
+    func testRebuildReusesOnlyCurrentFingerprints() async throws {
+        let f = try fixture(useSyntheticBackend: true)
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let fingerprints = CloudArchiveFingerprintCache()
+        let service = CloudGameArchive(backend: f.backend, trash: { _ in }, fingerprints: fingerprints)
+        let manifest = try await service.upload(f.game)
+        let key = CloudArchiveInventory.fingerprintKey(f.cache, kind: .cache)
+        let signature = try CloudArchiveInventory.signature(f.cache, kind: .cache)
+        let artifact = try XCTUnwrap(manifest.artifacts.first { $0.kind == .cache })
+        // A cached mismatch goes straight to the choice, without reopening any file.
+        await fingerprints.save([key: .init(signature: signature.sha256, sha256: "different", withoutRootMtime: nil)])
+        let mismatch = try await service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false)
+        XCTAssertEqual(mismatch.decision, .downloadCache)
+        XCTAssertTrue(mismatch.hasUsableLocalCache)
+        await fingerprints.save([key: .init(signature: signature.sha256, sha256: artifact.inventorySHA256, withoutRootMtime: nil)])
+        let match = try await service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false)
+        XCTAssertEqual(match.verifiedCache, f.cache)
+
+        let file = f.cache.appendingPathComponent("run.key")
+        let mtime = try XCTUnwrap(FileManager.default.attributesOfItem(atPath: file.path)[.modificationDate] as? Date)
+        try Data("different!".utf8).write(to: file)
+        try FileManager.default.setAttributes([.modificationDate: mtime], ofItemAtPath: file.path)
+        let changed = try await service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false)
+        XCTAssertEqual(changed.decision, .downloadCache)
+        XCTAssertNil(changed.verifiedCache)
+        XCTAssertTrue(changed.hasUsableLocalCache)
+    }
+
+    func testCancelledRebuildCheckDoesNotOfferAnUnverifiedCache() async throws {
+        let f = try fixture(useSyntheticBackend: true)
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let service = f.service
+        let check = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return try await service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false)
+        }
+        do {
+            _ = try await check.value
+            XCTFail("Cancellation must not produce a rebuild decision")
+        } catch is CancellationError {}
     }
 
     func testInterruptedRestoreLeavesOriginalAndSuccessfulSwapKeepsPreviousCopy() async throws {
