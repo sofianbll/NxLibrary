@@ -424,8 +424,9 @@ final class CloudGameArchiveTests: XCTestCase {
                 XCTAssertEqual(missing.decision, .downloadCache)
             }
             _ = try await service.restore(kind, for: fixture.game, progress: { updates.record($0) })
-            XCTAssertTrue(updates.snapshot().contains { $0.phase == .downloading && $0.kind == kind && $0.transfer != nil })
-            XCTAssertTrue(updates.snapshot().contains { $0.phase == .restoring && $0.kind == kind })
+            let phases = updates.snapshot().filter { $0.kind == kind }
+            XCTAssertTrue(phases.contains { $0.phase == .downloading && $0.transfer != nil && !$0.downloadComplete })
+            XCTAssertEqual(phases.filter(\.downloadComplete).map(\.phase), [.verifying, .restoring])
         }
         let restored = try await service.checkRebuild(fixture.game, sourcesAvailable: true, withoutCache: false)
         XCTAssertEqual(restored.decision, .allowed)

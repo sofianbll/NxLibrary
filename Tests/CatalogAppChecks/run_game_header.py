@@ -19,7 +19,7 @@ struct CloudLibraryPill: View { let indicator: CloudLibraryIndicator; let focuse
 struct SelenePillButton: View {
  let title: String?; var icon: MaterialIcon? = nil; var iconSize: CGFloat = 26
  var minWidth: CGFloat = 180; var height: CGFloat = 60; var horizontalPadding: CGFloat = 36
- let focused: Bool; var enabled: Bool = true; var waveDots = false; let action: () -> Void
+ let focused: Bool; var enabled: Bool = true; var waveDots = false; var downloadFill: Double? = nil; let action: () -> Void
  static func buildQueue(focused: Bool, action: @escaping () -> Void) -> Self {
   Self(title: "Queued", focused: focused, action: action)
  }

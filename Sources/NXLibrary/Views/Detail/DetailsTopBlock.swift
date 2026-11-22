@@ -177,7 +177,8 @@ struct DetailsTopBlock: View {
     }
 
     private var normalPills: some View {
-        HStack(spacing: canvas.u(14)) {
+        let state = cloud.states[game.id] ?? CloudLibraryState()
+        return HStack(spacing: canvas.u(14)) {
             Group {
                 if pillSet == .queued {
                     SelenePillButton.buildQueue(minWidth: 200, focused: focusedPill == 0, action: onPrimary)
@@ -186,7 +187,10 @@ struct DetailsTopBlock: View {
                                      horizontalPadding: 36, focused: focusedPill == 0,
                                      enabled: isRunning || (downloadsApp ? downloadEnabled && cloud.states[game.id]?.action == nil
                                          && cloud.states[game.id]?.refreshing != true
-                                         : primaryEnabled && pillSet.unavailableReason == nil), action: onPrimary)
+                                         : primaryEnabled && pillSet.unavailableReason == nil),
+                                     downloadFill: downloadsApp && !isRunning
+                                         ? CloudLibraryProgressView.downloadFill(state, item: .app) ?? 0 : nil,
+                                     action: onPrimary)
                 }
             }
             .onHover { if $0 { onHoverPill(0) } }

@@ -27,6 +27,9 @@ struct SelenePillButton: View {
     var queuedBuild = false
     var accessory: AnyView? = nil
     var keyboardFocus: FocusState<Bool>.Binding? = nil
+    /// Zero keeps the outlined download style; nil uses the normal pill style.
+    var downloadFill: Double? = nil
+    var passive = false
     let action: () -> Void
 
     static func roundIcon(_ icon: MaterialIcon, focused: Bool = false, enabled: Bool = true,
@@ -54,42 +57,54 @@ struct SelenePillButton: View {
         }
     }
 
-    private var pill: some View {
+    @ViewBuilder private var pill: some View {
         let cancelling = queuedBuild && (focused || hovered)
         let focused = self.focused || cancelling
         let tint = !queuedBuild || cancelling ? self.tint : nil
         let title = cancelling ? "Cancel" : self.title
         let icon = cancelling ? MaterialIcon.close : self.icon
-        let solid = focused && enabled && tint == nil && fillsOnFocus
-        return Button(action: action) {
-            HStack(spacing: canvas.u(10)) {
-                accessory
-                if let icon {
-                    MaterialIconView(icon, size: iconSize)
-                }
-                if let title {
-                    // A pill's title stays on one line: the pill grows instead.
-                    ZStack {
-                        if queuedBuild {
-                            Text(L10n.text(cancelling ? "Queued" : "Cancel", context: localization))
-                                .hidden().accessibilityHidden(true)
-                        }
-                        Text(titleArguments.isEmpty ? L10n.text(title, context: localization)
-                             : L10n.format(title, titleArguments, context: localization))
+        let solid = downloadFill == nil && focused && enabled && tint == nil && fillsOnFocus
+        let label = HStack(spacing: canvas.u(10)) {
+            accessory
+            if let icon {
+                MaterialIconView(icon, size: iconSize)
+            }
+            if let title {
+                // A pill's title stays on one line: the pill grows instead.
+                ZStack {
+                    if queuedBuild {
+                        Text(L10n.text(cancelling ? "Queued" : "Cancel", context: localization))
+                            .hidden().accessibilityHidden(true)
                     }
-                        .seleneFont(21)
-                        .lineLimit(1)
-                        .fixedSize()
+                    Text(titleArguments.isEmpty ? L10n.text(title, context: localization)
+                         : L10n.format(title, titleArguments, context: localization))
                 }
-                if waveDots {
-                    WaveDots()
-                        .padding(.leading, canvas.u(-4))
+                .seleneFont(21)
+                .lineLimit(1)
+                .fixedSize()
+            }
+            if waveDots {
+                WaveDots()
+                    .padding(.leading, canvas.u(-4))
+            }
+        }
+        .padding(.horizontal, canvas.u(horizontalPadding))
+        .frame(minWidth: canvas.u(minWidth), minHeight: canvas.u(height), maxHeight: canvas.u(height))
+        let capsule = label
+            .foregroundColor(downloadFill != nil ? .white : solid ? SeleneTheme.onFocus
+                             : (enabled ? tint ?? SeleneTheme.ink : SeleneTheme.ink60))
+            .background(Capsule().fill(solid ? SeleneTheme.focus : SeleneTheme.glass))
+            .overlay {
+                if let downloadFill {
+                    Capsule().fill(.white)
+                        .overlay { label.foregroundColor(.black) }
+                        // One moving edge clips both the white fill and the black glyphs.
+                        .mask { DownloadFillMask(fraction: downloadFill) }
+                        .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: downloadFill)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
                 }
             }
-            .foregroundColor(solid ? SeleneTheme.onFocus : (enabled ? tint ?? SeleneTheme.ink : SeleneTheme.ink60))
-            .padding(.horizontal, canvas.u(horizontalPadding))
-            .frame(minWidth: canvas.u(minWidth), minHeight: canvas.u(height), maxHeight: canvas.u(height))
-            .background(Capsule().fill(solid ? SeleneTheme.focus : SeleneTheme.glass))
             .overlay(Capsule().strokeBorder(focused && !solid ? tint ?? SeleneTheme.focus : SeleneTheme.ink15,
                                             lineWidth: solid ? 0 : max(1, canvas.u(focused && !solid ? 2 : 1))))
             .shadow(color: solid ? SeleneTheme.focus.opacity(0.4) : .clear, radius: canvas.u(22))
@@ -97,8 +112,24 @@ struct SelenePillButton: View {
             // Focus eases across pills; the colour change is a fade, so it stays under reduce motion.
             .animation(SeleneTheme.cubicOut(0.26), value: focused)
             .contentShape(Capsule())
+        if passive {
+            capsule
+        } else {
+            Button(action: action) { capsule }
+                .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+    }
+}
+
+private struct DownloadFillMask: Shape {
+    var fraction: Double
+    var animatableData: Double {
+        get { fraction }
+        set { fraction = newValue }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        Path(CGRect(x: rect.minX, y: rect.minY, width: rect.width * fraction, height: rect.height))
     }
 }
 

@@ -93,6 +93,7 @@ import ArcanePorting
                 officialName: { _ in nil }, needsMetadata: { _ in }, cloud: model,
                 showsCloudBadges: true, onSelect: { _ in }, onActivate: { _ in }),
             size: .init(width: 400, height: 440))
+        // DOWNLOAD_FILL_CHECK
         // TYPED_PATH_CHECK
         // MULTIPLAYER_CHECK
     }
@@ -118,6 +119,55 @@ import ArcanePorting
         try png.write(to: output.appendingPathComponent(name + ".png"))
     }
 }
+'''
+
+DOWNLOAD_FILL = r'''
+        let fr = AppLocale(language: .french, region: "FR")
+        model.active = nil
+        model.queue = []
+        func checkDownloadFill(_ expected: Double?) {
+            let state = model.states[game.id]!
+            precondition(CloudLibraryProgressView.downloadFill(state, item: .app) == expected)
+            precondition(CloudLibraryProgressView.downloadFill(state, item: .cache) == nil)
+        }
+        model.update(game.id) { $0.action = nil; $0.queued = false; $0.progress = nil }
+        checkDownloadFill(nil)
+        try render("panel-download-idle", output,
+            CloudLibraryPanel(viewModel: vm, model: model, game: game).environment(\.nxAppLocale, fr))
+        for percent in [0, 40, 100] {
+            model.update(game.id) {
+                $0.action = .restore(.app)
+                $0.progress = .init(.downloading, kind: .app,
+                    transfer: .init(bytesTransferred: Int64(percent) * 1_000_000, totalBytes: 100_000_000))
+            }
+            checkDownloadFill(Double(percent) / 100)
+            try render("panel-download-\(percent)", output,
+                CloudLibraryPanel(viewModel: vm, model: model, game: game).environment(\.nxAppLocale, fr))
+            try render("spotlight-download-\(percent)", output,
+                SpotlightGameInfoView(game: game, logo: nil,
+                    presentation: .init(game: game, metadata: nil, totalPlaytime: 0, lastPlayed: nil),
+                    isRunning: false, focusedPill: 0, onPill: { _ in }, onHoverPill: { _ in },
+                    cloud: model, showsCloudPill: true, downloadsApp: true, downloadEnabled: true)
+                    .environment(\.nxAppLocale, fr),
+                size: .init(width: 1120, height: 460))
+            try render("details-download-\(percent)", output,
+                DetailsTopBlock(game: game, logo: nil,
+                    presentation: .init(game: game, metadata: nil, totalPlaytime: 0, lastPlayed: nil),
+                    isRunning: false, focusedPill: 0, primaryEnabled: true, expanded: .constant(false),
+                    onPrimary: {}, onSecondary: {}, onFavorite: {}, onHoverPill: { _ in }, pillSet: .normal,
+                    cloud: model, showsCloudPill: true, downloadEnabled: true)
+                    .environment(\.nxAppLocale, fr),
+                size: .init(width: 1120, height: 460))
+        }
+        model.update(game.id) { $0.progress = .init(.verifying, kind: .app, downloadComplete: true) }
+        checkDownloadFill(1)
+        precondition(CloudLibraryProgressView.fraction(model.states[game.id]?.progress) == nil)
+        model.update(game.id) { $0.progress = .init(.downloading, kind: .app) }
+        checkDownloadFill(0)
+        try render("panel-download-unknown", output,
+            CloudLibraryPanel(viewModel: vm, model: model, game: game).environment(\.nxAppLocale, fr))
+        model.update(game.id) { $0.queued = true }
+        checkDownloadFill(nil)
 '''
 
 MULTIPLAYER = r'''
@@ -336,6 +386,11 @@ extension CloudDriveFolders.Listing {
         change(activity, r'                    }\n                    \.padding\(EdgeInsets.*?\.onChange\(of: focused\)[^\n]*\n                }\n', "")
         change(activity, r'        LazyVStack\(', '        VStack(')
         host = HOST.replace("/* NOTICE_LAYOUT */", "vertical: notice.vertical," if before else "cancelIndex: notice.cancelIndex,")
+        if not before:
+            # Capture Spotlight after its entrance, without running the reveal in ImageRenderer.
+            change(app / "Views/Spotlight/SpotlightInfoView.swift",
+                   r'        \.onAppear \{ reveal\(\) \}\n        \.onChange\(of: game.id\) \{ reveal\(\) \}\n', "")
+            host = host.replace("// DOWNLOAD_FILL_CHECK", "do {\n" + DOWNLOAD_FILL + "\n        }")
         if "onEditLibrary:" in section.read_text():
             host = host.replace("onEdit: {}, onEditSources:", "onEdit: {}, onEditLibrary: {}, onEditSources:")
             host = host.replace("/* ENTRY */", ", entry: .sources")

@@ -11,6 +11,7 @@ struct GamePrimaryActions: View {
     /// The wave dots after the first title, as the porting pill shows them (a Steam game still downloading).
     var primaryWaveDots = false
     var primaryQueued = false
+    var primaryDownloadFill: Double? = nil
     /// The cloud badge pill between Options and favorite (index 2, favorite moves to 3), as on Details.
     var cloud: CloudLibraryIndicator? = nil
     let onAction: (Int) -> Void
@@ -22,7 +23,8 @@ struct GamePrimaryActions: View {
                 pill(0, SelenePillButton.buildQueue(focused: focused == 0) { onAction(0) })
             } else {
                 pill(0, SelenePillButton(title: primaryTitle, height: 52, focused: focused == 0,
-                                        enabled: primaryEnabled, waveDots: primaryWaveDots) { onAction(0) })
+                                        enabled: primaryEnabled, waveDots: primaryWaveDots,
+                                        downloadFill: primaryDownloadFill) { onAction(0) })
             }
             pill(1, SelenePillButton(title: secondaryTitle, height: 52, focused: focused == 1) { onAction(1) })
             if let cloud {

@@ -149,14 +149,17 @@ struct SpotlightGameInfoView: View {
     }
 
     private var normalPills: some View {
-        GamePrimaryActions(primaryTitle: primaryTitle,
+        let state = cloud.states[game.id] ?? CloudLibraryState()
+        return GamePrimaryActions(primaryTitle: primaryTitle,
                            secondaryTitle: isRunning ? "Close Game" : "Options",
                            isFavorite: game.isFavorite, focused: focusedPill,
                            primaryEnabled: isRunning || (downloadsApp
                                ? downloadEnabled && cloud.states[game.id]?.action == nil && cloud.states[game.id]?.refreshing != true
                                : pillSet.unavailableReason == nil),
                            primaryQueued: pillSet == .queued,
-                           cloud: showsCloudPill ? CloudLibraryIndicator(state: cloud.states[game.id] ?? CloudLibraryState()) : nil,
+                           primaryDownloadFill: downloadsApp && !isRunning
+                               ? CloudLibraryProgressView.downloadFill(state, item: .app) ?? 0 : nil,
+                           cloud: showsCloudPill ? CloudLibraryIndicator(state: state) : nil,
                            onAction: onPill, onHover: onHoverPill)
     }
 

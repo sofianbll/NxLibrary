@@ -112,6 +112,7 @@ struct CloudLibraryPanel: View {
                         context: localization)
         }
         let control = artifactControl(item)
+        let downloadFill = CloudLibraryProgressView.downloadFill(state, item: item)
         return VStack(alignment: .leading, spacing: canvas.u(8)) {
             HStack(spacing: canvas.u(12)) {
                 VStack(alignment: .leading, spacing: canvas.u(5)) {
@@ -139,16 +140,19 @@ struct CloudLibraryPanel: View {
                 }
                 .foregroundColor(SeleneTheme.ink75)
                 .multilineTextAlignment(.trailing)
-                Group {
+                HStack(spacing: canvas.u(10)) {
+                    if let downloadFill, control == .cancel {
+                        downloadButton(nil, fill: downloadFill)
+                    }
                     if let control {
                         switch control {
                         case .cancel: artifactButton(control, "Cancel", icon: .close)
                         case .upload, .uploadSources: artifactButton(control, "Send", icon: .cloudUpload)
-                        default: artifactButton(control, "Download", icon: .cloudDownload)
+                        default: downloadButton(control, fill: 0)
                         }
                     }
                 }
-                .frame(width: canvas.u(44), height: canvas.u(44))
+                .frame(minWidth: canvas.u(44), minHeight: canvas.u(44), alignment: .trailing)
             }
             if let path = cloudPath(item) {
                 Text(verbatim: path)
@@ -260,6 +264,15 @@ struct CloudLibraryPanel: View {
             .help(text(key))
             .accessibilityLabel(text(key))
             .onHover { if $0 { focus = control } }
+    }
+
+    private func downloadButton(_ control: Control?, fill: Double) -> some View {
+        SelenePillButton(title: "Download", icon: .cloudDownload, iconSize: 20, minWidth: 0, height: 44,
+                         horizontalPadding: 14, focused: false, downloadFill: fill, passive: control == nil) {
+            if let control { choose(control) }
+        }
+        .accessibilityHidden(control == nil)
+        .onHover { if $0, let control { focus = control } }
     }
 
     private func handle(_ action: GamepadAction) {
@@ -397,6 +410,16 @@ struct CloudLibraryProgressView: View {
     static func fraction(_ progress: CloudArchiveProgress?) -> Double? {
         guard let transfer = progress?.transfer, transfer.totalBytes > 0 else { return nil }
         return min(1, max(0, Double(transfer.bytesTransferred) / Double(transfer.totalBytes)))
+    }
+
+    static func downloadFill(_ state: CloudLibraryState, item: CloudLibraryItem) -> Double? {
+        guard !state.queued, state.activeItem == item else { return nil }
+        switch state.action {
+        case .restore, .restoreBuildCache, .downloadSources:
+            return state.progress?.downloadComplete == true ? 1 : fraction(state.progress) ?? 0
+        default:
+            return nil
+        }
     }
 
     static func summary(_ progress: CloudArchiveProgress?, context: AppLocale, showsPhase: Bool = true) -> String {

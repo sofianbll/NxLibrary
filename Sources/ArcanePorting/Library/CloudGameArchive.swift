@@ -50,11 +50,14 @@ public struct CloudArchiveProgress: Equatable, Sendable {
     public let phase: Phase
     public let kind: CloudArtifactKind?
     public let transfer: StorageProgress?
+    public let downloadComplete: Bool
 
-    public init(_ phase: Phase, kind: CloudArtifactKind? = nil, transfer: StorageProgress? = nil) {
+    public init(_ phase: Phase, kind: CloudArtifactKind? = nil, transfer: StorageProgress? = nil,
+                downloadComplete: Bool = false) {
         self.phase = phase
         self.kind = kind
         self.transfer = transfer
+        self.downloadComplete = downloadComplete
     }
 }
 
@@ -635,7 +638,7 @@ public actor CloudGameArchive {
         let archive = stage.appendingPathComponent("item.aar")
         try await backend.get(artifact.object(titleID: game.titleID).key, to: archive,
                               progress: transfer(progress, phase: .downloading, kind: kind, total: artifact.size))
-        progress?(.init(.verifying, kind: kind))
+        progress?(.init(.verifying, kind: kind, downloadComplete: true))
         guard try CloudArchiveInventory.node(at: archive).st_size == artifact.size,
               try CloudArchiveInventory.hashes(at: archive, includeMD5: false)["sha256"] == artifact.sha256
         else { throw StorageBackendError.hashMismatch }
@@ -645,7 +648,7 @@ public actor CloudGameArchive {
         else { throw CloudArchiveError.invalidArchive }
         try requireSpace(in: parent, bytes: artifact.unpackedSize, entries: artifact.entryCount)
         let incoming = stage.appendingPathComponent(destination.lastPathComponent, isDirectory: true)
-        progress?(.init(.restoring, kind: kind))
+        progress?(.init(.restoring, kind: kind, downloadComplete: true))
         _ = try await unpack(archive, to: incoming, kind: kind, titleID: game.titleID,
                              listed: entries, fingerprint: artifact.inventorySHA256)
         try beforeMutation()
