@@ -14,14 +14,20 @@ extension SpotlightView {
         if cardMenu != nil { return handleCardMenu(action) }
         if modsHost.isPanelOpen { return modsHost.handlePanel(action) }
         if storeHost.isPanelOpen { return storeHost.panel.handlePanel(action) }
-        if sortFocused {
+        if sortMenu != nil {
+            var next = sortMenu
+            LibrarySortMenu.handle(action, focused: &next, choose: setSort)
+            sortMenu = next
+            return
+        }
+        if profileFocused {
             switch action {
-            case .confirm, .rightStickPress: cycleSort(); return
-            case .navigateDown, .cancel: sortFocused = false; return
-            default: sortFocused = false
+            case .confirm: SpotlightTopBar.openProfile(); return
+            case .navigateDown, .cancel: profileFocused = false; return
+            default: profileFocused = false
             }
-        } else if action == .navigateUp, viewModel.spotlight.focus == .row {
-            sortFocused = true
+        } else if action == .navigateUp, viewModel.spotlight.focus == .row, profile != nil {
+            profileFocused = true
             SoundEffectService.shared.play(.focus)
             return
         }
@@ -101,7 +107,7 @@ extension SpotlightView {
         case .menuHold:
             router.openSettings(.startUp)
         case .rightStickPress:
-            cycleSort()
+            openSort()
         }
         if moved { SoundEffectService.shared.play(.focus) }
     }
@@ -531,12 +537,13 @@ extension SpotlightView {
             case 53:
                 // On the row Esc falls through to the shell, which opens the Menu.
                 guard viewModel.spotlight.focus != .row || viewModel.spotlight.isLifted
-                        || cardMenu != nil || sortFocused else { return event }
+                        || cardMenu != nil || sortMenu != nil || profileFocused else { return event }
                 action = .cancel
             case 7: action = .secondaryAction   // X
             case 16: action = .contextAction    // Y
             case 12: action = .tabPrevious      // Q
             case 14: action = .tabNext          // E
+            case 1: action = .rightStickPress  // S: Sort
             default: return event
             }
             handle(action)

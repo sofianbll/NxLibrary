@@ -10,7 +10,7 @@ import NXLibraryCore
 /// launch on another screen land it at once.
 extension SpotlightView {
     /// Drawn over Spotlight: the welcome until its fade has ended, or Setup (the first launch's pages come first).
-    var isOverlaid: Bool { viewModel.isWelcomeOpen || viewModel.showSetupCheck }
+    var isOverlaid: Bool { viewModel.isWelcomeOpen || viewModel.showSetupCheck || viewModel.profileOwnsInput }
 
     /// Overlaid, or the window still taking its launch mode (a fullscreen transition would cut the flight).
     var isCovered: Bool { isOverlaid || viewModel.isWindowSettling }

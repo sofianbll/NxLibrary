@@ -5,17 +5,19 @@ public struct PlaySession: Codable, Identifiable, Equatable {
     public let gameID: UUID
     public let titleID: String
     public let bundleID: String?
+    public let profileID: UUID?
     public let startedAt: Date
     public var endedAt: Date?
     public var lastHeartbeatAt: Date
 
     public init(id: UUID = UUID(), gameID: UUID, titleID: String,
                 bundleID: String?, startedAt: Date, endedAt: Date? = nil,
-                lastHeartbeatAt: Date) {
+                lastHeartbeatAt: Date, profileID: UUID? = nil) {
         self.id = id
         self.gameID = gameID
         self.titleID = titleID
         self.bundleID = bundleID
+        self.profileID = profileID
         self.startedAt = startedAt
         self.endedAt = endedAt
         self.lastHeartbeatAt = lastHeartbeatAt

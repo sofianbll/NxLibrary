@@ -11,6 +11,7 @@ Come si aggiorna:
 
 | Parte | Stato | Prove ancora da fare |
 |---|---|---|
+| Profili locali e menu di ordinamento | in attesa | Su un profilo di prova, migrare senza perdere preferiti e cronologia, cambiare giocatore durante un gioco, annullare la modifica e rimuovere dopo conferma. Provare ritratto, connessione e stati Nextendo, tasti A/Y/X/+, S e R3, ripristino del focus, VoiceOver, Riduci movimento e testi nelle 7 lingue. Il probe `run_profiles.py` rende le schermate con dati sintetici. |
 | Pin del motore nel bundle e aggiornamento perso | in attesa | Dal Mac del giocatore controllare l'offerta, le note e il riavvio; in Setup provare Clone su una cartella nuova e Update o Switch su un checkout pulito con `origin` upstream. Verificare SHA raggiunto, `origin` invariato, checkout sporco intatto e un gioco esistente ancora giocabile. |
 
 ## 0.2.1 (pubblicata il 20 nov 2026)

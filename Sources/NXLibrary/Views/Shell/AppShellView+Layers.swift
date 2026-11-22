@@ -19,8 +19,8 @@ extension AppShellView {
                 // Keep artwork/tiles drawn and warm, as during Spotlight's entrance, while the full page covers them.
                 .opacity(fullScreenCover ? 0.001 : 1)
                 .allowsHitTesting(!fullScreenCover && !router.route.isOverlay && !viewModel.isGameOptionsOpen
-                                  && viewModel.cloudLibraryGameID == nil && router.activityCenterFocus == nil)
-                .accessibilityHidden(router.activityCenterFocus != nil)
+                                  && viewModel.cloudLibraryGameID == nil && router.activityCenterFocus == nil && profileFlow == nil)
+                .accessibilityHidden(router.activityCenterFocus != nil || profileFlow != nil)
             if router.route == .addGame {
                 AddGameView(viewModel: viewModel,
                             router: router,
@@ -136,6 +136,7 @@ extension AppShellView {
                         MenuOverlayView(
                             router: router,
                             cloudLibrary: viewModel.cloudLibrary,
+                            activeProfile: profiles.active,
                             hasBuildActivity: viewModel.isBuilding || viewModel.isCheckingCloudBuild
                                 || !viewModel.buildQueue.isEmpty || !viewModel.activityResults.entries.isEmpty,
                             onSelect: { runMenuAction($0) },
@@ -145,8 +146,12 @@ extension AppShellView {
                     }
                 }
                 .opacity(opacityBelowCover(ShellBackdropCover.themePicker.priority))
-                .allowsHitTesting(!currentBackdropCover.covers(ShellBackdropCover.themePicker.priority))
+                .allowsHitTesting(!currentBackdropCover.covers(ShellBackdropCover.themePicker.priority) && profileFlow == nil)
+                .accessibilityHidden(profileFlow != nil)
                 .zIndex(ShellBackdropCover.themePicker.priority)
+            }
+            if profileFlow != nil, !showsWelcome, !viewModel.showSetupCheck {
+                profileLayer.transition(.opacity).zIndex(2.5)
             }
             if let game = viewModel.gameForSettingsSheet {
                 GameOptionsView(
@@ -282,6 +287,11 @@ extension AppShellView {
             SteamPlayCoordinator.shared.setGames(games, sources: viewModel.catalogSourceConfigurations)
             SteamPlaytimeCoordinator.shared.setGames(games, sources: viewModel.catalogSourceConfigurations)
         }
+        .onChange(of: LocalProfile.Look(settings.settings)) { _, look in
+            guard var profile = profiles.active, profile.look != look else { return }
+            profile.look = look
+            _ = profiles.update(profile)
+        }
         .onChange(of: viewModel.catalogSourceConfigurations) { _, sources in
             SteamPlayCoordinator.shared.setGames(viewModel.catalogGames, sources: sources)
             SteamPlaytimeCoordinator.shared.setGames(viewModel.catalogGames, sources: sources)
@@ -357,7 +367,18 @@ extension AppShellView {
         .environment(\.locale, localization.context.formatLocale)
         .environment(\.nxAppLocale, localization.context)
         .environment(\.catalogPersonalizations, viewModel.personalizations)
+        .environment(\.profilePortrait, router.isMenuPresented ? nil : profiles.active)
+        .environment(\.onlinePlayersByTitle, onlinePlayers)
+        .task {
+            while !Task.isCancelled {
+                let counts = (try? await Self.onlineCounts.read()) ?? [:]
+                guard !Task.isCancelled else { return }
+                if counts != onlinePlayers { onlinePlayers = counts }
+                try? await Task.sleep(for: .seconds(180))
+            }
+        }
         .onChange(of: settings.settings.appLanguage) { updateLocale() }
+        .onReceive(NotificationCenter.default.publisher(for: .nxOpenLocalProfile)) { _ in openProfile(.detail) }
         .onChange(of: settings.settings.appRegion) { updateLocale() }
         .onReceive(NotificationCenter.default.publisher(for: .nxLibraryPlayFocused)) { _ in
             guard !router.isMenuPresented,

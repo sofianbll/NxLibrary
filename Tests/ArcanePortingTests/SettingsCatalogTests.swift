@@ -28,7 +28,7 @@ final class SettingsCatalogTests: XCTestCase {
     /// Every unconditional row identity: moving rows never renames them.
     private static let rowIDs: Set<String> = [
         "appLanguage", "appRegion", "startOn", "restoreLastGame", "startInFullscreen", "checkEngineAtLaunch",
-        "refreshLibraryAtLaunch", "checkAppUpdatesAtLaunch", "introAnimation", "showButtonHints", "buttonNames",
+        "refreshLibraryAtLaunch", "checkAppUpdatesAtLaunch", "introAnimation", "showProfilePicker", "showButtonHints", "buttonNames",
         "viewButtonSwitches", "spotlightCards", "startingTab", "spotlightOrder", "interfaceSounds", "soundVolume",
         "quietLaunch", "importSeleneSounds", "colorThemeID", "wallpaperID", "settingsWallpaperID", "backgroundSizing",
         "wallpaperBrightness", "animatedBackground", "keepWallpaperOnGames", "backgroundShade", "readableText",
@@ -152,7 +152,7 @@ final class SettingsCatalogTests: XCTestCase {
     func testRowsKeepTheirScreenOrder() {
         XCTAssertEqual(SettingsCatalog.all.map(\.id), [
         "appLanguage", "appRegion", "startOn", "restoreLastGame", "startInFullscreen", "checkAppUpdatesAtLaunch",
-        "introAnimation", "showButtonHints", "buttonNames", "viewButtonSwitches", "spotlightCards", "startingTab",
+        "introAnimation", "showProfilePicker", "showButtonHints", "buttonNames", "viewButtonSwitches", "spotlightCards", "startingTab",
         "spotlightOrder", "interfaceSounds", "soundVolume", "quietLaunch", "importSeleneSounds", "colorThemeID",
         "wallpaperID", "settingsWallpaperID", "backgroundSizing", "wallpaperBrightness", "animatedBackground",
         "keepWallpaperOnGames", "backgroundShade", "readableText", "showClock", "reduceMotion", "iconAppearance",
@@ -198,7 +198,7 @@ final class SettingsCatalogTests: XCTestCase {
 
     private static let generalStartUp: Set<String> = [
         "appLanguage", "appRegion", "startOn", "restoreLastGame", "startInFullscreen",
-        "checkAppUpdatesAtLaunch", "introAnimation"
+        "checkAppUpdatesAtLaunch", "introAnimation", "showProfilePicker"
     ]
 
     func testSearchMatchesAboutText() {

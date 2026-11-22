@@ -90878,6 +90878,314 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Ambas"}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "两处都显示"}}
       }
+    },
+    "Switch profile": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Switch profile"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cambia profilo"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Changer de profil"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Profil wechseln"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Cambiar de perfil"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Trocar de perfil"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "切换个人资料"}}
+      }
+    },
+    "Edit profile": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Edit profile"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Modifica profilo"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Modifier le profil"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Profil bearbeiten"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Editar perfil"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Editar perfil"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "编辑个人资料"}}
+      }
+    },
+    "Who's playing?": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Who's playing?"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Chi gioca?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Qui joue ?"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wer spielt?"}},
+        "es": {"stringUnit": {"state": "translated", "value": "¿Quién juega?"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Quem vai jogar?"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "谁在玩？"}}
+      }
+    },
+    "Choose a profile at startup instead of using the last one.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose a profile at startup instead of using the last one."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli un profilo all’avvio invece di usare l’ultimo."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez un profil au démarrage au lieu de reprendre le dernier."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Beim Start ein Profil auswählen, statt das letzte zu verwenden."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige un perfil al iniciar en lugar de usar el último."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha um perfil ao iniciar em vez de usar o último."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "启动时选择个人资料，而不是沿用上次的资料。"}}
+      }
+    },
+    "What should we call you?": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "What should we call you?"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Come ti chiami?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Comment t’appelles-tu ?"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wie sollen wir dich nennen?"}},
+        "es": {"stringUnit": {"state": "translated", "value": "¿Cómo te llamas?"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Como podemos chamar você?"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "该怎么称呼你？"}}
+      }
+    },
+    "This is the name on your profile. Type, or use the keys below.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "This is the name on your profile. Type, or use the keys below."}},
+        "it": {"stringUnit": {"state": "translated", "value": "È il nome che appare sul tuo profilo. Digitalo oppure usa i tasti qui sotto."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ce nom s’affiche sur ton profil. Saisis-le ou utilise les touches ci-dessous."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Dieser Name steht in deinem Profil. Tippe ihn ein oder nutze die Tasten unten."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Este nombre aparecerá en tu perfil. Escríbelo con tu teclado o con las teclas de abajo."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Esse nome aparece no seu perfil. Digite-o ou use as teclas abaixo."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "这个名字会显示在你的个人资料中。请直接输入或使用下方按键。"}}
+      }
+    },
+    "Choose your avatar": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose your avatar"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli il tuo avatar"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisis ton avatar"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle deinen Avatar"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige tu avatar"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha seu avatar"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "选择头像"}}
+      }
+    },
+    "Pick one, or use your own picture.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Pick one, or use your own picture."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegline uno o usa una tua immagine."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisis-en un ou utilise ta propre image."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle einen aus oder verwende ein eigenes Bild."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige uno o usa tu propia imagen."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha um ou use sua própria imagem."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "任选一个，或使用自己的图片。"}}
+      }
+    },
+    "Choose the picture behind your library.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose the picture behind your library."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli l’immagine di sfondo della tua libreria."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisis l’image de fond de ta bibliothèque."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle das Hintergrundbild deiner Bibliothek."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige la imagen de fondo de tu biblioteca."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha a imagem de fundo da sua biblioteca."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "选择游戏库的背景图片。"}}
+      }
+    },
+    "Enter a name of 1 to 32 characters.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Enter a name of 1 to 32 characters."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Inserisci un nome da 1 a 32 caratteri."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Saisis un nom de 1 à 32 caractères."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Gib einen Namen mit 1 bis 32 Zeichen ein."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Introduce un nombre de 1 a 32 caracteres."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Digite um nome de 1 a 32 caracteres."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "请输入 1 至 32 个字符的名字。"}}
+      }
+    },
+    "This profile will lose its favorites and play time.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "This profile will lose its favorites and play time."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Questo profilo perderà i preferiti e il tempo di gioco."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ce profil perdra ses favoris et son temps de jeu."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Dieses Profil verliert seine Favoriten und Spielzeiten."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Este perfil perderá sus favoritos y su tiempo de juego."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Este perfil perderá os favoritos e o tempo de jogo."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "此个人资料的收藏和游玩时长将丢失。"}}
+      }
+    },
+    "Profiles could not be saved.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Profiles could not be saved."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Non è stato possibile salvare i profili."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Impossible d’enregistrer les profils."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Die Profile konnten nicht gespeichert werden."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se han podido guardar los perfiles."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível salvar os perfis."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "无法保存个人资料。"}}
+      }
+    },
+    "Profiles could not be loaded.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Profiles could not be loaded."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Non è stato possibile caricare i profili."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Impossible de charger les profils."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Die Profile konnten nicht geladen werden."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se han podido cargar los perfiles."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível carregar os perfis."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "无法加载个人资料。"}}
+      }
+    },
+    "Player": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Player"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Giocatore"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Joueur"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spieler"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Jugador"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Jogador"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "玩家"}}
+      }
+    },
+    "Add a picture": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Add a picture"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Aggiungi un’immagine"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ajouter une image"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Bild hinzufügen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Añadir una imagen"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Adicionar uma imagem"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "添加图片"}}
+      }
+    },
+    "Avatar %lld": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Avatar %lld"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Avatar %lld"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Avatar %lld"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Avatar %lld"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Avatar %lld"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Avatar %lld"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "头像 %lld"}}
+      }
+    },
+    "Create profile": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Create profile"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Crea profilo"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Créer le profil"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Profil erstellen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Crear perfil"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Criar perfil"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "创建个人资料"}}
+      }
+    },
+    "Shift": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Shift"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Maiusc"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Maj"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Umschalt"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Mayús"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Shift"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "大写"}}
+      }
+    },
+    "Erase": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Erase"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cancella"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Effacer"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Löschen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Borrar"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Apagar"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "退格"}}
+      }
+    },
+    "No account linked": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "No account linked"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nessun account collegato"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Aucun compte relié"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Kein Konto verknüpft"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ninguna cuenta vinculada"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nenhuma conta vinculada"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "未关联账号"}}
+      }
+    },
+    "Presence unknown": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Presence unknown"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Presenza sconosciuta"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Présence inconnue"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Onlinestatus unbekannt"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Presencia desconocida"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Presença desconhecida"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "在线状态未知"}}
+      }
+    },
+    "Remove this friend from your Nextendo account?": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Remove this friend from your Nextendo account?"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Rimuovere questo amico dal tuo account Nextendo?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Retirer cette personne de ta liste d’amis Nextendo ?"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Diese Person aus deiner Nextendo-Freundesliste entfernen?"}},
+        "es": {"stringUnit": {"state": "translated", "value": "¿Eliminar a esta persona de tus amistades de Nextendo?"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Remover esta pessoa da sua lista de amigos do Nextendo?"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "从 Nextendo 好友列表中移除此人？"}}
+      }
+    },
+    "No games played yet.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "No games played yet."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Non hai ancora giocato."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Aucun jeu lancé pour le moment."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Noch keine Spiele gespielt."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Aún no has jugado a ningún juego."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Você ainda não jogou nenhum jogo."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "尚未游玩任何游戏。"}}
+      }
+    },
+    "Linked Nextendo account": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Linked Nextendo account"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Account Nextendo collegato"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Compte Nextendo relié"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Verknüpftes Nextendo-Konto"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Cuenta de Nextendo vinculada"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Conta Nextendo vinculada"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "关联的 Nextendo 账号"}}
+      }
+    },
+    "Open profile": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Open profile"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Apri profilo"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ouvrir le profil"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Profil öffnen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Abrir perfil"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Abrir perfil"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "打开个人资料"}}
+      }
+    },
+    "Online play uses the original profile on this Mac.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Online play uses the original profile on this Mac."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Il gioco online usa il profilo originale su questo Mac."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Le jeu en ligne utilise le profil d’origine de ce Mac."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Online-Spiele verwenden das ursprüngliche Profil auf diesem Mac."}},
+        "es": {"stringUnit": {"state": "translated", "value": "El juego en línea usa el perfil original de este Mac."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O jogo online usa o perfil original neste Mac."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "在线游戏使用这台 Mac 上的原始个人资料。"}}
+      }
+    },
+    "%lld online": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "%lld online"}},
+        "it": {"stringUnit": {"state": "translated", "value": "%lld online"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "%lld en ligne"}},
+        "de": {"stringUnit": {"state": "translated", "value": "%lld online"}},
+        "es": {"stringUnit": {"state": "translated", "value": "%lld en línea"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "%lld online"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "%lld 人在线"}}
+      }
+    },
+    "Return": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Return"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Invio"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Entrée"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Eingabe"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Intro"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enter"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "回车"}}
+      }
     }
   },
   "version": "1.0"

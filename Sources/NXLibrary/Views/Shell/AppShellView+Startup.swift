@@ -6,9 +6,14 @@ import NXLibraryCore
 /// What the shell starts when it appears, and the first launch's choices and the last home screen.
 extension AppShellView {
     func startRuntime() {
+        if profiles.failed {
+            viewModel.showSettingsNotice(title: L10n.text("Profiles could not be loaded."),
+                                         message: L10n.text("Defaults are in use. Your previous settings file has been kept."))
+        }
         presentLegacyNotice()
         askToMoveIfTranslocated()
         viewModel.playSessionStore = playSessions
+        playSessions.profileID = profiles.active?.id == profiles.originalID ? nil : profiles.active?.id
         viewModel.settingsStore = settings
         SoundEffectService.shared.bind(to: settings)
         // The opening's boot cue, with Spotlight's entrance (Settings → Start-up → Entrance animation).
@@ -113,6 +118,10 @@ extension AppShellView {
             }
             if viewModel.cloudLibraryGameID != nil {
                 NotificationCenter.default.post(name: .nxCloudLibraryGamepadAction, object: action)
+                return
+            }
+            if viewModel.profileOwnsInput {
+                postProfileAction(action)
                 return
             }
             if router.isMenuPresented {

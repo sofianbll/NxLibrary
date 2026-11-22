@@ -13,6 +13,7 @@ struct SelenePromptBadge: View {
 
     let button: PromptButton
     var height: CGFloat = 30
+    var keyboardOverride: KeyCap? = nil
 
     private var pad: ConnectedPad {
         ConnectedPad(connected: controller.isGamepadConnected, brand: controller.activeBrand)
@@ -20,7 +21,7 @@ struct SelenePromptBadge: View {
 
     var body: some View {
         if ButtonPrompts.usesKeyboard(style: style, connected: pad) {
-            keycap(ButtonPrompts.keyboardKey(button))
+            keycap(keyboardOverride ?? ButtonPrompts.keyboardKey(button))
         } else if let name = ButtonPrompts.symbol(button, style: style, connected: pad,
                                            reported: controller.buttonSymbols),
            let symbol = Self.filled(name) {
@@ -81,7 +82,12 @@ struct SelenePromptBadge: View {
         .frame(minWidth: canvas.u(height), minHeight: canvas.u(height))
         .background(RoundedRectangle(cornerRadius: canvas.u(height * 0.24), style: .continuous)
             .fill(SeleneTheme.ink))
-        .accessibilityLabel(ButtonPrompts.label(button, style: style, connected: pad))
+        .accessibilityLabel(key == .symbol("return") ? L10n.text("Return") : keyboardLabel(key))
+    }
+
+    private func keyboardLabel(_ key: KeyCap) -> String {
+        if case .text(let text) = key { return text }
+        return ButtonPrompts.label(button, style: style, connected: pad)
     }
 
     /// The filled variant when the system has it (it reads as a badge), else the

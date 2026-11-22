@@ -218,6 +218,7 @@ final class SteamPlayCoordinator: ObservableObject {
             if let app = NSRunningApplication(processIdentifier: pid) { RunningGameMonitor.activate(app) }
         case .handOff(let url, let generation):
             guard let client else { return }
+            sessions?.expectStart(gameID: game.id)
             returnFocus.playPressed(game.id)
             hideAgain?.cancel(); hideAgain = nil
             // Steam gets the request in the background: Arcane stays in front until the game's
@@ -283,6 +284,7 @@ final class SteamPlayCoordinator: ObservableObject {
     func cancel(_ game: CatalogGame) {
         guard var state = states[game.id] else { return }
         if pendingHandOff?.gameID == game.id {
+            sessions?.abandonStart(gameID: game.id)
             pendingHandOff = nil
             handOffDeadline?.cancel(); handOffDeadline = nil
         }
@@ -292,7 +294,8 @@ final class SteamPlayCoordinator: ObservableObject {
     }
 
     private func finishHandOff(_ id: UUID, accepted: Bool, generation: Int) {
-        guard var state = states[id] else { return }
+        guard var state = states[id], state.generation == generation else { return }
+        if !accepted { sessions?.abandonStart(gameID: id) }
         state.handoffFinished(accepted: accepted, generation: generation)
         states[id] = state
         refresh()
@@ -342,7 +345,10 @@ final class SteamPlayCoordinator: ObservableObject {
             case nil:
                 if heartbeat, case .running = state.phase { sessions?.heartbeat(for: id) }
             }
-            if case .failed = state.phase { returnFocus.playAbandoned(id) }
+            if case .failed = state.phase {
+                sessions?.abandonStart(gameID: id)
+                returnFocus.playAbandoned(id)
+            }
             if state.phase == .idle, game == nil { next[id] = nil } else { next[id] = state }
         }
         if next != states { states = next }

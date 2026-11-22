@@ -184,6 +184,9 @@ struct SpotlightRowView: View {
         .accessibilityLabel(title(of: item))
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
         .modifier(CloudLibraryTileBadge(state: cloudState))
+        .overlay(alignment: .bottomTrailing) {
+            NextendoOnlineBadge(titleID: native?.titleId, compact: true).padding(canvas.u(12))
+        }
     }
 
     @ViewBuilder

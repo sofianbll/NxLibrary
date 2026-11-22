@@ -27,7 +27,9 @@ struct CollectionView: View {
     /// Steam Play phases drive the A hint.
     @ObservedObject var steamPlayer = SteamPlayCoordinator.shared
     @State var keyMonitor: Any?
-    @FocusState var sortFocused: Bool
+    @State var sortMenu: LibrarySort?
+    @State var profileFocused = false
+    @Environment(\.profilePortrait) var profile
 
     init(viewModel: AppViewModel, router: AppRouter, settings: AppSettingsStore,
                 playSessions: PlaySessionStore, artwork: ArtworkStore) {
@@ -68,7 +70,7 @@ struct CollectionView: View {
             leftHints: HintItem.homeGlobals(other: "Spotlight",
                                             onOther: { if settings.settings.viewButtonSwitches { router.showLibrary() } },
                                             onMenu: { router.isMenuPresented = true }),
-            rightHints: contextHints(game),
+            rightHints: contextHints(game) + [LibrarySortMenu.hint(settings.settings.librarySort, action: openSort)],
             hintsHidden: router.overlayHasHints(viewModel),
             backdrop: {
                 SeleneArtBackground(image: art.image, imageKey: art.key,
@@ -76,6 +78,14 @@ struct CollectionView: View {
                                     showsArt: !settings.settings.keepWallpaperOnGames)
             },
             stage: { stage(games: games, game: game) })
+        .accessibilityHidden(sortMenu != nil)
+        .overlay {
+            if let sortMenu {
+                LibrarySortMenu(current: settings.settings.librarySort, focused: sortMenu, choose: setSort) {
+                    self.sortMenu = nil
+                }
+            }
+        }
         .onAppear(perform: appear)
         // A launch on Collection: Spotlight's entrance belongs to the first home only (`SpotlightView+Entrance`).
         .onAppear { viewModel.homeSeen = true }
@@ -109,7 +119,7 @@ struct CollectionView: View {
     private func stage(games: [CatalogGame], game: PortedGame?) -> some View {
         ZStack(alignment: .topLeading) {
             SpotlightTopBar(filter: filter, sort: settings.settings.librarySort, showClock: settings.settings.showClock,
-                            sortFocus: $sortFocused, onSelect: { setFilter($0) }, onCycleSort: cycleSort)
+                            profileFocused: profileFocused, onSelect: { setFilter($0) })
 
             if let game {
                 CollectionInfoView(game: game, logo: art.logo(for: game),
@@ -184,7 +194,6 @@ struct CollectionView: View {
     // MARK: - Hints
 
     private func contextHints(_ game: PortedGame?) -> [HintItem] {
-        if sortFocused { return [HintItem(.a, "Sort"), HintItem(.b, "Back")] }
         if let steam = selectedCatalogGame, steam.integration == .steam {
             return SteamPlayCoordinator.shared.hint(for: steam)
                 + [HintItem(.y, L10n.text("Game options"))]
@@ -237,8 +246,11 @@ struct CollectionView: View {
         SoundEffectService.shared.play(.tabSwitch)
     }
 
-    func cycleSort() {
-        settings.settings.librarySort = settings.settings.librarySort.stepped(1)
+    func openSort() { sortMenu = settings.settings.librarySort }
+
+    func setSort(_ sort: LibrarySort) {
+        sortMenu = nil
+        settings.settings.librarySort = sort
         reconcile()
         SoundEffectService.shared.play(.tabSwitch)
     }

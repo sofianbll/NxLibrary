@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 import Combine
 import NXLibraryCore
+import ArcanePorting
 
 struct AppShellView: View {
     @StateObject var viewModel: AppViewModel
@@ -12,6 +13,10 @@ struct AppShellView: View {
     @StateObject var router: AppRouter
     @StateObject var settings: AppSettingsStore
     @StateObject var playSessions = PlaySessionStore()
+    @ObservedObject var profiles: LocalProfileStore
+    @State var profileFlow: ProfileFlow?
+    @State var onlinePlayers: [String: Int] = [:]
+    static let onlineCounts = NextendoOnlineCounts()
     @StateObject var artwork = ArtworkStore()
     @StateObject var runningGames = RunningGameMonitor()
     @StateObject var sessionCard = SessionCardPresenter()
@@ -43,6 +48,9 @@ struct AppShellView: View {
         _setup = ObservedObject(wrappedValue: state.viewModel.setup)
         _store = ObservedObject(wrappedValue: state.viewModel.store)
         _router = StateObject(wrappedValue: state.router)
+        _profiles = ObservedObject(wrappedValue: state.profiles)
+        _profileFlow = State(initialValue: state.viewModel.profileOwnsInput
+            ? ProfileFlow(page: .picker, selected: state.profiles.active?.id, atStartup: true) : nil)
         modStoreHost = state.modStoreHost
         _showsWelcome = State(initialValue: state.opensWithWelcome)
     }
@@ -113,7 +121,7 @@ struct AppShellView: View {
     }
 
     var nativeMenuAvailability: NativeMenuAvailability {
-        let general = !viewModel.showSetupCheck && !showsWelcome
+        let general = !viewModel.showSetupCheck && !showsWelcome && profileFlow == nil
             && !isCloseGameOpen && !router.isScreenshotViewerOpen && !router.isSearchPresented
             && router.activityCenterFocus == nil
             && !viewModel.isGameOptionsOpen && viewModel.launchOverlay == nil && !nativeDialogOwnsInput
@@ -177,11 +185,11 @@ struct AppShellView: View {
             updater.checkNow()
         }
         .onReceive(NotificationCenter.default.publisher(for: .nxLibraryOpenMenu)) { _ in
-            guard !isCloseGameOpen, !viewModel.isGameOptionsOpen, !router.isScreenshotViewerOpen else { return }
+            guard profileFlow == nil, !isCloseGameOpen, !viewModel.isGameOptionsOpen, !router.isScreenshotViewerOpen else { return }
             router.isMenuPresented = true
         }
         .onReceive(NotificationCenter.default.publisher(for: .nxLibraryOpenSettings)) { _ in
-            guard !isCloseGameOpen, !router.isScreenshotViewerOpen, !viewModel.isGameOptionsOpen else { return }
+            guard profileFlow == nil, !isCloseGameOpen, !router.isScreenshotViewerOpen, !viewModel.isGameOptionsOpen else { return }
             router.closeMenu()
             router.openSettings(.startUp)
         }
@@ -190,12 +198,12 @@ struct AppShellView: View {
             viewModel.retrySavingBuildResults()
         }
         .onReceive(NotificationCenter.default.publisher(for: .nxLibraryOpenConsole)) { _ in
-            guard !isCloseGameOpen, !router.isScreenshotViewerOpen, !viewModel.isGameOptionsOpen else { return }
+            guard profileFlow == nil, !isCloseGameOpen, !router.isScreenshotViewerOpen, !viewModel.isGameOptionsOpen else { return }
             router.closeMenu()
             router.openConsole()
         }
         .onReceive(NotificationCenter.default.publisher(for: .nxLibraryPortingNoticeOpened)) { note in
-            guard !isCloseGameOpen, !router.isScreenshotViewerOpen, !viewModel.isGameOptionsOpen,
+            guard profileFlow == nil, !isCloseGameOpen, !router.isScreenshotViewerOpen, !viewModel.isGameOptionsOpen,
                   let id = (note.userInfo?["gameID"] as? String).flatMap(UUID.init(uuidString:)) else { return }
             router.closeMenu()
             if note.userInfo?["outcome"] as? String == "failed" {
@@ -212,12 +220,12 @@ struct AppShellView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .nxLibraryOpenLibrary)) { _ in
-            guard !isCloseGameOpen, !router.isScreenshotViewerOpen, !viewModel.isGameOptionsOpen else { return }
+            guard profileFlow == nil, !isCloseGameOpen, !router.isScreenshotViewerOpen, !viewModel.isGameOptionsOpen else { return }
             router.closeMenu()
             router.showLibrary()
         }
         .onReceive(NotificationCenter.default.publisher(for: .nxLibraryOpenAddGame)) { _ in
-            guard !isCloseGameOpen, !router.isMenuPresented, !router.isScreenshotViewerOpen,
+            guard profileFlow == nil, !isCloseGameOpen, !router.isMenuPresented, !router.isScreenshotViewerOpen,
                   !viewModel.isGameOptionsOpen else { return }
             router.closeMenu()
             openFreshAddGame()
@@ -237,6 +245,8 @@ struct AppShellView: View {
                 updater.later()
             } else if viewModel.cloudLibraryGameID != nil {
                 viewModel.cloudLibraryGameID = nil
+            } else if profileFlow != nil {
+                postProfileAction(.cancel)
             } else if viewModel.isGameOptionsOpen {
                 // Game options steps back (dialog, then Edit details) or closes.
                 NotificationCenter.default.post(name: .nxGameOptionsGamepadAction, object: GamepadAction.cancel)

@@ -49,6 +49,8 @@ struct SettingsStartUpSection: View {
             SeleneToggleRow("Entrance animation",
                             subtitle: "The library's tiles fly in with the boot sound when the app opens.",
                             isOn: $settings.settings.introAnimation)
+            SeleneToggleRow("Who's playing?", subtitle: "Choose a profile at startup instead of using the last one.",
+                            isOn: $settings.settings.showProfilePicker)
         }
         .onAppear(perform: publishActions)
         .onChange(of: settings.settings.appLanguage) { publishActions() }
@@ -73,6 +75,9 @@ struct SettingsStartUpSection: View {
             },
             .init(id: "intro", title: "Entrance animation") {
                 settings.settings.introAnimation.toggle()
+            },
+            .init(id: "showProfilePicker", title: "Who's playing?") {
+                settings.settings.showProfilePicker.toggle()
             }
         ])
     }

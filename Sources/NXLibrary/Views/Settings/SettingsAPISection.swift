@@ -9,6 +9,8 @@ struct SettingsAPISection: View {
     @ObservedObject var settings: AppSettingsStore
     let showsMultiplayer: Bool
     let supportsNextendo: Bool
+    var accountOnly = false
+    var accountOffline = false
     @Binding var advanced: Bool
     let onActions: ([SettingsRowAction]) -> Void
     @Environment(\.seleneCanvas) private var canvas
@@ -18,7 +20,7 @@ struct SettingsAPISection: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.nxAppLocale) private var localization
     @ObservedObject private var igdb = IGDBSettings.shared
-    @ObservedObject private var nextendo = NextendoSettings.shared
+    @ObservedObject var nextendo = NextendoSettings.shared
     @State private var friendsExpanded = false
     @State private var recentExpanded = false
     @State private var friendCode = ""
@@ -80,7 +82,8 @@ struct SettingsAPISection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: canvas.u(8)) {
-            if showsMultiplayer { multiplayerRows } else { serviceRows }
+            if accountOnly { nextendoRows }
+            else if showsMultiplayer { multiplayerRows } else { serviceRows }
         }
         .onAppear {
             refreshRemotePlay()
@@ -306,7 +309,9 @@ struct SettingsAPISection: View {
         switch nextendo.status {
         case .signedIn: return SeleneStatusDot(text: text("Nextendo connected"), color: SeleneTheme.statusOK).fixedSize()
         case .expired: return SeleneStatusDot(text: text("Session expired"), color: SeleneTheme.danger).fixedSize()
-        case .signedOut, .unavailable: return SeleneStatusDot(text: text("Offline"), color: SeleneTheme.ink60).fixedSize()
+        case .signedOut, .unavailable:
+            let label = accountOnly && !accountOffline ? "Presence unknown" : "Offline"
+            return SeleneStatusDot(text: text(label), color: SeleneTheme.ink60).fixedSize()
         }
     }
 
@@ -552,8 +557,8 @@ struct SettingsAPISection: View {
             ])
             return
         }
-        var actions: [SettingsRowAction] = [.value("multiplayerVPN", "Private network (VPN)", cycle: stepVPN)]
-        if vpn != .none {
+        var actions: [SettingsRowAction] = accountOnly ? [] : [.value("multiplayerVPN", "Private network (VPN)", cycle: stepVPN)]
+        if !accountOnly && vpn != .none {
             actions.append(.init(id: "multiplayerVPNStatus", title: vpnActionTitle, rowID: "multiplayerVPNStatus", activate: openVPN))
         }
         if supportsNextendo {
@@ -583,6 +588,10 @@ struct SettingsAPISection: View {
                     actions.append(.init(id: linksRowID, title: openProfile.title, rowID: linksRowID, activate: openProfile.action))
                 }
             }
+        }
+        if accountOnly {
+            onActions(actions)
+            return
         }
         actions += [
             .value("multiplayerDefault", "Default for games", cycle: stepDefault),

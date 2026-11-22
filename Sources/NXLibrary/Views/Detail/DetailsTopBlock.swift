@@ -70,6 +70,7 @@ struct DetailsTopBlock: View {
             HStack(spacing: canvas.u(14)) {
                 pills
                 if showsCloudPill && (pillSet == .porting || pillSet.isFailed) { cloudPill }
+                NextendoOnlineBadge(titleID: game.titleId)
             }
                 .padding(.top, canvas.u(pillSet.isFailed ? 10 : 26))
             if let state = cloud.states[game.id], let active = state.activeItem, active != .sources, !state.queued {

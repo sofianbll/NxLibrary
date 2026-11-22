@@ -81,10 +81,18 @@ extension AppViewModel {
             return
         }
         launchingGameId = game.id
+        playSessionStore?.expectStart(gameID: game.id)
         let setting = gameSettings.flatMap { NextendoLaunch.networkSetting(in: $0.settings) }
         let multiplayerEnvironment = multiplayer?.environment ?? [:]
         let mode = multiplayerEnvironment[NextendoLaunch.networkKey] ?? gameSettings?.effectiveLaunchValue(NextendoLaunch.networkKey)
         if NextendoLaunch.requiresSignIn(setting: setting, mode: mode) {
+            guard usesSharedNextendo else {
+                playSessionStore?.abandonStart(gameID: game.id)
+                saveGate.end(titleID: titleId, token: saveLaunchToken)
+                launchingGameId = nil
+                showSettingsNotice(title: "Nextendo", message: L10n.text("Online play uses the original profile on this Mac."))
+                return
+            }
             let clientID = settingsStore?.settings.nextendoClientID ?? NextendoLaunch.buildClientID
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -97,6 +105,7 @@ extension AppViewModel {
                     self.startGame(game, titleId: titleId, token: saveLaunchToken, gameSettings: gameSettings,
                                    environment: multiplayerEnvironment.merging(environment) { _, online in online })
                 } catch {
+                    self.playSessionStore?.abandonStart(gameID: game.id)
                     self.saveGate.end(titleID: titleId, token: saveLaunchToken)
                     self.launchingGameId = nil
                     let problem = error as? NextendoError ?? .service
@@ -138,6 +147,7 @@ extension AppViewModel {
                 try launchService.writeEnvironment(settings: config, titleId: titleId)
             }
         } catch {
+            playSessionStore?.abandonStart(gameID: game.id)
             saveGate.end(titleID: titleId, token: saveLaunchToken)
             launchingGameId = nil
             launchOverlay = nil
@@ -193,6 +203,7 @@ extension AppViewModel {
                         if self.launchingGameId == game.id { self.launchingGameId = nil }
                     }
                 } else {
+                    self.playSessionStore?.abandonStart(gameID: game.id)
                     let message = error ?? NXLibraryError.launchFailed(game.name).localizedDescription
                     self.launchingGameId = nil
                     self.launchOverlay = nil

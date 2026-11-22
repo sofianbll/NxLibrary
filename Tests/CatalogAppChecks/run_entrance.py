@@ -88,6 +88,7 @@ final class InputState {
     var alertMessage: String?
     var settingsNotice: Int?
     var isWelcomeOpen = false
+    var profileOwnsInput = false
     var showSetupCheck = false
     var isWindowSettling = true
 }

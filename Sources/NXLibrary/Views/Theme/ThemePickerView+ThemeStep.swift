@@ -13,7 +13,7 @@ extension ThemePickerView {
             header(L10n.text("Choose your theme"), L10n.text("Colors for all of Arcane. Move through them to see each one in the preview."))
             HStack(alignment: .top, spacing: canvas.u(60)) {
                 grid(count: palettes.count, columns: ThemePickerState.themeColumns) { index in
-                    swatch(palettes[index], focused: index == state.themeIndex)
+                    ThemePaletteSwatch(palette: palettes[index], focused: index == state.themeIndex)
                         .onTapGesture { tap(index) }
                 }
                 VStack(alignment: .leading, spacing: 0) {
@@ -34,7 +34,15 @@ extension ThemePickerView {
         }
     }
 
-    private func swatch(_ palette: SelenePalette, focused: Bool) -> some View {
+}
+
+struct ThemePaletteSwatch: View {
+    let palette: SelenePalette
+    let focused: Bool
+    @Environment(\.seleneCanvas) private var canvas
+    @ObservedObject private var theme = ThemeStore.shared
+
+    var body: some View {
         let background = Color(hex: palette.base.stops.first?.color ?? palette.glass)
         let shape = RoundedRectangle(cornerRadius: canvas.u(14), style: .continuous)
         return VStack(spacing: canvas.u(8)) {
@@ -77,6 +85,9 @@ extension ThemePickerView {
         .accessibilityAddTraits(focused ? [.isButton, .isSelected] : .isButton)
     }
 
+}
+
+extension ThemePickerView {
     /// The palette's colors as a strip of chips.
     private func chips(_ palette: SelenePalette) -> some View {
         var colors: [UInt32] = []

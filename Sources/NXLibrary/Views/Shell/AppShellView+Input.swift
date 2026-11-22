@@ -140,6 +140,9 @@ extension AppShellView {
             // The open control center takes the keyboard: arrows, Return, Space and Esc go to the menu,
             // and no screen underneath sees them.
             // Typing in a menu's text field (the Theme screen's search): keys go to the field, Esc leaves it.
+            if viewModel.profileOwnsInput, !showsWelcome, !viewModel.showSetupCheck, !isCloseGameOpen {
+                return profileKey(event)
+            }
             if router.isMenuPresented, router.activityCenterFocus != nil {
                 guard mods.isEmpty else { return event }
                 if let action = activityCenterKey(event.keyCode),
@@ -251,6 +254,8 @@ extension AppShellView {
     /// pills, and Theme opens its screen in place of the row.
     func runMenuAction(_ action: MenuAction) {
         switch action {
+        case .switchProfile: openProfile(.picker, fromMenu: true)
+        case .editProfile: openProfile(.editor, fromMenu: true)
         case .activityCenter:
             router.closePowerMenu()
             var focus = ActivityCenterFocus()

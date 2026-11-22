@@ -6,11 +6,17 @@ import ArcanePorting
 /// Collection's controller, keyboard and pointer input.
 extension CollectionView {
     func handle(_ action: GamepadAction) {
-        if sortFocused {
+        if sortMenu != nil {
+            var next = sortMenu
+            LibrarySortMenu.handle(action, focused: &next, choose: setSort)
+            sortMenu = next
+            return
+        }
+        if profileFocused {
             switch action {
-            case .confirm, .rightStickPress: cycleSort(); return
-            case .navigateDown, .cancel: sortFocused = false; return
-            default: sortFocused = false
+            case .confirm: SpotlightTopBar.openProfile(); return
+            case .navigateDown, .cancel: profileFocused = false; return
+            default: profileFocused = false
             }
         }
         var moved = false
@@ -22,8 +28,10 @@ extension CollectionView {
                                             in: all, history: playSessions)
             moved = viewModel.librarySelection.selectedGameID != before
         case .navigateUp:
-            sortFocused = true
-            SoundEffectService.shared.play(.focus)
+            if profile != nil {
+                profileFocused = true
+                SoundEffectService.shared.play(.focus)
+            }
         case .navigateDown: break
         case .jumpToStart, .jumpToEnd:
             let before = viewModel.librarySelection.selectedGameID
@@ -34,7 +42,7 @@ extension CollectionView {
         case .tabNext:
             setFilter(filter.shifted(by: 1))
         case .rightStickPress:
-            cycleSort()
+            openSort()
         case .confirm:
             if let record = selectedCatalogGame {
                 activateCatalog(record)
@@ -115,10 +123,11 @@ extension CollectionView {
             switch event.keyCode {
             case 123: action = .navigateLeft
             case 124: action = .navigateRight
-            case 125 where sortFocused: action = .navigateDown
+            case 125 where sortMenu != nil || profileFocused: action = .navigateDown
             case 126: action = .navigateUp
             case 36, 49, 76: action = .confirm
-            case 53 where sortFocused: action = .cancel
+            case 53 where sortMenu != nil || profileFocused: action = .cancel
+            case 1: action = .rightStickPress  // S: Sort
             case 7: action = .secondaryAction   // X
             case 16: action = .contextAction    // Y
             case 12: action = .tabPrevious      // Q

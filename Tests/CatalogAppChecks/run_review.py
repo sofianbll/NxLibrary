@@ -105,6 +105,7 @@ struct SpotlightPageModel { var links = [1]; var more: [Int] = [] }
 @MainActor final class ViewModel {
     var spotlight = SpotlightState(focus: .actions)
     var showSetupCheck = false
+    var profileOwnsInput = false
     var isGameOptionsOpen = false
     var alertMessage: String?
     var gameToClose: Int?
@@ -295,6 +296,7 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
     let nativeMenus = NativeMenus()
     var isCloseGameOpen = false
     var showsWelcome = false
+    var profileFlow: Int?
     var showsSettingsNotice = false
     var showsInstallFailure = false
     var showsUpdateOffer = false
@@ -312,6 +314,7 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
     func removeGameInput(_ action: GamepadAction) { dialogActions.append(action) }
     func updateOfferInput(_ action: GamepadAction) { dialogActions.append(action) }
     func cloudQuitInput(_ action: GamepadAction) { dialogActions.append(action) }
+    func postProfileAction(_ action: GamepadAction) { dialogActions.append(action) }
     func menuInput(_ action: GamepadAction) { dialogActions.append(action) }
     // ACTUAL_DIALOG
     // ACTUAL_MENU
@@ -526,6 +529,14 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
                 "Cloud library must own the controller without changing the underlying page")
         NotificationCenter.default.removeObserver(cloudWatch)
         input.viewModel.cloudLibraryGameID = nil
+        input.viewModel.profileOwnsInput = true
+        input.profileFlow = 1
+        input.dialogActions = []
+        GameControllerService.shared.onAction?(.confirm)
+        require(input.dialogActions == [.confirm] && received.actions.isEmpty && !input.availability().general,
+                "Profile modal owns controller input and suspends native actions")
+        input.viewModel.profileOwnsInput = false
+        input.profileFlow = nil
 
         let wizard = PortingWizardHost()
         wizard.router.showDetail(firstModsGame.id)

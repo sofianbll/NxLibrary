@@ -58,7 +58,7 @@ struct SettingsView: View {
         guard setup.isNxnativeValid, !setup.nxnativePath.isEmpty else { return nil }
         return EngineSelection(path: setup.nxnativePath, commit: setup.currentEngineCommit)
     }
-    private var supportsNextendo: Bool { nextendoEngine != nil && engine == nextendoEngine }
+    private var supportsNextendo: Bool { nextendoEngine != nil && engine == nextendoEngine && viewModel.usesSharedNextendo }
     @Environment(\.nxAppLocale) private var localization
 
     init(initialSection: SettingsSection,

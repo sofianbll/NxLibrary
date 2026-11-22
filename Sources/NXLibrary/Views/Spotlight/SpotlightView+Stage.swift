@@ -61,8 +61,8 @@ extension SpotlightView {
         let items = model.items
         return ZStack(alignment: .topLeading) {
             SpotlightTopBar(filter: filter, sort: settings.settings.librarySort, showClock: settings.settings.showClock,
-                            sortFocus: $sortFocused,
-                            onSelect: { if !state.isLifted { setFilter($0) } }, onCycleSort: cycleSort)
+                            profileFocused: profileFocused,
+                            onSelect: { if !state.isLifted { setFilter($0) } })
                 // Comes in last with the hints (`finishEntrance`).
                 .opacity(rowShown && controlsShown ? 1 : 0)
                 .allowsHitTesting(rowShown && entrance.takesInput)

@@ -6,6 +6,7 @@ extension AppViewModel {
         CatalogLibraryProjection.visible(games: catalogGames, sources: catalogSourceConfigurations)
     }
     func setCatalogFavorite(_ game: CatalogGame) {
+        if toggleLocalFavorite(game.id) { return }
         do { applyCatalog(try catalogRepository.toggleFavorite(for: game.id)) }
         catch { reportCatalogFailure(error) }
     }

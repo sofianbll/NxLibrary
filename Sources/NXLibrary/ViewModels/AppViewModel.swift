@@ -100,7 +100,8 @@ final class AppViewModel: ObservableObject {
 
     /// The shell's update dialog owns input; screens leave the keyboard to it.
     var appUpdateDialogOwnsInput = false
-    var shellDialogOwnsInput: Bool { appUpdateDialogOwnsInput || cloudQuitRequested }
+    @Published var profileOwnsInput = false
+    var shellDialogOwnsInput: Bool { appUpdateDialogOwnsInput || cloudQuitRequested || profileOwnsInput }
     /// "Welcome to Arcane" is on screen, until its fade has ended: screens' own keyboard monitors let Return and
     /// the arrows go to it, and Spotlight holds its entrance until it has gone.
     @Published var isWelcomeOpen = false
@@ -120,6 +121,7 @@ final class AppViewModel: ObservableObject {
     // MARK: - Library
     @Published private(set) var libraryGames: [PortedGame] = []
     @Published private(set) var catalogGames: [CatalogGame] = []
+    private var catalogSnapshot = CatalogDocument()
     @Published private(set) var catalogSourceConfigurations: [CatalogSourceConfiguration] = []
     @Published private(set) var personalizations = CatalogPersonalizations.empty
     /// Finished file operations whose catalog save must still be retried.
@@ -250,6 +252,8 @@ final class AppViewModel: ObservableObject {
     var launchProbeTask: Task<Void, Never>?
 
     var playSessionStore: PlaySessionStore?
+    var localProfiles: LocalProfileStore?
+    var usesSharedNextendo: Bool { localProfiles?.active?.id == localProfiles?.originalID }
     var settingsStore: AppSettingsStore?
 
     let availableLanguages: [(code: String, label: String)] = [
@@ -281,9 +285,11 @@ final class AppViewModel: ObservableObject {
     lazy var workspaceManager = WorkspaceManager(root: core.appendingPathComponent("workspaces"))
     var libraryRescanRequested = false
 
-    init(settingsStore: AppSettingsStore, catalog: CatalogDocument, repository: CatalogRepository) {
+    init(settingsStore: AppSettingsStore, catalog: CatalogDocument, repository: CatalogRepository,
+         localProfiles: LocalProfileStore? = nil) {
         self.catalogRepository = repository
         self.settingsStore = settingsStore
+        self.localProfiles = localProfiles
         applyCatalog(catalog)
         saveGate.onActivityChange = { [weak self] in
             DispatchQueue.main.async {
@@ -485,16 +491,35 @@ final class AppViewModel: ObservableObject {
     }
 
     func applyCatalog(_ document: CatalogDocument) {
-        catalogGames = document.games
+        catalogSnapshot = document
+        refreshProfileFavorites()
         // Published only when a game is new, so a rescan that changes nothing redraws nothing for it.
         var downloads = sessionDownloads
         if downloads.note(document.games) { sessionDownloads = downloads }
         catalogSourceConfigurations = document.sources
         personalizations = CatalogPersonalizations(document: document)
-        libraryGames = document.nxnativeGames.sorted {
+        if !buildQueue.isEmpty { porting.scheduleNextBuild() }
+    }
+
+    func refreshProfileFavorites() {
+        let document = catalogSnapshot
+        let favorites = localProfiles.flatMap { store in
+            store.active.flatMap { $0.id == store.originalID ? nil : $0.favorites }
+        }
+        catalogGames = document.games.map { original in
+            guard let favorites else { return original }
+            var game = original
+            game.setFavorite(favorites.contains(game.id))
+            return game
+        }
+        libraryGames = document.nxnativeGames.map { original in
+            guard let favorites else { return original }
+            var game = original
+            game.isFavorite = favorites.contains(game.id)
+            return game
+        }.sorted {
             $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
         }
-        if !buildQueue.isEmpty { porting.scheduleNextBuild() }
     }
 
     var cloudSavesPreferences = CloudSavesPreferences()

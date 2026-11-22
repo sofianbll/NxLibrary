@@ -25,7 +25,18 @@ extension AppViewModel {
 
     /// Flips the favorite heart and saves the library.
     func toggleFavorite(_ game: PortedGame) {
+        if toggleLocalFavorite(game.id) { return }
         updateStoredGame(game) { $0.isFavorite.toggle() }
+    }
+
+    func toggleLocalFavorite(_ id: UUID) -> Bool {
+        guard let profiles = localProfiles, let active = profiles.active, active.id != profiles.originalID else { return false }
+        if profiles.toggleFavorite(id) { refreshProfileFavorites() }
+        else {
+            showSettingsNotice(title: L10n.text("Profiles could not be saved."),
+                               message: L10n.text("Your changes could not be saved. Try again."))
+        }
+        return true
     }
 
     /// Gives the whole library one cloud saves folder (or none): written into every

@@ -1,3 +1,4 @@
+import Foundation
 import NXLibraryCore
 
 /// Prepared before the shell enters SwiftUI's view graph. Model startup can
@@ -9,6 +10,7 @@ final class AppShellState {
     let viewModel: AppViewModel
     let router: AppRouter
     let sources: CatalogSourcesModel
+    let profiles: LocalProfileStore
     /// The Mods card keeps its prepared cover across navigation; Spotlight observes it only while visible.
     let modStoreHost = ModStoreHost()
     /// "Welcome to Arcane" is up from the first frame, so the library never shows before it. Decided before save recovery starts; what it raises opens above.
@@ -16,10 +18,17 @@ final class AppShellState {
 
     init(settings: AppSettingsStore, catalog: CatalogDocument, repository: CatalogRepository) {
         self.settings = settings
+        let name = NSFullUserName().trimmingCharacters(in: .whitespacesAndNewlines)
+        let profiles = LocalProfileStore(settings: settings.settings,
+                                         name: name.isEmpty ? L10n.text("Player") : String(name.prefix(32)))
+        self.profiles = profiles
+        if let look = profiles.active?.look, look != .init(settings.settings) {
+            look.apply(to: &settings.settings)
+        }
         AppDelegate.settingsStore = settings
         AppLocalization.shared.configure(settings.settings)
         ThemeStore.shared.apply(id: settings.settings.colorThemeID)
-        let model = AppViewModel(settingsStore: settings, catalog: catalog, repository: repository)
+        let model = AppViewModel(settingsStore: settings, catalog: catalog, repository: repository, localProfiles: profiles)
         viewModel = model
         AppDelegate.cloudLibrary = model.cloudLibrary
         AppDelegate.activityOwner = model
@@ -42,5 +51,6 @@ final class AppShellState {
                                                     shown: settings.settings.welcomeArcaneShown,
                                                     hasPendingRecovery: false)
         model.isWelcomeOpen = opensWithWelcome
+        model.profileOwnsInput = settings.settings.showProfilePicker && profiles.active != nil
     }
 }

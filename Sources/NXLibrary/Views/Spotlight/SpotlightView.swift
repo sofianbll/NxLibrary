@@ -48,7 +48,9 @@ struct SpotlightView: View {
     /// Only traits are retained for the cache pass, without artwork, screenshots or descriptions.
     @State var cachedSteamRelated: (request: SteamRelatedRequest, traits: [UInt32: MoreLikeThis.Traits])?
     @State var keyMonitor: Any?
-    @FocusState var sortFocused: Bool
+    @State var sortMenu: LibrarySort?
+    @State var profileFocused = false
+    @Environment(\.profilePortrait) var profile
     @State var hadGames = false
     /// The card Y menu: which card and the focused row.
     @State var cardMenu: CardMenuState?
@@ -233,7 +235,8 @@ struct SpotlightView: View {
                 ? [] : HintItem.homeGlobals(other: "Collection",
                                             onOther: { if settings.settings.viewButtonSwitches { router.openCollection() } },
                                             onMenu: { router.isMenuPresented = true }),
-            rightHints: contextHints(model, state),
+            rightHints: contextHints(model, state) + (state.focus == .row && !state.isLifted && cardMenu == nil
+                ? [LibrarySortMenu.hint(settings.settings.librarySort, action: openSort)] : []),
             rightReserve: hintReserve(state),
             hintsHidden: router.overlayHasHints(viewModel) || achievementsScreen != nil,
             hintsHeld: !controlsShown,
@@ -256,6 +259,14 @@ struct SpotlightView: View {
         .animation(SeleneTheme.screen, value: achievementsScreen != nil)
         .overlay(model.selectedGame.map { ModsBandOverlay(host: modsHost, find: modsHost.find, game: $0) })
         .overlay(storeOverlay(model))
+        .accessibilityHidden(sortMenu != nil)
+        .overlay {
+            if let sortMenu {
+                LibrarySortMenu(current: settings.settings.librarySort, focused: sortMenu, choose: setSort) {
+                    self.sortMenu = nil
+                }
+            }
+        }
     }
 
     /// Appearing, the entrance, the pills and the Achievements screen, and leaving.

@@ -2,11 +2,13 @@ import Foundation
 
 /// The control-center row, left to right (Selene's menu.png).
 public enum MenuAction: String, CaseIterable, Identifiable, Equatable {
-    case addGame, refreshLibrary, settings, theme, console, setupCheck, manageSources, activityCenter, power
+    case switchProfile, editProfile, theme, addGame, refreshLibrary, settings, console, setupCheck, manageSources, activityCenter, power
     public var id: String { rawValue }
 
     public var title: String {
         switch self {
+        case .switchProfile: return L10n.text("Switch profile")
+        case .editProfile: return L10n.text("Edit profile")
         case .addGame: return L10n.text("Add Game")
         case .refreshLibrary: return L10n.text("Library refresh")
         case .settings: return L10n.text("Settings")
@@ -21,6 +23,8 @@ public enum MenuAction: String, CaseIterable, Identifiable, Equatable {
 
     public var icon: MaterialIcon {
         switch self {
+        case .switchProfile: return .person
+        case .editProfile: return .edit
         case .addGame: return .add
         case .refreshLibrary: return .sync
         case .settings: return .tune

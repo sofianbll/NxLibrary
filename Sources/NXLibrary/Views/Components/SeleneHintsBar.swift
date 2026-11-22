@@ -8,15 +8,17 @@ struct HintItem: Identifiable {
     var glyph: MaterialIcon?
     var label: String
     var hold: String?
+    var keyboard: KeyCap?
     /// A mouse click on the hint, when the screen has one for it.
     var action: (() -> Void)?
 
-    init(_ button: PromptButton?, _ label: String, glyph: MaterialIcon? = nil, hold: String? = nil,
+    init(_ button: PromptButton?, _ label: String, glyph: MaterialIcon? = nil, hold: String? = nil, keyboard: KeyCap? = nil,
          action: (() -> Void)? = nil) {
         self.button = button
         self.glyph = glyph
         self.label = label
         self.hold = hold
+        self.keyboard = keyboard
         self.action = action
     }
 }
@@ -84,7 +86,8 @@ struct SeleneHintsBar: View {
     @ViewBuilder
     private func item(_ item: HintItem, reserve: [String] = []) -> some View {
         if let action = item.action {
-            content(item, reserve: reserve).contentShape(Rectangle()).onTapGesture(perform: action)
+            Button(action: action) { content(item, reserve: reserve).contentShape(Rectangle()) }
+                .buttonStyle(.plain)
         } else {
             content(item, reserve: reserve)
         }
@@ -93,7 +96,7 @@ struct SeleneHintsBar: View {
     private func content(_ item: HintItem, reserve: [String] = []) -> some View {
         HStack(spacing: canvas.u(8)) {
             if let button = item.button {
-                SelenePromptBadge(button: button)
+                SelenePromptBadge(button: button, keyboardOverride: item.keyboard)
             } else if let glyph = item.glyph {
                 badge { MaterialIconView(glyph, size: 18) }
             }

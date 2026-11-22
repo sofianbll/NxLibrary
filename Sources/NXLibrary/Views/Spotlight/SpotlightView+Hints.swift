@@ -26,7 +26,6 @@ extension SpotlightView {
         if cardMenu != nil {
             return [HintItem(.a, L10n.text("Select")), HintItem(.b, L10n.text("Back"))]
         }
-        if sortFocused { return [HintItem(.a, "Sort"), HintItem(.b, "Back")] }
         switch state.focus {
         case .pills:
             let cancels = model.selectedGame.map { viewModel.portingPills($0).cancelsQueuedBuild(at: state.pillIndex) } ?? false

@@ -93,11 +93,16 @@ extension SpotlightView {
         SoundEffectService.shared.play(.tabSwitch)
     }
 
-    func cycleSort() {
+    func openSort() {
         guard viewModel.spotlight.focus == .row, !viewModel.spotlight.isLifted,
               cardMenu == nil, viewer == nil, achievementsScreen == nil,
               !router.overlayHasHints(viewModel) else { return }
-        settings.settings.librarySort = settings.settings.librarySort.stepped(1)
+        sortMenu = settings.settings.librarySort
+    }
+
+    func setSort(_ sort: LibrarySort) {
+        sortMenu = nil
+        settings.settings.librarySort = sort
         SoundEffectService.shared.play(.tabSwitch)
     }
 

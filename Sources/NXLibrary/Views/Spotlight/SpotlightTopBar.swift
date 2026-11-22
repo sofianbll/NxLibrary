@@ -2,20 +2,19 @@ import SwiftUI
 import NXLibraryCore
 
 /// Selene's top bar (Main.xaml HubTopBarBackground + HomeNav.RenderFilterTabs):
-/// 110 high, 64 side margins, LB · filter tabs · RB · sort centered, clock on the right.
+/// 110 high, 64 side margins, LB · filter tabs · RB centered, clock on the right.
 /// Shared by Spotlight and Collection.
 struct SpotlightTopBar: View {
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneReduceMotion) private var reduceMotion
     @Environment(\.nxAppLocale) private var locale
-    @ObservedObject private var controller = GameControllerService.shared
+    @Environment(\.profilePortrait) private var profile
 
     let filter: LibraryFilter
     let sort: LibrarySort
     var showClock: Bool = true
-    var sortFocus: FocusState<Bool>.Binding
+    var profileFocused = false
     var onSelect: (LibraryFilter) -> Void = { _ in }
-    let onCycleSort: () -> Void
 
     @State private var popScale: CGFloat = 1
     @State private var popOpacity: Double = 1
@@ -26,17 +25,18 @@ struct SpotlightTopBar: View {
                 badge(.lb)
                 ForEach(LibraryFilter.allCases) { tab($0) }
                 badge(.rb)
-                HStack(spacing: 0) {
-                    if controller.isGamepadConnected { badge(.rs) }
-                    SelenePillButton(title: sort.title, icon: .swap, iconSize: 20, minWidth: 0, height: 34,
-                                     horizontalPadding: 16, focused: sortFocus.wrappedValue,
-                                     keyboardFocus: sortFocus, action: onCycleSort)
-                        .accessibilityLabel(L10n.text("Sort games", context: locale))
-                        .accessibilityValue(L10n.text(sort.title, context: locale))
-                }
-                .padding(.leading, canvas.u(12))
             }
             HStack {
+                if let profile {
+                    Button(action: Self.openProfile) {
+                        ProfilePortrait(profile: profile, size: 44, ring: true)
+                            .modifier(TileFocus(focused: profileFocused, radius: 22, scale: 1.1))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(profile.name)
+                    .accessibilityHint(L10n.text("Open profile", context: locale))
+                    .accessibilityAddTraits(profileFocused ? .isSelected : [])
+                }
                 Spacer()
                 if showClock {
                     TimelineView(.everyMinute) { context in
@@ -48,10 +48,13 @@ struct SpotlightTopBar: View {
                 }
             }
         }
+        .accessibilityValue(L10n.text(sort.title, context: locale))
         .padding(.horizontal, canvas.u(64))
         .frame(height: canvas.u(110))
         .onChange(of: filter) { pop() }
     }
+
+    static func openProfile() { NotificationCenter.default.post(name: .nxOpenLocalProfile, object: nil) }
 
     private func tab(_ item: LibraryFilter) -> some View {
         let on = item == filter
@@ -91,5 +94,54 @@ struct SpotlightTopBar: View {
             if !reduceMotion { withAnimation(SeleneTheme.cubicOut(0.2)) { popScale = 1 } }
             withAnimation(.linear(duration: 0.16)) { popOpacity = 1 }
         }
+    }
+}
+
+/// A compact list anchored above the RS hint, like the control centre's Power menu.
+struct LibrarySortMenu: View {
+    let current: LibrarySort
+    let focused: LibrarySort
+    let choose: (LibrarySort) -> Void
+    let close: () -> Void
+    @Environment(\.seleneCanvas) private var canvas
+
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            Color.black.opacity(0.24).contentShape(Rectangle()).onTapGesture(perform: close)
+            VStack(alignment: .leading, spacing: canvas.u(8)) {
+                Text(L10n.text("Sort games")).seleneFont(19, .semibold)
+                    .foregroundStyle(SeleneTheme.ink75)
+                    .accessibilityAddTraits(.isHeader)
+                    .padding(.horizontal, canvas.u(15))
+                ForEach(LibrarySort.allCases, id: \.rawValue) { sort in
+                    SelenePillButton(title: L10n.text(sort.title), icon: sort == current ? .check : nil,
+                                     minWidth: 245, height: 44, focused: sort == focused, action: { choose(sort) })
+                        .accessibilityAddTraits(sort == current ? .isSelected : [])
+                }
+            }
+            .padding(canvas.u(16))
+            .background(RoundedRectangle(cornerRadius: canvas.u(18)).fill(SeleneTheme.glassCard))
+            .padding(.trailing, canvas.u(64))
+            .padding(.bottom, canvas.u(117))
+            .accessibilityAction(named: Text(L10n.text("Back")), close)
+        }
+    }
+
+    static func handle(_ action: GamepadAction, focused: inout LibrarySort?, choose: (LibrarySort) -> Void) {
+        guard let sort = focused else { return }
+        switch action {
+        case .navigateUp, .navigateDown:
+            let options = LibrarySort.allCases
+            var position = FocusIndex(index: options.firstIndex(of: sort) ?? 0)
+            position.move(by: action == .navigateUp ? -1 : 1, count: options.count)
+            focused = options[position.index]
+        case .confirm: focused = nil; choose(sort)
+        case .cancel, .rightStickPress, .menu: focused = nil
+        default: break
+        }
+    }
+
+    static func hint(_ sort: LibrarySort, action: @escaping () -> Void) -> HintItem {
+        HintItem(.rs, "Sort", hold: L10n.text(sort.title), action: action)
     }
 }

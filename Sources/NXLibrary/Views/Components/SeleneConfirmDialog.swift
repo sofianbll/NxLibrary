@@ -20,6 +20,7 @@ struct SeleneConfirmDialog<Detail: View>: View {
     var cancelTitle: String? = "Cancel"
     var confirmEnabled = true
     var highlightsPills = true
+    var warningIcon = false
     @Binding var focus: SeleneConfirmButton
     let onCancel: () -> Void
     let onConfirm: () -> Void
@@ -27,6 +28,15 @@ struct SeleneConfirmDialog<Detail: View>: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            if warningIcon {
+                Image(systemName: "exclamationmark.triangle")
+                    .seleneFont(28)
+                    .foregroundStyle(SeleneTheme.danger)
+                    .frame(width: canvas.u(68), height: canvas.u(68))
+                    .background(Circle().fill(SeleneTheme.danger.opacity(0.16)))
+                    .padding(.bottom, canvas.u(20))
+                    .accessibilityHidden(true)
+            }
             Text(L10n.text(title))
                 .seleneFont(34, .semibold)
                 .foregroundColor(SeleneTheme.ink)
@@ -57,10 +67,10 @@ struct SeleneConfirmDialog<Detail: View>: View {
 
 extension SeleneConfirmDialog where Detail == SeleneDialogNotes {
     init(title: String, message: String, confirmTitle: String, cancelTitle: String? = "Cancel",
-         detail: String? = nil, focus: Binding<SeleneConfirmButton>,
+         detail: String? = nil, warningIcon: Bool = false, focus: Binding<SeleneConfirmButton>,
          onCancel: @escaping () -> Void, onConfirm: @escaping () -> Void) {
         self.init(title: title, message: message, confirmTitle: confirmTitle, cancelTitle: cancelTitle,
-                  focus: focus, onCancel: onCancel, onConfirm: onConfirm) {
+                  warningIcon: warningIcon, focus: focus, onCancel: onCancel, onConfirm: onConfirm) {
             SeleneDialogNotes(detail: detail)
         }
     }

@@ -29,6 +29,7 @@ public enum SettingsReset {
             next.startInFullscreen = defaults.startInFullscreen
             next.checkAppUpdatesAtLaunch = defaults.checkAppUpdatesAtLaunch
             next.introAnimation = defaults.introAnimation
+            next.showProfilePicker = defaults.showProfilePicker
         case .navigation:
             next.showButtonHints = defaults.showButtonHints
             next.buttonNames = defaults.buttonNames

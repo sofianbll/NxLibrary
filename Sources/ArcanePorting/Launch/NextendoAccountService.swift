@@ -58,7 +58,7 @@ public struct NextendoAccountService {
     private static let mediaGate = GameBananaGate(limit: 4)
 
     public init() { self.init(oauth: NextendoOAuth()) }
-    init(oauth: NextendoOAuth) { self.oauth = oauth }
+    package init(oauth: NextendoOAuth) { self.oauth = oauth }
 
     public func check(clientID: String) async throws -> NextendoAccountSnapshot? {
         guard let access = try await oauth.refreshAccess(clientID: clientID) else { return nil }

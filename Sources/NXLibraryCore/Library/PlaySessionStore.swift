@@ -3,12 +3,16 @@ import Combine
 
 public final class PlaySessionStore: ObservableObject, PlayHistory {
     /// Recent sessions, at most `maxSessions` (running sessions are never dropped).
-    @Published public private(set) var sessions: [PlaySession] = []
+    @Published private var history: [PlaySession] = []
+    @Published public var profileID: UUID?
+    public var sessions: [PlaySession] { history.filter { $0.profileID == profileID } }
     /// Play time and last start of sessions trimmed from `sessions`, per game,
     /// so totals and last-played survive trimming.
-    @Published public private(set) var carried: [UUID: CarriedPlaytime] = [:]
+    @Published private var archive: [UUID?: [UUID: CarriedPlaytime]] = [:]
+    public var carried: [UUID: CarriedPlaytime] { archive[profileID] ?? [:] }
     /// Another launcher's own total for a game (Steam's), with when it was seen. Not persisted here.
-    @Published public private(set) var external: [UUID: ExternalPlaytime] = [:]
+    @Published private var legacyExternal: [UUID: ExternalPlaytime] = [:]
+    public var external: [UUID: ExternalPlaytime] { profileID == nil ? legacyExternal : [:] }
     /// When each game's external value was seen, kept while its total is hidden (source off, another
     /// account, launch), so trimming still keeps the part after it.
     public private(set) var trimReferences: [UUID: Date] = [:]
@@ -27,6 +31,7 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
     }
     private let fileManager: FileManager
     private let now: () -> Date
+    private var launchOwners: [UUID: UUID?] = [:]
 
     public init(fileURL: URL = PlaySessionStore.defaultURL(),
                 fileManager: FileManager = .default,
@@ -48,18 +53,23 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
     @discardableResult
     public func start(gameID: UUID, sourceID: String, bundleID: String? = nil, announces: Bool = true) -> Bool {
         if isRunning(gameID: gameID) { return false }
+        let owner = launchOwners.removeValue(forKey: gameID) ?? profileID
         let date = now()
-        sessions.append(PlaySession(gameID: gameID, titleID: sourceID, bundleID: bundleID,
-                                    startedAt: date, lastHeartbeatAt: date))
+        history.append(PlaySession(gameID: gameID, titleID: sourceID, bundleID: bundleID,
+                                   startedAt: date, lastHeartbeatAt: date, profileID: owner))
         let folded = trim()
         save(totals: folded)
-        if announces { starts.send(gameID) }
+        if announces && owner == profileID { starts.send(gameID) }
         return true
     }
 
+    /// The profile who pressed Play, even if the app's process is only detected after a profile switch.
+    public func expectStart(gameID: UUID) { launchOwners.updateValue(profileID, forKey: gameID) }
+    public func abandonStart(gameID: UUID) { launchOwners.removeValue(forKey: gameID) }
+
     public func heartbeat(for gameID: UUID) {
-        guard let index = sessions.lastIndex(where: { $0.gameID == gameID && $0.isActive }) else { return }
-        sessions[index].lastHeartbeatAt = now()
+        guard let index = history.lastIndex(where: { $0.gameID == gameID && $0.isActive }) else { return }
+        history[index].lastHeartbeatAt = now()
         save()
     }
 
@@ -68,13 +78,13 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
     public func end(gameID: UUID) -> [PlaySession] {
         let date = now()
         var ended: [PlaySession] = []
-        for index in sessions.indices where sessions[index].gameID == gameID && sessions[index].isActive {
-            sessions[index].endedAt = date
-            sessions[index].lastHeartbeatAt = date
-            ended.append(sessions[index])
+        for index in history.indices where history[index].gameID == gameID && history[index].isActive {
+            history[index].endedAt = date
+            history[index].lastHeartbeatAt = date
+            ended.append(history[index])
         }
         if !ended.isEmpty { save() }
-        return ended
+        return ended.filter { $0.profileID == profileID }
     }
 
     /// Ends the game's running sessions and returns them, ended.
@@ -83,26 +93,26 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
         guard let bundleID else { return [] }
         let date = now()
         var ended: [PlaySession] = []
-        for index in sessions.indices
-        where sessions[index].bundleID == bundleID && sessions[index].isActive {
-            sessions[index].endedAt = date
-            sessions[index].lastHeartbeatAt = date
-            ended.append(sessions[index])
+        for index in history.indices
+        where history[index].bundleID == bundleID && history[index].isActive {
+            history[index].endedAt = date
+            history[index].lastHeartbeatAt = date
+            ended.append(history[index])
         }
         if !ended.isEmpty { save() }
-        return ended
+        return ended.filter { $0.profileID == profileID }
     }
 
     public func reconcile(runningBundleIDs: Set<String>) {
         let date = now()
         var changed = false
-        for index in sessions.indices where sessions[index].isActive {
-            if let bundleID = sessions[index].bundleID,
+        for index in history.indices where history[index].isActive {
+            if let bundleID = history[index].bundleID,
                runningBundleIDs.contains(bundleID) {
-                sessions[index].lastHeartbeatAt = date
+                history[index].lastHeartbeatAt = date
                 changed = true
             } else {
-                sessions[index].endedAt = sessions[index].lastHeartbeatAt
+                history[index].endedAt = history[index].lastHeartbeatAt
                 changed = true
             }
         }
@@ -111,7 +121,7 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
 
     /// Sets the external totals; publishes only a change.
     public func setExternal(_ values: [UUID: ExternalPlaytime]) {
-        if values != external { external = values }
+        if values != legacyExternal { legacyExternal = values }
     }
 
     public func setTrimReferences(_ values: [UUID: Date]) { trimReferences = values }
@@ -126,8 +136,8 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
     /// The total under a given external value (nil: none), whatever is published.
     public func totalDuration(for gameID: UUID, with external: ExternalPlaytime?) -> TimeInterval {
         let date = now()
-        let own = sessions.filter { $0.gameID == gameID }
-        guard let base = external else {
+        let own = history.filter { $0.gameID == gameID && $0.profileID == profileID }
+        guard let base = profileID == nil ? external : nil else {
             return own.reduce(carried[gameID]?.duration ?? 0) { total, session in
                 total + max(0, (session.endedAt ?? date).timeIntervalSince(session.startedAt))
             }
@@ -140,37 +150,37 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
     }
 
     public func lastPlayed(for gameID: UUID) -> Date? {
-        let recent = sessions.filter { $0.gameID == gameID }.map(\.startedAt).max()
+        let recent = history.lazy.filter { $0.gameID == gameID && $0.profileID == self.profileID }.map(\.startedAt).max()
         return [recent, carried[gameID]?.lastPlayed, external[gameID]?.lastPlayed].compactMap { $0 }.max()
     }
 
     public func isRunning(gameID: UUID) -> Bool {
-        sessions.contains { $0.gameID == gameID && $0.isActive }
+        history.contains { $0.gameID == gameID && $0.isActive }
     }
 
     /// Drops the oldest ended sessions beyond `maxCount`, folding each into `carried`.
     /// Returns whether `carried` changed.
     private func trim(maxCount: Int = PlaySessionStore.maxSessions) -> Bool {
-        let excess = sessions.count - maxCount
+        let excess = history.count - maxCount
         guard excess > 0 else { return false }
-        let dropped = sessions.filter { !$0.isActive }
+        let dropped = history.filter { !$0.isActive }
             .sorted { $0.startedAt < $1.startedAt }
             .prefix(excess)
         guard !dropped.isEmpty else { return false }
         for session in dropped {
-            var entry = carried[session.gameID] ?? CarriedPlaytime(duration: 0, lastPlayed: session.startedAt)
+            var entry = archive[session.profileID]?[session.gameID] ?? CarriedPlaytime(duration: 0, lastPlayed: session.startedAt)
             entry.duration += session.duration ?? 0
             entry.lastPlayed = max(entry.lastPlayed, session.startedAt)
             // The part after an external value was seen is not in that value yet: keep it, tied to that value.
-            if let since = external[session.gameID]?.since ?? trimReferences[session.gameID] {
+            if session.profileID == nil, let since = legacyExternal[session.gameID]?.since ?? trimReferences[session.gameID] {
                 if entry.externalSince != since { entry.externalSince = since; entry.afterExternal = 0 }
                 let end = session.endedAt ?? session.lastHeartbeatAt
                 entry.afterExternal += max(0, end.timeIntervalSince(max(session.startedAt, since)))
             }
-            carried[session.gameID] = entry
+            archive[session.profileID, default: [:]][session.gameID] = entry
         }
         let droppedIDs = Set(dropped.map(\.id))
-        sessions.removeAll { droppedIDs.contains($0.id) }
+        history.removeAll { droppedIDs.contains($0.id) }
         return true
     }
 
@@ -182,10 +192,11 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
                 at: fileURL.deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )
-            try write(JSONEncoder().encode(sessions), to: fileURL)
+            try write(JSONEncoder().encode(history), to: fileURL)
             if totals {
-                let entries = carried.map { CarriedEntry(gameID: $0.key, playtime: $0.value) }
-                    .sorted { $0.gameID.uuidString < $1.gameID.uuidString }
+                let entries = archive.flatMap { profileID, values in
+                    values.map { CarriedEntry(gameID: $0.key, playtime: $0.value, profileID: profileID) }
+                }.sorted { ($0.profileID?.uuidString ?? "", $0.gameID.uuidString) < ($1.profileID?.uuidString ?? "", $1.gameID.uuidString) }
                 try write(JSONEncoder().encode(entries), to: totalsURL)
             }
             loadError = nil
@@ -207,10 +218,10 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
     private func load() {
         if fileManager.fileExists(atPath: fileURL.path) {
             do {
-                sessions = try JSONDecoder().decode([PlaySession].self, from: Data(contentsOf: fileURL))
+                history = try JSONDecoder().decode([PlaySession].self, from: Data(contentsOf: fileURL))
                 loadError = nil
             } catch {
-                sessions = []
+                history = []
                 loadError = error.localizedDescription
             }
         }
@@ -218,10 +229,11 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
         guard fileManager.fileExists(atPath: totalsURL.path) else { return }
         do {
             let entries = try JSONDecoder().decode([CarriedEntry].self, from: Data(contentsOf: totalsURL))
-            carried = Dictionary(entries.map { ($0.gameID, $0.playtime) },
-                                 uniquingKeysWith: { first, _ in first })
+            for entry in entries where archive[entry.profileID]?[entry.gameID] == nil {
+                archive[entry.profileID, default: [:]][entry.gameID] = entry.playtime
+            }
         } catch {
-            carried = [:]
+            archive = [:]
             loadError = error.localizedDescription
         }
     }
@@ -268,4 +280,5 @@ public struct CarriedPlaytime: Codable, Equatable {
 private struct CarriedEntry: Codable {
     var gameID: UUID
     var playtime: CarriedPlaytime
+    var profileID: UUID? = nil
 }

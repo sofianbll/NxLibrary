@@ -11,6 +11,7 @@ import NXLibraryCore
 struct MenuOverlayView: View {
     @ObservedObject var router: AppRouter
     @ObservedObject var cloudLibrary: CloudLibraryModel
+    var activeProfile: LocalProfile? = nil
     let hasBuildActivity: Bool
     /// A click on a row button; the shell runs it.
     let onSelect: (MenuAction) -> Void
@@ -82,7 +83,7 @@ struct MenuOverlayView: View {
             onSelect(action)
         } label: {
             VStack(spacing: 0) {
-                Text(action.title)
+                Text(action == .switchProfile ? activeProfile?.name ?? action.title : action.title)
                     .seleneFont(18, .semibold)
                     .foregroundColor(SeleneTheme.ink)
                     .lineLimit(1)
@@ -91,7 +92,9 @@ struct MenuOverlayView: View {
                     .opacity(isFocused ? 1 : 0)
                     .offset(y: isFocused || reduceMotion ? 0 : canvas.u(6))
                     .animation(SeleneTheme.focusIn, value: isFocused)
-                    .padding(.bottom, canvas.u(labelGap))
+                if action == .switchProfile, activeProfile != nil, isFocused {
+                    Text(action.title).seleneFont(14).foregroundColor(SeleneTheme.ink60).lineLimit(1).fixedSize()
+                }
 
                 ZStack {
                     Circle()
@@ -103,7 +106,13 @@ struct MenuOverlayView: View {
                         .frame(width: canvas.u(dotSize), height: canvas.u(dotSize))
                         .opacity(isFocused ? 1 : 0)
                         .animation(SeleneTheme.focusIn, value: isFocused)
-                    MaterialIconView(action.icon, size: iconSize)
+                    Group {
+                        if action == .switchProfile, let activeProfile {
+                            ProfilePortrait(profile: activeProfile, size: 52)
+                        } else {
+                            MaterialIconView(action.icon, size: iconSize)
+                        }
+                    }
                         .foregroundColor(SeleneTheme.ink)
                         .overlay(alignment: .topTrailing) {
                             if hasActivity {
@@ -113,6 +122,7 @@ struct MenuOverlayView: View {
                             }
                         }
                 }
+                .padding(.top, canvas.u(labelGap))
                 .frame(width: canvas.u(dotSize), height: canvas.u(dotSize))
                 .scaleEffect(isFocused && !reduceMotion ? focusedScale : 1)
                 .animation(reduceMotion ? nil : SeleneTheme.quick, value: isFocused)

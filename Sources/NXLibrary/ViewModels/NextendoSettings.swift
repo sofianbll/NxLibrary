@@ -23,14 +23,21 @@ import ArcanePorting
     private var operation: Task<Void, Never>?
     private var ticket = UUID()
     private var isSigningOut = false
-    private let service = NextendoAccountService()
+    private let store: NextendoTokenStore
+    private let service: NextendoAccountService
+
+    init(store: NextendoTokenStore = .init()) {
+        self.store = store
+        service = NextendoAccountService(oauth: NextendoOAuth(store: store))
+    }
 
     func check(clientID: String?) {
         run(checking: true) { model in
             if let clientID {
                 try model.apply(await model.service.check(clientID: clientID))
             } else {
-                let hasToken = try await Task.detached { try NextendoTokenStore().hasToken() }.value
+                let store = model.store
+                let hasToken = try await Task.detached { try store.hasToken() }.value
                 try Task.checkCancellation()
                 if hasToken { throw NextendoError.clientID }
                 try model.apply(nil)
@@ -93,7 +100,7 @@ import ArcanePorting
 
     func signOut() {
         run(signingOut: true) { model in
-            try await NextendoOAuth().signOut()
+            try await NextendoOAuth(store: model.store).signOut()
             try model.apply(nil)
         }
     }
