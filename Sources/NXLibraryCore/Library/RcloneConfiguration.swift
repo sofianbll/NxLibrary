@@ -6,14 +6,16 @@ public struct CloudLibraryPreference: Equatable, Sendable {
     public static let sourcesRootKey = "NXLibrary_CloudSourcesRoot"
     public static let enabledKey = "NXLibrary_CloudStorageEnabled"
     public static let executableKey = "NXLibrary_RclonePath"
+    public static let referenceFolderKey = "NXLibrary_CloudReferenceFolder"
     public static let defaultRoot = "Games"
 
     public let remote: String?
     public let root: String
     public let sourcesRootOverride: String?
     public let enabled: Bool
+    public let referenceFolder: String?
 
-    public init(storage: String?, enabled: Bool?, sourcesRoot: String? = nil) {
+    public init(storage: String?, enabled: Bool?, sourcesRoot: String? = nil, referenceFolder: String? = nil) {
         let parts = (storage ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             .split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
         let name = parts.first.map(String.init) ?? ""
@@ -23,6 +25,22 @@ public struct CloudLibraryPreference: Equatable, Sendable {
         root = valid ? folder : Self.defaultRoot
         sourcesRootOverride = sourcesRoot.flatMap { Self.validSourcesRoot($0) ? $0 : nil }
         self.enabled = enabled ?? (remote != nil)
+        self.referenceFolder = referenceFolder.flatMap(Self.referenceFolderID)
+    }
+
+    public static func referenceFolderID(_ input: String) -> String? {
+        let input = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        func valid(_ id: String) -> Bool {
+            id != "root" && id != "appDataFolder" && !id.hasPrefix("-")
+                && id.range(of: #"^[A-Za-z0-9_-]{1,128}\z"#, options: .regularExpression) != nil
+        }
+        if valid(input) { return input }
+        guard let url = URLComponents(string: input), url.scheme == "https", url.host == "drive.google.com",
+              url.user == nil, url.password == nil, url.port == nil else { return nil }
+        let path = url.percentEncodedPath.components(separatedBy: "/")
+        guard path.count == 4 || (path.count == 5 && path[4].isEmpty),
+              path[0].isEmpty, path[1] == "drive", path[2] == "folders", valid(path[3]) else { return nil }
+        return path[3]
     }
 
     public var sourcesRoot: String {

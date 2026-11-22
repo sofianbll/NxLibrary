@@ -18,6 +18,7 @@ struct SettingsSectionContent: View {
     let onEditCloud: () -> Void
     let onEditCloudLibraryFolder: () -> Void
     let onEditCloudSources: () -> Void
+    let onEditCloudReference: () -> Void
     let onActions: ([SettingsRowAction]) -> Void
 
     var body: some View {
@@ -51,7 +52,7 @@ struct SettingsSectionContent: View {
         case .cloudLibrary:
             SettingsCloudLibrarySection(viewModel: viewModel, model: viewModel.cloudLibrary, settings: settings, advanced: $cloudAdvanced,
                                         onEdit: onEditCloud, onEditLibrary: onEditCloudLibraryFolder,
-                                        onEditSources: onEditCloudSources, onActions: onActions)
+                                        onEditSources: onEditCloudSources, onEditReference: onEditCloudReference, onActions: onActions)
         case .controllers:
             SettingsControllersSection(settings: settings, onActions: onActions,
                                        onViewControls: onViewControls)

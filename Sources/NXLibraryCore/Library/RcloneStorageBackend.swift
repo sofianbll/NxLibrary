@@ -12,6 +12,8 @@ public struct RcloneStorageBackend: StorageBackend {
     private let executable: URL?
     private let config: URL?
     private let commandOverride: RcloneConfiguration.Run?
+    private let referenceID: String?
+    package var isReference: Bool { referenceID != nil }
     let control: RcloneRemoteControl
     package let leases: CloudTitleLeases
 
@@ -28,7 +30,8 @@ public struct RcloneStorageBackend: StorageBackend {
     }
 
     private init(remote: String, root: String, executable: URL?, config: URL?,
-                 control: RcloneRemoteControl, leases: CloudTitleLeases, commandOverride: RcloneConfiguration.Run?) {
+                 control: RcloneRemoteControl, leases: CloudTitleLeases, commandOverride: RcloneConfiguration.Run?,
+                 referenceID: String? = nil) {
         self.remote = remote
         self.root = root
         self.executable = executable
@@ -36,11 +39,27 @@ public struct RcloneStorageBackend: StorageBackend {
         self.control = control
         self.leases = leases
         self.commandOverride = commandOverride
+        self.referenceID = referenceID
     }
 
     package func atRoot(_ root: String) -> Self {
         Self(remote: remote, root: root, executable: executable, config: config,
-             control: control, leases: leases, commandOverride: commandOverride)
+             control: control, leases: leases, commandOverride: commandOverride, referenceID: referenceID)
+    }
+
+    package func reference(folderID: String) -> Self? {
+        guard remote != ":local:", CloudLibraryPreference.referenceFolderID(folderID) == folderID else { return nil }
+        return Self(remote: remote, root: "", executable: executable, config: config,
+                    control: control, leases: leases, commandOverride: commandOverride, referenceID: folderID)
+    }
+
+    package func referenceName() async throws -> String? {
+        guard let referenceID else { throw StorageBackendError.invalidConfiguration }
+        struct Folder: Decodable { let ID: String?; let Name: String }
+        let folders = try decode([Folder].self, from: await run([
+            "lsjson", basePath(), "--dirs-only", "--no-modtime", "--no-mimetype", "--drive-shared-with-me",
+        ], listingFolder: true))
+        return folders.first { $0.ID == referenceID }?.Name
     }
 
     /// Ends the RC session when the cloud configuration is replaced or the app quits.
@@ -144,6 +163,7 @@ public struct RcloneStorageBackend: StorageBackend {
     package func copyFiles(_ paths: [String], from local: URL, to key: StorageObjectKey,
                            reusing previous: StorageObjectKey?,
                            progress: (@Sendable (StorageProgress) -> Void)?) async throws {
+        guard !isReference else { throw StorageBackendError.invalidConfiguration }
         let reuse = try previous.map { ["--copy-dest", try path(for: $0)] } ?? []
         // Encode links on the source only. The local fixture must store the same sidecars as Drive.
         try await copyFiles(paths, from: ":local,links=true:" + local.path, to: path(for: key),
@@ -151,8 +171,15 @@ public struct RcloneStorageBackend: StorageBackend {
     }
 
     package func downloadFiles(_ paths: [String], from key: StorageObjectKey, to local: URL,
+                               decodeLinks: Bool = false,
                                progress: (@Sendable (StorageProgress) -> Void)?) async throws {
-        try await copyFiles(paths, from: path(for: key), to: local.path, flags: [], progress: progress)
+        guard local.isFileURL, local.path.hasPrefix("/") else { throw StorageBackendError.invalidLocalFile }
+        // Never ask rclone to create a symlink before Arcane has checked its target.
+        guard !decodeLinks || !paths.contains(where: { $0.lowercased().hasSuffix(".rclonelink") }) else {
+            throw StorageBackendError.invalidKey
+        }
+        try await copyFiles(paths, from: path(for: key), to: decodeLinks ? ":local,links=true:" + local.path : local.path,
+                            flags: [], progress: progress)
     }
 
     private func copyFiles(_ paths: [String], from: String, to: String, flags: [String],
@@ -181,7 +208,7 @@ public struct RcloneStorageBackend: StorageBackend {
             ]) {
                 directory = try decode(StatResult<Directory>.self, from: output).item
             } else {
-                let path = prefix.isEmpty ? base : base + (base.hasSuffix("/") ? "" : "/") + prefix
+                let path = prefix.isEmpty ? base : base + (base.hasSuffix("/") || base.hasSuffix(":") ? "" : "/") + prefix
                 let output = try await run(["lsjson", path, "--stat", "--no-modtime", "--no-mimetype",
                                             "--retries", "1", "--low-level-retries", "1", "--contimeout", "5s", "--timeout", "10s"],
                                            listingFolder: true)
@@ -207,6 +234,7 @@ public struct RcloneStorageBackend: StorageBackend {
 
     private func put(_ source: URL, as object: StorageObject, md5Only: Bool,
                      progress: (@Sendable (StorageProgress) -> Void)?) async throws {
+        guard !isReference else { throw StorageBackendError.invalidConfiguration }
         let final = try path(for: object.key)
         guard source.isFileURL, isRegularFile(source) else {
             throw StorageBackendError.invalidLocalFile
@@ -328,7 +356,7 @@ public struct RcloneStorageBackend: StorageBackend {
     }
 
     private func rc(_ operation: String, _ parameters: [String: Any]) async throws -> String? {
-        if commandOverride != nil { return nil }
+        if commandOverride != nil || isReference { return nil }
         guard let binary = Self.findExecutable(preferred: executable) else { return nil }
         let environment = RcloneConfiguration.environment()
         do {
@@ -375,12 +403,12 @@ public struct RcloneStorageBackend: StorageBackend {
                 }
             }
         }
-        return base + (base.hasSuffix("/") ? "" : "/") + key
+        return base + (base.hasSuffix("/") || base.hasSuffix(":") ? "" : "/") + key
     }
 
     private func basePath() throws -> String {
         let name = remote.hasSuffix(":") ? String(remote.dropLast()) : remote
-        guard CloudLibraryPreference.validRoot(root), config?.isFileURL != false,
+        guard (isReference && root.isEmpty || CloudLibraryPreference.validRoot(root)), config?.isFileURL != false,
               remote == ":local:" ? root.hasPrefix("/") && root != "/" :
                   CloudLibraryPreference.validRemote(name)
         else { throw StorageBackendError.invalidConfiguration }
@@ -399,7 +427,24 @@ public struct RcloneStorageBackend: StorageBackend {
         try Task.checkCancellation()
         let flags = ["--use-json-log", "--stats", "1s", "--stats-log-level", "NOTICE"] + Self.flags
         let environment = RcloneConfiguration.environment()
-        let command = arguments + flags + RcloneConfiguration.flags(config: config, environment: environment)
+        var referenceFlags: [String] = []
+        if let referenceID {
+            let prefix = (remote.hasSuffix(":") ? remote : remote + ":")
+            switch arguments.first {
+            case "lsjson":
+                guard arguments.count > 1, arguments[1].hasPrefix(prefix) else {
+                    throw StorageBackendError.invalidConfiguration
+                }
+            case "copy", "copyto":
+                guard arguments.count > 2, arguments[1].hasPrefix(prefix),
+                      arguments[2].hasPrefix("/") || arguments[2].hasPrefix(":local,links=true:/") else {
+                    throw StorageBackendError.invalidConfiguration
+                }
+            default: throw StorageBackendError.invalidConfiguration
+            }
+            referenceFlags = ["--drive-root-folder-id", referenceID]
+        }
+        let command = arguments + flags + referenceFlags + RcloneConfiguration.flags(config: config, environment: environment)
         let result: CommandResult
         do {
             if let commandOverride {
@@ -416,6 +461,10 @@ public struct RcloneStorageBackend: StorageBackend {
         }
         if result.status != 0, let failure = CloudLibraryFailure.rclone(result.stderr, status: result.status,
                                                                        listingFolder: listingFolder) { throw failure }
+        if isReference && result.status != 0,
+           result.stderr.lowercased().contains("error 403") || result.stderr.lowercased().contains("error 404") {
+            throw CloudLibraryFailure.folderMissing
+        }
         switch result.status {
         case 0: return result.stdout
         case 3, 4: throw StorageBackendError.notFound

@@ -90395,6 +90395,149 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "主页"}}
       }
     },
+    "Reference library": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Reference library"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Libreria di riferimento"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Bibliothèque de référence"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Referenzbibliothek"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Biblioteca de referencia"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Biblioteca de referência"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "参考游戏库"}}
+      }
+    },
+    "Follow a shared Google Drive folder in read-only mode.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Follow a shared Google Drive folder in read-only mode."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Segui una cartella condivisa di Google Drive in sola lettura."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Suivre un dossier Google Drive partagé en lecture seule."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Einem freigegebenen Google-Drive-Ordner schreibgeschützt folgen."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Sigue una carpeta compartida de Google Drive en modo de solo lectura."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Siga uma pasta compartilhada do Google Drive no modo somente leitura."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "以只读方式关注共享的 Google 云端硬盘文件夹。"}}
+      }
+    },
+    "Google Drive folder link or ID": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Google Drive folder link or ID"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Link o ID della cartella Google Drive"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Lien ou ID du dossier Google Drive"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Link oder ID des Google-Drive-Ordners"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Enlace o ID de la carpeta de Google Drive"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Link ou ID da pasta do Google Drive"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "Google 云端硬盘文件夹链接或 ID"}}
+      }
+    },
+    "Enter a Google Drive folder link or a valid folder ID.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Enter a Google Drive folder link or a valid folder ID."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Inserisci un link a una cartella di Google Drive o un ID valido."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Saisis un lien de dossier Google Drive ou un ID valide."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Gib einen Google-Drive-Ordnerlink oder eine gültige Ordner-ID ein."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Introduce un enlace a una carpeta de Google Drive o un ID válido."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Insira o link de uma pasta do Google Drive ou um ID válido."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "请输入 Google 云端硬盘文件夹链接或有效的文件夹 ID。"}}
+      }
+    },
+    "No access. Share this folder as Viewer with the Google account connected here.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "No access. Share this folder as Viewer with the Google account connected here."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nessun accesso. Condividi la cartella come Visualizzatore con l’account Google collegato qui."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Pas d’accès : partage ce dossier en Lecteur avec le compte Google connecté ici."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Kein Zugriff. Gib diesen Ordner für das verbundene Google-Konto als Betrachter frei."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Sin acceso. Comparte la carpeta como Lector con la cuenta de Google conectada aquí."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Sem acesso. Compartilhe a pasta como Leitor com a conta Google conectada aqui."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "无权访问。请将此文件夹共享给此处连接的 Google 账号，并设为查看者。"}}
+      }
+    },
+    "Games: %@ · Checked %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Games: %@ · Checked %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Giochi: %@ · Verifica %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Jeux : %@ · Vérifié le %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spiele: %@ · Geprüft %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Juegos: %@ · Verificado el %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Jogos: %@ · Verificado em %@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "游戏：%@ · 检查时间：%@"}}
+      }
+    },
+    "Follow": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Follow"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Segui"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Suivre"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Folgen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Seguir"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Seguir"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "关注"}}
+      }
+    },
+    "Unfollow": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Unfollow"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Smetti di seguire"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ne plus suivre"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Nicht mehr folgen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Dejar de seguir"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Deixar de seguir"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "取消关注"}}
+      }
+    },
+    "Read only": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Read only"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Sola lettura"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Lecture seule"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Schreibgeschützt"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Solo lectura"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Somente leitura"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "只读"}}
+      }
+    },
+    "Files on this Mac and in Drive stay in place.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Files on this Mac and in Drive stay in place."}},
+        "it": {"stringUnit": {"state": "translated", "value": "I file su questo Mac e su Drive restano dove sono."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Aucun fichier supprimé sur ce Mac ni sur Drive."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Dateien auf diesem Mac und in Drive bleiben erhalten."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se elimina ningún archivo de este Mac ni de Drive."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nenhum arquivo é excluído deste Mac ou do Drive."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "此 Mac 和云端硬盘中的文件均不会删除。"}}
+      }
+    },
+    "Source: reference library": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Source: reference library"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Origine: libreria di riferimento"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Origine : bibliothèque de référence"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Quelle: Referenzbibliothek"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Origen: biblioteca de referencia"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Origem: biblioteca de referência"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "来源：参考游戏库"}}
+      }
+    },
+    "Update from reference · %@ of %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Update from reference · %@ of %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Aggiornamento dal riferimento · %@ di %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mise à jour depuis la référence · %@ sur %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Update aus der Referenz · %@ von %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Actualización desde la referencia · %@ de %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Atualização da referência · %@ de %@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "从参考库更新 · %@ / %@"}}
+      }
+    },
+    "Reference archive · Full download (%@ of %@)": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Reference archive · Full download (%@ of %@)"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Archivio di riferimento · Download completo (%@ di %@)"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Archive de référence · Téléchargement complet (%@ sur %@)"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Referenzarchiv · Vollständiger Download (%@ von %@)"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Archivo de referencia · Descarga completa (%@ de %@)"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Arquivo de referência · Download completo (%@ de %@)"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "参考归档 · 完整下载（%@ / %@）"}}
+      }
+    },
     "Both": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Both"}},

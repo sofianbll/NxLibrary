@@ -75,6 +75,91 @@ final class CloudGameArchiveTests: XCTestCase {
         try await XCTUnwrap(first.artifacts.last?.files).verify(on: f.backend)
     }
 
+    func testNewestReferenceDiffAndLegacyRestore() async throws {
+        let f = try fixture(useSyntheticBackend: true)
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let own = try await f.service.upload(f.game)
+        let later = Date(timeIntervalSinceNow: 300)
+        try Data("reference changed only this file".utf8).write(to: f.cache.appendingPathComponent("run.key"))
+        let newer = try await f.service.upload(f.game)
+        let reference = CloudGameManifest(version: newer.version, titleID: title, createdAt: later,
+            artifacts: newer.artifacts.map {
+                .init(kind: $0.kind, unpackedSize: $0.unpackedSize, entryCount: $0.entryCount,
+                      inventorySHA256: $0.inventorySHA256, engineCommit: nil, shaderChain: nil, options: [:], files: $0.files)
+            })
+        XCTAssertFalse(own.prefersReference(reference, for: .app), "An unchanged fingerprint does not replace the same bytes")
+        XCTAssertTrue(own.prefersReference(reference, for: .cache))
+        XCTAssertFalse(reference.prefersReference(reference, for: .cache))
+        let equalDate = CloudGameManifest(version: reference.version, titleID: title, createdAt: own.createdAt, artifacts: reference.artifacts)
+        XCTAssertFalse(own.prefersReference(equalDate, for: .cache))
+        try Data("local old".utf8).write(to: f.cache.appendingPathComponent("run.key"))
+        let remote = RcloneStorageBackend(remote: "fixture", root: "Games", executable: f.root.appendingPathComponent("fake-rclone"),
+                                          config: f.root.appendingPathComponent("rclone.conf"))
+        let service = CloudGameArchive(backend: try XCTUnwrap(remote.reference(folderID: "1Reference")),
+                                        capacity: { _ in Int64.max }, trash: { _ in XCTFail("No trash") })
+        let named = try await service.latest(titleID: title)
+        XCTAssertEqual(named, newer)
+        let earlier = CloudGameManifest(version: reference.version, titleID: title,
+            createdAt: Date(timeIntervalSinceNow: -60), artifacts: reference.artifacts)
+        let localStatus = CloudArtifactStatus(state: .newerOnThisMac, hasLocalCopy: true, bytes: nil,
+                                              uploadedAt: nil, skippedRoots: [])
+        let newerLocal = try await service.referenceCopy(.cache, for: f.game, manifest: earlier, status: localStatus)
+        XCTAssertNil(newerLocal)
+        let locallyRestoredOlder = try await service.referenceCopy(.cache, for: f.game, manifest: earlier,
+                                                                   status: localStatus, matchesOlderCopy: true)
+        XCTAssertNotNil(locallyRestoredOlder)
+        let statuses = try await service.copyStatuses(f.game, manifest: .success(reference))
+        let difference = try await service.referenceCopy(.cache, for: f.game, manifest: reference, status: statuses[.cache])
+        let bytes = Int64("reference changed only this file".utf8.count)
+        XCTAssertEqual(difference?.downloadBytes, bytes)
+        XCTAssertTrue(difference?.updatesLocal == true)
+        let log = f.root.appendingPathComponent("transfers")
+        try Data().write(to: log)
+        let previous = try await service.restore(.cache, for: f.game, from: reference, onlyIfMissing: false,
+                                                 progress: nil, beforeMutation: {})
+        XCTAssertEqual(try cacheContents(XCTUnwrap(previous)), "local old")
+        XCTAssertEqual(try cacheContents(f.cache), "reference changed only this file")
+        let transfers = try String(contentsOf: log, encoding: .utf8).split(separator: "\n")
+        XCTAssertEqual(transfers.map { $0.split(separator: "/").last! }, ["run.key"])
+
+        let legacy = try await publishLegacy(f)
+        let withBothFolders = try await service.latestManifests()
+        XCTAssertEqual(withBothFolders, [newer])
+        let legacyFolder = f.remote.appendingPathComponent("\(title)/manifests")
+        let original = try XCTUnwrap(FileManager.default.contentsOfDirectory(atPath: legacyFolder.path).first)
+        try FileManager.default.copyItem(at: legacyFolder.appendingPathComponent(original),
+            to: legacyFolder.appendingPathComponent("9999999999999999" + original.dropFirst(16)))
+        let listed = try await service.latest(titleID: title)
+        XCTAssertEqual(listed, legacy)
+        let listedCatalog = try await service.latestManifests()
+        XCTAssertEqual(listedCatalog, [legacy])
+        let legacyStatus = try await service.referenceCopy(.cache, for: .init(titleID: title, locations: [:]),
+                                                           manifest: try XCTUnwrap(listed), status: nil)
+        XCTAssertTrue(legacyStatus?.legacy == true)
+        XCTAssertEqual(legacyStatus?.downloadBytes, legacy.artifacts.last?.size)
+        try FileManager.default.removeItem(at: f.cache)
+        try await service.restore(.cache, for: f.game, from: legacy, onlyIfMissing: true, progress: nil, beforeMutation: {})
+        XCTAssertEqual(try cacheContents(f.cache), "reference changed only this file")
+    }
+
+    func testUnfollowOnlyRemovesReferencePlaceholder() throws {
+        let f = try fixture(useSyntheticBackend: true)
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let repository = CatalogRepository(store: .init(directory: f.root))
+        let app = CloudGameManifest.Artifact(kind: .app, unpackedSize: 4, entryCount: 1, inventorySHA256: "fixture",
+                                            engineCommit: nil, shaderChain: nil, options: [:])
+        let reference = CloudGameManifest(version: 2, titleID: title, createdAt: .now, artifacts: [app])
+        let id = "1Reference"
+        let imported = try repository.importCloudGames([reference], in: f.root, referenceFolder: id)
+        XCTAssertEqual(imported.nxnativeGames.count, 1)
+        XCTAssertTrue(try repository.forgetCloudReference(id).nxnativeGames.isEmpty)
+        let restored = try repository.importCloudGames([reference], in: f.root, referenceFolder: id)
+        let local = try XCTUnwrap(restored.nxnativeGames.first)
+        _ = try repository.recordCloudAppRestore(id: local.id, at: f.app)
+        XCTAssertEqual(try repository.forgetCloudReference(id).nxnativeGames.first?.id, local.id)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: f.app.path))
+    }
+
     func testMovingLibraryIncludesFilesReferencedByVersionTwo() async throws {
         let f = try fixture()
         defer { try? FileManager.default.removeItem(at: f.root) }
@@ -470,7 +555,8 @@ final class CloudGameArchiveTests: XCTestCase {
         XCTAssertTrue(CloudArtifactStatus.canUploadAlone(.app, statuses: synchronized))
         XCTAssertTrue(CloudArtifactStatus.canUploadAlone(.cache, statuses: synchronized))
         let modern = try await f.service.upload(f.game, kinds: [.app])
-        XCTAssertEqual(modern.artifacts.last, legacy.artifacts.last)
+        XCTAssertEqual(modern.artifacts.last?.legacyObject(titleID: title), legacy.artifacts.last?.legacyObject(titleID: title))
+        XCTAssertEqual(modern.artifacts.last?.publishedAt, legacy.createdAt)
         let mixed = try await f.service.copyStatuses(f.game, manifest: .success(modern))
         XCTAssertFalse(CloudArtifactStatus.canUploadAlone(.app, statuses: mixed))
         XCTAssertTrue(CloudArtifactStatus.canUploadAlone(.cache, statuses: mixed))
@@ -1068,7 +1154,16 @@ final class CloudGameArchiveTests: XCTestCase {
         if cmd == "rcd":
             sys.exit(1)
         root = Path(__file__).resolve().parent
+        reference = "--drive-root-folder-id" in args
+        if reference:
+            assert cmd in ("lsjson", "copy", "copyto")
+            assert args[0].startswith("fixture:")
+            if cmd != "lsjson":
+                assert args[1].startswith(("/", ":local,links=true:/"))
         def path(arg):
+            if arg.startswith("fixture:"):
+                assert reference
+                return root / "remote" / arg.removeprefix("fixture:")
             result = Path(arg.removeprefix(":local:").removeprefix(":local,links=true:")).resolve()
             assert result.is_relative_to(root) or (
                 not arg.startswith(":local:") and any(p.startswith((".arcane-cloud-", ".arcane-download-")) for p in result.parts))

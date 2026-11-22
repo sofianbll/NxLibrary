@@ -85,7 +85,8 @@ extension CatalogRepository {
     /// Cloud discovery only adds missing titles; no local observation or personal choice is replaced.
     public func importCloudGames(_ manifests: [CloudGameManifest], in folder: URL,
                                  legacyNames: [String: String] = [:],
-                                 sourceRoot: URL = AppData.supportRoot) throws -> CatalogDocument {
+                                 sourceRoot: URL = AppData.supportRoot,
+                                 referenceFolder: String? = nil) throws -> CatalogDocument {
         try transactionIfChanged { draft in
             let count = draft.games.count
             var seen = draft.cloudImportExclusions ?? []
@@ -98,10 +99,12 @@ extension CatalogRepository {
                 guard SaveLocation.validID(title), let app = manifest.artifacts.first(where: { $0.kind == .app }),
                       seen.insert(title).inserted else { continue }
                 if let index = known[title] {
-                    guard var game = draft.games[index].nxnativeGame, game.cloudImportPending == true, game.sources.isEmpty,
-                          let sources = manifest.sourceSelection?.adopted(
-                              in: CloudGameSources.importedFolder(for: game.id, in: sourceRoot), titleID: title) else { continue }
-                    game.sources = sources
+                    guard var game = draft.games[index].nxnativeGame, game.cloudImportPending == true else { continue }
+                    let previous = game
+                    if referenceFolder == nil { game.cloudReferenceFolder = nil }
+                    if game.sources.isEmpty, let sources = manifest.sourceSelection?.adopted(
+                        in: CloudGameSources.importedFolder(for: game.id, in: sourceRoot), titleID: title) { game.sources = sources }
+                    guard game != previous else { continue }
                     try draft.games[index].updateNXNative(game)
                     adopted = true
                     continue
@@ -120,6 +123,7 @@ extension CatalogRepository {
                     titleId: title, versionString: manifest.gameVersion)
                 game.status = .appMissing
                 game.cloudImportPending = true
+                game.cloudReferenceFolder = referenceFolder
                 game.sources = manifest.sourceSelection?.adopted(
                     in: CloudGameSources.importedFolder(for: game.id, in: sourceRoot), titleID: title) ?? []
                 draft.games.append(.init(nxnative: game))
@@ -133,6 +137,19 @@ extension CatalogRepository {
                 else { draft.sources.append(source) }
             }
             return true
+        }
+    }
+
+    /// Forget only catalog placeholders. Installed apps, downloaded sources and caches never get deleted here.
+    package func forgetCloudReference(_ folder: String) throws -> CatalogDocument {
+        try transactionIfChanged { document in
+            let count = document.games.count
+            document.games.removeAll { record in
+                guard let game = record.nxnativeGame, game.cloudReferenceFolder == folder,
+                      game.cloudImportPending == true, game.workspacePath == nil, game.buildCachePath == nil else { return false }
+                return !game.sources.contains { FileManager.default.fileExists(atPath: $0.url.path) }
+            }
+            return document.games.count != count
         }
     }
 
@@ -152,6 +169,7 @@ extension CatalogRepository {
         try updateNXNative(id: id) { game in
             game.url = url
             game.cloudImportPending = nil
+            game.cloudReferenceFolder = nil
             game.status = GameResourceState.sourcesAvailable(for: game) ? .built : .builtSourcesMissing
             game.versionString = BuildOutputInstaller.version(of: url)
             game.bundleId = Bundle(url: url)?.bundleIdentifier

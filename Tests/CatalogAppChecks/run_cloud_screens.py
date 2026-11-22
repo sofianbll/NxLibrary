@@ -18,7 +18,7 @@ import NXLibraryCore
 import ArcanePorting
 
 @main struct CloudScreenProbe {
-    @MainActor static func main() throws {
+    @MainActor static func main() async throws {
         let output = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
         let font = URL(fileURLWithPath: CommandLine.arguments[2])
         precondition(CTFontManagerRegisterFontsForURL(font as CFURL, .process, nil))
@@ -94,6 +94,32 @@ import ArcanePorting
                 showsCloudBadges: true, onSelect: { _ in }, onActivate: { _ in }),
             size: .init(width: 400, height: 440))
         // TYPED_PATH_CHECK
+        model.active = nil
+        model.queue = []
+        L10n.setContext(.init(language: .french, region: "FR"))
+        model.setReferenceFolder("1-arcane-fixture")
+        func referenceSettings() -> some View {
+            SettingsCloudLibrarySection(viewModel: vm, model: model, settings: settings, advanced: .constant(false),
+                onEdit: {}, onEditLibrary: {}, onEditSources: {}, onActions: { _ in })
+                .environment(\.nxAppLocale, L10n.context)
+                .padding(24).frame(width: 1040)
+        }
+        try await vm.checkReferenceScreen(access: true)
+        precondition(model.referenceCheck?.name == "Arcane-nx" && model.referenceCheck?.count == 0)
+        try render("reference-settings", output, referenceSettings())
+        try await vm.checkReferenceScreen(access: false)
+        precondition(model.referenceCheck?.failure == .folderMissing)
+        try render("reference-error", output, referenceSettings())
+        try render("reference-editor", output, CloudReferenceDialog(viewModel: vm, onClose: {})
+            .environment(\.nxAppLocale, L10n.context))
+        model.update(game.id) {
+            $0.copies = [.app: .screenFixture(.newerOnThisMac, hasLocalCopy: true)]
+            $0.referenceKinds = [.app]
+            $0.referenceCopies = [.app: .init(downloadBytes: 45_000_000, totalBytes: 600_000_000,
+                                             legacy: false, updatesLocal: true)]
+        }
+        try render("reference-update", output, CloudLibraryPanel(viewModel: vm, model: model, game: game)
+            .environment(\.nxAppLocale, L10n.context))
     }
 
     @MainActor static func render<V: View>(_ name: String, _ output: URL, _ view: V,
@@ -121,6 +147,7 @@ def change(file, old, new):
 
 def main():
     # Without a folder, as a release regression, render into a throwaway folder under work/.
+    (ROOT / "work").mkdir(exist_ok=True)
     output = Path(sys.argv[1] if len(sys.argv) > 1 else tempfile.mkdtemp(prefix="cloud-screens-", dir=ROOT / "work")).resolve()
     output.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="cloud-screen-", dir=output.parent) as temp:
@@ -151,6 +178,10 @@ def main():
                r'        \.task\(id: Inspection.*?\n        }\n', "")
         change(app / "Views/Detail/CloudLibraryPanel.swift",
                r'        \.task\(id: ReadRequest.*?\n', "")
+        change(app / "Views/Settings/CloudReferenceDialog.swift",
+               r'                TextField\(.*?\.onExitCommand\(perform: onClose\)',
+               '                Text(text("Google Drive folder link or ID"))\n'
+               '                    .frame(maxWidth: .infinity, alignment: .leading)')
         assistant = app / "Views/Settings/CloudSetupAssistant.swift"
         change(assistant, r'        \.onAppear \{\s*.*?installAssistantKeys\(\)(?: \}|\n        })\n', "")
         change(assistant, r'@State private var remotes: \[RcloneRemote\]\?', '@State private var remotes: [RcloneRemote]? = []')
@@ -266,12 +297,31 @@ extension CloudSetupAssistant {
         with (app / "ViewModels/AppViewModel+CloudLibrary.swift").open("a") as swift:
             swift.write('''
 extension AppViewModel {
+    @MainActor func checkReferenceScreen(access: Bool) async throws {
+        let backend = RcloneStorageBackend(remote: "fixture", root: "Games") { _, args, _ in
+            precondition(args.contains("--drive-root-folder-id") && args[0] == "lsjson")
+            if !access { return .init(status: 1, stdout: "", stderr: "googleapi: Error 403: forbidden") }
+            let name = #"[{"Name":"Arcane-nx","Path":"Arcane-nx","ID":"1-arcane-fixture","Size":-1}]"#
+            let output = args.contains("--drive-shared-with-me") ? name : args.contains("--stat") ? #"{"IsDir":true}"# : "[]"
+            return .init(status: 0, stdout: output, stderr: "")
+        }
+        let reference = backend.reference(folderID: cloudLibrary.preference.referenceFolder!)!
+        cloudLibrary.installScreenReference(reference)
+        await importCloudReference(archive: cloudLibrary.archive!)
+    }
+
     @MainActor func screenRebuildNotice() {
         let game = PortedGame(name: "Pokémon Legends: Z-A", url: AppData.supportRoot.appendingPathComponent("Fixture.app"),
                              platform: .macApp, sizeBytes: 0, modificationDate: .now)
         let archive = CloudGameArchive(backend: RcloneStorageBackend(remote: "fixture", root: "Games"))
         showCloudBuildNotice(for: game, archive: archive, extraArguments: [], onStarted: nil,
                              canDownload: true, hasLocalCache: true)
+    }
+}
+extension CloudLibraryModel {
+    func installScreenReference(_ reference: RcloneStorageBackend) {
+        referenceBackend = reference
+        referenceArchive = CloudGameArchive(backend: reference)
     }
 }
 ''')

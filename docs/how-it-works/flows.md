@@ -191,6 +191,8 @@ Lo spostamento riguarda solo i manifest e le copie di app e cache, non le sorgen
 
 **Importazione dalla libreria cloud.** All'avvio o alla fine dell'assistente, e quando si riattiva la libreria, Arcane cerca manifest validi e aggiunge i giochi mancanti senza scaricare app o sorgenti. Se il manifest contiene la selezione delle sorgenti, Arcane registra i file selezionati e, per NUP, il programma Switch 2 del title ID esatto; un manifest precedente senza selezione non cambia comportamento. Import games from the cloud ripete la ricerca e ne mostra l'esito. Un gioco rimosso esplicitamente resta escluso. Un titolo importato compare con badge solo cloud; Download nelle viste della libreria e in Details diventa Play dopo il ripristino.
 
+**Libreria di riferimento.** Condividi manualmente la cartella in Google Drive come Lettore con l'altro account. Su quel Mac, in Cloud library → Reference library, incolla il link o l'ID. Lo stato mostra la cartella, il conteggio e la verifica, oppure indica come recuperare l'accesso. I nuovi titoli usano le stesse tessere. In Details → Cloud, la riga di aggiornamento indica i byte da scaricare sul totale. Unfollow dimentica il riferimento e toglie solo le voci del catalogo senza copia locale; non elimina file.
+
 Conclusa l'importazione automatica e ripristinata la coda, Arcane verifica la presenza remota per ogni titolo valido del catalogo in sequenza; il badge di un'app solo cloud non richiede di aprire Details. Un errore interrompe il controllo, lascia l'esito non verificato e mostra l'azione di recupero. Se arriva un trasferimento, gli lascia la precedenza; spegnere la libreria ferma il controllo.
 
 ## 6. Importare o ripristinare un salvataggio

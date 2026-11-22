@@ -71,6 +71,9 @@ struct CloudLibraryPanel: View {
                     .foregroundColor(SeleneTheme.ink).accessibilityAddTraits(.isHeader)
                 Text(game.name).seleneFont(17).foregroundColor(SeleneTheme.ink75)
                     .lineLimit(1)
+                if !state.referenceKinds.isEmpty || state.referenceSources != nil {
+                    Text(text("Source: reference library")).seleneFont(14).foregroundColor(SeleneTheme.ink75)
+                }
             }
             if let unavailable {
                 Text(text(unavailable)).seleneFont(17).foregroundColor(SeleneTheme.ink75)
@@ -105,6 +108,7 @@ struct CloudLibraryPanel: View {
         let copy = item.artifact.flatMap { state.copies[$0] }
         let indicator = CloudLibraryIndicator(state: state, item: item)
         let live = state.activeItem == item && !state.queued
+        let reference = !live && !state.queued ? referenceLine(item) : nil
         let size = state.bytes(item).map(formattedBytes)
         let published = copy?.uploadedAt.map {
             L10n.format("Published %@", [$0.formatted(.relative(presentation: .named, unitsStyle: .abbreviated)
@@ -117,7 +121,7 @@ struct CloudLibraryPanel: View {
                 VStack(alignment: .leading, spacing: canvas.u(5)) {
                     Text(title).seleneFont(17, .semibold).foregroundColor(SeleneTheme.ink90)
                         .accessibilityAddTraits(.isHeader)
-                    SeleneStatusDot(text: indicator.label(context: localization), color: indicator.status.color,
+                    SeleneStatusDot(text: reference ?? indicator.label(context: localization), color: indicator.status.color,
                                     labelColor: indicator.status == .failed ? PortingPillCopy.softRed : SeleneTheme.ink90,
                                     accessibilityTitle: title,
                                     pulses: indicator.isTransferring)
@@ -130,7 +134,7 @@ struct CloudLibraryPanel: View {
                         Text(CloudLibraryProgressView.summary(state.progress, context: localization, showsPhase: false))
                             .seleneFont(13).monospacedDigit()
                             .fixedSize(horizontal: false, vertical: true)
-                    } else {
+                    } else if reference == nil {
                         if let size { Text(size).seleneFont(15).monospacedDigit() }
                         if !indicator.progress, let published {
                             Text(published).seleneFont(13)
@@ -177,6 +181,8 @@ struct CloudLibraryPanel: View {
     }
 
     private func cloudPath(_ item: CloudLibraryItem) -> String? {
+        if let kind = item.artifact, state.referenceKinds.contains(kind) { return nil }
+        if item == .sources, state.referenceSources != nil { return nil }
         let base: String, folder: String
         if let kind = item.artifact {
             guard let storage = model.preference.storage, let title = game.titleId else { return nil }
@@ -190,16 +196,32 @@ struct CloudLibraryPanel: View {
         return base + (base.hasSuffix("/") ? "" : "/") + folder + "/"
     }
 
+    private func referenceLine(_ item: CloudLibraryItem) -> String? {
+        let bytes: Int64, total: Int64, legacy: Bool
+        if let kind = item.artifact, let copy = state.referenceCopies[kind] {
+            if !copy.updatesLocal && !copy.legacy { return nil }
+            (bytes, total, legacy) = (copy.downloadBytes, copy.totalBytes, copy.legacy)
+        } else if item == .sources, let status = state.referenceSources, let changed = state.referenceSourceBytes,
+                  status.files.contains(where: { $0.localBytes != nil }) {
+            (bytes, total, legacy) = (changed, status.remoteBytes, false)
+        } else { return nil }
+        return L10n.format(legacy ? "Reference archive · Full download (%@ of %@)"
+                                 : "Update from reference · %@ of %@",
+                           [formattedBytes(bytes), formattedBytes(total)], context: localization)
+    }
+
     private func artifactControl(_ item: CloudLibraryItem) -> Control? {
         if state.activeItem == item { return .cancel }
         guard canChange else { return nil }
         guard let kind = item.artifact else {
+            if state.referenceSourceBytes != nil { return .downloadSources }
             switch state.sources?.state {
             case .notInCloud: return GameResourceState.sourcesAvailable(for: game) ? .uploadSources : nil
             case .cloudOnly: return .downloadSources
             default: return nil
             }
         }
+        if state.referenceCopies[kind] != nil { return .download(kind) }
         switch state.copies[kind]?.state {
         case .cloudOnly: return .download(kind)
         default: return state.canUpload(kind) ? .upload(kind) : nil
@@ -511,6 +533,8 @@ struct CloudLibraryIndicator {
         if queued { return .queued }
         if progress { return .pending }
         if failed { return .failed }
+        if let item, item.artifact.flatMap({ state.referenceCopies[$0] }) != nil ||
+            item == .sources && state.referenceSourceBytes != nil { return .pending }
         switch copy {
         case .synchronized: return .synchronized
         case .cloudOnly: return .pending

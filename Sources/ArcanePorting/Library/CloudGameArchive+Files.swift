@@ -3,6 +3,12 @@ import Foundation
 import NXLibraryCore
 
 extension CloudGameArchive {
+    nonisolated static func changedFiles(in tree: CloudArtifactFiles.Tree, comparedWith local: [CloudArtifactFiles.Entry])
+        -> [CloudArtifactFiles.Entry] {
+        let known = Dictionary(uniqueKeysWithValues: local.map { ($0.path, $0) })
+        return tree.entries.filter { known[$0.path] != $0 }
+    }
+
     func restoreFiles(_ tree: CloudArtifactFiles.Tree, kind: CloudArtifactKind, titleID: String,
                       destination: URL, incoming: URL, progress: Progress?, partialCache: Bool,
                       beforePartial: () throws -> Void) async throws -> URL {
@@ -42,8 +48,15 @@ extension CloudGameArchive {
             try fm.createDirectory(at: resume, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
         }
         do {
-            try await downloader.downloadFiles(pending.map(\.path), from: tree.key, to: resume,
-                progress: transfer(progress, phase: .downloading, kind: kind, total: bytes))
+            let report = transfer(progress, phase: .downloading, kind: kind, total: bytes)
+            if downloader.isReference {
+                // Fetch sidecars as plain bytes. The assembler checks the MD5 and confines link targets.
+                try await downloader.downloadFiles(pending.filter(\.isLink).map(\.path), from: tree.key, to: resume, progress: nil)
+                try await downloader.downloadFiles(pending.filter { !$0.isLink }.map(\.path), from: tree.key, to: resume,
+                                                   decodeLinks: true, progress: report)
+            } else {
+                try await downloader.downloadFiles(pending.map(\.path), from: tree.key, to: resume, progress: report)
+            }
         } catch {
             if kind == .cache && partialCache {
                 let ready = await Task.detached(priority: .utility) {

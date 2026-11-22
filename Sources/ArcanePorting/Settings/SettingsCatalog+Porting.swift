@@ -96,6 +96,7 @@ extension SettingsCatalog {
         action("cloudLibraryService", .cloudLibrary, "Cloud service", "Last connection test and recovery for Google Drive."),
         action("cloudLibraryFolder", .cloudLibrary, "Library folder", "Folder for game apps and build caches."),
         action("cloudSourcesRoot", .cloudLibrary, "Game files folder", "Choose a path on the same cloud service. No files are moved."),
+        action("cloudReferenceFolder", .cloudLibrary, "Reference library", "Follow a shared Google Drive folder in read-only mode."),
         action("cloudLibraryImport", .cloudLibrary, "Import games from the cloud", "Add missing games without downloading their apps."),
         row("showsCloudPlayIcon", .cloudLibrary, "Icon next to Play", "Show the cloud icon by the play button.") { $0.showsCloudPlayIcon },
         row("showsCloudDetailsLink", .cloudLibrary, "Link in Details", "Show the cloud library link in Details.") { $0.showsCloudDetailsLink },
