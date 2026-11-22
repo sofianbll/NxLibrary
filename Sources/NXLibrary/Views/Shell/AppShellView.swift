@@ -163,8 +163,12 @@ struct AppShellView: View {
         reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.985))
     }
 
+    /// The profile picker over the screen: Selene's Captures blur (40) under its 65 % veil.
+    static let profileOverlayBlur: CGFloat = 40
+
     var contentBlur: CGFloat {
-        !viewModel.isGameOptionsOpen && !router.route.isOverlay ? 0 : 10
+        if let flow = profileFlow, flow.page != .detail, !flow.atStartup { return Self.profileOverlayBlur }
+        return !viewModel.isGameOptionsOpen && !router.route.isOverlay ? 0 : 10
     }
 
     var currentBackdropCover: ShellBackdropCover {

@@ -170,9 +170,11 @@ import ArcanePorting
         vm.spotlight.selectedKey = SpotlightItem.game(game.id).key
         vm.profileOwnsInput = true
         try render("20-picker-over-spotlight", ZStack {
-            SeleneBackdrop().still(true)
+            // The shell blurs the screen under an overlaid picker by `profileOverlayBlur`.
+            SeleneBackdrop().still(true).blur(radius: AppShellView.profileOverlayBlur)
             SpotlightView(viewModel: vm, router: AppRouter(), settings: settings, playSessions: historyStore,
                           runningGames: RunningGameMonitor(), artwork: art, storeHost: ModStoreHost())
+                .blur(radius: AppShellView.profileOverlayBlur)
             picker(selected: profiles.active?.id, overlay: true)
         }, in: out, refs, "web/reddit-showcase-who-05s.png")
         vm.profileOwnsInput = false

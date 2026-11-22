@@ -112,6 +112,9 @@ final class BackdropViewModel {
     let viewModel = BackdropViewModel()
     let router = AppRouter()
     var showsWelcome = false
+    struct ProfileFlow { enum Page { case picker, editor, detail }; var page: Page; var atStartup = false }
+    var profileFlow: ProfileFlow?
+    static let profileOverlayBlur: CGFloat = 40
     // ACTUAL_COVER_POLICY
     // ACTUAL_COVER_PRIORITY
     // ACTUAL_BLUR_POLICY
@@ -150,6 +153,10 @@ final class BackdropViewModel {
         backdropHost.router.back(); precondition(backdropHost.blur == 0)
         backdropHost.viewModel.isGameOptionsOpen = true; precondition(backdropHost.blur == 10)
         backdropHost.viewModel.isGameOptionsOpen = false
+        backdropHost.profileFlow = .init(page: .picker); precondition(backdropHost.blur == 40)
+        backdropHost.profileFlow = .init(page: .picker, atStartup: true); precondition(backdropHost.blur == 0)
+        backdropHost.profileFlow = .init(page: .detail); precondition(backdropHost.blur == 0)
+        backdropHost.profileFlow = nil
         let originalBackdrop = backdropHost.snapshot
         let homeRequest = SeleneBackdropRequest(style: originalBackdrop)
         var stacked: SeleneBackdropRequest? = homeRequest

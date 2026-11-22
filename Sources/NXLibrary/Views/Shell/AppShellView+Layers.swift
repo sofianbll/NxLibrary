@@ -151,7 +151,7 @@ extension AppShellView {
                 .zIndex(ShellBackdropCover.themePicker.priority)
             }
             if profileFlow != nil, !showsWelcome, !viewModel.showSetupCheck {
-                profileLayer.transition(reduceMotion ? .identity : .opacity).zIndex(2.5)
+                profileLayer.transition(.opacity).zIndex(2.5)
             }
             if let game = viewModel.gameForSettingsSheet {
                 GameOptionsView(
@@ -231,7 +231,8 @@ extension AppShellView {
         .animation(reduceMotion ? nil : SeleneTheme.quick,
                    value: router.isMenuPresented)
         .animation(reduceMotion ? nil : SeleneTheme.screen, value: router.isThemePickerOpen)
-        .animation(reduceMotion ? nil : SeleneTheme.quick, value: profileFlow != nil)
+        // The veil and the blur fade in; under Reduce Motion it is a plain short fade.
+        .animation(reduceMotion ? .easeOut(duration: 0.15) : SeleneTheme.quick, value: profileFlow != nil)
         .animation(SeleneTheme.quick, value: router.isSearchPresented)
         .animation(reduceMotion ? nil : SeleneTheme.screen, value: viewModel.showSetupCheck)
         .animation(reduceMotion ? nil : SeleneTheme.screen, value: viewModel.firstRunSetup.page)
