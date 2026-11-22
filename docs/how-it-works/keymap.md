@@ -25,6 +25,7 @@ Menu apre il centro di controllo al rilascio; a 500 ms apre invece Settings, con
 | Settings / Add Game / Console | B chiude o torna al livello precedente. Menu apre il centro se nessun dialogo blocca l'input. |
 | Centro di controllo | A seleziona; B chiude un pannello o il centro. Menu corto non chiude il centro. |
 | Selettore profili | A sceglie, Menu aggiunge, Y modifica; B o Home chiude la sovrapposizione e torna al focus precedente. |
+| Editor profilo | B torna al passo precedente o esce dal primo. Dal nome Menu corto salva un profilo esistente o prosegue per un profilo nuovo. |
 | Ricerca, opzioni, Setup e dialoghi | Prendono l'input prima della schermata sottostante. Solo B/Esc torna indietro o chiude via scorciatoia. |
 
 La barra Selene usa i simboli del profilo attivo quando leggibili, poi quelli della famiglia riconosciuta; Options e touchpad possono mostrare il nome fisico. Con una manetta, Cerca è il secondo gesto di View; senza manetta la barra mostra ⌘F. Su PlayStation, Create non cambia vista. Settings → Navigation può disattivare il cambio di vista senza disattivare la ricerca.

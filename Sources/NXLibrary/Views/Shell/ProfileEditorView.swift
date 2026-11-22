@@ -7,6 +7,7 @@ import ArcanePorting
 
 struct ProfileEditorView: View {
     enum Step: Int, CaseIterable { case name, avatar, theme, background }
+    private let original: LocalProfile
     @State var profile: LocalProfile
     let games: [PortedGame]
     var avatarGames: [CatalogGame] = []
@@ -24,6 +25,9 @@ struct ProfileEditorView: View {
     @State private var cropDraft: AvatarCropDraft?
     @State private var isCropping = false
     @State private var cropTask: Task<Void, Never>?
+    @State private var discardFocus: Int?
+    @State private var discardHover = SeleneHoverFocus()
+    @State private var resumeNameFocus = false
     @FocusState private var nameFocused: Bool
     @ObservedObject private var theme = ThemeStore.shared
     @Environment(\.seleneCanvas) private var canvas
@@ -39,6 +43,21 @@ struct ProfileEditorView: View {
     private var presetCount: Int { cachedPortraits.count + ProfilePortrait.symbols.count }
     private var ownAvatar: Int { presetCount + (profile.portrait == nil ? 0 : 1) }
     private var itemCount: Int { [keys.count, ownAvatar + 1, palettes.count, wallpapers.count + 1][step.rawValue] }
+
+    init(profile: LocalProfile, games: [PortedGame], avatarGames: [CatalogGame] = [], artwork: ArtworkStore? = nil,
+         isNew: Bool, onCancel: @escaping () -> Void, onSave: @escaping (LocalProfile) -> Bool,
+         step: Step = .name, cachedPortraits: [CachedAvatar] = []) {
+        original = profile
+        _profile = State(initialValue: profile)
+        self.games = games
+        self.avatarGames = avatarGames
+        self.artwork = artwork
+        self.isNew = isNew
+        self.onCancel = onCancel
+        self.onSave = onSave
+        _step = State(initialValue: step)
+        _cachedPortraits = State(initialValue: cachedPortraits)
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -74,17 +93,16 @@ struct ProfileEditorView: View {
             .accessibilityHidden(true)
             .frame(maxHeight: .infinity, alignment: .bottom)
             .padding(.bottom, canvas.u(124))
-            SeleneHintsBar(left: step == .avatar ? [HintItem(.b, "Cancel", action: onCancel)]
-                           : [HintItem(.b, "Back", action: back), HintItem(nil, "Cancel", glyph: .close, action: onCancel)],
-                           right: [HintItem(.a, step == .avatar && index == ownAvatar ? "Your own picture"
-                            : customBackgroundSelected && customBackground == nil ? "Add a picture"
-                            : step == .background ? (isNew ? "Create profile" : "Save") : "Next", action: advance)])
+            SeleneHintsBar(left: backHints, right: editorHints)
                 .frame(maxHeight: .infinity, alignment: .bottom)
-                .accessibilityHidden(cropDraft != nil)
-                .allowsHitTesting(cropDraft == nil)
+                .seleneOverlayOwnership(cropDraft == nil)
             if let cropDraft { cropPanel(cropDraft) }
         }
         .foregroundStyle(SeleneTheme.ink)
+        .seleneOverlayOwnership(discardFocus == nil)
+        .overlay {
+            if discardFocus != nil { discardDialog }
+        }
         .onAppear {
             indexes[Step.avatar.rawValue] = profile.portrait == nil ? profile.avatar : presetCount
             indexes[Step.theme.rawValue] = palettes.firstIndex { $0.id == profile.look.theme } ?? 0
@@ -104,6 +122,40 @@ struct ProfileEditorView: View {
         .onReceive(NotificationCenter.default.publisher(for: .nxProfileInput)) { note in
             if let action = note.object as? GamepadAction { handle(action) }
         }
+    }
+
+    private var discardDialog: some View {
+        let focus = Binding(get: { discardFocus ?? 1 }, set: { choice in
+            if discardHover.moved(true) { discardFocus = choice }
+        })
+        return SeleneOverlay(style: .profileRemoval, onOutside: keepEditing) {
+            SeleneChoiceDialog(title: "Discard changes?", message: L10n.text("Your profile changes won’t be saved."),
+                               choices: ["Discard", "Keep editing"], focus: focus, cancelIndex: 1,
+                               onChoose: chooseDiscardAction)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .overlay(alignment: .bottom) {
+                    SeleneHintsBar(left: [HintItem(.b, "Back", action: keepEditing)],
+                                   right: [HintItem(.a, "Select", action: confirmDiscardChoice)])
+                }
+        }
+    }
+
+    private var backHints: [HintItem] {
+        [HintItem(.b, "Back", action: back), HintItem(nil, "Cancel", glyph: .close, action: requestCancel)]
+    }
+
+    private var editorHints: [HintItem] {
+        let label = switch step {
+        case .name: "Select"
+        case .avatar: index == ownAvatar ? "Your own picture" : "Next"
+        case .theme: "Next"
+        case .background: customBackgroundSelected && customBackground == nil ? "Add a picture" : isNew ? "Create profile" : "Save"
+        }
+        let select = HintItem(.a, label, action: accept)
+        if step == .name && !isNew {
+            return [HintItem(.menu, "Save", keyboard: .text("+"), action: { handle(.menu) }), select]
+        }
+        return [select]
     }
 
     private var title: String {
@@ -134,7 +186,7 @@ struct ProfileEditorView: View {
                 .background(Capsule().fill(SeleneTheme.ink.opacity(0.10)))
                 .overlay(Capsule().strokeBorder(SeleneTheme.focus, lineWidth: canvas.u(2)))
                 .focused($nameFocused)
-                .onSubmit(advance)
+                .onSubmit { advance() }
             VStack(spacing: canvas.u(9)) {
                 ForEach(keyRows, id: \.lowerBound) { row in
                     HStack(spacing: canvas.u(9)) {
@@ -163,7 +215,7 @@ struct ProfileEditorView: View {
         .background(RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.card)).fill(SeleneTheme.glass))
         .overlay(RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.card)).strokeBorder(SeleneTheme.ink15, lineWidth: canvas.u(1)))
         .overlay(alignment: .topTrailing) {
-            if item > 39 {
+            if item > 39 && (item != 42 || isNew) {
                 SelenePromptBadge(button: item == 40 ? .y : item == 41 ? .x : .menu, height: 22,
                                   keyboardOverride: item == 42 ? .symbol("return") : nil)
                     .padding(canvas.u(5)).accessibilityHidden(true)
@@ -320,6 +372,16 @@ struct ProfileEditorView: View {
     }
 
     private func handle(_ action: GamepadAction) {
+        if discardFocus != nil {
+            switch action {
+            case .navigateLeft: discardFocus = 0
+            case .navigateRight: discardFocus = 1
+            case .confirm: confirmDiscardChoice()
+            case .cancel: keepEditing()
+            default: break
+            }
+            return
+        }
         if cropDraft != nil { handleCrop(action); return }
         switch action {
         case .navigateLeft, .navigateRight, .navigateUp, .navigateDown:
@@ -347,9 +409,9 @@ struct ProfileEditorView: View {
             nameFocused = false
             indexes[step.rawValue] = next
         case .confirm: accept()
-        case .cancel: if step == .avatar { onCancel() } else { back() }
-        case .menu: advance()
-        case .menuHold: onCancel()
+        case .cancel: back()
+        case .menu: advance(saveOnName: !isNew)
+        case .menuHold: requestCancel()
         case .secondaryAction where step == .name: selectKey(keys.count - 2)
         case .contextAction where step == .name: selectKey(keys.count - 3)
         default: break
@@ -368,13 +430,15 @@ struct ProfileEditorView: View {
         }
     }
 
-    private func advance() {
+    private func advance(saveOnName: Bool = false) {
         error = nil
         switch step {
         case .name:
-            profile.name = profile.name.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !profile.name.isEmpty && profile.name.count <= 32 else { error = "Enter a name of 1 to 32 characters."; return }
+            let name = profile.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty && name.count <= 32 else { error = "Enter a name of 1 to 32 characters."; return }
+            profile.name = name
             nameFocused = false
+            if saveOnName { save(); return }
         case .avatar:
             if index < cachedPortraits.count {
                 profile.portrait = cachedPortraits[index].image
@@ -406,7 +470,7 @@ struct ProfileEditorView: View {
             } else {
                 profile.look.wallpaper = wallpapers[index]
             }
-            if !onSave(profile) { error = "Profiles could not be saved." }
+            save()
             return
         }
         if let next = Step(rawValue: step.rawValue + 1) { step = next }
@@ -416,8 +480,30 @@ struct ProfileEditorView: View {
         error = nil
         if nameFocused { nameFocused = false; return }
         if let previous = Step(rawValue: step.rawValue - 1) { step = previous }
-        else { onCancel() }
+        else { requestCancel() }
     }
+
+    private func save() {
+        if !onSave(profile) { error = "Profiles could not be saved." }
+    }
+
+    private func requestCancel() {
+        let hasCustomBackground = customBackground != nil && indexes[Step.background.rawValue] == wallpapers.count
+        guard profile != original || hasCustomBackground else { onCancel(); return }
+        resumeNameFocus = nameFocused
+        nameFocused = false
+        discardHover = SeleneHoverFocus()
+        discardFocus = 1
+    }
+
+    private func keepEditing() {
+        discardFocus = nil
+        if resumeNameFocus { nameFocused = true }
+    }
+
+    private func confirmDiscardChoice() { if let discardFocus { chooseDiscardAction(discardFocus) } }
+
+    private func chooseDiscardAction(_ index: Int) { if index == 0 { onCancel() } else { keepEditing() } }
 
     private func selectKey(_ item: Int) {
         let key = keys[item]

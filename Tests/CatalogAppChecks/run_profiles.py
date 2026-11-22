@@ -36,6 +36,8 @@ import ArcanePorting
         let game = PortedGame(name: "Lunar Observatory", url: data.appendingPathComponent("Fixture.app"),
                               platform: .macApp, sizeBytes: 0, modificationDate: .now, titleId: "0100000000001000")
         let slate = LocalProfile(name: "", look: alex.look)
+        ProfileEditorView.checkInput(existing: sam, new: slate)
+        print("Profile editor input checks passed")
         let avatarGames = (0..<7).map { index -> CatalogGame in
             var item = game
             item.id = UUID()
@@ -84,11 +86,20 @@ import ArcanePorting
         }
         let french = AppLocale(language: .french, region: "FR")
         L10n.setContext(french)
+        try render("03-wizard-edit-name", ZStack {
+            SeleneBackdrop().still(true)
+            ProfileEditorView(profile: sam, games: [game], isNew: false, onCancel: {}, onSave: { _ in true })
+        }.environment(\.nxAppLocale, french), in: out, refs, "none")
         try render("04-wizard-avatar", ZStack {
             SeleneBackdrop().still(true)
             ProfileEditorView(profile: slate, games: [game], isNew: true, onCancel: {}, onSave: { _ in true },
                               step: .avatar, cachedPortraits: cachedPortraits)
         }.environment(\.nxAppLocale, french), in: out, refs, "web/182-12.png", reduced: false)
+        try render("04-wizard-discard", ZStack {
+            SeleneBackdrop().still(true)
+            ProfileEditorView(profile: sam, games: [game], isNew: false, onCancel: {}, onSave: { _ in true },
+                              step: .avatar, cachedPortraits: cachedPortraits).discardFixture()
+        }.environment(\.nxAppLocale, french), in: out, refs, "none")
         L10n.setContext(.init(language: .english, region: "US"))
         let current = LibrarySort.recent
         let history = [ProfileRecentGame(id: game.id, name: game.name,
@@ -667,6 +678,111 @@ import ArcanePorting
 }
 '''
 
+EDITOR_TEST = r'''
+extension ProfileEditorView {
+    @MainActor static var inspectFixture: ((Self) -> Void)?
+
+    func discardFixture() -> Self {
+        var view = self
+        view._discardFocus = State(initialValue: 1)
+        return view
+    }
+
+    @MainActor static func checkInput(existing: LocalProfile, new: LocalProfile) {
+        NSApplication.shared.setActivationPolicy(.prohibited)
+        var editor: Self?
+        var cancelled = 0
+        var saves: [LocalProfile] = []
+        var canSave = true
+        inspectFixture = { editor = $0 }
+        defer { inspectFixture = nil }
+
+        func check(_ profile: LocalProfile, step: Step = .name, _ actions: () -> Void) {
+            editor = nil
+            let view = Self(profile: profile, games: [], isNew: profile.id == new.id,
+                            onCancel: { cancelled += 1 }, onSave: { saves.append($0); return canSave }, step: step)
+            let host = NSHostingView(rootView: AnyView(view.frame(width: 1440, height: 810)))
+            host.frame = CGRect(x: 0, y: 0, width: 1440, height: 810)
+            func settle() {
+                for _ in 0..<10 {
+                    _ = host.fittingSize
+                    host.layoutSubtreeIfNeeded()
+                    RunLoop.main.run(until: Date().addingTimeInterval(0.01))
+                }
+            }
+            settle()
+            precondition(editor != nil, "Offscreen hosting did not mount the profile editor")
+            actions()
+            precondition(host.window == nil)
+            host.rootView = AnyView(EmptyView())
+            settle()
+        }
+
+        func press(_ action: GamepadAction) {
+            NotificationCenter.default.post(name: .nxProfileInput, object: action)
+        }
+        func close() { editor!.backHints.first { $0.glyph == .close }!.action!() }
+
+        check(new) {
+            close()
+            precondition(cancelled == 1 && editor!.discardFocus == nil)
+        }
+        check(new) {
+            press(.confirm)
+            let name = editor!.profile.name
+            precondition(!name.isEmpty, "Synthetic confirm must reach the editor")
+            press(.menu)
+            precondition(editor!.step == .avatar && saves.isEmpty)
+            press(.cancel)
+            precondition(editor!.step == .name && editor!.profile.name == name && cancelled == 1)
+            press(.cancel)
+            precondition(editor!.discardFocus == 1 && cancelled == 1)
+            press(.confirm)
+            precondition(editor!.discardFocus == nil && cancelled == 1)
+        }
+        check(existing) {
+            press(.confirm)
+            let draft = editor!.profile
+            editor!.selectKey(editor!.keys.count - 1) // Done continues editing instead of saving.
+            precondition(editor!.step == .avatar && editor!.profile == draft)
+            close()
+            precondition(editor!.discardFocus == 1 && cancelled == 1)
+            press(.menu)
+            press(.cancel)
+            precondition(editor!.discardFocus == nil && editor!.step == .avatar && editor!.profile == draft)
+            close()
+            press(.navigateLeft)
+            press(.confirm)
+            precondition(cancelled == 2 && saves.isEmpty)
+        }
+        check(existing, step: .background) {
+            editor!.customBackground = AppData.supportRoot.appendingPathComponent("fixture-wallpaper.png")
+            editor!.indexes[Step.background.rawValue] = editor!.wallpapers.count
+            close()
+            precondition(editor!.discardFocus == 1 && cancelled == 2)
+            press(.cancel)
+            editor!.indexes[Step.background.rawValue] = 0
+            close()
+            precondition(cancelled == 3 && editor!.discardFocus == nil)
+        }
+        check(existing) {
+            editor!.profile.name = "   "
+            press(.menu)
+            precondition(editor!.step == .name && saves.isEmpty && editor!.error != nil)
+            editor!.profile.name = "  Nova  "
+            canSave = false
+            press(.menu)
+            precondition(editor!.step == .name && editor!.error == "Profiles could not be saved.")
+            var expected = existing
+            expected.name = "Nova"
+            canSave = true
+            press(.menu)
+            precondition(editor!.step == .name && saves == [expected, expected] && editor!.error == nil)
+        }
+    }
+}
+'''
+
 
 def replace(file, old, new):
     original = file.read_text()
@@ -754,9 +870,13 @@ def main():
         editor = app / "Views/Shell/ProfileEditorView.swift"
         replace(editor, r'TextField\(L10n.text\("Name"\), text: \$profile.name\)\n                \.textFieldStyle\(\.plain\)',
                 'Text(verbatim: profile.name)')
-        replace(editor, r'\n                \.focused\(\$nameFocused\)\n                \.onSubmit\(advance\)', '')
+        replace(editor, r'\n                \.focused\(\$nameFocused\)\n                \.onSubmit \{ advance\(\) \}', '')
         replace(editor, r'            ScrollViewReader \{ scroll in\n                ScrollView \{(.*?)\n                }\n                \.scrollIndicators\(\.hidden\)(.*?)\n                \.onChange\(of: index\).*?\n            }',
                 lambda m: f"            Group {{{m[1]}\n            }}{m[2]}")
+        # Observe the mounted editor's state without adding any test hooks to Arcane.
+        replace(editor, r"    var body: some View \{\n", "    var body: some View {\n        let _ = Self.inspectFixture?(self)\n")
+        with editor.open("a") as swift:
+            swift.write(EDITOR_TEST)
         page = app / "Views/Shell/LocalProfilePage.swift"
         replace(page, r'            ScrollViewReader \{ proxy in\n                ScrollView \{', '            Group {\n                Group {')
         replace(page, r'                \.onChange\(of: row\) \{ _, value in\n.*?\n                }', '')
