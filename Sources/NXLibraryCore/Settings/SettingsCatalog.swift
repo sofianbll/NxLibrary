@@ -23,7 +23,7 @@ public struct SettingDescriptor: Identifiable {
 /// with the Porting rows, is `SettingsCatalog.all` (`SettingsCatalog+Porting.swift`).
 public enum SettingsCatalog {
     package static let defaults = AppSettings()
-    public static let remotePlayHelp = "Play in Local communication or LAN mode with a friend outside your home. Online play (Nextendo) is not affected."
+    public static let remotePlayHelp = "Use ZeroTier in Local communication, LAN, or Automatic with VPN on. Nextendo is not affected."
 
     package static func row<Value: Equatable>(_ id: String, _ group: SettingsSection, _ title: String,
                                       _ about: String,

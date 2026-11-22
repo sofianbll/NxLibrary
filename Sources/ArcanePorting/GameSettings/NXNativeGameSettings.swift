@@ -118,10 +118,15 @@ public struct NXNativeGameSettings {
         let networkKey = NextendoLaunch.networkKey
         guard mode == .automatic, adapters.zeroTier.count == 1, let name = adapters.zeroTier.first,
               setting(Self.remotePlayKey)?.accepts("1") == true,
-              let network = explicitLaunchValue(networkKey, environment: environment) ?? setting(networkKey)?.defaultValue,
-              network == "ldn" || network == "lan",
-              explicitLaunchValue(Self.remotePlayKey, environment: environment, includeDisabledChoices: true) == nil,
               explicitLaunchValue(Self.interfaceKey, environment: environment, includeDisabledChoices: true) == nil
+        else { return nil }
+        let network = explicitLaunchValue(networkKey, environment: environment) ?? setting(networkKey)?.defaultValue
+        if network == "auto" {
+            guard effectiveLaunchValue(Self.remotePlayKey, environment: environment) == "1" else { return nil }
+            return [Self.interfaceKey: name]
+        }
+        guard network == "ldn" || network == "lan",
+              explicitLaunchValue(Self.remotePlayKey, environment: environment, includeDisabledChoices: true) == nil
         else { return nil }
         return [Self.remotePlayKey: "1", Self.interfaceKey: name]
     }

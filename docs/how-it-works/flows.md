@@ -97,7 +97,7 @@ flowchart TD
     J --> K["Dopo la chiusura: icone, installazioni in attesa"]
 ```
 
-Subito prima del lancio, con rete LDN o LAN e una build che offre VPN, Gioco a distanza automatico passa `DM_NET_VPN=1` e `DM_NETWORK_INTERFACE=<nome>` solo se trova una sola interfaccia ZeroTier attiva con IPv4 non link-local. Le altre VPN non contano. Se una delle due chiavi è già impostata nell'ambiente, in un `env.txt` o nelle scelte del gioco, Arcane non aggiunge nulla. Il lancio non salva questa scelta e non modifica Nextendo.
+Subito prima del lancio, Gioco a distanza automatico usa una sola interfaccia ZeroTier attiva con IPv4 non link-local. In LDN o LAN Arcane propone VPN e interfaccia se nessuna delle due è esplicita. Con rete Automatica, VPN deve essere già attiva: Arcane aggiunge solo l'interfaccia, se non è già impostata. Il lancio non salva questa scelta e non modifica Nextendo.
 
 ## 4. Play di un gioco Steam
 

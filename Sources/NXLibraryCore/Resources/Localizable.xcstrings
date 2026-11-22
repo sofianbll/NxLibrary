@@ -1189,15 +1189,15 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "通过 ZeroTier 远程游玩"}}
       }
     },
-    "Play in Local communication or LAN mode with a friend outside your home. Online play (Nextendo) is not affected.": {
+    "Use ZeroTier in Local communication, LAN, or Automatic with VPN on. Nextendo is not affected.": {
       "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "Play in Local communication or LAN mode with a friend outside your home. Online play (Nextendo) is not affected."}},
-        "it": {"stringUnit": {"state": "translated", "value": "Per giocare in Comunicazione locale o in Modalità LAN con un amico fuori casa. La modalità Online (Nextendo) non cambia."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Pour jouer en Communication locale ou en Mode LAN avec un ami hors de chez toi. Le mode En ligne (Nextendo) n’est pas concerné."}},
-        "de": {"stringUnit": {"state": "translated", "value": "Spiele per lokaler Kommunikation oder im LAN-Modus mit jemandem außerhalb deines Heimnetzes. Der Online-Modus (Nextendo) bleibt unverändert."}},
-        "es": {"stringUnit": {"state": "translated", "value": "Juega mediante comunicación local o en modo LAN con un amigo fuera de casa. El modo en línea (Nextendo) no cambia."}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Jogue por comunicação local ou no modo LAN com um amigo fora de casa. O modo on-line (Nextendo) não muda."}},
-        "zh-Hans": {"stringUnit": {"state": "translated", "value": "通过本地通信或 LAN 模式与家以外的好友游玩。不影响联机游玩（Nextendo）。"}}
+        "en": {"stringUnit": {"state": "translated", "value": "Use ZeroTier in Local communication, LAN, or Automatic with VPN on. Nextendo is not affected."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Usa ZeroTier in Comunicazione locale, in LAN o in Automatico con VPN attiva. Nextendo non cambia."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Utilise ZeroTier en Communication locale, en LAN ou en Automatique si le VPN est activé. Nextendo ne change pas."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Nutze ZeroTier für lokale Kommunikation, LAN oder Automatisch mit aktivem VPN. Nextendo bleibt unverändert."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Usa ZeroTier en Comunicación local, LAN o Automático con la VPN activada. Nextendo no cambia."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Use ZeroTier em Comunicação local, LAN ou Automático com VPN ativada. O Nextendo não muda."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "在本地通信、LAN 或已开启 VPN 的自动模式下使用 ZeroTier。不影响 Nextendo。"}}
       }
     },
     "ZeroTier": {
