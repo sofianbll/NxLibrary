@@ -2,6 +2,8 @@ import SwiftUI
 import NXLibraryCore
 
 struct SettingsSectionContent: View {
+    @Environment(\.seleneFocusedRowID) private var focusedRowID
+    @Environment(\.seleneFocusedButton) private var focusedButton
     let section: SettingsSection
     @ObservedObject var viewModel: AppViewModel
     @ObservedObject var settings: AppSettingsStore
@@ -11,6 +13,7 @@ struct SettingsSectionContent: View {
     let profileNextendo: NextendoSettings?
     let onEditProfileName: () -> Void
     let onProfilePIN: () -> Void
+    let onRemovePIN: () -> Void
     let onViewControls: () -> Void
     let onChooseLanguage: () -> Void
     let onChooseRegion: () -> Void
@@ -51,11 +54,18 @@ struct SettingsSectionContent: View {
             }
         case .profileSecurity:
             if let profile = activeProfile, viewModel.localProfiles?.guest == nil {
-                SeleneButtonRow("Profile lock", subtitle: "Use four digits.",
-                                buttonTitle: profile.isLocked ? "Remove code" : "Set code", action: onProfilePIN)
-                    .onAppear {
-                        onActions([.init(id: "profileLock", title: "Profile lock", rowID: "Profile lock", activate: onProfilePIN)])
+                let focused = focusedRowID == "Profile lock"
+                SeleneRow("Profile lock", subtitle: "Use four digits.") {
+                    SelenePillButton(title: profile.isLocked ? "Change code" : "Set code",
+                                     focused: focused && focusedButton == 0, action: onProfilePIN)
+                    if profile.isLocked {
+                        SelenePillButton(title: "Remove code", focused: focused && focusedButton == 1, action: onRemovePIN)
                     }
+                }
+                .onChange(of: profile.isLocked, initial: true) { _, locked in
+                    onActions([.init(id: "profileLock", title: "Profile lock",
+                                     secondary: locked ? ("Remove code", onRemovePIN) : nil, activate: onProfilePIN)])
+                }
             }
         case .profileNextendo:
             if let profiles = viewModel.localProfiles, let profile = activeProfile, let profileNextendo {

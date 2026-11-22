@@ -42,6 +42,7 @@ public enum SeleneTokens {
         public static let section: CGFloat = 32
         public static let group: CGFloat = 48
         public static let actionPillHeight: CGFloat = 54
+        public static let profileKeypadKey: CGFloat = 80
         public static let chromeGutter: CGFloat = 64
         public static let settingsHintsClearance: CGFloat = 100
         public static let settingsInfoClearance: CGFloat = 60

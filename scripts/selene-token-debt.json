@@ -106,8 +106,7 @@
   },
   "Sources/NXLibrary/Views/Components/SelenePillButton.swift": {
     ".padding(.leading,canvas.u(-4": 1,
-    ".padding(.top,canvas.u(6": 1,
-    ".seleneFont(21": 1
+    ".padding(.top,canvas.u(6": 1
   },
   "Sources/NXLibrary/Views/Components/SeleneSettingsRow.swift": {
     ".padding(.horizontal,12": 1,

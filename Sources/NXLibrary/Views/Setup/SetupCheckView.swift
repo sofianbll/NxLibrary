@@ -48,7 +48,7 @@ struct SetupCheckView: View {
                 panel.padding(.top, canvas.u(22))
                 buttons.padding(.top, canvas.u(20))
             }
-            .modifier(Shake(amount: CGFloat(shakes)))
+            .modifier(SeleneShake(amount: CGFloat(shakes), distance: 8))
             .offset(y: canvas.u(-20))
             VStack {
                 Spacer(minLength: 0)
@@ -345,17 +345,5 @@ private struct SetupProgressBar: View {
             }
             .clipShape(Capsule())
         }
-    }
-}
-
-/// Selene's Ui.Shake: a short side-to-side when B or A has nothing to do.
-private struct Shake: GeometryEffect {
-    var amount: CGFloat
-    var animatableData: CGFloat {
-        get { amount }
-        set { amount = newValue }
-    }
-    func effectValue(size: CGSize) -> ProjectionTransform {
-        ProjectionTransform(CGAffineTransform(translationX: 8 * sin(amount * .pi * 4), y: 0))
     }
 }

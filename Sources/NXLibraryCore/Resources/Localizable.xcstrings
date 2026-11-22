@@ -265,6 +265,18 @@
     "Remove code": {"localizations": {
       "en": {"stringUnit":{"state":"translated","value":"Remove code"}}, "it": {"stringUnit":{"state":"translated","value":"Rimuovi codice"}}, "fr": {"stringUnit":{"state":"translated","value":"Retirer le code"}}, "de": {"stringUnit":{"state":"translated","value":"Code entfernen"}}, "es": {"stringUnit":{"state":"translated","value":"Quitar código"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Remover código"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"移除密码"}}
     }},
+    "Change code": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Change code"}}, "it": {"stringUnit":{"state":"translated","value":"Cambia codice"}}, "fr": {"stringUnit":{"state":"translated","value":"Changer le code"}}, "de": {"stringUnit":{"state":"translated","value":"Code ändern"}}, "es": {"stringUnit":{"state":"translated","value":"Cambiar código"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Alterar código"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"更改密码"}}
+    }},
+    "Enter current profile code": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Enter current profile code"}}, "it": {"stringUnit":{"state":"translated","value":"Inserisci il codice attuale del profilo"}}, "fr": {"stringUnit":{"state":"translated","value":"Saisir le code actuel du profil"}}, "de": {"stringUnit":{"state":"translated","value":"Aktuellen Profilcode eingeben"}}, "es": {"stringUnit":{"state":"translated","value":"Introduce el código actual del perfil"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Digite o código atual do perfil"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"输入当前的个人资料密码"}}
+    }},
+    "Validate": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Validate"}}, "it": {"stringUnit":{"state":"translated","value":"Conferma"}}, "fr": {"stringUnit":{"state":"translated","value":"Valider"}}, "de": {"stringUnit":{"state":"translated","value":"Bestätigen"}}, "es": {"stringUnit":{"state":"translated","value":"Validar"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Validar"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"确认"}}
+    }},
+    "%lld of %lld digits entered": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"%lld of %lld digits entered"}}, "it": {"stringUnit":{"state":"translated","value":"%lld cifre inserite su %lld"}}, "fr": {"stringUnit":{"state":"translated","value":"%lld chiffres saisis sur %lld"}}, "de": {"stringUnit":{"state":"translated","value":"%lld von %lld Ziffern eingegeben"}}, "es": {"stringUnit":{"state":"translated","value":"%lld de %lld dígitos introducidos"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"%lld de %lld dígitos digitados"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"已输入 %lld 位数字，共 %lld 位"}}
+    }},
     "Set profile code": {"localizations": {
       "en": {"stringUnit":{"state":"translated","value":"Set profile code"}}, "it": {"stringUnit":{"state":"translated","value":"Imposta codice del profilo"}}, "fr": {"stringUnit":{"state":"translated","value":"Définir le code du profil"}}, "de": {"stringUnit":{"state":"translated","value":"Profilcode festlegen"}}, "es": {"stringUnit":{"state":"translated","value":"Configurar el código del perfil"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Definir código do perfil"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"设置个人资料密码"}}
     }},

@@ -204,9 +204,13 @@ extension AppShellView {
                 && !viewModel.isGameOptionsOpen && !router.isSearchPresented
                 && !router.isScreenshotViewerOpen && router.activityCenterFocus == nil
                 && !router.isThemePickerOpen {
-                MenuHoldIndicator()
-                    .frame(maxHeight: .infinity, alignment: .bottom)
-                    .zIndex(5)
+                switch router.route {
+                case .settings: EmptyView()
+                default:
+                    MenuHoldIndicator()
+                        .frame(maxHeight: .infinity, alignment: .bottom)
+                        .zIndex(5)
+                }
             }
         }
         .onPreferenceChange(SeleneBackdropRequestKey.self, perform: updateSharedBackdrop)

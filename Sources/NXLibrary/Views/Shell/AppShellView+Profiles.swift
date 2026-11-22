@@ -39,6 +39,7 @@ extension EnvironmentValues {
 
 extension Notification.Name {
     static let nxProfileInput = Self("NXProfileInput")
+    static let nxSettingsPINInput = Self("NXSettingsPINInput")
     static let nxOpenLocalProfile = Self("NXOpenLocalProfile")
     static let nxToggleProfilePicker = Self("NXToggleProfilePicker")
 }
@@ -248,6 +249,9 @@ extension AppShellView {
     }
 
     func profileKey(_ event: NSEvent) -> NSEvent? {
+        if profileFlow?.change?.step == .unlock {
+            return ProfilePINDialog.handleKey(event, input: .nxProfileInput)
+        }
         let key = event.charactersIgnoringModifiers?.lowercased()
         let typing = event.window?.firstResponder is NSText
         if typing && event.keyCode != 53 { return event }
@@ -268,10 +272,6 @@ extension AppShellView {
             action = profileFlow == nil && router.route == .profile
                 ? (previous ? .tabPrevious : .tabNext) : (previous ? .navigateLeft : .navigateRight)
         default:
-            if let key, key.utf8.count == 1, let digit = Int(key), !event.isARepeat {
-                NotificationCenter.default.post(name: .nxProfileInput, object: digit)
-                return nil
-            }
             switch key {
             case "x": action = .secondaryAction
             case "y": action = .contextAction
@@ -332,14 +332,19 @@ struct ProfileSwitchDialog: View {
 struct ProfilePINDialog: View {
     let title: String
     var allowsTouchID = false
+    var input: Notification.Name = .nxProfileInput
     let onCancel: () -> Void
     var onTouchID: (() -> Void)?
     /// nil closes or advances the caller's flow; an error keeps the keypad open.
     let onPIN: (String) -> String?
     @Environment(\.seleneCanvas) private var canvas
-    @State private var digits = ""
-    @State private var selected = 0
+    @Environment(\.nxAppLocale) private var localization
+    @Environment(\.seleneReduceMotion) private var reduceMotion
+    @Environment(\.seleneHintsCovered) private var covered
+    @State private var keypad = ProfileKeypad()
+    @State private var hover = SeleneHoverFocus()
     @State private var error: String?
+    @State private var shakes = 0
     @State private var biometric = LAContext()
     @State private var canUseTouchID = false
     @State private var authenticating = false
@@ -347,22 +352,28 @@ struct ProfilePINDialog: View {
 
     var body: some View {
         VStack(spacing: canvas.u(SeleneTokens.Space.control)) {
-            Label(L10n.text(title), systemImage: "lock.fill")
+            Label(L10n.text(title, context: localization), systemImage: "lock.fill")
                 .seleneFont(.dialogTitle, .semibold)
                 .accessibilityAddTraits(.isHeader)
-            Text(L10n.text(error ?? "Use four digits."))
+            Text(L10n.text(error ?? "Use four digits.", context: localization))
                 .seleneFont(.panelBody).foregroundStyle(error == nil ? SeleneTheme.ink75 : SeleneTheme.danger)
             HStack(spacing: canvas.u(SeleneTokens.Space.medium)) {
                 ForEach(0..<LocalProfile.pinLength, id: \.self) { index in
-                    Image(systemName: index < digits.count ? "circle.fill" : "circle")
+                    Image(systemName: index < keypad.count ? "circle.fill" : "circle")
+                        .seleneFont(.caption)
                 }
             }
-            .accessibilityHidden(true)
-            HStack(spacing: canvas.u(SeleneTokens.Space.hairline)) {
-                ForEach(0..<10, id: \.self) { digit in
-                    SelenePillButton(title: String(digit), minWidth: 0, horizontalPadding: SeleneTokens.Space.small,
-                                     focused: selected == digit) { enter(digit) }
-                        .onHover { if $0 { selected = digit } }
+            .foregroundStyle(error == nil ? SeleneTheme.ink : SeleneTheme.danger)
+            .modifier(SeleneShake(amount: reduceMotion ? 0 : CGFloat(shakes),
+                                  distance: canvas.u(SeleneTokens.Space.compact)))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(L10n.format("%lld of %lld digits entered", [keypad.count, LocalProfile.pinLength],
+                                           context: localization))
+            VStack(spacing: canvas.u(SeleneTokens.Space.small)) {
+                ForEach(ProfileKeypad.rows.indices, id: \.self) { row in
+                    HStack(spacing: canvas.u(SeleneTokens.Space.small)) {
+                        ForEach(ProfileKeypad.rows[row], id: \.self, content: key)
+                    }
                 }
             }
             if canUseTouchID {
@@ -373,9 +384,10 @@ struct ProfilePINDialog: View {
         .modifier(SeleneDialogCard(width: nil))
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottom) {
-            SeleneHintsBar(left: [HintItem(.b, "Cancel", action: onCancel), HintItem(.x, "Delete", action: erase)],
+            SeleneHintsBar(left: [HintItem(.b, "Cancel", action: onCancel), HintItem(.x, "Erase") { press(.erase) }],
                            right: (canUseTouchID ? [HintItem(.y, "Touch ID", action: authenticate)] : [])
-                            + [HintItem(.a, "Select", action: { enter(selected) })])
+                            + [HintItem(.navigate, "Move"), HintItem(.a, "Select") { press(keypad.selected) },
+                               HintItem(.menu, "Validate", keyboard: .text("⌘↵")) { press(.validate) }])
         }
         .onAppear {
             if allowsTouchID {
@@ -384,13 +396,17 @@ struct ProfilePINDialog: View {
             }
         }
         .onDisappear { biometricTask?.cancel(); biometric.invalidate() }
-        .onReceive(NotificationCenter.default.publisher(for: .nxProfileInput)) { note in
-            if let digit = note.object as? Int { enter(digit); return }
+        .onReceive(NotificationCenter.default.publisher(for: input)) { note in
+            guard !covered else { return }
+            if let digit = note.object as? Int { press(.digit(digit)); return }
             switch note.object as? GamepadAction {
-            case .navigateLeft, .navigateDown: selected = (selected + 9) % 10
-            case .navigateRight, .navigateUp: selected = (selected + 1) % 10
-            case .confirm: enter(selected)
-            case .secondaryAction: erase()
+            case .navigateLeft: keypad.move(.left)
+            case .navigateRight: keypad.move(.right)
+            case .navigateUp: keypad.move(.up)
+            case .navigateDown: keypad.move(.down)
+            case .confirm: press(keypad.selected)
+            case .menu, .menuHold: press(.validate)
+            case .secondaryAction: press(.erase)
             case .contextAction: authenticate()
             case .cancel: onCancel()
             default: break
@@ -398,18 +414,75 @@ struct ProfilePINDialog: View {
         }
     }
 
-    private func enter(_ digit: Int) {
-        guard !authenticating, (0...9).contains(digit) else { return }
-        error = nil
-        digits.append(String(digit))
-        if digits.count == LocalProfile.pinLength {
-            let pin = digits
-            digits = ""
+    private func key(_ key: ProfileKeypad.Key) -> some View {
+        let title: String?
+        let icon: MaterialIcon?
+        let label: String
+        switch key {
+        case .digit(let digit): title = String(digit); icon = nil; label = String(digit)
+        case .erase: title = nil; icon = .backspace; label = "Erase"
+        case .validate: title = nil; icon = .done; label = "Validate"
+        }
+        let enabled = !authenticating && (key != .validate || keypad.canValidate)
+        let size = SeleneTokens.Space.profileKeypadKey
+        return SelenePillButton(title: title, icon: icon, iconSize: SeleneTokens.Text.title.rawValue, minWidth: size,
+                               height: size, titleSize: .title, horizontalPadding: 0, focused: keypad.selected == key,
+                               fillsOnFocus: false, scalesOnFocus: false, enabled: enabled, tint: .white) {
+            keypad.focus(key)
+            press(key)
+        }
+        .disabled(!enabled)
+        .accessibilityLabel(L10n.text(label, context: localization))
+        .accessibilityAddTraits(keypad.selected == key ? .isSelected : [])
+        .onHover { if hover.moved($0) { keypad.focus(key) } }
+    }
+
+    private func press(_ key: ProfileKeypad.Key) {
+        guard !authenticating else { return }
+        let previousCount = keypad.count
+        if let pin = keypad.press(key) {
             error = onPIN(pin)
+            if error != nil {
+                keypad.focus(.digit(1))
+                if !reduceMotion { withAnimation(.linear(duration: 0.3)) { shakes += 1 } }
+            }
+        } else if keypad.count != previousCount {
+            error = nil
         }
     }
 
-    private func erase() { if !digits.isEmpty { digits.removeLast() } }
+    /// Both callers give the same keys to the keypad; the rest of each screen is suspended.
+    static func handleKey(_ event: NSEvent, input: Notification.Name) -> NSEvent? {
+        let modifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
+        let key = event.charactersIgnoringModifiers?.lowercased()
+        let action: GamepadAction
+        if modifiers == [.command], [36, 76].contains(event.keyCode) {
+            action = .menu
+        } else {
+            guard modifiers.subtracting(.shift).isEmpty else { return event }
+            switch (event.keyCode, key) {
+            case (123, _): action = .navigateLeft
+            case (124, _): action = .navigateRight
+            case (125, _): action = .navigateDown
+            case (126, _): action = .navigateUp
+            case (36, _), (49, _), (76, _): action = .confirm
+            case (48, _): action = modifiers.contains(.shift) ? .navigateLeft : .navigateRight
+            case (53, _): action = .cancel
+            case (51, _), (117, _), (_, "x"): action = .secondaryAction
+            case (_, "y"): action = .contextAction
+            default:
+                if let key, key.utf8.count == 1, let digit = Int(key) {
+                    if !event.isARepeat { NotificationCenter.default.post(name: input, object: digit) }
+                    return nil
+                }
+                return event
+            }
+        }
+        if !event.isARepeat || [.navigateLeft, .navigateRight, .navigateUp, .navigateDown].contains(action) {
+            NotificationCenter.default.post(name: input, object: action)
+        }
+        return nil
+    }
 
     private func authenticate() {
         guard canUseTouchID, !authenticating else { return }
