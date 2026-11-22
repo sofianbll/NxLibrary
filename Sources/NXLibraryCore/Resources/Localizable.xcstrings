@@ -28116,6 +28116,17 @@
         }
       }
     },
+    "Discard changes?": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Änderungen verwerfen?"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Discard changes?"}},
+        "es": {"stringUnit": {"state": "translated", "value": "¿Descartar los cambios?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Abandonner les modifications ?"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scartare le modifiche?"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Descartar as alterações?"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "要放弃更改吗？"}}
+      }
+    },
     "Discard selected sources?": {
       "comment": "AddGameView.swift",
       "localizations": {
@@ -82994,6 +83005,17 @@
             "value": "你的构建已保留。“重试”会直接安装，无需再次移植。"
           }
         }
+      }
+    },
+    "Your profile changes won’t be saved.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Deine Profiländerungen werden nicht gespeichert."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Your profile changes won’t be saved."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se guardarán los cambios de tu perfil."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Les modifications de ton profil ne seront pas enregistrées."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Le modifiche al tuo profilo non saranno salvate."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "As alterações no seu perfil não serão salvas."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "你对个人资料所做的更改将不会保存。"}}
       }
     },
     "Your changes could not be saved. Try again.": {
