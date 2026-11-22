@@ -15,8 +15,20 @@ final class StorageManagerTests: XCTestCase {
                               platform: .macApp, sizeBytes: 0, modificationDate: Date(), titleId: title)
         game.workspacePath = workspace.path
         game.buildCachePath = cache.path
-        let manager = StorageManager(supportRoot: root, applicationsRoot: root, logsRoot: root.appendingPathComponent("launch"))
+        let manager = StorageManager(supportRoot: root, applicationsRoot: root, logsRoot: root.appendingPathComponent("launch"),
+                                     trash: { try FileManager.default.moveItem(at: $0, to: root.appendingPathComponent("trash-\($0.lastPathComponent)")) })
         return (root, game, manager)
+    }
+
+    func testTrashRefusalKeepsCache() throws {
+        let (root, game, _) = try fixture()
+        let cache = URL(fileURLWithPath: try XCTUnwrap(game.buildCachePath))
+        let file = cache.appendingPathComponent("only-copy")
+        try Data([42]).write(to: file)
+        let manager = StorageManager(supportRoot: root, applicationsRoot: root, logsRoot: root,
+                                     trash: { _ in throw CocoaError(.fileWriteNoPermission) })
+        XCTAssertThrowsError(try manager.deleteCache(for: game))
+        XCTAssertEqual(try Data(contentsOf: file), Data([42]))
     }
 
     func testCacheDeletionRejectsUnrelatedFolderEvenWhenItsNameEndsInBuild() throws {
@@ -200,7 +212,8 @@ final class StorageManagerTests: XCTestCase {
         let manager = StorageManager(
             supportRoot: root.appendingPathComponent("Support"),
             applicationsRoot: root.appendingPathComponent("Applications"),
-            logsRoot: logs
+            logsRoot: logs,
+            trash: { try FileManager.default.moveItem(at: $0, to: root.appendingPathComponent("trash-\(UUID())")) }
         )
         let usage = manager.usage(games: [game])
         XCTAssertGreaterThanOrEqual(usage.libraryBytes, 10)

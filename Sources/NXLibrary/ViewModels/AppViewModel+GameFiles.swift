@@ -32,11 +32,11 @@ extension AppViewModel {
             parts.append(L10n.format("Build cache (%@)", [Self.formatBytes(workspaceBytes)]))
         }
         let target = parts.isEmpty ? L10n.text("Remaining build data") : parts.joined(separator: ", ")
-        return L10n.format("This permanently deletes: %@. The installed app, saves and logs stay. Rebuilds will be disabled until you attach the sources again. This cannot be undone.", [target])
+        return L10n.format("Move to Trash: %@. The installed app, saves and logs stay. Rebuilds will be disabled until you attach the sources again.", [target])
     }
 
     func removeSources(for game: PortedGame) {
-        guard !isBuilding, !isCheckingCloudBuild, !cloudLibrary.isWorking else {
+        guard !isBuilding, !isUpdatingApp, !isCleaningStorage, !isCheckingCloudBuild, !cloudLibrary.isWorking else {
             alertMessage = L10n.text("Wait for the current build, storage operation or app update to finish.")
             return
         }
@@ -44,18 +44,21 @@ extension AppViewModel {
         let current: CatalogDocument
         do { current = try catalogRepository.load() }
         catch { reportCatalogFailure(error); return }
-        guard current.nxnativeGames.contains(where: { $0.id == game.id }) else {
+        guard var updated = current.nxnativeGames.first(where: { $0.id == game.id }),
+              updated.sources == game.sources, updated.workspacePath == game.workspacePath, updated.url == game.url,
+              RunningGameMonitor.runningApplication(for: updated) == nil else {
             alertMessage = L10n.format("Could not load the library entry for %@.", [game.name])
             return
         }
 
-        let appPath = game.url.standardizedFileURL.path
+        let appPath = resolvedRemovalPath(updated.url)
         let otherGames = current.nxnativeGames.filter { $0.id != game.id }
         var removedCount = 0
         var removedBytes: Int64 = 0
         var failures: [String] = []
+        var trashed = Set<URL>()
 
-        for source in game.sources {
+        for source in updated.sources {
             let url = source.url.standardizedFileURL
             var isDir: ObjCBool = false
             guard fm.fileExists(atPath: url.path, isDirectory: &isDir) else { continue }
@@ -63,12 +66,18 @@ extension AppViewModel {
                 failures.append(L10n.format("%@ is a folder", [url.lastPathComponent]))
                 continue
             }
-            if url.path.hasPrefix(appPath + "/") {
+            let resolved = resolvedRemovalPath(url)
+            if resolved == appPath || resolved.hasPrefix(appPath + "/") {
                 failures.append(L10n.format("%@ is inside the app", [url.lastPathComponent]))
                 continue
             }
             let shared = otherGames.contains { other in
-                other.sources.contains { $0.url.standardizedFileURL == url }
+                other.sources.contains { candidate in
+                    resolvedRemovalPath(candidate.url) == resolved ||
+                    ((try? url.resourceValues(forKeys: [.fileResourceIdentifierKey]).fileResourceIdentifier).map { id in
+                        id.isEqual((try? candidate.url.resourceValues(forKeys: [.fileResourceIdentifierKey]).fileResourceIdentifier) ?? nil)
+                    } ?? false)
+                }
             }
             if shared {
                 failures.append(L10n.format("%@ is also used by another library entry", [url.lastPathComponent]))
@@ -77,7 +86,11 @@ extension AppViewModel {
             do {
                 let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize)
                     .map(Int64.init) ?? source.sizeBytes
-                try fm.removeItem(at: url)
+                guard RunningGameMonitor.runningApplication(for: updated) == nil else {
+                    throw CloudArchiveError.busy
+                }
+                try fm.trashItem(at: url, resultingItemURL: nil)
+                trashed.insert(url)
                 removedCount += 1
                 removedBytes += size
             } catch {
@@ -86,12 +99,13 @@ extension AppViewModel {
         }
 
         var removedWorkspace = false
-        if let path = game.workspacePath {
+        if let path = updated.workspacePath, failures.isEmpty {
             let workspace = URL(fileURLWithPath: path).standardizedFileURL
             if BuildScratch.isManaged(workspace, core: core),
-               fm.fileExists(atPath: workspace.path) {
+               fm.fileExists(atPath: workspace.path),
+               workspaceCanBeTrashed(workspace, protecting: current.nxnativeGames, owner: updated) {
                 do {
-                    try fm.removeItem(at: workspace)
+                    try fm.trashItem(at: workspace, resultingItemURL: nil)
                     removedWorkspace = true
                 } catch {
                     failures.append(L10n.format("Build cache: %@", [error.localizedDescription]))
@@ -99,15 +113,8 @@ extension AppViewModel {
             }
         }
 
-        var updated = current.nxnativeGames.first { $0.id == game.id }!
-        updated.sources = updated.sources.filter { source in
-            var isDir: ObjCBool = false
-            return fm.fileExists(atPath: source.url.path, isDirectory: &isDir)
-                && !isDir.boolValue
-        }
-        if removedWorkspace || updated.workspacePath.map({
-            !fm.fileExists(atPath: URL(fileURLWithPath: $0).path)
-        }) == true {
+        updated.sources.removeAll { trashed.contains($0.url.standardizedFileURL) }
+        if removedWorkspace {
             updated.workspacePath = nil
             updated.buildCachePath = nil
         }
@@ -140,6 +147,21 @@ extension AppViewModel {
         }
     }
 
+    private func resolvedRemovalPath(_ url: URL) -> String {
+        url.resolvingSymlinksInPath().standardizedFileURL.path.precomposedStringWithCanonicalMapping.lowercased()
+    }
+
+    private func workspaceCanBeTrashed(_ workspace: URL, protecting games: [PortedGame], owner: PortedGame) -> Bool {
+        let path = resolvedRemovalPath(workspace)
+        return games.allSatisfy { game in
+            let otherWorkspace = game.id == owner.id ? nil : game.workspacePath.map { URL(fileURLWithPath: $0) }
+            return ([game.url] + game.sources.map(\.url) + [otherWorkspace].compactMap { $0 }).allSatisfy {
+                let protected = resolvedRemovalPath($0)
+                return protected != path && !protected.hasPrefix(path + "/")
+            }
+        }
+    }
+
     private func directorySize(_ url: URL) -> Int64 {
         let fm = FileManager.default
         var isDir: ObjCBool = false
@@ -167,14 +189,26 @@ extension AppViewModel {
     }
 
     func deletePortedGame(_ game: PortedGame) {
-        guard !isCheckingCloudBuild, !cloudLibrary.isWorking else {
+        guard !isBuilding, !isUpdatingApp, !isCleaningStorage, !isCheckingCloudBuild, !cloudLibrary.isWorking else {
             alertMessage = L10n.text("Wait for the current build, storage operation or app update to finish.")
             return
         }
         do {
-            let deleteBundle = game.canDeleteAppBundle()
+            let games = try catalogRepository.load().nxnativeGames
+            guard let current = games.first(where: { $0.id == game.id }),
+                  current.url == game.url, current.workspacePath == game.workspacePath, current.sources == game.sources,
+                  RunningGameMonitor.runningApplication(for: current) == nil,
+                  workspaceCanBeTrashed(game.url, protecting: games.filter { $0.id != game.id }, owner: current) else {
+                alertMessage = L10n.format("Could not load the library entry for %@.", [game.name])
+                return
+            }
+            let appPath = resolvedRemovalPath(current.url)
+            let deleteBundle = current.canDeleteAppBundle() && !current.sources.contains {
+                let path = resolvedRemovalPath($0.url)
+                return path == appPath || path.hasPrefix(appPath + "/")
+            }
             if deleteBundle, FileManager.default.fileExists(atPath: game.url.path) {
-                try FileManager.default.removeItem(at: game.url)
+                try FileManager.default.trashItem(at: game.url, resultingItemURL: nil)
             }
 
             // Remove only the app-owned staged workspace. A folder-mode game's
@@ -183,9 +217,10 @@ extension AppViewModel {
             if let path = game.workspacePath {
                 let workspace = URL(fileURLWithPath: path).standardizedFileURL
                 if BuildScratch.isManaged(workspace, core: core),
-                   FileManager.default.fileExists(atPath: workspace.path) {
-                    try? FileManager.default.removeItem(at: workspace)
-                    removedWorkspace = !FileManager.default.fileExists(atPath: workspace.path)
+                   FileManager.default.fileExists(atPath: workspace.path),
+                   workspaceCanBeTrashed(workspace, protecting: games, owner: current) {
+                    try FileManager.default.trashItem(at: workspace, resultingItemURL: nil)
+                    removedWorkspace = true
                 }
             }
 

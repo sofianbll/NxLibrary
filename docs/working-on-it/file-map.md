@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 22 novembre 2026. Copertura di **883 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 22 novembre 2026. Copertura di **886 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -109,7 +109,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 | [Sources/NXLibrary/ViewModels/AppViewModel+Launch.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Launch.swift) | Play: attesa dello scambio cloud, multigiocatore, controllo Nextendo, salvataggi, mod e dati del profilo che avvia il gioco. |
 | [Sources/NXLibrary/ViewModels/NextendoSettings.swift](../../Sources/NXLibrary/ViewModels/NextendoSettings.swift) | Scheda Nextendo in memoria, accesso e disconnessione, aggiornamento amici, ultimi dati noti per l'overlay e stato della pubblicazione. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+GameActions.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+GameActions.swift) | Azioni su un gioco: Game options, preferito, nascosto, salvataggi cloud, chiusura, rimozione e Mostra nel Finder. |
-| [Sources/NXLibrary/ViewModels/AppViewModel+GameFiles.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+GameFiles.swift) | File di un gioco: riepilogo e rimozione delle sorgenti, cancellazione del porting, cartella Ryujinx e log. |
+| [Sources/NXLibrary/ViewModels/AppViewModel+GameFiles.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+GameFiles.swift) | Rilegge voci e percorsi prima di spostare sorgenti e porting nel Cestino; cartella Ryujinx e log. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+Mods.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Mods.swift) | Crea lo `ModStore` di un gioco, il valore della riga Mods e le frasi per ogni errore. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+Controller.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Controller.swift) | Sceglie il gioco su cui agiscono i comandi Play, Details e Options del menu. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+Diagnostics.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Diagnostics.swift) | Raccoglie ambiente, toolchain e ultimo build per il rapporto diagnostico ripulito. |
@@ -1200,6 +1200,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [docs/history/reviews/2026-11-22-rebuild-cache.md](../history/reviews/2026-11-22-rebuild-cache.md) | Tempi prima e dopo della verifica Rebuild su cache sintetica e limiti della prova. |
 | [docs/history/reviews/2026-11-22-browser-app-adoption.md](../history/reviews/2026-11-22-browser-app-adoption.md) | Sonda locale: riparazione e firma di ripiego di una copia estratta dallo ZIP del browser. |
 | [docs/history/reviews/2026-11-22-cloud-per-file.md](../history/reviews/2026-11-22-cloud-per-file.md) | Sonda locale: byte e tempo per il cambio di un solo file, archivio rispetto a copia incrementale. |
+| [docs/history/reviews/2026-11-22-local-removal-inventory.md](../history/reviews/2026-11-22-local-removal-inventory.md) | Inventario delle cancellazioni locali e verifica del contratto `DM_SAVE`. |
 
 ## Aggiornare questo catalogo
 

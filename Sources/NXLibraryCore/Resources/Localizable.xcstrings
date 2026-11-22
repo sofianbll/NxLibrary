@@ -76327,49 +76327,49 @@
         }
       }
     },
-    "This permanently deletes: %@. The installed app, saves and logs stay. Rebuilds will be disabled until you attach the sources again. This cannot be undone.": {
+    "Move to Trash: %@. The installed app, saves and logs stay. Rebuilds will be disabled until you attach the sources again.": {
       "comment": "Source removal safety copy. User paths/names remain verbatim.",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This permanently deletes: %@. The installed app, saves and logs stay. Rebuilds will be disabled until you attach the sources again. This cannot be undone."
+            "value": "Move to Trash: %@. The installed app, saves and logs stay. Rebuilds will be disabled until you attach the sources again."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Elimina definitivamente: %@. L’app installata, i salvataggi e i log vengono conservati. Non potrai ricompilare finché non colleghi di nuovo le sorgenti. Questa operazione è irreversibile."
+            "value": "Sposta nel Cestino: %@. L’app installata, i salvataggi e i log vengono conservati. Non potrai ricompilare finché non colleghi di nuovo le sorgenti."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Supprime définitivement : %@. L’app installée, les sauvegardes et les journaux sont conservés. La recompilation sera désactivée jusqu’à ce que vous rattachiez les sources. Cette action est irréversible."
+            "value": "Déplacer à la Corbeille : %@. L’app installée, les sauvegardes et les journaux sont conservés. La recompilation sera désactivée jusqu’à ce que vous rattachiez les sources."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Folgendes wird endgültig gelöscht: %@. Die installierte App, Spielstände und Protokolle bleiben erhalten. Neue Builds sind erst wieder möglich, wenn du die Quelldateien erneut verknüpfst. Dies kann nicht rückgängig gemacht werden."
+            "value": "In den Papierkorb verschieben: %@. Die installierte App, Spielstände und Protokolle bleiben erhalten. Neue Builds sind erst wieder möglich, wenn du die Quelldateien erneut verknüpfst."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Elimina de forma permanente: %@. Se conservan la app instalada, las partidas guardadas y los registros. No podrás recompilar hasta que vuelvas a vincular los archivos de origen. Esta acción no se puede deshacer."
+            "value": "Mover a la papelera: %@. Se conservan la app instalada, las partidas guardadas y los registros. No podrás recompilar hasta que vuelvas a vincular los archivos de origen."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Exclui permanentemente: %@. O app instalado, os saves e os logs são mantidos. Novas compilações ficam desativadas até você vincular os arquivos de origem novamente. Esta ação não pode ser desfeita."
+            "value": "Mover para o Lixo: %@. O app instalado, os saves e os logs são mantidos. Novas compilações ficam desativadas até você vincular os arquivos de origem novamente."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "这会永久删除：%@。已安装的 App、存档和日志会保留。在你重新附加来源之前，无法重新构建。此操作无法撤销。"
+            "value": "移到废纸篓：%@。已安装的 App、存档和日志会保留。在你重新附加来源之前，无法重新构建。"
           }
         }
       }

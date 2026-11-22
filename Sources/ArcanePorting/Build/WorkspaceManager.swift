@@ -83,6 +83,9 @@ public final class WorkspaceManager {
                 try fm.createDirectory(at: link.deletingLastPathComponent(), withIntermediateDirectories: true)
                 if fm.fileExists(atPath: link.path)
                     || (try? fm.destinationOfSymbolicLink(atPath: link.path)) != nil {
+                    guard (try? fm.destinationOfSymbolicLink(atPath: link.path)) != nil else {
+                        throw CocoaError(.fileWriteFileExists)
+                    }
                     try fm.removeItem(at: link)
                 }
                 try fm.createSymbolicLink(at: link, withDestinationURL: source.url)

@@ -697,7 +697,10 @@ public final class NintendoStoreMetadataService: @unchecked Sendable {
     }
 
     public func clearCache() {
-        try? fileManager.removeItem(at: cacheDirectory)
+        clearCache { try fileManager.trashItem(at: $0, resultingItemURL: nil) }
+    }
+    internal func clearCache(discard: (URL) throws -> Void) {
+        try? discard(cacheDirectory)
     }
 
     private func cacheURL(for titleId: String, locale: AppLocale) -> URL {

@@ -628,6 +628,9 @@ extension PortingModel {
         let logURL = app.core.appendingPathComponent("Logs").appendingPathComponent("\(titleId).log")
         try FileManager.default.createDirectory(at: logURL.deletingLastPathComponent(),
                                                 withIntermediateDirectories: true)
+        if FileManager.default.fileExists(atPath: logURL.path) {
+            try FileManager.default.trashItem(at: logURL, resultingItemURL: nil)
+        }
 
         let capabilities = app.setup.engineSourceCapabilities
         let codeMods: URL?

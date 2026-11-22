@@ -78,7 +78,7 @@ final class ArtworkStoreTests: XCTestCase {
                               remoteURL: URL(string: "https://example.com/cover.jpg"),
                               kind: .boxart)
         XCTAssertGreaterThan(store.cacheSize(), 0)
-        store.clear()
+        store.clear { try FileManager.default.removeItem(at: $0) }
         XCTAssertEqual(store.cacheSize(), 0)
     }
 

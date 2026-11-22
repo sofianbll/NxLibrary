@@ -620,6 +620,7 @@ Il percorso completo è in [flows.md](flows.md#6-importare-o-ripristinare-un-sal
 - Lo spazio libero è quello della cartella Game apps corrente, senza ripiegare sul disco interno se questa manca.
 
 **Pulizia.**
+- Sorgenti, app portate, cache di compilazione e log passano dal Cestino, senza ripiego sulla cancellazione.
 - La conferma per gioco conserva identità e percorso scelti. Prima di cancellare, il coordinatore ricontrolla la voce corrente.
 - `StorageManager` richiede la cartella `<title ID>_build` immediatamente sotto il workspace registrato. Rifiuta file ordinari e cache che siano symlink, e protegge app, sorgenti e installazioni differite di tutte le voci.
 - Un collegamento dentro la cache si rimuove senza visitarne la destinazione. Le cache condivise sono indicate sia nella riga sia nella conferma.
