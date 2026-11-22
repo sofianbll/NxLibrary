@@ -134,8 +134,7 @@ import SwiftUI
                 onSelect: { _ in }, onActivate: { _ in })
                 .frame(height: 190)
             SpotlightCardInfoView(card: .inbox, gameCount: 0, installedCount: 0, poolLabel: "",
-                activity: ActivitySummary(), topGames: [], focusedTop: nil, artwork: artwork,
-                boxArt: app.boxArt, boxArtIndexVersion: app.boxArtIndexVersion, onTopGame: { _ in })
+                activity: ActivitySummary(), topGames: [], focusedTop: nil, artwork: artwork, onTopGame: { _ in })
                 .padding(.leading, 58)
         }.padding(.top, 90), to: output, locale: locale)
         settings.settings.gameInboxEnabled = false

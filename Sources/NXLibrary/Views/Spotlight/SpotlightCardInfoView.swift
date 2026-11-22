@@ -18,8 +18,6 @@ struct SpotlightCardInfoView: View {
     let topGames: [PortedGame]
     let focusedTop: Int?
     let artwork: ArtworkStore
-    let boxArt: BoxArtService
-    let boxArtIndexVersion: Int
     let onTopGame: (Int) -> Void
     /// Nil hides the section; an empty history has its own visible state.
     var recentBuilds: [(game: PortedGame, date: Date)]? = nil
@@ -116,17 +114,17 @@ struct SpotlightCardInfoView: View {
     }
 
     private var activityDetail: some View {
-        VStack(alignment: .leading, spacing: canvas.u(18)) {
+        VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.control)) {
             HStack(alignment: .bottom, spacing: canvas.u(44)) {
                 stat(L10n.text("THIS WEEK"), Self.duration(activity.thisWeek))
                 bars
             }
             if !topGames.isEmpty {
-                VStack(alignment: .leading, spacing: canvas.u(8)) {
-                    Text(L10n.text("MOST PLAYED")).seleneFont(12, .semibold).foregroundColor(SeleneTheme.ink60)
-                    HStack(spacing: canvas.u(14)) {
+                VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.compact)) {
+                    activityHeading("MOST PLAYED")
+                    HStack(spacing: canvas.u(SeleneTokens.Space.line)) {
                         ForEach(Array(topGames.enumerated()), id: \.element.id) { index, game in
-                            topTile(game, focused: focusedTop == index)
+                            activityTile(game, focused: focusedTop == index)
                                 .onTapGesture { onTopGame(index) }
                         }
                     }
@@ -136,17 +134,13 @@ struct SpotlightCardInfoView: View {
             }
             if let recentBuilds {
                 VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.compact)) {
-                    Text(L10n.text("Recently built"))
-                        .textCase(.uppercase)
-                        .seleneFont(.metadata, .semibold)
-                        .foregroundStyle(SeleneTheme.ink60)
-                        .accessibilityAddTraits(.isHeader)
+                    activityHeading("Recently built")
                     if recentBuilds.isEmpty {
                         Text(L10n.text("No completed builds yet."))
                             .seleneFont(.caption)
                             .foregroundStyle(SeleneTheme.ink75)
                     } else {
-                        HStack(alignment: .top, spacing: canvas.u(SeleneTokens.Space.medium)) {
+                        HStack(alignment: .top, spacing: canvas.u(SeleneTokens.Space.line)) {
                             ForEach(recentBuilds, id: \.game.id) { item in
                                 buildTile(item.game, date: item.date)
                             }
@@ -157,20 +151,23 @@ struct SpotlightCardInfoView: View {
         }
     }
 
+    private func activityHeading(_ title: String) -> some View {
+        Text(L10n.text(title))
+            .textCase(.uppercase)
+            .seleneFont(.metadata, .semibold)
+            .foregroundStyle(SeleneTheme.ink60)
+            .accessibilityAddTraits(.isHeader)
+    }
+
     private func buildTile(_ game: PortedGame, date: Date) -> some View {
-        let width = canvas.u(SeleneTokens.Space.chromeGutter)
-        let height = width * CollectionRow.coverHeight / CollectionRow.coverWidth
-        let shape = RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.cover))
-        return VStack(spacing: canvas.u(SeleneTokens.Space.tight)) {
-            SwitchBoxArtCover(game: game, width: width, height: height, boxArt: boxArt,
-                              artwork: artwork, indexVersion: boxArtIndexVersion)
-                .clipShape(shape)
-                .overlay { shape.strokeBorder(SeleneTheme.ink15) }
+        VStack(spacing: canvas.u(SeleneTokens.Space.tight)) {
+            activityTile(game, focused: false)
             Text(date.formatted(.dateTime.day().month(.abbreviated).locale(locale.formatLocale)))
                 .seleneFont(.metadata)
                 .foregroundStyle(SeleneTheme.ink75)
                 .lineLimit(1)
         }
+        .frame(width: canvas.u(SeleneTokens.Space.chromeGutter))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(game.name)
         .accessibilityValue(date.formatted(.dateTime.day().month().year().locale(locale.formatLocale)))
@@ -194,8 +191,8 @@ struct SpotlightCardInfoView: View {
         .frame(height: canvas.u(80), alignment: .bottom)
     }
 
-    private func topTile(_ game: PortedGame, focused: Bool) -> some View {
-        let side = canvas.u(64)
+    private func activityTile(_ game: PortedGame, focused: Bool) -> some View {
+        let side = canvas.u(SeleneTokens.Space.chromeGutter)
         let shape = RoundedRectangle(cornerRadius: canvas.u(10), style: .continuous)
         return SpotlightTileArtwork(game: game, side: side,
                                     artwork: artwork)
