@@ -632,6 +632,7 @@ Il percorso completo è in [flows.md](flows.md#6-importare-o-ripristinare-un-sal
 - `SavesPanel` offre: apertura della cartella, backup manuale, destinazione, importazione, refresh e cartella dei backup con la data dell'ultima copia. L'anteprima From → To è in `SaveImportDetails`.
 - Dopo ogni importazione riuscita, `SavePanelModel` pubblica un evento e la vista mostra `SeleneSuccessNotice`, che si chiude dopo tre secondi; il timer si annulla quando il pannello scompare.
 - I backup sono copie locali conservate finché l'utente non li gestisce. Sono automatici prima di importazione e ripristino, oppure manuali con Back up now.
+- Il backup manuale fissa il profilo, il percorso del salvataggio e la cartella di backup prima di entrare in coda. Un cambio di profilo non può mescolare i dati.
 - Importazione e ripristino richiedono la sincronizzazione cloud davvero disattivata. I casi rifiutati e le verifiche sono descritti nelle sezioni Saves del README e dei test.
 - Storage → Save backups apre la cartella comune degli snapshot; le copie si creano dal pannello Saves.
 - Per i profili secondari gli snapshot sono separati per UUID. In Saves si può copiare un altro
