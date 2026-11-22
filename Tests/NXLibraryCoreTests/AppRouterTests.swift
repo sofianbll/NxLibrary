@@ -114,10 +114,10 @@ final class MenuSelectionModelTests: XCTestCase {
     func testMenuHasFiveIconsWithCards() {
         XCTAssertEqual(MenuAction.allCases, [.profile, .library, .activityCenter, .settings, .power])
         XCTAssertEqual(MenuAction.allCases.map(\.title), ["Profile", "Library", "Activity center", "Settings", "Power"])
-        XCTAssertEqual(MenuAction.profile.entries, [.switchProfile, .editProfile, .theme])
+        XCTAssertEqual(MenuAction.profile.entries, [.myProfile, .switchProfile, .editProfile, .theme])
         XCTAssertEqual(MenuAction.library.entries, [.addGame, .manageSources, .refreshLibrary, .gameInbox])
         XCTAssertEqual(MenuEntry.allCases.map(\.title),
-                       ["Switch profile", "Edit profile", "Theme", "Add Game", "Manage sources", "Library refresh", "Sort incoming files"])
+                       ["My profile", "Switch profile", "Edit profile", "Theme", "Add Game", "Manage sources", "Library refresh", "Sort incoming files"])
         // Console and the Setup check live in Settings; Activity and Settings act at once.
         XCTAssertTrue(MenuAction.activityCenter.entries.isEmpty && MenuAction.settings.entries.isEmpty)
         XCTAssertEqual(MenuAction.allCases.flatMap(\.entries).count, MenuEntry.allCases.count)
@@ -150,7 +150,7 @@ final class MenuSelectionModelTests: XCTestCase {
     func testCardOpensOnItsFirstEntryAndClamps() {
         var model = MenuSelectionModel(selected: .library)
         model.moveEntry(by: 1) // closed: nothing moves
-        XCTAssertEqual(model.entry, .switchProfile)
+        XCTAssertEqual(model.entry, .myProfile)
         model.openEntries()
         XCTAssertTrue(model.isEntryOpen && model.isSubmenuOpen)
         XCTAssertEqual(model.entry, .addGame)
@@ -169,7 +169,7 @@ final class MenuSelectionModelTests: XCTestCase {
         router.isMenuPresented = true
         router.menuSelection.selected = .profile
         router.openEntryMenu()
-        router.moveEntryMenu(by: 2)
+        router.moveEntryMenu(by: 3)
         XCTAssertEqual(router.menuSelection.entry, .theme)
         // Left and Right wait while the card is open.
         router.moveMenu(by: 1)
@@ -241,7 +241,7 @@ final class MenuSelectionModelTests: XCTestCase {
         router.pressMenuIcon(.profile)
         XCTAssertEqual(router.menuSelection.selected, .profile)
         XCTAssertTrue(router.menuSelection.isEntryOpen)
-        XCTAssertEqual(router.menuSelection.entry, .switchProfile)
+        XCTAssertEqual(router.menuSelection.entry, .myProfile)
         router.pressMenuIcon(.power)
         XCTAssertTrue(router.menuSelection.isPowerOpen && !router.menuSelection.isEntryOpen)
         router.pressMenuIcon(.library)

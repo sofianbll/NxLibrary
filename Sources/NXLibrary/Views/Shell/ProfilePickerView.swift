@@ -14,7 +14,9 @@ struct ProfilePortrait: View {
     static let symbols = ["person.fill", "moon.stars.fill", "hare.fill", "cat.fill", "tortoise.fill",
                           "bird.fill", "leaf.fill", "bolt.fill", "flame.fill", "drop.fill",
                           "snowflake", "sparkle", "fish.fill", "pawprint.fill", "sun.max.fill",
-                          "mountain.2.fill", "cloud.fill", "heart.fill", "star.fill", "gamecontroller.fill"]
+                          "mountain.2.fill", "cloud.fill", "heart.fill", "star.fill", "gamecontroller.fill",
+                          "circle.lefthalf.filled", "triangle.fill", "diamond.fill", "hexagon.fill",
+                          "circle.hexagongrid.fill", "swirl.circle.fill", "sparkles", "person.crop.circle"]
     private static let colors: [UInt32] = [0x254A71, 0x373C75, 0x6D355D, 0x713F38, 0x255B4C,
                                            0x315772, 0x48612D, 0x745A25, 0x8D4831, 0x2E5771]
 
@@ -55,6 +57,10 @@ struct ProfilePickerView: View {
     let onClose: () -> Void
     let onActiveEdited: () -> Void
     var onRemoved: (UUID) -> Void = { _ in }
+    var onGuest: ((LocalProfile) -> Void)?
+    var canRemove: (LocalProfile) -> Bool = { _ in true }
+    var canEdit: (LocalProfile) -> Bool = { _ in true }
+    var dialogOwnsInput = false
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneReduceMotion) private var reduceMotion
     @ObservedObject private var theme = ThemeStore.shared
@@ -64,10 +70,13 @@ struct ProfilePickerView: View {
     @State var removalFocus: SeleneConfirmButton = .cancel
     @State private var appeared = false
     @State private var hover = SeleneHoverFocus()
+    @State private var newGuest = LocalProfile(name: L10n.text("Guest"), avatar: LocalProfile.avatarCount - 1, look: .init(AppSettings()))
     @AccessibilityFocusState(for: .voiceOver) private var accessibilityFocus: Tile?
     private enum Tile: Hashable { case profile(UUID), add }
     private var selection: UUID? { appeared ? selected : initialSelection }
     private var layers: ProfileLayers { .init(editing: draft != nil, removing: removing != nil) }
+    private var guest: LocalProfile? { onGuest == nil ? nil : profiles.guest ?? newGuest }
+    private var selectedProfile: LocalProfile? { profiles.profiles.first { $0.id == selection } }
 
     var body: some View {
         Group {
@@ -91,7 +100,7 @@ struct ProfilePickerView: View {
             if initialEdit { edit() }
         }
         .onReceive(NotificationCenter.default.publisher(for: .nxProfileInput)) { note in
-            guard layers.top != .editor, let action = note.object as? GamepadAction else { return }
+            guard !dialogOwnsInput, layers.top != .editor, let action = note.object as? GamepadAction else { return }
             handle(action)
         }
         .accessibilityAddTraits(.isModal)
@@ -132,6 +141,7 @@ struct ProfilePickerView: View {
                             ForEach(profiles.profiles) { profile in
                                 tile(profile)
                             }
+                            if let guest { tile(guest).id(guest.id) }
                             tile(nil).id("add")
                         }
                         .padding(canvas.u(SeleneTokens.Space.control))
@@ -159,8 +169,8 @@ struct ProfilePickerView: View {
     private var leftHints: [HintItem] {
         (canClose ? [HintItem(.b, "Back", action: onClose)] : [])
         + [HintItem(.menu, "Add", keyboard: .text("+"), action: add)]
-        + (selection != nil ? [HintItem(.y, "Edit profile", action: edit)] : [])
-        + (selection != nil && profiles.profiles.count > 1 ? [HintItem(.x, "Remove", action: askRemoval)] : [])
+        + (selectedProfile.map(canEdit) == true ? [HintItem(.y, "Edit profile", action: edit)] : [])
+        + (profiles.profiles.count > 1 && selectedProfile.map(canRemove) == true ? [HintItem(.x, "Remove", action: askRemoval)] : [])
     }
 
     private func tile(_ profile: LocalProfile?) -> some View {
@@ -214,7 +224,7 @@ struct ProfilePickerView: View {
             }
             return
         }
-        let ids = profiles.profiles.map { Optional($0.id) } + [nil]
+        let ids = (profiles.profiles + (guest.map { [$0] } ?? [])).map { Optional($0.id) } + [nil]
         switch action {
         case .navigateLeft, .navigateRight:
             let current = ids.firstIndex(of: selected) ?? 0
@@ -230,13 +240,14 @@ struct ProfilePickerView: View {
     }
 
     private func accept() {
-        if let selected { onChoose(selected) }
+        if let guest, selected == guest.id, profiles.guest == nil { onGuest?(guest) }
+        else if let selected { onChoose(selected) }
         else { add() }
     }
 
     private func add() { draft = LocalProfile(name: "", look: .init(AppSettings())) }
 
-    private func edit() { draft = profiles.profiles.first { $0.id == selected } }
+    private func edit() { if let selectedProfile, canEdit(selectedProfile) { draft = selectedProfile } }
 
     private func editorClosed() {
         draft = nil
@@ -253,13 +264,13 @@ struct ProfilePickerView: View {
     }
 
     private func askRemoval() {
-        guard profiles.profiles.count > 1 else { return }
+        guard profiles.profiles.count > 1, let selectedProfile, canRemove(selectedProfile) else { return }
         removalFocus = .cancel
-        removing = profiles.profiles.first { $0.id == selected }
+        removing = selectedProfile
     }
 
     private func remove() {
-        guard let removing, let index = profiles.profiles.firstIndex(where: { $0.id == removing.id }),
+        guard let removing, canRemove(removing), let index = profiles.profiles.firstIndex(where: { $0.id == removing.id }),
               profiles.remove(removing.id) else { return }
         selected = profiles.profiles[min(index, profiles.profiles.count - 1)].id
         self.removing = nil

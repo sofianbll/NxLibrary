@@ -3,6 +3,51 @@ import XCTest
 @testable import NXLibraryCore
 
 final class LocalProfileStoreTests: XCTestCase {
+    func testGuestDoesNotReplaceLastProfileOrShareFavorites() throws {
+        try withDirectory { url in
+            let store = LocalProfileStore(directory: url, settings: .init(), name: "Host")
+            let host = try XCTUnwrap(store.active)
+            let guest = LocalProfile(name: "Guest", avatar: LocalProfile.avatarCount - 1, look: host.look)
+            let game = UUID()
+            XCTAssertTrue(store.beginGuest(guest))
+            XCTAssertTrue(store.toggleFavorite(game))
+            XCTAssertEqual(store.active?.favorites, [game])
+            XCTAssertEqual(store.profiles, [host])
+            XCTAssertEqual(LocalProfileStore(directory: url, settings: .init(), name: "Host").active, host)
+            XCTAssertTrue(store.choose(host.id))
+            XCTAssertNil(store.guest)
+            XCTAssertEqual(store.active?.favorites, [])
+        }
+    }
+
+    func testLockedStartupAndIndependentPresencePreferences() throws {
+        try withDirectory { url in
+            let store = LocalProfileStore(directory: url, settings: .init(), name: "Host")
+            let host = try XCTUnwrap(store.active)
+            var locked = LocalProfile(name: "Locked", avatar: LocalProfile.avatarCount - 1, look: host.look)
+            XCTAssertFalse(locked.setPIN("１２３４"))
+            XCTAssertFalse(locked.setPIN("123"))
+            XCTAssertTrue(locked.setPIN("0123"))
+            XCTAssertFalse(locked.matchesPIN("1230"))
+            XCTAssertTrue(locked.matchesPIN("0123"))
+            XCTAssertFalse(locked.sharesPresence)
+            locked.showsCurrentGame = true
+            XCTAssertFalse(locked.sharesCurrentGame)
+            locked.appearsOnline = true
+            XCTAssertTrue(locked.sharesCurrentGame)
+            XCTAssertTrue(store.update(locked))
+            XCTAssertTrue(store.needsStartupPicker(.profile(locked.id)))
+            XCTAssertEqual(store.startupSelection(.profile(locked.id)), locked.id)
+            XCTAssertEqual(store.active?.id, host.id)
+            XCTAssertTrue(store.choose(locked.id))
+            let reopened = LocalProfileStore(directory: url, settings: .init(), name: "Host")
+            XCTAssertTrue(reopened.needsStartupPicker(.last))
+            XCTAssertTrue(reopened.active?.matchesPIN("0123") == true)
+            XCTAssertTrue(locked.setPIN(nil))
+            XCTAssertFalse(locked.isLocked)
+        }
+    }
+
     private func withDirectory(_ body: (URL) throws -> Void) throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)

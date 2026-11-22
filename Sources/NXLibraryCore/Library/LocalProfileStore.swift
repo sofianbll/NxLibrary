@@ -1,4 +1,5 @@
 import Combine
+import CryptoKit
 import Foundation
 
 public enum ProfileStartup: Codable, Equatable {
@@ -11,13 +12,18 @@ public enum ProfileStartup: Codable, Equatable {
 }
 
 public struct LocalProfile: Codable, Equatable, Identifiable {
+    public static let avatarCount = 28
     public let id: UUID
     public var name: String
     public var avatar: Int
     public var portrait: Data?
     public var look: Look
-    // Omitted by older profile files; only an explicit opt-out disables idle presence.
     public var appearsOnline: Bool? = nil
+    public var showsCurrentGame: Bool? = nil
+    public var sharesPresence: Bool { appearsOnline == true }
+    public var sharesCurrentGame: Bool { sharesPresence && showsCurrentGame == true }
+    private var pinDigest: Data? = nil
+    public var isLocked: Bool { pinDigest != nil }
     public fileprivate(set) var favorites: Set<UUID> = []
 
     public init(id: UUID = UUID(), name: String, avatar: Int = 0, portrait: Data? = nil, look: Look) {
@@ -27,6 +33,18 @@ public struct LocalProfile: Codable, Equatable, Identifiable {
         self.portrait = portrait
         self.look = look
     }
+
+    public static let pinLength = 4
+
+    public mutating func setPIN(_ pin: String?) -> Bool {
+        if let pin, pin.utf8.count != Self.pinLength || !pin.utf8.allSatisfy({ (48...57).contains($0) }) { return false }
+        pinDigest = pin.map(digest)
+        return true
+    }
+
+    public func matchesPIN(_ pin: String) -> Bool { pinDigest == digest(pin) }
+
+    private func digest(_ pin: String) -> Data { Data(SHA256.hash(data: Data((id.uuidString + pin).utf8))) }
 
     public struct Look: Codable, Equatable {
         public var theme: String
@@ -63,21 +81,28 @@ public final class LocalProfileStore: ObservableObject {
     }
 
     @Published private var document: Document?
+    @Published public private(set) var guest: LocalProfile?
     @Published public private(set) var failed = false
     private let url: URL
     private let selectionURL: URL
 
     public var profiles: [LocalProfile] { document?.profiles ?? [] }
-    public var active: LocalProfile? { profiles.first { $0.id == document?.activeID } }
+    public var active: LocalProfile? { guest ?? profiles.first { $0.id == document?.activeID } }
     public var originalID: UUID? { document?.originalID }
 
     /// Resolve before applying the active profile's appearance and play history.
+    public func startupSelection(_ preference: ProfileStartup) -> UUID? {
+        if case .profile(let id) = preference.available(in: profiles) { return id }
+        return active?.id
+    }
+
     public func needsStartupPicker(_ preference: ProfileStartup) -> Bool {
         guard active != nil else { return false }
         switch preference.available(in: profiles) {
         case .ask: return true
-        case .last: return false
-        case .profile(let id): return !choose(id)
+        case .last: return active?.isLocked == true
+        case .profile(let id):
+            return profiles.first { $0.id == id }?.isLocked == true || !choose(id)
         }
     }
 
@@ -108,11 +133,12 @@ public final class LocalProfileStore: ObservableObject {
 
     @discardableResult public func choose(_ id: UUID) -> Bool {
         guard var next = document, next.profiles.contains(where: { $0.id == id }) else { return false }
-        guard next.activeID != id else { return true }
+        if next.activeID == id { guest = nil; return true }
         do {
             try Data(id.uuidString.utf8).write(to: selectionURL, options: .atomic)
             next.activeID = id
             document = next
+            guest = nil
             failed = false
             return true
         } catch {
@@ -121,12 +147,23 @@ public final class LocalProfileStore: ObservableObject {
         }
     }
 
+    @discardableResult public func beginGuest(_ profile: LocalProfile) -> Bool {
+        guard document != nil, !failed, guest == nil, !profiles.contains(where: { $0.id == profile.id }) else { return false }
+        guest = profile
+        return true
+    }
+
     @discardableResult public func update(_ value: LocalProfile) -> Bool {
         guard var next = document else { return false }
         var profile = value
         profile.name = value.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !profile.name.isEmpty, profile.name.count <= 32,
-              (0..<20).contains(profile.avatar), (profile.portrait?.count ?? 0) <= Self.maximumPortraitBytes else { return false }
+              (0..<LocalProfile.avatarCount).contains(profile.avatar), (profile.portrait?.count ?? 0) <= Self.maximumPortraitBytes else { return false }
+        if guest?.id == profile.id {
+            profile.favorites = guest?.favorites ?? []
+            guest = profile
+            return true
+        }
         if let index = next.profiles.firstIndex(where: { $0.id == value.id }) {
             profile.favorites = next.profiles[index].favorites
             guard next.profiles[index] != profile else { return true }
@@ -146,6 +183,11 @@ public final class LocalProfileStore: ObservableObject {
     }
 
     @discardableResult public func toggleFavorite(_ gameID: UUID) -> Bool {
+        if var guest {
+            if guest.favorites.remove(gameID) == nil { guest.favorites.insert(gameID) }
+            self.guest = guest
+            return true
+        }
         guard var next = document, let index = next.profiles.firstIndex(where: { $0.id == next.activeID }) else { return false }
         if next.profiles[index].favorites.remove(gameID) == nil { next.profiles[index].favorites.insert(gameID) }
         return save(next)

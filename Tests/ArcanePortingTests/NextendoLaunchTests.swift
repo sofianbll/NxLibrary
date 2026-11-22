@@ -3,6 +3,27 @@ import XCTest
 @testable import ArcanePorting
 
 final class NextendoLaunchTests: XCTestCase {
+    func testGuestOfflineAndGameTitleRequiresTwoOptIns() throws {
+        let app = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        addTeardownBlock { try? FileManager.default.removeItem(at: app) }
+        let host = app.appendingPathComponent("Contents/MacOS/dmhost")
+        try FileManager.default.createDirectory(at: host.deletingLastPathComponent(), withIntermediateDirectories: true)
+        var profile = LocalProfile(name: "Player", look: .init(.init()))
+        XCTAssertThrowsError(try NextendoLaunch.presenceEnvironment(profile: profile, in: app)) {
+            XCTAssertEqual($0 as? NextendoError, .presenceHost)
+        }
+        try Data("DM_NEXTENDO_PRESENCE\0".utf8).write(to: host)
+        let hidden = ["DM_NEXTENDO_PRESENCE": "0"]
+        XCTAssertEqual(try NextendoLaunch.presenceEnvironment(profile: profile, in: app), hidden)
+        profile.appearsOnline = true
+        XCTAssertEqual(try NextendoLaunch.presenceEnvironment(profile: profile, in: app), hidden)
+        profile.showsCurrentGame = true
+        XCTAssertEqual(try NextendoLaunch.presenceEnvironment(profile: profile, in: app), [:])
+        profile.appearsOnline = false
+        XCTAssertEqual(try NextendoLaunch.presenceEnvironment(profile: profile, in: app), hidden)
+        XCTAssertEqual(NextendoLaunch.guestEnvironment(), ["DM_NETWORK": "offline", "DM_NEXTENDO_PRESENCE": "0"])
+    }
+
     private func networkSetting(online: Bool) throws -> LauncherSetting {
         let option = online ? #",["nextendo","Nextendo (online)"]"# : ""
         let json = """

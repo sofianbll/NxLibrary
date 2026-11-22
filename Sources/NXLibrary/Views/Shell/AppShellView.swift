@@ -51,7 +51,7 @@ struct AppShellView: View {
         _router = StateObject(wrappedValue: state.router)
         _profiles = ObservedObject(wrappedValue: state.profiles)
         _profileFlow = State(initialValue: state.viewModel.profileOwnsInput
-            ? ProfileFlow(page: .picker, selected: state.profiles.active?.id, atStartup: true) : nil)
+            ? ProfileFlow(page: .picker, selected: state.profiles.startupSelection(state.settings.settings.profileStartup), atStartup: true) : nil)
         modStoreHost = state.modStoreHost
         _showsWelcome = State(initialValue: state.opensWithWelcome)
     }

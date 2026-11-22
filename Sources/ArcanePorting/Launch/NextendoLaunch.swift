@@ -6,6 +6,15 @@ public enum NextendoLaunch {
     public static let networkKey = "DM_NETWORK"
     public static let clientIDKey = "DM_NEXTENDO_CLIENT_ID"
     public static let loginDirectoryKey = "DM_NEXTENDO_LOGIN_DIR"
+    public static let presenceKey = "DM_NEXTENDO_PRESENCE"
+
+    public static func guestEnvironment() -> [String: String] { [networkKey: "offline", presenceKey: "0"] }
+
+    public static func presenceEnvironment(profile: LocalProfile?, in app: URL) throws -> [String: String] {
+        guard profile?.sharesCurrentGame != true else { return [:] }
+        guard supports(presenceKey, in: app) else { throw NextendoError.presenceHost }
+        return [presenceKey: "0"]
+    }
 
     public static func tokenStore(profileID: UUID?, originalID: UUID?, root: URL = AppData.supportRoot) -> NextendoTokenStore {
         guard let profileID, profileID != originalID else { return .init() }
@@ -15,9 +24,13 @@ public enum NextendoLaunch {
 
     /// Prove the installed host knows the override, not just that the selected source checkout does.
     public static func supportsProfileLogin(in app: URL) -> Bool {
+        supports(loginDirectoryKey, in: app)
+    }
+
+    private static func supports(_ key: String, in app: URL) -> Bool {
         let host = app.appendingPathComponent("Contents/MacOS/dmhost")
         guard let data = try? Data(contentsOf: host, options: .mappedIfSafe) else { return false }
-        return data.range(of: Data((loginDirectoryKey + "\0").utf8)) != nil
+        return data.range(of: Data((key + "\0").utf8)) != nil
     }
 
     public static func networkSetting(in settings: [LauncherSetting]) -> LauncherSetting? {

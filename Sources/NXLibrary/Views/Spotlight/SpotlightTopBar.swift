@@ -52,7 +52,7 @@ struct SpotlightTopBar: View {
         Button(action: Self.openProfile) {
             ProfilePortrait(profile: profile, size: 44, ring: true)
                 .overlay(alignment: .bottomTrailing) {
-                    if let nextendo, profile.appearsOnline != false {
+                    if let nextendo, profile.sharesPresence {
                         OnlineDot(nextendo: nextendo).offset(x: canvas.u(2), y: canvas.u(2))
                     }
                 }

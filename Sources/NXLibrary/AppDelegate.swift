@@ -14,6 +14,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor static var cloudLibrary: CloudLibraryModel?
     @MainActor static weak var activityOwner: AppViewModel?
     @MainActor static var showCloudQuit: (() -> Void)?
+    @MainActor static var requestGuestQuit: (() -> Void)?
+    @MainActor private static var guestQuitConfirmed = false
     @MainActor static weak var shellWindow: NSWindow?
     @MainActor private static var cloudQuitCleanupComplete = false
 
@@ -53,6 +55,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                          isQuitting: cloud.isQuitting, cleanupComplete: Self.cloudQuitCleanupComplete,
                                          relaunchScheduled: Self.relaunchScheduled) {
         case .quit:
+            if !Self.guestQuitConfirmed, activity?.localProfiles?.guest != nil {
+                if let window = Self.shellWindow, !window.isKeyWindow { window.makeKeyAndOrderFront(nil) }
+                Self.requestGuestQuit?()
+                return .terminateCancel
+            }
             return .terminateNow
         case .cancel:
             return .terminateCancel
@@ -66,6 +73,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Self.finishCloudQuit(sender)
             return .terminateCancel
         }
+    }
+
+    @MainActor static func quitAfterGuestConfirmation() {
+        guestQuitConfirmed = true
+        defer { guestQuitConfirmed = false }
+        NSApplication.shared.terminate(nil)
     }
 
     @MainActor static func finishCloudQuit(_ sender: NSApplication) {
