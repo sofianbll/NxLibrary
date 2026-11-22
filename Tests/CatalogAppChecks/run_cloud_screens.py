@@ -142,6 +142,45 @@ import ArcanePorting
                               message: L10n.text("Content not verified"), cancelTitle: L10n.text("Close"))
         try renderNotice("adoption-unverified", output, vm.settingsNotice!, width: 1280)
         // REFERENCE_END
+        if CommandLine.arguments.count > 4 {
+            try compareDetails(output, baseline: URL(fileURLWithPath: CommandLine.arguments[4], isDirectory: true))
+        }
+    }
+
+    static func compareDetails(_ output: URL, baseline: URL) throws {
+        let images = try FileManager.default.contentsOfDirectory(atPath: baseline.path).filter {
+            ($0.hasPrefix("state-") || $0.hasPrefix("cloud-button-")) && $0.hasSuffix("-details.png")
+        }.sorted()
+        precondition(images.count == 12, "Expected six transfer phases and six cloud button states")
+        for name in images {
+            func bitmap(_ folder: URL) throws -> NSBitmapImageRep {
+                guard let image = NSBitmapImageRep(data: try Data(contentsOf: folder.appendingPathComponent(name))),
+                      !image.isPlanar && image.bitsPerSample == 8 && image.bitmapData != nil
+                else { throw CocoaError(.fileReadCorruptFile) }
+                return image
+            }
+            let before = try bitmap(baseline)
+            let after = try bitmap(output)
+            precondition(before.pixelsWide == after.pixelsWide && before.pixelsHigh == after.pixelsHigh
+                && before.bitsPerPixel == after.bitsPerPixel, "\(name): bitmap format differs")
+            let pixelSize = before.bitsPerPixel / 8
+            var haloPixels = 0
+            for y in 0..<before.pixelsHigh {
+                for x in 0..<before.pixelsWide {
+                    let a = before.bitmapData! + y * before.bytesPerRow + x * pixelSize
+                    let b = after.bitmapData! + y * after.bytesPerRow + x * pixelSize
+                    if memcmp(a, b, pixelSize) == 0 { continue }
+                    // Allow only a small difference around the transfer halo, never around the text or gauge.
+                    let centerY = name == "cloud-button-sending-details.png" ? 314
+                        : name == "state-running-details.png" ? 320 : -20
+                    precondition(abs(x - 502) <= 11 && abs(y - centerY) <= 11,
+                                 "\(name): unexpected pixel difference at (\(x), \(y))")
+                    haloPixels += 1
+                }
+            }
+            precondition(haloPixels <= 64, "\(name): transfer halo changed more than 64 pixels")
+            print("\(name): identical outside the transfer mark (\(haloPixels) pixels)")
+        }
     }
 
     @MainActor static func renderNotice(_ name: String, _ output: URL, _ notice: SettingsNotice, width: CGFloat) throws {
@@ -613,6 +652,11 @@ def main():
     output = Path(sys.argv[1] if len(sys.argv) > 1 else tempfile.mkdtemp(prefix="cloud-screens-", dir=ROOT / "work")).resolve()
     output.mkdir(parents=True, exist_ok=True)
     before = len(sys.argv) > 2 and sys.argv[2] == "--before"
+    compare = len(sys.argv) > 2 and sys.argv[2] == "--compare-with-5047557"
+    if compare:
+        pixel_reference = output / "5047557"
+        subprocess.run([sys.executable, __file__, str(pixel_reference)], check=True,
+                       env=dict(os.environ, ARCANE_CLOUD_SCREEN_BASE="5047557"))
     with tempfile.TemporaryDirectory(prefix="cloud-screen-", dir=output.parent) as temp:
         package = Path(temp)
         shutil.copyfile(ROOT / "Package.swift", package / "Package.swift")
@@ -940,7 +984,8 @@ extension CloudArtifactStatus {
             ', remoteFolder: fileByFile ? "Fixture [0100000000001000]/app/version" : nil'))
         font = ROOT / "Resources/Selene/Fonts/MaterialIcons-Regular.ttf"
         icon = ROOT / "Resources/AppIcon-Light.png"
-        subprocess.run(["swift", "run", "--package-path", str(package), "NXLibrary", str(output), str(font), str(icon)],
+        subprocess.run(["swift", "run", "--package-path", str(package), "NXLibrary", str(output), str(font), str(icon)]
+                       + ([str(pixel_reference)] if compare else []),
                        check=True, env=dict(os.environ, HOME=temp))
 
 
