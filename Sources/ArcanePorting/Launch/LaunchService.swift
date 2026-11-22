@@ -3,14 +3,14 @@ import AppKit
 import NXLibraryCore
 
 public protocol AppLaunching {
-    func open(_ url: URL, environment: [String: String],
+    func open(_ url: URL, environment: [String: String], onExit: (() -> Void)?,
               completion: @escaping (Bool, String?) -> Void)
 }
 
 public final class NSWorkspaceLauncher: AppLaunching {
     public init() {}
 
-    public func open(_ url: URL, environment: [String: String],
+    public func open(_ url: URL, environment: [String: String], onExit: (() -> Void)?,
                      completion: @escaping (Bool, String?) -> Void) {
         guard FileManager.default.fileExists(atPath: url.path) else {
             completion(false, "The app bundle is missing: \(url.path)")
@@ -24,13 +24,39 @@ public final class NSWorkspaceLauncher: AppLaunching {
         for (key, value) in environment { merged[key] = value }
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.environment = merged
-        NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, error in
+        NSWorkspace.shared.openApplication(at: url, configuration: configuration) { app, error in
             if let error {
                 completion(false, error.localizedDescription)
-            } else {
+            } else if let app {
+                if let onExit {
+                    DispatchQueue.main.async {
+                        Self.watchExit(of: app, onExit: onExit)
+                    }
+                }
                 completion(true, nil)
+            } else {
+                completion(false, nil)
             }
         }
+    }
+
+    private static func watchExit(of app: NSRunningApplication, onExit: @escaping () -> Void) {
+        let center = NSWorkspace.shared.notificationCenter
+        var observer: NSObjectProtocol?
+        func finish() {
+            guard let token = observer else { return }
+            observer = nil
+            center.removeObserver(token)
+            onExit()
+        }
+        observer = center.addObserver(forName: NSWorkspace.didTerminateApplicationNotification,
+                                      object: nil, queue: .main) { note in
+            guard let ended = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+                  ended == app else { return }
+            finish()
+        }
+        // The process can exit before the open completion or observer registration.
+        if app.isTerminated { finish() }
     }
 }
 
@@ -61,9 +87,26 @@ public final class LaunchService {
     public static let launchEnvironment = ["DM_LAUNCHER": "0"]
 
     public func launch(appURL: URL, environment: [String: String] = [:],
+                       overlay: GameOverlayLaunch? = nil, snapshot: GameOverlaySnapshot? = nil,
                        completion: @escaping (Bool, String?) -> Void) {
-        launcher.open(appURL, environment: environment.merging(Self.launchEnvironment) { _, fixed in fixed },
-                      completion: completion)
+        launch(appURL: appURL, environment: environment, overlay: overlay, snapshot: snapshot,
+               temporaryDirectory: FileManager.default.temporaryDirectory, completion: completion)
+    }
+
+    func launch(appURL: URL, environment: [String: String] = [:],
+                overlay: GameOverlayLaunch?, snapshot: GameOverlaySnapshot?, temporaryDirectory: URL,
+                completion: @escaping (Bool, String?) -> Void) {
+        var values = environment.merging(Self.launchEnvironment) { _, fixed in fixed }
+        values[GameOverlayLaunch.dataKey] = nil
+        var cleanup: (() -> Void)?
+        if let overlay, let snapshot, let file = try? overlay.writeSnapshot(snapshot, in: temporaryDirectory) {
+            values[GameOverlayLaunch.dataKey] = file.path
+            cleanup = { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+        }
+        launcher.open(appURL, environment: values, onExit: cleanup) { success, error in
+            if !success { cleanup?() }
+            completion(success, error)
+        }
     }
 
     public func saveDirectory(for titleId: String) -> URL {

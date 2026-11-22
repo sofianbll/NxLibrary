@@ -15,6 +15,9 @@ import ArcanePorting
     @Published private(set) var isWaitingForBrowser = false
     @Published private(set) var failure: NextendoError?
     private(set) var revision = UUID()
+    private(set) var overlayUsername: String?
+    private(set) var overlayFriends: [NextendoAccountSnapshot.Friend]?
+    private(set) var knownGameTitles: [String: String] = [:]
     @Published var isEditingClient = false
     @Published var friendToRemove: NextendoAccountSnapshot.Friend?
     @Published private(set) var friendMessage: (key: String, isError: Bool)?
@@ -56,6 +59,7 @@ import ArcanePorting
             guard let updated = try? await model.accountService.refreshFriends(in: account, clientID: clientID),
                   !Task.isCancelled else { return }
             model.account = updated
+            model.overlayFriends = updated.friends
             model.friendsNeedRefresh = updated.requests == nil || updated.sent == nil
             model.friendsUpdatedAt = .now
         }
@@ -157,11 +161,28 @@ import ArcanePorting
 
     func clientChanged() {
         endVisit()
+        clearOverlayAccount()
         if status != .signedOut { status = .unavailable }
+    }
+
+    func rememberGameTitle(_ title: String, id: String) {
+        guard let overlayFriends, overlayFriends.contains(where: { $0.gameID == id }) else { return }
+        knownGameTitles[id.uppercased()] = title
+    }
+
+    private func clearOverlayAccount() {
+        overlayUsername = nil
+        overlayFriends = nil
+        knownGameTitles = [:]
     }
 
     private func apply(_ snapshot: NextendoAccountSnapshot?) throws {
         try Task.checkCancellation()
+        if snapshot?.username != overlayUsername || snapshot == nil { clearOverlayAccount() }
+        if let snapshot {
+            overlayUsername = snapshot.username
+            if let friends = snapshot.friends { overlayFriends = friends }
+        }
         revision = UUID()
         friendsNeedRefresh = false
         account = snapshot
@@ -206,6 +227,7 @@ import ArcanePorting
                 if problem == .expired {
                     self.status = .expired
                     self.account = nil
+                    self.clearOverlayAccount()
                 } else if (checking || self.status != .signedOut),
                           problem == .service || problem == .clientID || problem == .storage {
                     self.status = .unavailable

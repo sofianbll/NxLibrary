@@ -15,7 +15,6 @@ struct AppShellView: View {
     @StateObject var playSessions = PlaySessionStore()
     @ObservedObject var profiles: LocalProfileStore
     @State var profileFlow: ProfileFlow?
-    @State var additionalNextendo: (id: UUID, account: NextendoSettings)?
     @State var steamBlocksIdlePresence = false
     @State var onlinePlayers: [String: Int] = [:]
     static let onlineCounts = NextendoOnlineCounts()

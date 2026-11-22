@@ -65,7 +65,7 @@ final class AppIconModel: ObservableObject {
         SoundEffectService.shared.play(.click)
     }
 
-    private func finishIconLaunchWait(for game: PortedGame, rerun: Bool, outcome: Result<Bool, Error>) {
+    @MainActor private func finishIconLaunchWait(for game: PortedGame, rerun: Bool, outcome: Result<Bool, Error>) {
         guard iconLaunchWait.gameID == game.id, !rerun else { return }
         let noticeID = iconLaunchWait.noticeID
         let succeeded: Bool

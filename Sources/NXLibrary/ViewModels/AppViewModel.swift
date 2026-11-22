@@ -253,6 +253,15 @@ final class AppViewModel: ObservableObject {
 
     var playSessionStore: PlaySessionStore?
     var localProfiles: LocalProfileStore?
+    private var profileNextendoAccounts: [UUID: NextendoSettings] = [:]
+    @MainActor var profileNextendo: NextendoSettings? {
+        guard let id = localProfiles?.active?.id else { return nil }
+        if usesSharedNextendo { return .shared }
+        if let account = profileNextendoAccounts[id] { return account }
+        let account = NextendoSettings(store: NextendoLaunch.tokenStore(profileID: id, originalID: localProfiles?.originalID))
+        profileNextendoAccounts[id] = account
+        return account
+    }
     var usesSharedNextendo: Bool { localProfiles?.active?.id == localProfiles?.originalID }
     var settingsStore: AppSettingsStore?
 

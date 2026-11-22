@@ -414,7 +414,8 @@ struct SettingsAPISection: View {
                 LazyVStack(spacing: canvas.u(8)) {
                     ForEach(friends) { friend in
                         let row = friendRowID(friend.id)
-                        NextendoFriendLine(friend: friend, revision: nextendo.revision, service: nextendo.accountService) {
+                        NextendoFriendLine(friend: friend, revision: nextendo.revision, service: nextendo.accountService,
+                                           rememberTitle: nextendo.rememberGameTitle) {
                             action(removeButton(friend), row: row, index: 0)
                                 .disabled(!canUpdateFriends)
                         }
@@ -690,6 +691,7 @@ private struct NextendoFriendLine<Trailing: View>: View {
     let friend: NextendoAccountSnapshot.Friend
     let revision: UUID
     let service: NextendoAccountService
+    let rememberTitle: (String, String) -> Void
     @ViewBuilder var trailing: () -> Trailing
 
     var body: some View {
@@ -704,7 +706,8 @@ private struct NextendoFriendLine<Trailing: View>: View {
             HStack(spacing: canvas.u(4)) {
                 SeleneStatusDot(text: L10n.text(status, context: locale), color: color).fixedSize()
                 if friend.presence == .playing {
-                    NextendoGameTitle(service: service, name: friend.game, id: friend.gameID, prefix: "· ")
+                    NextendoGameTitle(service: service, name: friend.game, id: friend.gameID, prefix: "· ",
+                                      rememberTitle: rememberTitle)
                 }
             }
             trailing()
@@ -739,6 +742,7 @@ private struct NextendoGameTitle: View {
     let name: String?
     let id: String?
     var prefix = ""
+    var rememberTitle: ((String, String) -> Void)? = nil
     private var key: String { "\(id ?? "")|\(locale.language.rawValue)" }
 
     var body: some View {
@@ -752,6 +756,7 @@ private struct NextendoGameTitle: View {
                   let title = try? await service.gameTitle(id: id, language: locale.language),
                   !Task.isCancelled else { return }
             resolved = (key, title)
+            rememberTitle?(title, id)
         }
     }
 }

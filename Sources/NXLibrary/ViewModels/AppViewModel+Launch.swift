@@ -7,7 +7,7 @@ import ArcanePorting
 
 /// Launching a Switch game: the launch screen, its checks and watching the launch.
 extension AppViewModel {
-    func launchGame(_ game: PortedGame, acceptsLocalFallback: Bool = false) {
+    @MainActor func launchGame(_ game: PortedGame, acceptsLocalFallback: Bool = false) {
         // One launch at a time: the launch screen covers the library, and input reaching it changes nothing.
         guard launchingGameId == nil, launchOverlay == nil else { return }
         if let title = game.titleId, cloudLibrary.appInstall?.title == title.uppercased() {
@@ -80,6 +80,7 @@ extension AppViewModel {
             alertMessage = SaveFailure.busy.localizedDescription
             return
         }
+        let overlayData = gameOverlayData()
         launchingGameId = game.id
         playSessionStore?.expectStart(gameID: game.id)
         let setting = gameSettings.flatMap { NextendoLaunch.networkSetting(in: $0.settings) }
@@ -99,11 +100,19 @@ extension AppViewModel {
                         }.value
                         guard supported else { throw NextendoError.profileHost }
                     }
+                    var checkedOverlay = overlayData
                     let environment = try await NextendoLaunch.environment(setting: setting, mode: mode, clientID: clientID,
                                                                            tokenStore: tokenStore) { client in
-                        try await NextendoOAuth(store: tokenStore).accountName(clientID: client) != nil
+                        guard let username = try await NextendoOAuth(store: tokenStore).accountName(clientID: client) else { return false }
+                        if checkedOverlay.snapshot.nextendoName != username {
+                            checkedOverlay.snapshot.nextendoName = username
+                            checkedOverlay.snapshot.presence = nil
+                            checkedOverlay.snapshot.friends = nil
+                        }
+                        return true
                     }
                     self.startGame(game, titleId: titleId, token: saveLaunchToken, gameSettings: gameSettings,
+                                   overlayData: checkedOverlay,
                                    environment: multiplayerEnvironment.merging(environment) { _, online in online })
                 } catch {
                     self.playSessionStore?.abandonStart(gameID: game.id)
@@ -125,7 +134,8 @@ extension AppViewModel {
             }
             return
         }
-        startGame(game, titleId: titleId, token: saveLaunchToken, gameSettings: gameSettings, environment: multiplayerEnvironment)
+        startGame(game, titleId: titleId, token: saveLaunchToken, gameSettings: gameSettings,
+                  overlayData: overlayData, environment: multiplayerEnvironment)
     }
 
     func showMultiplayerVPNFallback(_ proceed: @escaping () -> Void) {
@@ -135,7 +145,8 @@ extension AppViewModel {
     }
 
     private func startGame(_ game: PortedGame, titleId: String, token saveLaunchToken: UUID,
-                           gameSettings: NXNativeGameSettings?, environment: [String: String] = [:]) {
+                           gameSettings: NXNativeGameSettings?,
+                           overlayData: (snapshot: GameOverlaySnapshot, total: String?), environment: [String: String]) {
         launchOverlay = LaunchOverlayState(game: .nxnative(game))
         SoundEffectService.shared.play(.launch)
 
@@ -194,14 +205,41 @@ extension AppViewModel {
                 .merging(codeMods) { _, mods in mods }
                 .merging(overlay.environment(palette: ThemeStore.shared.palette,
                                              playtime: playSessionStore?.totalDuration(for: game.id),
-                                             cover: cover)) { _, session in session }
-            openGame(game, titleId: titleId, token: saveLaunchToken, environment: overrides)
+                                             cover: cover, profilePlaytime: overlayData.total)) { _, session in session }
+            openGame(game, titleId: titleId, token: saveLaunchToken, environment: overrides,
+                     overlay: overlay, snapshot: overlayData.snapshot)
         }
     }
 
+    @MainActor private func gameOverlayData() -> (snapshot: GameOverlaySnapshot, total: String?) {
+        var snapshot = GameOverlaySnapshot()
+        guard let profile = localProfiles?.active, localProfiles?.failed == false else { return (snapshot, nil) }
+        snapshot.profile = profile
+        snapshot.color = SelenePaletteCatalog.resolve(profile.look.theme, in: ThemeStore.shared.palettes).glyph
+        if let nextendo = profileNextendo, !nextendo.isSigningOut {
+            snapshot.nextendoName = nextendo.overlayUsername
+            if profile.appearsOnline != false, nextendo.presenceShared == true { snapshot.presence = .online }
+            snapshot.friends = nextendo.overlayFriends
+            snapshot.friendGameTitles = nextendo.knownGameTitles
+            for friend in nextendo.overlayFriends ?? [] where friend.game == nil {
+                guard let id = friend.gameID?.uppercased(), snapshot.friendGameTitles[id] == nil else { continue }
+                snapshot.friendGameTitles[id] = libraryGames.first(where: { $0.titleId?.uppercased() == id })?.name
+            }
+        }
+        guard let history = playSessionStore, history.loadError == nil,
+              history.profileID == (usesSharedNextendo ? nil : profile.id) else { return (snapshot, nil) }
+        let sessions = history.sessions
+        // shortcut: folded sessions are included in the lifetime total, but lack dates for a weekly breakdown.
+        let week = Activity.summary(sessions: sessions, now: .now, calendar: .current).thisWeek
+        if Int(exactly: (week / 60).rounded(.down)) != nil { snapshot.week = LibraryPresentation.duration(week) }
+        let gameIDs = Set(sessions.map(\.gameID)).union(history.carried.keys).union(history.external.keys)
+        let total = gameIDs.reduce(0.0) { $0 + history.totalDuration(for: $1) }
+        return (snapshot, Int(exactly: (total / 60).rounded(.down)) == nil ? nil : LibraryPresentation.duration(total))
+    }
+
     private func openGame(_ game: PortedGame, titleId: String, token saveLaunchToken: UUID,
-                          environment: [String: String]) {
-        launchService.launch(appURL: game.url, environment: environment) { [weak self] success, error in
+                          environment: [String: String], overlay: GameOverlayLaunch, snapshot: GameOverlaySnapshot) {
+        launchService.launch(appURL: game.url, environment: environment, overlay: overlay, snapshot: snapshot) { [weak self] success, error in
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.saveGate.end(titleID: titleId, token: saveLaunchToken)

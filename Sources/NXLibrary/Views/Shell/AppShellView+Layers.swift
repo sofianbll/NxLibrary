@@ -258,7 +258,6 @@ extension AppShellView {
         .frame(minWidth: 1100, minHeight: 700)
         .onAppear(perform: startRuntime)
         .background { profilePresenceTask }
-        .onChange(of: profiles.active?.id, initial: true) { updateProfileNextendo() }
         .onReceive(SteamPlayCoordinator.shared.$states.map { SteamPlayCoordinator.blocksIdlePresence($0) }
             .removeDuplicates()) { steamBlocksIdlePresence = $0 }
         .task { await viewModel.restoreActivity() }

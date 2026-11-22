@@ -89,7 +89,7 @@ flowchart TD
     N -->|"no"| E["LauncherSettings migra launcher.json<br/>oppure LaunchService aggiorna env.txt"]
     E --> F["CloudSavesPreferences applica la scelta cloud"]
     F --> M["ModStore riconcilia le cartelle prima di Play"]
-    M --> O["GameOverlayLaunch: palette e dati locali<br/>solo se il dmhost dichiara le chiavi"]
+    M --> O["GameOverlayLaunch: palette e dati locali<br/>snapshot temporaneo del profilo se il dmhost lo dichiara"]
     O --> G["LaunchService apre l'app (NSWorkspace)<br/>DM_MODS_OFF controlla il gruppo ExeFS già nel bundle"]
     G --> H["LaunchCoverWindow + LaunchMotion<br/>finché LaunchReadinessProbe vede una finestra"]
     H --> I["RunningGameMonitor · PlaySessionStore (heartbeat)"]
@@ -97,7 +97,7 @@ flowchart TD
     PZ -->|"Pulsante Resume → richiesta e attivazione"| I
     PZ -->|"Close Game → richiesta, SIGTERM dopo 5 s se serve"| J
     PZ -->|"Uscita del processo mentre è in pausa"| J
-    I --> J["Fine: sessione salvata → SessionCard<br/>GameFocus/LibraryWindow riportano la libreria davanti"]
+    I --> J["Fine: snapshot rimosso, sessione salvata → SessionCard<br/>GameFocus/LibraryWindow riportano la libreria davanti"]
     J --> K["Dopo la chiusura: icone, installazioni in attesa"]
 ```
 

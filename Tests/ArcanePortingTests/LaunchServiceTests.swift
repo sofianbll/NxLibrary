@@ -7,12 +7,113 @@ final class LaunchServiceTests: XCTestCase {
         var opened: URL?
         var environment: [String: String] = [:]
         var shouldSucceed = true
-        func open(_ url: URL, environment: [String: String],
+        var onExit: (() -> Void)?
+        func open(_ url: URL, environment: [String: String], onExit: (() -> Void)?,
                   completion: @escaping (Bool, String?) -> Void) {
             opened = url
             self.environment = environment
+            self.onExit = onExit
             completion(shouldSucceed, shouldSucceed ? nil : "sample launch error")
         }
+    }
+
+    func testOverlaySnapshotWireFormatPermissionsAndLifetime() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("NXOverlay-\(UUID())")
+        let app = root.appendingPathComponent("Fixture.app")
+        let host = HomeMenu.hostExecutable(in: app)
+        let fm = FileManager.default
+        try fm.createDirectory(at: host.deletingLastPathComponent(), withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: root) }
+        let launcher = FakeLauncher()
+        let service = LaunchService(launcher: launcher)
+        var snapshot = GameOverlaySnapshot()
+        let portrait = try XCTUnwrap(Data(base64Encoded:
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0ioAAAAASUVORK5CYII="))
+        snapshot.profile = LocalProfile(name: "Koya\nMori", portrait: portrait, look: .init(.init()))
+        snapshot.color = 0x9CCBFF
+        snapshot.nextendoName = "Koya"
+        snapshot.presence = .online
+        snapshot.week = "2 h 14 min"
+        snapshot.friends = [
+            .init(id: 96, name: "Milo", favorite: false, presence: .offline, game: nil, gameID: nil),
+            .init(id: 87, name: "Lina", favorite: true, presence: .playing, game: nil, gameID: "PRIVATE-ID")
+        ]
+        snapshot.friendGameTitles = ["PRIVATE-ID": "Pokémon Legends: Z-A"]
+        snapshot.achievements = AchievementSummary(achievements: (0..<6).map {
+            SteamAchievement(apiName: "private-\($0)", name: "Success \($0)", description: "Excluded",
+                             hidden: false, icon: "https://example.test/?token=secret",
+                             grayIcon: nil, unlockedAt: $0 == 0 ? nil : Date(timeIntervalSince1970: Double($0)))
+        }, percents: [:])
+
+        try Data("DM_OVERLAY_DATAX\0".utf8).write(to: host)
+        service.launch(appURL: app, environment: ["DM_OVERLAY_DATA": "/tmp/inherited"], overlay: .init(app: app),
+                       snapshot: snapshot, temporaryDirectory: root) { ok, _ in XCTAssertTrue(ok) }
+        XCTAssertNil(launcher.environment["DM_OVERLAY_DATA"])
+        XCTAssertNil(launcher.onExit)
+        XCTAssertEqual(try fm.contentsOfDirectory(atPath: root.path), ["Fixture.app"])
+
+        try service.writeEnvironment(settings: .init(), titleId: "test-title", baseDirectory: root)
+        let env = root.appendingPathComponent("test-title/env.txt")
+        let before = try Data(contentsOf: env)
+        let expectedChildren: Set<String> = ["Fixture.app", "test-title"]
+        try Data("DM_OVERLAY_DATA\0DM_OVERLAY_PLAY_TIME\0".utf8).write(to: host)
+        let overlay = GameOverlayLaunch(app: app)
+        XCTAssertNil(try overlay.writeSnapshot(.init(), in: root))
+        var noSections = GameOverlaySnapshot()
+        noSections.friends = []
+        XCTAssertNil(try noSections.encoded())
+        let environment = overlay.environment(palette: .fallback, playtime: nil, cover: nil, profilePlaytime: "20 h")
+        service.launch(appURL: app, environment: environment, overlay: overlay, snapshot: snapshot,
+                       temporaryDirectory: root) { ok, _ in XCTAssertTrue(ok) }
+        XCTAssertEqual(launcher.environment["DM_OVERLAY_PLAY_TIME"], "20 h")
+        XCTAssertEqual(try Data(contentsOf: env), before)
+        let path = try XCTUnwrap(launcher.environment["DM_OVERLAY_DATA"])
+        let file = URL(fileURLWithPath: path)
+        XCTAssertTrue((path as NSString).isAbsolutePath)
+        XCTAssertEqual(try fm.attributesOfItem(atPath: path)[.posixPermissions] as? Int, 0o600)
+        XCTAssertEqual(try fm.attributesOfItem(atPath: file.deletingLastPathComponent().path)[.posixPermissions] as? Int, 0o700)
+        let data = try Data(contentsOf: file)
+        var decoded = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        var profile = try XCTUnwrap(decoded["profile"] as? [String: String])
+        let avatar = try XCTUnwrap(profile.removeValue(forKey: "avatar"))
+        XCTAssertLessThanOrEqual(avatar.utf16.count, 131_072)
+        XCTAssertTrue(try XCTUnwrap(Data(base64Encoded: avatar)).starts(with: [0xff, 0xd8]))
+        decoded["profile"] = profile
+        let expected = try JSONSerialization.jsonObject(with: Data("""
+            {"profile":{"name":"Koya Mori","color":"#9CCBFF","nextendo":"Koya","status":"online","week":"2 h 14 min"},
+             "friends":{"shared":true,"items":[{"name":"Milo","status":"offline"},{"name":"Lina","status":"playing","game":"Pokémon Legends: Z-A"}]},
+             "achievements":{"total":6,"unlocked":5,"recent":["Success 5","Success 4","Success 3","Success 2"]}}
+            """.utf8))
+        // An exact allowlist also rules out account IDs, credential fields and unrelated URLs.
+        XCTAssertEqual(decoded as NSDictionary, expected as? NSDictionary)
+        if let probe = ProcessInfo.processInfo.environment["ARCANE_OVERLAY_PARSER_PROBE"] {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: probe)
+            process.arguments = [path]
+            try process.run()
+            process.waitUntilExit()
+            XCTAssertEqual(process.terminationStatus, 0)
+        }
+        launcher.onExit?()
+        XCTAssertEqual(Set(try fm.contentsOfDirectory(atPath: root.path)), expectedChildren)
+
+        launcher.shouldSucceed = false
+        service.launch(appURL: app, overlay: overlay, snapshot: snapshot, temporaryDirectory: root) { ok, _ in XCTAssertFalse(ok) }
+        XCTAssertNotEqual(launcher.environment["DM_OVERLAY_DATA"], path)
+        XCTAssertEqual(Set(try fm.contentsOfDirectory(atPath: root.path)), expectedChildren)
+    }
+
+    func testOverlaySnapshotCapsFriendCountAndUTF16Text() throws {
+        var snapshot = GameOverlaySnapshot()
+        snapshot.friends = (0...100).map {
+            .init(id: UInt64($0), name: String(repeating: "🎮", count: 81), favorite: false,
+                  presence: .online, game: nil, gameID: nil)
+        }
+        let data = try XCTUnwrap(snapshot.encoded())
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: [String: Any]])
+        let items = try XCTUnwrap(object["friends"]?["items"] as? [[String: String]])
+        XCTAssertEqual(items.count, 100)
+        XCTAssertEqual(items.first?["name"], String(repeating: "🎮", count: 80))
     }
 
     func testWritesEnvAndLaunches() throws {
