@@ -1,6 +1,21 @@
 import Foundation
 import NXLibraryCore
 
+public struct NextendoCheckDiagnostic: Equatable, Sendable {
+    public let route: String
+    public let code: Int
+
+    public func message(context: AppLocale) -> String {
+        switch code {
+        case 401, 403: return L10n.text("Session expired: sign in again", context: context)
+        case URLError.notConnectedToInternet.rawValue, URLError.networkConnectionLost.rawValue:
+            return L10n.text("Offline", context: context)
+        case 500...599: return L10n.format("Nextendo server unavailable (%@)", [String(code)], context: context)
+        default: return L10n.format("Error (%@ · %@)", [route, String(code)], context: context)
+        }
+    }
+}
+
 public struct NextendoAccountSnapshot {
     public enum Presence: Equatable { case offline, online, playing }
 
@@ -186,7 +201,9 @@ public struct NextendoAccountService {
         catch NextendoHTTPError.unauthorized {
             guard let fresh = try await oauth.refreshAccess(clientID: clientID) else { return nil }
             do { return try await fetch(clientID: clientID, access: fresh, mayRefresh: false) }
-            catch NextendoHTTPError.unauthorized { throw NextendoError.expired }
+            catch NextendoHTTPError.unauthorized {
+                throw NextendoError.check(.init(route: "/api/oauth/userinfo", code: 401))
+            }
         }
     }
 
@@ -214,9 +231,20 @@ public struct NextendoAccountService {
         // `mii` is a Switch StoreData, not a bitmap. Use Nextendo's image endpoint for that portrait.
         let hasAvatar = ["mii", "avatar", "image"].contains { profile?.text($0, limit: 1_048_576) != nil }
         let friends = sections[2].body?.objects("friends").map(Self.sortedFriends)
-        let failure: NextendoError? = if sections[3].forbidden || sections[3].body?.bool("allow") == false {
-            .onlinePlayUnavailable
-        } else if friends == nil || sections.contains(where: { $0.body == nil }) {
+        let incomplete = sections.enumerated().filter { $0.element.body == nil || ($0.offset == 2 && friends == nil) }
+        let diagnostic = incomplete.compactMap(\.element.diagnostic).first
+            ?? recentSection.diagnostic.flatMap { $0.code == 200 ? nil : $0 }
+        let failure: NextendoError? = if sections[3].forbidden, let diagnostic = sections[3].diagnostic {
+            .check(diagnostic)
+        } else if let onlineStatus = sections[3].body, onlineStatus.bool("allow") == false {
+            switch onlineStatus.text("reason", limit: 32) {
+            case "discord_unlinked": .discordUnlinked
+            case "unverified": .emailUnverified
+            default: .onlinePlayUnavailable
+            }
+        } else if let diagnostic {
+            .check(diagnostic)
+        } else if !incomplete.isEmpty {
             .service
         } else {
             nil
@@ -234,8 +262,9 @@ public struct NextendoAccountService {
 
     private struct Section {
         var body: NextendoDocument? = nil
-        var unauthorized = false
-        var forbidden = false
+        var diagnostic: NextendoCheckDiagnostic? = nil
+        var unauthorized: Bool { diagnostic?.code == 401 }
+        var forbidden: Bool { diagnostic?.code == 403 }
     }
 
     private func friendLists(clientID: String, access: String) async throws -> Section {
@@ -245,11 +274,12 @@ public struct NextendoAccountService {
     private func read(_ path: String, query: [URLQueryItem] = [], clientID: String, access: String) async throws -> Section {
         do {
             let (body, status) = try await oauth.get(path, query: query, clientID: clientID, access: access)
-            if status == 401 { return Section(unauthorized: true) }
-            if status == 403 { return Section(forbidden: true) }
-            return Section(body: status == 200 ? try? NextendoDocument(data: body) : nil)
+            return Section(body: status == 200 ? try? NextendoDocument(data: body) : nil,
+                           diagnostic: .init(route: path, code: status))
         } catch is CancellationError {
             throw CancellationError()
+        } catch let error as NextendoError {
+            return Section(diagnostic: error.checkDiagnostic)
         } catch {
             return Section()
         }
@@ -258,11 +288,11 @@ public struct NextendoAccountService {
     private func onlineStatus(clientID: String, access: String) async throws -> Section {
         let game = try await read("/api/nex-token", clientID: clientID, access: access)
         guard let gameToken = game.body?.text("nex_token", limit: 8192), NextendoOAuth.validBearer(gameToken)
-        else { return Section(unauthorized: game.unauthorized, forbidden: game.forbidden) }
+        else { return Section(diagnostic: game.diagnostic) }
         // The status route takes a game bearer, not the OAuth access token.
         let status = try await read("/api/online-status", clientID: clientID, access: gameToken)
         guard status.body?.bool("allow") != nil else {
-            return Section(unauthorized: status.unauthorized, forbidden: status.forbidden)
+            return Section(diagnostic: status.diagnostic)
         }
         return status
     }

@@ -1,10 +1,18 @@
 import CryptoKit
 import Foundation
 import NXLibraryCore
+import OSLog
 import Security
 
 public enum NextendoError: LocalizedError, Equatable {
     case clientID, browser, timeout, authorization, service, expired, storage, signedOut, onlinePlayUnavailable, profileHost, presenceHost
+    case check(NextendoCheckDiagnostic)
+    case discordUnlinked, emailUnverified
+
+    public var checkDiagnostic: NextendoCheckDiagnostic? {
+        if case .check(let diagnostic) = self { return diagnostic }
+        return nil
+    }
 
     public var errorDescription: String? {
         switch self {
@@ -12,11 +20,12 @@ public enum NextendoError: LocalizedError, Equatable {
         case .browser: return L10n.text("Could not open the Nextendo sign-in window.")
         case .timeout: return L10n.text("Nextendo sign-in timed out. Try again.")
         case .authorization: return L10n.text("Nextendo did not authorize sign-in. Check the client ID and its permissions.")
-        case .service: return L10n.text("Could not check the Nextendo account. Try again.")
+        case .service, .check: return L10n.text("Could not check the Nextendo account. Try again.")
         case .expired: return L10n.text("Nextendo sign-in expired. Sign in again.")
         case .storage: return L10n.text("Could not access the shared Nextendo sign-in. Close any running games and try again.")
         case .signedOut: return L10n.text("Sign in to Nextendo in Online services before playing online.")
-        case .onlinePlayUnavailable: return L10n.text("Nextendo does not allow online play for this account. Check your profile on the website.")
+        case .onlinePlayUnavailable, .discordUnlinked, .emailUnverified:
+            return L10n.text("Nextendo does not allow online play for this account. Check your profile on the website.")
         case .profileHost: return L10n.text("Rebuild this game to use this profile’s Nextendo account.")
         case .presenceHost: return L10n.text("Rebuild this game to play online without sharing its title.")
         }
@@ -95,6 +104,8 @@ public struct NextendoOAuth {
     private static let tokenEndpoint = URL(string: "https://nextendo.network/api/oauth/token")!
     public let store: NextendoTokenStore
     private let send: (URLRequest) async throws -> (Data, URLResponse)
+    private let onResult: @Sendable (NextendoCheckDiagnostic) -> Void
+    private static let log = Logger(subsystem: "local.nxlibrary", category: "nextendo")
 
     private static let session: URLSession = {
         let config = URLSessionConfiguration.ephemeral
@@ -105,8 +116,9 @@ public struct NextendoOAuth {
         return URLSession(configuration: config)
     }()
 
-    public init(store: NextendoTokenStore = NextendoTokenStore()) {
-        self.init(store: store) { request in
+    public init(store: NextendoTokenStore = NextendoTokenStore(),
+                onResult: @escaping @Sendable (NextendoCheckDiagnostic) -> Void = { _ in }) {
+        self.init(store: store, onResult: onResult) { request in
             let path = request.url?.path ?? ""
             let limit = ["/api/friends", "/api/profile", "/api/avatar", "/api/recent-players"].contains(path)
                 || path.hasPrefix("/api/friends/") ? 1_048_576 : 65_536
@@ -114,8 +126,11 @@ public struct NextendoOAuth {
         }
     }
 
-    package init(store: NextendoTokenStore, send: @escaping (URLRequest) async throws -> (Data, URLResponse)) {
+    package init(store: NextendoTokenStore,
+                 onResult: @escaping @Sendable (NextendoCheckDiagnostic) -> Void = { _ in },
+                 send: @escaping (URLRequest) async throws -> (Data, URLResponse)) {
         self.store = store
+        self.onResult = onResult
         self.send = send
     }
 
@@ -184,6 +199,9 @@ public struct NextendoOAuth {
             // Another front end may have signed in with a different client. Don't delete its credential.
             throw grant == "refresh_token" ? NextendoError.expired : NextendoError.authorization
         }
+        if status != 200, grant == "refresh_token" {
+            throw NextendoError.check(.init(route: Self.tokenEndpoint.path, code: status))
+        }
         if [400, 401, 403].contains(status) { throw NextendoError.authorization }
         guard status == 200, let token = try? JSONDecoder().decode(Token.self, from: body),
               Self.validBearer(token.access),
@@ -206,7 +224,9 @@ public struct NextendoOAuth {
     func userInfo(clientID: String, access: String) async throws -> UserInfo {
         let (body, status) = try await get("/api/oauth/userinfo", clientID: clientID, access: access)
         if status == 401 { throw NextendoHTTPError.unauthorized }
-        guard status == 200, let account = try? NextendoDocument(data: body) else { throw NextendoError.service }
+        guard status == 200, let account = try? NextendoDocument(data: body) else {
+            throw NextendoError.check(.init(route: "/api/oauth/userinfo", code: status))
+        }
         let fields = [account, account.object("account"), account.object("identity")].compactMap { $0 }
         let names = fields.compactMap { $0.text("username") }
         let pids = fields.compactMap { $0.pid }
@@ -254,15 +274,28 @@ public struct NextendoOAuth {
     }
 
     private func response(_ request: URLRequest) async throws -> (Data, Int) {
+        // These paths are fixed by the callers. Never include query items or error userInfo.
+        let route = request.url?.path ?? ""
         do {
             let (data, response) = try await send(request)
             guard let http = response as? HTTPURLResponse, http.url == request.url else { throw NextendoError.service }
+            record(.init(route: route, code: http.statusCode))
             return (data, http.statusCode)
         } catch is CancellationError {
             throw CancellationError()
+        } catch let error as URLError {
+            let diagnostic = NextendoCheckDiagnostic(route: route, code: error.code.rawValue)
+            record(diagnostic)
+            throw NextendoError.check(diagnostic)
         } catch {
             throw NextendoError.service
         }
+    }
+
+    private func record(_ diagnostic: NextendoCheckDiagnostic) {
+        Self.log.log(level: (200..<300).contains(diagnostic.code) ? .default : .error,
+                     "\(diagnostic.route, privacy: .public) · \(diagnostic.code, privacy: .public)")
+        onResult(diagnostic)
     }
 }
 

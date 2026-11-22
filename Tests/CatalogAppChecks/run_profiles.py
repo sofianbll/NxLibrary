@@ -597,6 +597,10 @@ import ArcanePorting
         try render("18-second-profile-nextendo", SettingsView(initialSection: .profileNextendo,
             viewModel: vm, settings: settings, router: AppRouter(), artwork: art, profileAccount: samAccount)
             .environment(\.nxAppLocale, french), in: out, refs, "none")
+        samAccount.setScreenFixture(.connected, second: true, failure: .discordUnlinked)
+        try render("18-nextendo-discord", SettingsView(initialSection: .profileNextendo,
+            viewModel: vm, settings: settings, router: AppRouter(), artwork: art, profileAccount: samAccount)
+            .environment(\.nxAppLocale, french), in: out, refs, "none")
         L10n.setContext(.init(language: .english, region: "US"))
         try render("12-sort-before", stage(BeforeSortTopBar(), showsSort: false), in: out, refs, "screenshots/library.png")
         try render("13-sort-after", after, in: out, refs, "screenshots/library.png")
@@ -1188,8 +1192,9 @@ enum ProfilePresence { case connected }
 
 extension NextendoSettings {
     func setPresenceFixture() { presenceShared = true }
-    func setScreenFixture(_ presence: ProfilePresence, second: Bool = false) {
+    func setScreenFixture(_ presence: ProfilePresence, second: Bool = false, failure: NextendoError? = nil) {
         status = .signedIn; account = .screenFixture(second: second); accountName = account?.name
+        self.failure = failure
         friendsUpdatedAt = .now.addingTimeInterval(-30)
     }
 }

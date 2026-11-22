@@ -33,9 +33,10 @@ import ArcanePorting
     let store: NextendoTokenStore
     let accountService: NextendoAccountService
 
-    init(store: NextendoTokenStore = .init(), service: NextendoAccountService? = nil) {
+    init(store: NextendoTokenStore = .init(), service: NextendoAccountService? = nil,
+         onResult: @escaping @Sendable (NextendoCheckDiagnostic) -> Void = { _ in }) {
         self.store = store
-        accountService = service ?? NextendoAccountService(oauth: NextendoOAuth(store: store))
+        accountService = service ?? NextendoAccountService(oauth: NextendoOAuth(store: store, onResult: onResult))
     }
 
     func check(clientID: String?) {
@@ -224,12 +225,12 @@ import ArcanePorting
             catch {
                 guard self.ticket == ticket, !Task.isCancelled else { return }
                 let problem = error as? NextendoError ?? .service
-                if problem == .expired {
+                if problem == .expired || problem.checkDiagnostic?.code == 401 || problem.checkDiagnostic?.code == 403 {
                     self.status = .expired
                     self.account = nil
                     self.clearOverlayAccount()
                 } else if (checking || self.status != .signedOut),
-                          problem == .service || problem == .clientID || problem == .storage {
+                          problem == .service || problem.checkDiagnostic != nil || problem == .clientID || problem == .storage {
                     self.status = .unavailable
                     self.account = nil
                 }

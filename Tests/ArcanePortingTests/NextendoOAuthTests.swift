@@ -81,7 +81,9 @@ final class NextendoOAuthTests: XCTestCase {
         do {
             _ = try await unavailable.accountName(clientID: "sample-client")
             XCTFail("A temporary error is not expiry")
-        } catch let error as NextendoError { XCTAssertEqual(error, .service) }
+        } catch let error as NextendoError {
+            XCTAssertEqual(error.checkDiagnostic, .init(route: "/api/oauth/token", code: 503))
+        }
     }
 
     private func makeStore() -> NextendoTokenStore {
