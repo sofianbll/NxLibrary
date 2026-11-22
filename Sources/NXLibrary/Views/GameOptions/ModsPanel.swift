@@ -431,7 +431,7 @@ struct ModsPanel: View {
             case .navigateLeft: moveConfirmFocus(.cancel)
             case .navigateRight: moveConfirmFocus(.confirm)
             case .confirm: confirmFocus == .confirm ? runRemove() : dismissConfirm()
-            case .cancel, .secondaryAction, .menu: dismissConfirm()
+            case .cancel: dismissConfirm()
             default: break
             }
             return
@@ -444,7 +444,7 @@ struct ModsPanel: View {
         case .confirm:
             if let focusedRow { activate(focusedRow) }
         case .contextAction: askRemove()
-        case .cancel, .secondaryAction, .menu: close()
+        case .cancel: close()
         default: break
         }
     }

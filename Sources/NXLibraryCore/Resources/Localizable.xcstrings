@@ -76872,6 +76872,18 @@
         }
       }
     },
+    "Touchpad": {
+      "comment": "ButtonPrompts.swift: PlayStation touchpad click",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Touchpad" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Touch pad" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Pavé tactile" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Touchpad" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Panel táctil" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Touchpad" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "触摸板" } }
+      }
+    },
     "Touchscreen": {
       "comment": "ControlsView.swift:38",
       "localizations": {

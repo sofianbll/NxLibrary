@@ -533,7 +533,7 @@ struct CheatsPanel: View {
             case .navigateLeft: moveConfirmFocus(.cancel)
             case .navigateRight: moveConfirmFocus(.confirm)
             case .confirm: confirmFocus == .confirm ? runConfirm() : dismissConfirm()
-            case .cancel, .secondaryAction, .menu: dismissConfirm()
+            case .cancel: dismissConfirm()
             default: break
             }
             return
@@ -542,7 +542,7 @@ struct CheatsPanel: View {
         case .navigateUp: move(by: -1)
         case .navigateDown: move(by: 1)
         case .confirm: activateFocused()
-        case .cancel, .secondaryAction, .menu: close()
+        case .cancel: close()
         default: break
         }
     }

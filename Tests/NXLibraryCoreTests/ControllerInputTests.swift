@@ -151,23 +151,6 @@ final class ControllerInputTests: XCTestCase {
         XCTAssertEqual(otherSide.leftStick.x, -0.48718, accuracy: 0.0002)
     }
 
-    func testDisconnectCancelsHoldsWithoutTurningThemIntoTaps() {
-        var holds = ControllerHolds()
-        XCTAssertNil(holds.update(.menu, pressed: true, at: 1))
-        XCTAssertNil(holds.update(.view, pressed: true, at: 1.05))
-        holds.reset()
-        XCTAssertFalse(holds.isPressed)
-        XCTAssertEqual(holds.tick(at: 2), [])
-        XCTAssertNil(holds.update(.menu, pressed: false, at: 2.1))
-        XCTAssertNil(holds.update(.view, pressed: false, at: 2.2))
-        XCTAssertNil(holds.update(.menu, pressed: true, at: 3))
-        XCTAssertEqual(holds.update(.menu, pressed: false, at: 3.2), .tap)
-        XCTAssertNil(holds.update(.view, pressed: true, at: 4))
-        XCTAssertEqual(holds.tick(at: 4.49), [])
-        XCTAssertEqual(holds.tick(at: 4.5), [.view])
-        XCTAssertNil(holds.update(.view, pressed: false, at: 4.6))
-    }
-
     func testGCClaimWaitsTwoSecondsAndMatchingGCTakesOverEvenLater() {
         var pad = ControllerArbitration.HID(name: "Lic Pro Controller", claimedByGC: true, connectedAt: 10)
         XCTAssertEqual(pad.admission(gcNames: [], at: 11.99), .wait(until: 12))

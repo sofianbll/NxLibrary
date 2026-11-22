@@ -105,7 +105,8 @@ struct SeleneHintsBar: View {
                         .foregroundColor(SeleneTheme.ink90)
                 }
                 if let hold = item.hold {
-                    Text(hold).seleneFont(13).foregroundColor(SeleneTheme.ink60)
+                    Text(L10n.text(hold, context: localization))
+                        .seleneFont(13).foregroundColor(SeleneTheme.ink60)
                 }
             }
         }

@@ -92,9 +92,8 @@ extension ChangeArtworkView {
         case .tabPrevious: select(ArtworkPickerFocus.slot(after: slot, by: -1))
         case .tabNext: select(ArtworkPickerFocus.slot(after: slot, by: 1))
         case .confirm: chooseFocused()
-        case .secondaryAction: browsing != nil ? openPage() : close()
+        case .secondaryAction where browsing != nil: openPage()
         case .cancel: back()
-        case .menu: close()
         default: break
         }
     }

@@ -186,6 +186,15 @@ extension AppShellView {
                 .transition(overlayTransition)
                 .zIndex(2)
             }
+            if !isCloseGameOpen && !nativeDialogOwnsInput && !nativeMenus.isTracking
+                && !viewModel.showSetupCheck && !showsWelcome && viewModel.launchOverlay == nil
+                && !viewModel.isGameOptionsOpen && !router.isSearchPresented
+                && !router.isScreenshotViewerOpen && router.activityCenterFocus == nil
+                && !router.isThemePickerOpen {
+                MenuHoldIndicator()
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                    .zIndex(5)
+            }
         }
         .onPreferenceChange(SeleneBackdropRequestKey.self, perform: updateSharedBackdrop)
     }
@@ -396,6 +405,40 @@ extension AppShellView {
             default:
                 break
             }
+        }
+    }
+}
+
+private struct MenuHoldIndicator: View {
+    @ObservedObject private var controller = GameControllerService.shared
+    @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.seleneReduceMotion) private var reduceMotion
+
+    var body: some View {
+        if let start = controller.menuHoldStartedAt {
+            TimelineView(.animation(paused: reduceMotion)) { _ in
+                let elapsed = ProcessInfo.processInfo.systemUptime - start
+                let progress = min(1, max(0, elapsed / HoldDetector.defaultThreshold))
+                HStack(spacing: canvas.u(10)) {
+                    Circle()
+                        .stroke(SeleneTheme.ink25, lineWidth: canvas.u(3))
+                        .overlay {
+                            if !reduceMotion {
+                                Circle().trim(from: 0, to: progress)
+                                    .stroke(SeleneTheme.focus, style: StrokeStyle(lineWidth: canvas.u(3), lineCap: .round))
+                                    .rotationEffect(.degrees(-90))
+                            }
+                        }
+                        .frame(width: canvas.u(22), height: canvas.u(22))
+                    Text(L10n.text("Hold: Settings")).seleneFont(19)
+                }
+                .foregroundStyle(SeleneTheme.ink)
+                .padding(.horizontal, canvas.u(16))
+                .padding(.vertical, canvas.u(9))
+                .background(SeleneTheme.glassCard, in: Capsule())
+                .padding(.bottom, canvas.u(SeleneBottomScrim.hintsBottom + 50))
+            }
+            .allowsHitTesting(false)
         }
     }
 }

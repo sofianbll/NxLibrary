@@ -20,7 +20,9 @@ extension GameDetailView {
         case .navigateDown: moved = moveFocus { $0.down(in: $1) }
         case .confirm: activateFocused()
         case .cancel: router.back()
-        case .secondaryAction, .contextAction: openOptions()
+        case .contextAction: openOptions()
+        case .menu: router.isMenuPresented = true
+        case .menuHold: router.openSettings(.startUp)
         default: break
         }
         if moved { SoundEffectService.shared.play(.focus) }
@@ -318,7 +320,6 @@ extension GameDetailView {
             case 126: action = .navigateUp
             case 36, 49: action = .confirm
             case 53: action = .cancel           // Esc: back to where Details was opened from
-            case 7: action = .secondaryAction   // X
             case 16: action = .contextAction    // Y
             default: return event
             }

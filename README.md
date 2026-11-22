@@ -314,13 +314,13 @@ In fullscreen, the pointer hides after three seconds without movement. Moving th
 | Navigate | Arrow keys | D-pad / left stick |
 | Select | Return / Space | Confirm button |
 | Back | Escape | Back button |
-| Menu | `⌘K` | Menu / Start |
-| Settings | `⌘,` | Hold Menu |
-| Find a game | `⌘F` | Hold View |
-| Switch library view | Tab | View |
+| Control center | `⌘K` | Tap Menu / `+` / Options |
+| Settings | `⌘,` | Hold Menu / `+` / Options for 0.5 s |
+| Find a game | `⌘F` | — |
+| Switch library view | `V` | View / `−` / touchpad click |
 | Switch tabs / filters | Q / E where shown | LB / RB |
 
-Prompts follow the connected controller and supported system remapping. The PowerA **Lic Pro Controller** can use a direct HID fallback with Nintendo prompts when it isn't available through GameController. **Settings → Controllers → Button layout** separates **Library** navigation from **In game** defaults. Game inputs are handled by the engine and can differ in older builds.
+Home has no action in Arcane. Prompts follow the connected controller and supported system remapping. The PowerA **Lic Pro Controller** can use a direct HID fallback with Nintendo prompts when it isn't available through GameController. **Settings → Controllers → Button layout** separates **Library** navigation from **In game** defaults. Game inputs are handled by the engine and can differ in older builds. See the [launcher keymap](docs/how-it-works/keymap.md) for screen-specific bindings.
 
 ## Troubleshooting
 

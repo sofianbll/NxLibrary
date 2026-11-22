@@ -94,8 +94,6 @@ extension GameOptionsView {
         case .confirm: activateFocused()
         case .cancel: back()
         case .contextAction: toggleInfo()
-        case .secondaryAction, .menu:
-            if confirm != nil { dismissConfirm() } else { onClose() }
         default: break
         }
     }

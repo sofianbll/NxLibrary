@@ -41,11 +41,11 @@ final class ButtonPromptsTests: XCTestCase {
     func testAutomaticIgnoresGenericReportedGlyphs() {
         let viewSym = ButtonPrompts.symbol(.view, style: .automatic, connected: .playstation,
                                            reported: [.view: "circle"])
-        XCTAssertEqual(viewSym, "square.and.arrow.up.circle")
+        XCTAssertNil(viewSym)
 
         let menuSym = ButtonPrompts.symbol(.menu, style: .automatic, connected: .playstation,
                                            reported: [.menu: "circle.fill"])
-        XCTAssertEqual(menuSym, "line.3.horizontal.circle")
+        XCTAssertNil(menuSym)
     }
 
     func testGenericShapeDetection() {
@@ -62,10 +62,10 @@ final class ButtonPromptsTests: XCTestCase {
         for name in ["capsule.portrait", "capsule.portrait.fill", "oval.portrait.fill",
                      "rectangle.portrait.fill", "rectangle.roundedtop.fill", "button.horizontal.fill"] {
             XCTAssertTrue(ButtonPrompts.isGenericShape(name), name)
-            XCTAssertEqual(ButtonPrompts.symbol(.view, style: .automatic, connected: .playstation,
-                                               reported: [.view: name]), "square.and.arrow.up.circle", name)
-            XCTAssertEqual(ButtonPrompts.symbol(.menu, style: .automatic, connected: .playstation,
-                                               reported: [.menu: name]), "line.3.horizontal.circle", name)
+            XCTAssertNil(ButtonPrompts.symbol(.view, style: .automatic, connected: .playstation,
+                                             reported: [.view: name]), name)
+            XCTAssertNil(ButtonPrompts.symbol(.menu, style: .automatic, connected: .playstation,
+                                             reported: [.menu: name]), name)
         }
         XCTAssertEqual(ButtonPrompts.symbol(.view, style: .automatic, connected: .xbox,
                                            reported: [.view: "capsule.portrait"]), "rectangle.on.rectangle.circle")
@@ -97,7 +97,7 @@ final class ButtonPromptsTests: XCTestCase {
 
     func testEveryButtonHasASymbolInEveryStyle() {
         for style in ButtonNameStyle.allCases where style != .automatic {
-            for button in PromptButton.allCases {
+            for button in PromptButton.allCases where style != .playstation || (button != .view && button != .menu) {
                 XCTAssertNotNil(ButtonPrompts.symbol(button, style: style, connected: .none))
             }
         }
@@ -109,6 +109,21 @@ final class ButtonPromptsTests: XCTestCase {
         XCTAssertFalse(ButtonPrompts.usesKeyboard(style: .xbox, connected: .none))
         XCTAssertEqual(ButtonPrompts.keyboardKey(.a), .symbol("return"))
         XCTAssertEqual(ButtonPrompts.keyboardKey(.b), .text("esc"))
+        XCTAssertEqual(ButtonPrompts.keyboardKey(.view), .text("V"))
+        XCTAssertEqual(ButtonPrompts.keyboardKey(.rb), .text("E"))
+        XCTAssertEqual(ButtonPrompts.keyboardKey(.rs), .text("F3"))
+    }
+
+    func testFaceAndMenuLabelsByFamily() {
+        let buttons: [PromptButton] = [.a, .b, .x, .y, .lb, .rb, .lt, .rt, .view, .menu]
+        let families: [(ConnectedPad, [String])] = [
+            (.xbox, ["A", "B", "X", "Y", "LB", "RB", "LT", "RT", "View", "Menu"]),
+            (.nintendo, ["A", "B", "X", "Y", "L", "R", "ZL", "ZR", "−", "+"]),
+            (.playstation, ["✕", "○", "□", "△", "L1", "R1", "L2", "R2", L10n.text("Touchpad"), "Options"]),
+        ]
+        for (pad, expected) in families {
+            XCTAssertEqual(buttons.map { ButtonPrompts.label($0, style: .automatic, connected: pad) }, expected)
+        }
     }
 
     func testGenericControllerUsesXboxGlyphs() {

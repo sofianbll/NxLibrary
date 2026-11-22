@@ -44,7 +44,9 @@ extension CollectionView {
             }
         case .secondaryAction:
             // A Steam game's details are its Spotlight page; Collection has no Details screen for it.
-            if let game = selectedCatalogGame, game.integration != .steam { router.showDetail(game.id) }
+            if let game = selectedGame, game.isPlayableLocally || downloadsCloudApp(game) {
+                router.showDetail(game.id)
+            }
         case .contextAction:
             if let steam = selectedCatalogGame, steam.integration == .steam {
                 SoundEffectService.shared.play(.click)
@@ -53,10 +55,10 @@ extension CollectionView {
             }
             if let game = selectedGame { viewModel.openGameOptions(game, from: .collection) }
         case .cancel:
-            router.showLibrary() // B goes home, like Selene's library.
+            router.back()
         case .view:
-            if settings.settings.viewButtonSwitches { router.showLibrary() }
-        case .viewHold:
+            if settings.settings.viewButtonSwitches { router.setInitialRoute(.library) }
+        case .search:
             router.isSearchPresented = true
         case .menu:
             router.isMenuPresented = true
@@ -118,12 +120,13 @@ extension CollectionView {
             case 125 where sortFocused: action = .navigateDown
             case 126: action = .navigateUp
             case 36, 49, 76: action = .confirm
-            case 53 where sortFocused: action = .cancel
+            case 53: action = .cancel
             case 7: action = .secondaryAction   // X
             case 16: action = .contextAction    // Y
             case 12: action = .tabPrevious      // Q
             case 14: action = .tabNext          // E
-            default: return event               // Esc falls through to the shell, which opens the Menu.
+            case 99: action = .rightStickPress  // F3: keyboard equivalent of the existing sort action
+            default: return event
             }
             handle(action)
             return nil

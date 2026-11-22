@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 22 novembre 2026. Copertura di **868 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 22 novembre 2026. Copertura di **870 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -150,7 +150,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 | [Sources/NXLibrary/Services/NativeMenuCommands.swift](../../Sources/NXLibrary/Services/NativeMenuCommands.swift) | Coordina tracking, disponibilità nella scena e passaggio differito dai menu macOS alle azioni del launcher. |
 | [Sources/NXLibrary/Services/NextendoBrowserSignIn.swift](../../Sources/NXLibrary/Services/NextendoBrowserSignIn.swift) | Apre il browser predefinito e riceve una callback HTTP su loopback, con annullamento e scadenza. |
 | [Sources/NXLibrary/Services/ControllerSource.swift](../../Sources/NXLibrary/Services/ControllerSource.swift) | Contratto di connessione, identità e transizioni normalizzate per le sorgenti di input. |
-| [Sources/NXLibrary/Services/GameControllerService.swift](../../Sources/NXLibrary/Services/GameControllerService.swift) | Sceglie il pad attivo, gestisce tap, hold e navigazione, pubblica azioni e simboli. |
+| [Sources/NXLibrary/Services/GameControllerService.swift](../../Sources/NXLibrary/Services/GameControllerService.swift) | Sceglie il pad attivo, distingue tap e hold di Menu (500 ms), pubblica inizio del progresso, azioni e simboli. |
 | [Sources/NXLibrary/Services/GCControllerSource.swift](../../Sources/NXLibrary/Services/GCControllerSource.swift) | Legge il profilo esteso di GameController, lo schema dei tasti e i simboli di sistema. |
 | [Sources/NXLibrary/Services/HIDControllerSource.swift](../../Sources/NXLibrary/Services/HIDControllerSource.swift) | Scopre i pad HID Nintendo fisici e legge i report `0x3F` e `0x30` del pad selezionato in modalità condivisa. |
 | [Sources/NXLibrary/Services/LaunchReadinessProbe.swift](../../Sources/NXLibrary/Services/LaunchReadinessProbe.swift) | Attende una finestra visibile del gioco (per bundle o, per Steam, per pid) per terminare la schermata di lancio. |
@@ -251,9 +251,9 @@ Cartella `Sources/NXLibraryCore/Selene/`.
 | [Sources/NXLibraryCore/Selene/OnlineBackgrounds.swift](../../Sources/NXLibraryCore/Selene/OnlineBackgrounds.swift) | Modella sorgenti e risultati e interpreta le risposte dei provider di sfondi fissi e video. |
 | [Sources/NXLibraryCore/Selene/SeleneImporter.swift](../../Sources/NXLibraryCore/Selene/SeleneImporter.swift) | Importa suoni e wallpaper dalla cartella Selene dell’utente e risolve cue e fallback. |
 | [Sources/NXLibraryCore/Selene/ButtonPrompts.swift](../../Sources/NXLibraryCore/Selene/ButtonPrompts.swift) | Traduce azioni in simboli o etichette per tastiera e controller Switch, Xbox e PlayStation. |
-| [Sources/NXLibraryCore/Selene/ControllerInput.swift](../../Sources/NXLibraryCore/Selene/ControllerInput.swift) | Decodifica entrambi i report Nintendo, calibra gli stick per formato, calcola transizioni, annulla pressioni e decide il ripiego HID. |
+| [Sources/NXLibraryCore/Selene/ControllerInput.swift](../../Sources/NXLibraryCore/Selene/ControllerInput.swift) | Decodifica entrambi i report Nintendo, calibra gli stick per formato, calcola transizioni e decide il ripiego HID. |
 | [Sources/NXLibraryCore/Selene/FocusIndex.swift](../../Sources/NXLibraryCore/Selene/FocusIndex.swift) | Mantiene un indice di focus entro i limiti di una lista. |
-| [Sources/NXLibraryCore/Selene/HoldDetector.swift](../../Sources/NXLibraryCore/Selene/HoldDetector.swift) | Distingue pressione breve e prolungata usando un tempo fornito dal chiamante. |
+| [Sources/NXLibraryCore/Selene/HoldDetector.swift](../../Sources/NXLibraryCore/Selene/HoldDetector.swift) | Distingue pressione breve e prolungata a 500 ms e consente di annullarla senza azione. |
 | [Sources/NXLibraryCore/Selene/MaterialIcon.swift](../../Sources/NXLibraryCore/Selene/MaterialIcon.swift) | Elenca i glifi del font Material Icons incluso nel bundle. |
 | [Sources/NXLibraryCore/Selene/MenuSelectionModel.swift](../../Sources/NXLibraryCore/Selene/MenuSelectionModel.swift) | Gestisce azioni selezionate nel control center e nelle scelte Power. |
 | [Sources/NXLibraryCore/Selene/MoonlightField.swift](../../Sources/NXLibraryCore/Selene/MoonlightField.swift) | Genera in modo deterministico i dati delle particelle per lo sfondo Metal. |
@@ -880,7 +880,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/ArcanePortingTests/CloudGameArchiveTests.swift](../../Tests/ArcanePortingTests/CloudGameArchiveTests.swift) | App firmata sintetica e cache con rclone finto o locale: invio incrementale, manifest intermedio visibile dal riferimento, annullamento, cache compatibile, precedenza e migrazione `.aar`. |
 | [Tests/ArcanePortingTests/GameAppDestinationTests.swift](../../Tests/ArcanePortingTests/GameAppDestinationTests.swift) | Installazione e scoperta nella cartella scelta, rebuild dopo il cambio cartella, conflitti di nome, sorgenti protette e cartelle non disponibili o di sola lettura. |
 | [Tests/NXLibraryCoreTests/ButtonPromptsTests.swift](../../Tests/NXLibraryCoreTests/ButtonPromptsTests.swift) | Etichette e simboli per tastiera, controller e scelte esplicite dell’utente. |
-| [Tests/NXLibraryCoreTests/ControllerInputTests.swift](../../Tests/NXLibraryCoreTests/ControllerInputTests.swift) | Report Nintendo sintetici e cambio di formato, calibrazione, transizioni, annullamento degli hold e precedenza di GameController. |
+| [Tests/NXLibraryCoreTests/ControllerInputTests.swift](../../Tests/NXLibraryCoreTests/ControllerInputTests.swift) | Report Nintendo sintetici e cambio di formato, calibrazione, transizioni e precedenza di GameController. |
 | [Tests/ArcanePortingTests/CheatCopyTests.swift](../../Tests/ArcanePortingTests/CheatCopyTests.swift) | Testi di intestazione, rifiuto, conferma e rimozione dei cheats. |
 | [Tests/ArcanePortingTests/CheatFileTests.swift](../../Tests/ArcanePortingTests/CheatFileTests.swift) | Parsing dei codici secondo il motore, sezioni, metadati, nomi duplicati e codici non validi. |
 | [Tests/ArcanePortingTests/CheatInstallTests.swift](../../Tests/ArcanePortingTests/CheatInstallTests.swift) | Build ID, title ID, file senza nome, cartelle e decisioni di installazione. |
@@ -1048,7 +1048,8 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [CatalogPersonalizationTests.swift](../../Tests/ArcanePortingTests/CatalogPersonalizationTests.swift) | Rinomina senza perdita del lookup e isolamento di chiavi uguali tra fonti. |
 | [CatalogBuildRecoveryTests.swift](../../Tests/ArcanePortingTests/CatalogBuildRecoveryTests.swift) | Vecchia build persistita e nuova conservata, sospensione automatica e conferme obsolete. |
 | [run_notices.py](../../Tests/CatalogAppChecks/run_notices.py) | Esegue il modello e i metodi reali degli avvisi e del ponte legacy senza finestre, dopo swift test. |
-| [run_review.py](../../Tests/CatalogAppChecks/run_review.py) | Verifica senza finestre achievement, loghi, focus, navigazione, badge mod in Online, priorità dei dialoghi e Steam durante Play. |
+| [run_review.py](../../Tests/CatalogAppChecks/run_review.py) | Verifica senza finestre achievement, loghi, focus, keymap, badge mod in Online, priorità dei dialoghi e Steam durante Play. |
+| [run_keymap_screens.py](../../Tests/CatalogAppChecks/run_keymap_screens.py) | Rende la barra Selene per Xbox, Switch e DualSense con identità sintetiche, senza aprire finestre. |
 | [run_cloud_screens.py](../../Tests/CatalogAppChecks/run_cloud_screens.py) | Rende Cloud, Download, aggiornamento pronto, riferimento e Play together in PNG; verifica dialoghi e trasferimento durante Play con fixture locali. |
 | [run_startup_recovery.py](../../Tests/CatalogAppChecks/run_startup_recovery.py) | Coordinatore di avvio reale su profili sintetici: conflitto, scelta esplicita, offerta obsoleta, Retry e fallimento della preparazione; nessuna finestra. |
 | [run_source_access.py](../../Tests/CatalogAppChecks/run_source_access.py) | Esegue il ripristino di avvio, l'observer e i selettori reali: nessuna scansione automatica dei sorgenti, cartella ricordata, annullamento e lettura dei soli file scelti; nessuna finestra o dato personale. |
@@ -1151,6 +1152,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [docs/README.md](../README.md) | Indice della documentazione: cosa c'è in ogni cartella, per chi è e da dove partire. |
 | [docs/how-it-works/architecture.md](../how-it-works/architecture.md) | Come funziona oggi ogni area: confini dei componenti, regole, dati su disco e verifiche; niente storia né stati di validazione. |
 | [docs/how-it-works/flows.md](../how-it-works/flows.md) | Schemi dei flussi completi: avvio, libreria, Play Switch e Steam, Add Game, salvataggi, mod, impostazioni, aggiornamento dell’app. |
+| [docs/how-it-works/keymap.md](../how-it-works/keymap.md) | Keymap per tasto e schermata, precedenza dei dialoghi e glifi per famiglia. |
 | [docs/how-it-works/steam.md](../how-it-works/steam.md) | Riferimento unico dell’integrazione Steam: file letti, stati, osservazione, libreria, Play, ore, achievement, scelte e limiti. |
 | [docs/working-on-it/conventions.md](conventions.md) | Dove va il codice; ricette per fonti, interfaccia Selene e conferme, impostazioni, dati, rete, testi, test e documentazione. |
 | [docs/working-on-it/development.md](development.md) | Documenta prerequisiti, runtime, build, debug, verifiche, CI e release, compreso l'ID Nextendo pubblico della release personale. |

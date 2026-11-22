@@ -167,7 +167,7 @@ final class ModsBandHost: ObservableObject {
                 let expanded = Binding(get: { self.detailExpanded }, set: { self.detailExpanded = $0 })
                 ModDetailPanel.activate(rows[detailFocus], mod: mod, installed: records[mod.id], model: gameBanana,
                                         expanded: expanded)
-            case .cancel, .menu:
+            case .cancel:
                 closeDetail()
             default: break
             }
@@ -177,7 +177,7 @@ final class ModsBandHost: ObservableObject {
                 guard gameBanana.canSubmitModSearch else { return }
                 SoundEffectService.shared.play(.click)
                 gameBanana.submitModSearch()
-            case .cancel, .menu:
+            case .cancel:
                 SoundEffectService.shared.play(.focus)
                 gameBanana.closeModSearch()
             default: break
@@ -189,7 +189,7 @@ final class ModsBandHost: ObservableObject {
             case .confirm:
                 SoundEffectService.shared.play(.click)
                 find.confirm(using: gameBanana)
-            case .cancel, .menu:
+            case .cancel:
                 SoundEffectService.shared.play(.focus)
                 find.close()
             default: break

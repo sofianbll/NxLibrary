@@ -43,10 +43,12 @@ struct SeleneHomeChrome<Backdrop: View, Stage: View>: View {
 }
 
 extension HintItem {
-    /// Both home screens' left hints: the other screen (Hold: Search) and the Menu.
-    static func homeGlobals(other: String, onOther: (() -> Void)? = nil, onMenu: (() -> Void)? = nil) -> [HintItem] {
-        [HintItem(.view, other, glyph: .spotlight, hold: L10n.text("Hold: Search"), action: onOther),
-         HintItem(.menu, L10n.text("Menu"), glyph: .menu, hold: L10n.text("Hold: Settings"), action: onMenu)]
+    /// Both home screens' left hints: the other view, Menu and mouse/keyboard Search.
+    static func homeGlobals(other: String, onOther: (() -> Void)?, onMenu: @escaping () -> Void,
+                            onSearch: @escaping () -> Void) -> [HintItem] {
+        (onOther.map { [HintItem(.view, other, action: $0)] } ?? [])
+            + [HintItem(.menu, "Menu", hold: "Hold: Settings", action: onMenu),
+               HintItem(nil, "Find a game", glyph: .search, action: onSearch)]
     }
 }
 

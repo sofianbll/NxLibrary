@@ -532,7 +532,7 @@ struct ChangeMetadataView: View {
             case .navigateLeft: editorFocus = .cancel
             case .navigateRight: editorFocus = .confirm
             case .confirm: if editorFocus == .confirm { saveDraft() } else { editing = false }
-            case .cancel, .menu: editing = false
+            case .cancel: editing = false
             default: break
             }
             return
@@ -543,7 +543,7 @@ struct ChangeMetadataView: View {
         case .navigateLeft, .tabPrevious: shiftField(by: -1)
         case .navigateRight, .tabNext: shiftField(by: 1)
         case .confirm: chooseFocused()
-        case .cancel, .secondaryAction, .menu: close()
+        case .cancel: close()
         default: break
         }
     }

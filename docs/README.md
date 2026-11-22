@@ -16,6 +16,7 @@ The guides in `how-it-works/` and `working-on-it/` are in Italian, except `devel
 | File | Contents |
 |---|---|
 | [architecture.md](how-it-works/architecture.md) | Every area of the app, its parts, its rules and its data on disk. |
+| [keymap.md](how-it-works/keymap.md) | Launcher bindings, screen priority and controller button names. |
 | [flows.md](how-it-works/flows.md) | The main paths end to end: launch, library, Play, Add Game, saves, mods, settings, updates. |
 | [steam.md](how-it-works/steam.md) | The Steam integration in full. |
 

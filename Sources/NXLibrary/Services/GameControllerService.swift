@@ -10,6 +10,7 @@ final class GameControllerService: ObservableObject {
     @Published var activeBrand: GamepadBrand = .generic
     /// Reported glyphs (including system remapping); the brand supplies missing glyphs.
     @Published var buttonSymbols: [PromptButton: String] = [:]
+    @Published private(set) var menuHoldStartedAt: TimeInterval?
 
     var onAction: ((GamepadAction) -> Void)?
 
@@ -37,7 +38,7 @@ final class GameControllerService: ObservableObject {
     private var activePad: ControllerIdentity?
     private var inputGeneration = 0
 
-    private var holds = ControllerHolds()
+    private var menuHold = HoldDetector()
     private var holdTimer: Timer?
 
     private init() {
@@ -51,6 +52,7 @@ final class GameControllerService: ObservableObject {
         }
         center.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
             self?.isAppActive = false
+            self?.resetInput()
         }
         gcSource.onEvent = { [weak self] in self?.handle($0, fromHID: false) }
         hidSource.onEvent = { [weak self] in self?.handle($0, fromHID: true) }
@@ -124,10 +126,7 @@ final class GameControllerService: ObservableObject {
 
     private func setActive(_ pad: ControllerIdentity?) {
         if activePad?.id != pad?.id {
-            inputGeneration += 1
-            holds.reset()
-            stopHoldTimerIfIdle()
-            lastNavTime = 0
+            resetInput()
         }
         guard activePad != pad else { return }
         activePad = pad
@@ -138,6 +137,7 @@ final class GameControllerService: ObservableObject {
     }
 
     private func handleInput(_ input: ControllerInputChange) {
+        guard isAppActive else { return }
         switch input {
         case let .leftStick(stick):
             let now = ProcessInfo.processInfo.systemUptime
@@ -151,59 +151,45 @@ final class GameControllerService: ObservableObject {
             lastNavTime = now
             triggerAction(action)
         case let .button(button, pressed):
-            if button == .menu || button == .view {
-                let result = holds.update(button, pressed: pressed, at: ProcessInfo.processInfo.systemUptime)
-                if pressed { startHoldTimer() } else { stopHoldTimerIfIdle() }
-                if let result { triggerHoldAction(button, result: result) }
-                return
-            }
-            guard pressed else { return }
-            switch button {
-            case .up: triggerAction(.navigateUp)
-            case .down: triggerAction(.navigateDown)
-            case .left: triggerAction(.navigateLeft)
-            case .right: triggerAction(.navigateRight)
-            case .a: triggerAction(.confirm)
-            case .b: triggerAction(.cancel)
-            case .x: triggerAction(.secondaryAction)
-            case .y: triggerAction(.contextAction)
-            case .l: triggerAction(.tabPrevious)
-            case .r: triggerAction(.tabNext)
-            case .zl: triggerAction(.jumpToStart)
-            case .zr: triggerAction(.jumpToEnd)
-            case .r3: triggerAction(.rightStickPress)
-            // Home opens the control center (Power: Quit, Sleep…), as the Menu button does.
-            case .home: triggerAction(.menu)
-            case .menu, .view, .l3, .capture: break
+            if button == .menu {
+                handleMenu(pressed: pressed)
+            } else if pressed, let action = GamepadAction.onPress(button) {
+                triggerAction(action)
             }
         }
     }
 
-    private func triggerHoldAction(_ button: ControllerButton, result: HoldResult) {
-        if button == .menu {
-            triggerAction(result == .tap ? .menu : .menuHold)
-        } else {
-            triggerAction(result == .tap ? .view : .viewHold)
+    private func handleMenu(pressed: Bool) {
+        let now = ProcessInfo.processInfo.systemUptime
+        guard pressed else {
+            let action = menuHold.release(at: now).map(GamepadAction.menuAction)
+            stopHoldTimer()
+            if let action { triggerAction(action) }
+            return
         }
-    }
-
-    private func startHoldTimer() {
-        guard holdTimer == nil else { return }
-        let timer = Timer(timeInterval: 0.05, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            for button in self.holds.tick(at: ProcessInfo.processInfo.systemUptime) {
-                self.triggerHoldAction(button, result: .hold)
-            }
-            self.stopHoldTimerIfIdle()
+        guard !menuHold.isPressed else { return }
+        menuHold.press(at: now)
+        menuHoldStartedAt = now
+        let timer = Timer(timeInterval: menuHold.threshold, repeats: false) { [weak self] _ in
+            guard let self, let result = self.menuHold.tick(at: ProcessInfo.processInfo.systemUptime) else { return }
+            self.stopHoldTimer()
+            self.triggerAction(GamepadAction.menuAction(result))
         }
         RunLoop.main.add(timer, forMode: .common)
         holdTimer = timer
     }
 
-    private func stopHoldTimerIfIdle() {
-        guard !holds.isPressed else { return }
+    private func stopHoldTimer() {
         holdTimer?.invalidate()
         holdTimer = nil
+        menuHoldStartedAt = nil
+    }
+
+    private func resetInput() {
+        inputGeneration += 1
+        menuHold.reset()
+        stopHoldTimer()
+        lastNavTime = 0
     }
 
     private func triggerAction(_ action: GamepadAction) {

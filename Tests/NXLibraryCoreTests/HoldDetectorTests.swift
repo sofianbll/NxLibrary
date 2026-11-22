@@ -2,6 +2,17 @@ import XCTest
 @testable import NXLibraryCore
 
 final class HoldDetectorTests: XCTestCase {
+    func testRepeatedEventsDoNotRestartMenuAndResetDiscardsRelease() {
+        var detector = HoldDetector()
+        detector.press(at: 1)
+        detector.press(at: 1.25)
+        XCTAssertNil(detector.tick(at: 1.499))
+        XCTAssertEqual(detector.tick(at: 1.5), .hold)
+        XCTAssertNil(detector.release(at: 1.6))
+        detector.press(at: 2)
+        detector.reset()
+        XCTAssertNil(detector.release(at: 2.1))
+    }
     func testQuickReleaseIsTap() {
         var d = HoldDetector()
         d.press(at: 0)

@@ -440,6 +440,44 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
 
         let input = MenuHost()
         input.connectController()
+        let presses: [ControllerButton: GamepadAction] = [
+            .up: .navigateUp, .down: .navigateDown, .left: .navigateLeft, .right: .navigateRight,
+            .a: .confirm, .b: .cancel, .x: .secondaryAction, .y: .contextAction,
+            .l: .tabPrevious, .r: .tabNext, .zl: .jumpToStart, .zr: .jumpToEnd,
+            .r3: .rightStickPress, .view: .view,
+        ]
+        for button in ControllerButton.allCases {
+            require(GamepadAction.onPress(button) == presses[button], "Unexpected binding for \(button)")
+        }
+        let actions = ControllerButton.allCases.compactMap(GamepadAction.onPress)
+            + [GamepadAction.menuAction(.tap), GamepadAction.menuAction(.hold)]
+        require(Set(actions).count == actions.count, "No two button gestures may emit the same command")
+        require(GamepadAction.menuAction(.tap) == .menu && GamepadAction.menuAction(.hold) == .menuHold,
+                "Menu opens the control center on tap and Settings on hold")
+        let screens: [(AppRoute, Notification.Name)] = [
+            (.library, .nxSpotlightGamepadAction), (.collection, .nxCollectionGamepadAction),
+            (.detail(UUID()), .nxDetailGamepadAction), (.settings(.startUp), .nxSettingsGamepadAction),
+            (.addGame, .nxAddGameGamepadAction), (.console, .nxConsoleGamepadAction),
+        ]
+        for (route, name) in screens {
+            let routeInput = InputRecorder()
+            let observer = NotificationCenter.default.addObserver(forName: name, object: nil, queue: nil) { note in
+                if let action = note.object as? GamepadAction { MainActor.assumeIsolated { routeInput.actions.append(action) } }
+            }
+            input.router.route = route
+            let local = route == .console ? actions.filter { $0 != .menu && $0 != .menuHold } : actions
+            for action in local { GameControllerService.shared.onAction?(action) }
+            require(routeInput.actions == local, "\(route) must receive each command exactly once")
+            if route == .console {
+                GameControllerService.shared.onAction?(.menu)
+                require(input.router.isMenuPresented, "Menu opens the control center in Console")
+                input.router.isMenuPresented = false
+                GameControllerService.shared.onAction?(.menuHold)
+                require(input.router.route == .settings(.startUp), "Menu hold opens Settings from Console")
+            }
+            NotificationCenter.default.removeObserver(observer)
+        }
+        input.router.route = .library
         let received = InputRecorder()
         let watch = NotificationCenter.default.addObserver(forName: .nxSpotlightGamepadAction,
                                                            object: nil, queue: nil) { note in
@@ -459,6 +497,16 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
         input.router.activityCenterFocus = nil
         input.router.isMenuPresented = false
         input.dialogActions = []
+        input.router.isSearchPresented = true
+        for action: GamepadAction in [.menu, .menuHold, .view] { GameControllerService.shared.onAction?(action) }
+        require(input.router.route == .library && !input.router.isMenuPresented && received.actions.isEmpty,
+                "Search owns input, including Menu and View")
+        input.router.isSearchPresented = false
+        input.viewModel.isGameOptionsOpen = true
+        for action: GamepadAction in [.menu, .menuHold] { GameControllerService.shared.onAction?(action) }
+        require(input.router.route == .library && !input.router.isMenuPresented && received.actions.isEmpty,
+                "Game Options blocks the global Menu shortcuts")
+        input.viewModel.isGameOptionsOpen = false
         let blockers: [(String, (Bool) -> Void)] = [
             ("pending alert", { input.viewModel.alertMessage = $0 ? "Fixture alert" : nil }),
             ("modal dialog", { NSApp.modalWindow = $0 ? 1 : nil }),

@@ -1,4 +1,5 @@
 import Foundation
+import NXLibraryCore
 
 enum GamepadBrand: String, CaseIterable, Identifiable {
     case nintendoSwitch = "Nintendo Switch"
@@ -69,15 +70,39 @@ enum GamepadAction: Hashable {
     case navigateRight
     case confirm           // A or Cross
     case cancel            // B or Circle
-    case secondaryAction   // X or Square (Settings)
-    case contextAction     // Y or Triangle (Save files)
+    case secondaryAction   // X or Square
+    case contextAction     // Y or Triangle
     case tabPrevious       // Left Shoulder (L / LB)
     case tabNext           // Right Shoulder (R / RB)
-    case menu              // Plus / Start (tap)
-    case menuHold          // Plus / Start (hold)
-    case view              // Minus / Select / Share (tap)
-    case viewHold          // Minus / Select / Share (hold)
+    case menu              // Menu / + / Options (tap)
+    case menuHold          // Menu / + / Options (hold)
+    case view              // View / − / Touchpad
+    case search            // ⌘F
     case jumpToStart       // Left trigger
     case jumpToEnd         // Right trigger
     case rightStickPress   // R3
+
+    static func onPress(_ button: ControllerButton) -> Self? {
+        switch button {
+        case .up: return .navigateUp
+        case .down: return .navigateDown
+        case .left: return .navigateLeft
+        case .right: return .navigateRight
+        case .a: return .confirm
+        case .b: return .cancel
+        case .x: return .secondaryAction
+        case .y: return .contextAction
+        case .l: return .tabPrevious
+        case .r: return .tabNext
+        case .zl: return .jumpToStart
+        case .zr: return .jumpToEnd
+        case .r3: return .rightStickPress
+        case .view: return .view
+        case .menu, .home, .l3, .capture: return nil
+        }
+    }
+
+    static func menuAction(_ result: HoldResult) -> Self {
+        result == .tap ? .menu : .menuHold
+    }
 }
