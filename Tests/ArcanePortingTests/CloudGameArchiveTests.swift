@@ -244,17 +244,38 @@ final class CloudGameArchiveTests: XCTestCase {
         return compiled
     }
 
-    func testRebuildWithTheSameShaderChainCompilesNoShader() async throws {
+    func testRebuildWithTheInstalledAppsShaderChainCompilesNoShaderWhenCloudDiffers() async throws {
         let f = try fixture(useSyntheticBackend: true)
         defer { try? FileManager.default.removeItem(at: f.root) }
+        let appOnly = CloudArchiveGame(titleID: title, locations: [.app: f.app])
+        _ = try await f.service.upload(appOnly, kinds: [.app])
+        let installed = f.root.appendingPathComponent("Installed.app")
+        try FileManager.default.copyItem(at: f.app, to: installed)
+        let msl = installed.appendingPathComponent("Contents/Resources/msl")
+        try FileManager.default.moveItem(at: msl.appendingPathComponent("b-1234567890ab.img"),
+                                        to: msl.appendingPathComponent("b-1234567890ac.img"))
+        try command("/usr/bin/codesign", ["--force", "--sign", "-", installed.path])
+        let game = CloudArchiveGame(titleID: title, locations: [.app: installed, .cache: f.cache])
         try addShaderImage("1234567890ac", to: f.cache)
         XCTAssertEqual(try fakeCompile(40, in: f.cache), 40, "The first build compiles everything")
-        try await cancelledCacheUpload(in: f, game: f.game)
-        let check = try await f.service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false)
-        let work = try XCTUnwrap(check.verifiedCache)
-        XCTAssertEqual(try fakeCompile(40, in: work), 0)
-        let empty = f.root.appendingPathComponent("Temp/\(title)_build")
-        XCTAssertEqual(try fakeCompile(40, in: empty), 40, "The empty work folder of the bug compiles all again")
+
+        let check = try await f.service.checkRebuild(game, sourcesAvailable: true, withoutCache: false)
+        XCTAssertEqual(check.decision, .allowed)
+        XCTAssertEqual(check.verifiedCache, f.cache)
+        XCTAssertTrue(check.hasUsableLocalCache)
+        XCTAssertEqual(try fakeCompile(40, in: check.verifiedCache ?? f.root.appendingPathComponent("automatic")), 0)
+
+        let explicit = try await f.service.checkRebuild(game, sourcesAvailable: true, withoutCache: true)
+        XCTAssertEqual(explicit.decision, .allowed)
+        XCTAssertNil(explicit.verifiedCache)
+        XCTAssertEqual(try fakeCompile(40, in: explicit.verifiedCache ?? f.root.appendingPathComponent("explicit")), 40)
+
+        let shaders = f.cache.appendingPathComponent("shader/cache")
+        try FileManager.default.moveItem(at: shaders.appendingPathComponent("b-1234567890ac.img"),
+                                        to: shaders.appendingPathComponent("b-1234567890ad.img"))
+        let other = try await f.service.checkRebuild(game, sourcesAvailable: true, withoutCache: false)
+        XCTAssertEqual(other.decision, .fullRebuild)
+        XCTAssertNil(other.verifiedCache)
     }
 
     private func assertAppPublishedDuringCache(cancel: Bool) async throws {

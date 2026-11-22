@@ -395,9 +395,8 @@ public actor CloudGameArchive {
         leases.end(titleID.uppercased(), token: token)
     }
 
-    /// A rebuild always reuses this Mac's cache when it holds the shader chain the cloud's app has, whatever the
-    /// cloud copies say: a cancelled cache upload leaves a newer app beside an older cache, and the cloud's cache
-    /// then differs, but this Mac's is the current one.
+    /// A rebuild can reuse the local shader chain of the cloud app or, before an automatic cold rebuild,
+    /// of the installed app. The engine still checks individual shaders.
     public func checkRebuild(_ game: CloudArchiveGame, sourcesAvailable: Bool, withoutCache: Bool,
                              lastSuccessfulBuild: ClosedRange<Date>? = nil, preferLocalCache: Bool = false,
                              appManifest: CloudGameManifest? = nil)
@@ -428,7 +427,9 @@ public actor CloudGameArchive {
         let manifest = try? await latest(titleID: game.titleID)
         let reference = (appManifest ?? manifest)?.artifacts.first { $0.kind == .app }?.shaderChain
             ?? manifest?.artifacts.first { $0.kind == .cache }?.shaderChain
-        if reference == chain || (reference == nil && (try? LocalBuildCache.matchesInstalledApp(cache, app: game.locations[.app])) == true) {
+        if reference == chain ||
+            ((result.decision == .fullRebuild || reference == nil) &&
+             (try? LocalBuildCache.matchesInstalledApp(cache, app: game.locations[.app])) == true) {
             return (.allowed, cache, true)
         }
         return result
