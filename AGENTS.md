@@ -2,6 +2,20 @@
 
 A personal macOS SwiftUI front-end for upstream [nxnative](https://github.com/seedds/nxnative). Before changing behavior, read in this order: this file, `docs/README.md` (what each docs folder is for), `docs/how-it-works/architecture.md` (how each area works), `docs/working-on-it/conventions.md` (where new code goes and how it is built), `docs/how-it-works/flows.md` (end-to-end paths), the area's own document if it has one (for example `docs/how-it-works/steam.md`), then the files through `docs/working-on-it/file-map.md`.
 
+<!-- ARCANE-PERSO:BEGIN -->
+## Arcane perso — fork rules
+
+These rules apply to work on Sofian's fork. They override the upstream rules below only where explicitly stated. Load `arcane-dev` when available for local checkout and engine procedures; these repository rules apply even without the skill. Keep these blocks out of upstream contributions.
+
+- **Scope.** Get Sofian's decision before implementing a substantial UX redesign. Start a new fork lot from its agreed base in a separate worktree; integrate on the agreed branch. Fork lots and releases may use topic prefixes such as `lot/` and `release/`; use `bium/<topic>` for upstream Arcane contributions. Never name a branch after an agent.
+- **Delegation.** When delegation is authorized, brief every subagent in ponytail mode: smallest complete change, inherit these rules, preserve validated behavior, report concrete checks and limits. The coordinating agent verifies integration and obtains approvals.
+- **Preserve validation.** Before changing a flow, read `docs/working-on-it/validation.md` and protect already validated behavior with regression checks. Change a validated choice only with Sofian's explicit approval. Test passes, rendered evidence, installation and Sofian's manual confirmation are distinct.
+- **UI gate.** Apply the [fork conventions](docs/working-on-it/conventions.md#arcane-perso--regole-del-fork). Inspect a capture of every changed screen, panel and dialog before delivery, using the headless harness and synthetic data. Give Sofian the captures and the manual checks that remain. No computer-use or live app automation; Sofian does interactive checks.
+- **Protect existing data.** Follow the fork rules for Trash, replacement and cloud access. Get explicit approval before deleting or moving real data, changing live settings or cloud state, or installing/replacing Arcane. Use Arcane Dev or a separate signed test artifact; never overwrite a running build or use the installed release as an agent's test target.
+- **Engine and releases.** Develop nxnative changes in the engine fork, not in the installed or certified checkout. Build from a clean tree. A fork release uses `0.2.1.YYYYMMDD` on the `0.2.1` base, once per date and base, and pins the tested engine fork URL and exact commit, never a branch tip. Follow [fork packaging](docs/working-on-it/development.md#publication-perso-sofian); prepare French notes and verify the local artifact before asking for release approval.
+- **Separate approvals.** Preparing or testing does not authorize a push, tag push, public release, PR or public comment. Get explicit approval for the external action, and separate approval for a live installation or each real game rebuild. Review generic upstream contributions on the upstream base after real validation; strip fork-only changes and private data.
+<!-- ARCANE-PERSO:END -->
+
 ## Documentation
 
 The documentation is how the next session understands the structure. Keep it exact.

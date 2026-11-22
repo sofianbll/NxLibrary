@@ -8,6 +8,27 @@ Gli altri documenti:
 - [file-map.md](file-map.md): un file per riga;
 - [validation.md](validation.md): cosa ha validato il maintainer.
 
+<!-- ARCANE-PERSO:BEGIN -->
+## Arcane perso — regole del fork
+
+Queste regole integrano le ricette qui sotto. Sono criteri per il lavoro sul fork, non una descrizione delle coperture già implementate.
+
+### Interfaccia e verifica
+
+- **Selene, senza doppioni.** Usa le viste e i componenti condivisi della sezione 3. Mantieni schermate sobrie, leggibili, con una gerarchia chiara. Confronta la resa con Selene e con l'ultima versione convalidata; riprendi il disegno, non gli asset privi di licenza. Usa token semantici condivisi per dimensioni, spazi, colori, effetti e durate: `canvas.u(…)` converte le unità, non sostituisce un token. Aggiungi il token mancante nel punto condiviso, non un valore locale.
+- **Conferme.** Pulsanti affiancati su una sola riga, stessa altezza, larghezze dettate dal testo; allarga la scheda per le traduzioni. Azione principale a sinistra, Annulla a destra. Dai il focus iniziale all'azione principale quando è sicura (per esempio Continua nell'assistente); se l'azione è distruttiva o interrompe un lavoro, preserva il focus sul recesso sicuro senza invertire i pulsanti.
+- **Input e aiuto.** Solo il livello attivo riceve l'input, è esposto a VoiceOver e mostra la sua `SeleneHintsBar`. Ogni azione annunciata nell'aiuto ha un glifo `ButtonPrompts` adatto alla periferica (anche per i gesti tenuti); niente comandi duplicati o glifi ambigui. Mantieni il focus visibile, proteggi la digitazione e ripristina il focus alla chiusura. Un puntatore fermo non ruba il focus.
+- **Movimento e stato.** Usa `seleneReduceMotion` (app e sistema) per togliere il moto decorativo, i loop e gli spostamenti non necessari; lascia leggibili focus e progresso. Le transizioni non bloccano le azioni e si interrompono al ritorno. Niente doppia barra di progresso per la stessa operazione; distingui attesa, lavoro, esito ed errore. Nel Cloud mantieni il lessico coerente: Invia, Scarica, Libera (Cestino); un messaggio con un'azione utile per ogni causa. Per gli stati convalidati (punti, badge, focus, colori) consulta `validation.md`.
+- **Prova di consegna.** Rendi le viste reali fuori schermo con i probe `Tests/CatalogAppChecks/run_*.py` e fixture sintetiche; ispeziona personalmente i PNG di ogni schermata, pannello e dialogo toccati. Confronta prima/dopo dove cambia una vista esistente e verifica gli stati rilevanti: focus, sovrapposizioni, finestra piccola, testi lunghi, movimento ridotto ed errori. Per Cloud/porting copri anche offline, annullamento, spazio/quota, profilo assente, Switch 2 e operazioni concorrenti quando pertinenti. Indica i percorsi delle prove e cosa resta da provare con manetta fisica, mouse, tastiera e VoiceOver. I probe non sostituiscono la prova interattiva di Sofian.
+
+### Dati, rete e distribuzione
+
+- **Cestino sempre.** Nel fork questa regola prevale sulle eccezioni di eliminazione della sezione 5: ogni rimozione di file o cartelle passa dal Cestino locale o remoto, anche per cache e pulizie di build. Se il Cestino non è disponibile, conserva i dati e segnala il problema. Libera solo dopo verifica della copia di recupero nella propria libreria. Installa e verifica il sostituto prima di ritirare la vecchia app o cache; annullamento o errore lasciano recuperabile la copia valida.
+- **Confini dei dati.** Separa i salvataggi per profilo nelle modifiche che li riguardano, con migrazione reversibile e prova di ripristino; non dare per scontata la migrazione dei salvataggi esistenti. Conserva code e stato ripristinabili dopo riavvio. Per l'Inbox, identifica e proponi, poi dopo conferma copia e verifica prima di spostare l'originale nel Cestino; il porting continua a collegare i sorgenti senza copiarli nella build.
+- **Cloud personale, non distribuzione.** L'eccezione alla regola di rete della sezione 6 è soltanto il flusso personale esplicitamente scelto, verso l'account e le cartelle configurati. Una libreria di riferimento resta in sola lettura: Arcane non cambia i permessi Drive e scrive solo nella libreria personale. Niente link pubblici per importare o distribuire ROM, app portate (contengono il gioco), o altro contenuto di gioco. Chi usa Arcane porta i propri giochi con le proprie chiavi. Mai chiavi, token o salvataggi negli artefatti di build, nelle fixture, nei log o nei report condivisi.
+- **Client Google privato.** Solo un bundle privato può incorporare il client OAuth di Sofian. Nessun ID o segreto Google nel repository o in app, ZIP e DMG pubblici; verifica il plist del pacchetto pubblico. Non confondere quel client con l'ID pubblico Nextendo. Segui [development.md](development.md#private-google-drive-builds) per il packaging.
+<!-- ARCANE-PERSO:END -->
+
 ## 1. Dove va il codice
 
 | Cosa | Dove | Perché |
@@ -64,7 +85,6 @@ Esempi: `AchievementsScreen` con `AchievementsScreenModel` (schermata intera), `
   - `SeleneHintsBar`, `GamePrimaryActions`, `DetailsPanel`.
 
   Un componente nuovo nasce solo se nessuno di questi va bene.
-- **Conferme (regola di Sofian):** disponi tutti i pulsanti affiancati su una sola riga, mai in colonna. L'azione principale sta a sinistra e riceve il focus iniziale; Annulla sta a destra e resta secondario. Stessa altezza, larghezze dettate dal testo. Allarga la scheda se le traduzioni lo richiedono.
 - **Focus nel Core, input in un file `+Input`.** Lo stato del focus è un tipo del Core con i suoi test. La vista ha un'estensione `…+Input.swift` che traduce tastiera, mouse e controller in azioni sul modello.
 - **Priorità dell'input:** menu e dialoghi nativi vengono prima delle schermate dell'app. La shell (`AppShellView`, `nativeDialogOwnsInput`) sospende il controller prima del routing e condivide il controllo con tastiera e menu. Nell'app dà l'input al livello più alto: un pannello sopra la pagina sospende l'input della pagina sotto.
 - **Suggerimenti dei tasti:** `SeleneHintsBar` alla posizione condivisa `SeleneBottomScrim.hintsBottom` (32 unità dal fondo). I simboli vengono da `ButtonPrompts`.
