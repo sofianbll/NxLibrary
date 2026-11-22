@@ -35,10 +35,10 @@ extension AppShellView {
     func settingsNoticeOverlay(_ notice: SettingsNotice) -> some View {
         ZStack {
             SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle())
-                .onTapGesture { finishSettingsNotice(choice: 0) }
+                .onTapGesture { finishSettingsNotice() }
             SeleneChoiceDialog(title: notice.title, message: notice.message,
                                choices: notice.choices,
-                               focus: $viewModel.settingsNoticeFocus, vertical: notice.alternative != nil,
+                               focus: $viewModel.settingsNoticeFocus, vertical: !notice.alternatives.isEmpty,
                                onChoose: { finishSettingsNotice(choice: $0) })
         }
     }
@@ -55,12 +55,11 @@ extension AppShellView {
             retry: { NSWorkspace.shared.open(URL(fileURLWithPath: "/Applications", isDirectory: true)) })
     }
 
-    func finishSettingsNotice(choice: Int) {
+    func finishSettingsNotice(choice: Int? = nil) {
         let notice = viewModel.settingsNotice
         viewModel.settingsNotice = nil
         notice?.onDismiss?()
-        if choice == 1 { notice?.retry?() }
-        if choice == 2 { notice?.alternative?.run() }
+        notice?.runChoice(choice)
         presentLegacyNotice()
     }
 
@@ -138,7 +137,7 @@ extension AppShellView {
             let last = (viewModel.settingsNotice?.choices.count ?? 1) - 1
             viewModel.settingsNoticeFocus = min(last, viewModel.settingsNoticeFocus + 1)
         case .confirm: finishSettingsNotice(choice: viewModel.settingsNoticeFocus)
-        case .cancel: finishSettingsNotice(choice: 0)
+        case .cancel: finishSettingsNotice()
         default: break
         }
     }

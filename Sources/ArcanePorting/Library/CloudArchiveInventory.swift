@@ -22,6 +22,7 @@ enum CloudArchiveInventory {
         let withoutRootMtime: String?
         let hasExcludedFiles: Bool
         let skippedRoots: [String]
+        let latestFileWrite: Date?
 
         var isSkippedOnly: Bool { entries.count == 1 && !skippedRoots.isEmpty && !hasExcludedFiles }
     }
@@ -151,6 +152,7 @@ enum CloudArchiveInventory {
         var fingerprint = ContentFingerprint(kind: kind, includeContents: includeContents)
         var hasExcludedFiles = false
         var skippedRoots: [String] = []
+        var latestFileWrite: Date?
         let device = try node(at: root).st_dev
         func visit(_ url: URL, path: String) throws {
             try Task.checkCancellation()
@@ -180,6 +182,10 @@ enum CloudArchiveInventory {
             entries.append(entry)
             fingerprint.entry(entry, mtime: st.st_mtimespec)
             if includeContents {
+                if type == "F" {
+                    let mtime = Date(timeIntervalSince1970: Double(st.st_mtimespec.tv_sec) + Double(st.st_mtimespec.tv_nsec) / 1e9)
+                    latestFileWrite = max(latestFileWrite ?? mtime, mtime)
+                }
                 let attributes = attributeDigests(try SaveFiles.attributes(url))
                 fingerprint.contents(attributes: attributes,
                                      fileSHA256: type == "F" ? try hashes(at: url, includeMD5: false)["sha256"] : nil)
@@ -198,7 +204,7 @@ enum CloudArchiveInventory {
         try visit(root, path: "")
         return try Snapshot(entries: entries, bytes: validate(entries, kind: kind),
                             sha256: fingerprint.digest, withoutRootMtime: fingerprint.digestWithoutRootMtime,
-                            hasExcludedFiles: hasExcludedFiles, skippedRoots: skippedRoots)
+                            hasExcludedFiles: hasExcludedFiles, skippedRoots: skippedRoots, latestFileWrite: latestFileWrite)
     }
 
     static func node(at url: URL) throws -> stat {

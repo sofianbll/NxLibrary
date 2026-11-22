@@ -2,11 +2,6 @@ import Foundation
 @testable import NXLibraryCore
 @testable import ArcanePorting
 
-struct SettingsNotice {
-    var retry: (() -> Void)?
-    var onDismiss: (() -> Void)? = nil
-    var alternative: (title: String, run: () -> Void)?
-}
 final class AppViewModel {
     let catalogRepository: CatalogRepository
     var personalizations = CatalogPersonalizations.empty
@@ -18,7 +13,8 @@ final class AppViewModel {
     init(_ repository: CatalogRepository) { catalogRepository = repository }
     func reportLibrarySaveFailure(_ error: Error) { alertMessage = error.localizedDescription }
     func showSettingsNotice(title: String, message: String, actionTitle: String = "Retry", cancelTitle: String = "Back", retry: (() -> Void)? = nil) {
-        settingsNotice = SettingsNotice(retry: retry)
+        settingsNotice = SettingsNotice(title: title, message: message, retry: retry,
+                                        actionTitle: actionTitle, cancelTitle: cancelTitle)
     }
     func applyCatalog(_ document: CatalogDocument) {}
     func presentInstallFailure(for: PortedGame, error: String) {}
@@ -54,7 +50,21 @@ try require(model.alertMessage != nil, "Queued legacy alert was lost")
 host.dismiss()
 try require(model.alertMessage == nil, "Deferred legacy alert was not presented after dismissal")
 try require(model.settingsNotice?.retry == nil, "Expected the deferred generic notice after dismissal")
-print("Actual catalog helpers and legacy bridge preserve Retry and defer unrelated alerts.")
+var selected: [String] = []
+model.settingsNotice = SettingsNotice(title: "Rebuild", message: "Different cache",
+    retry: { selected.append("download") }, actionTitle: "Download", cancelTitle: "Cancel",
+    alternatives: [("Local", { selected.append("local") }), ("Without", { selected.append("without") })])
+let notice = model.settingsNotice!
+try require(notice.choices == ["Download", "Local", "Without", "Cancel"], "Download should be the first choice")
+notice.runChoice(notice.cancelIndex)
+host.dismiss()
+try require(selected.isEmpty, "Cancel should not start an action")
+for choice in 0..<notice.cancelIndex {
+    model.settingsNotice = notice
+    host.choose(choice)
+}
+try require(selected == ["download", "local", "without"], "Choice indices should run the matching actions")
+print("Catalog notice bridge preserves Retry, defers unrelated alerts, and routes Rebuild choices.")
 
 }
 do { try run() } catch { FileHandle.standardError.write(Data((error.localizedDescription + "\n").utf8)); exit(1) }

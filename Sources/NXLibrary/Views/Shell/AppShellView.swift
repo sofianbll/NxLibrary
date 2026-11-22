@@ -226,7 +226,7 @@ struct AppShellView: View {
             if router.isScreenshotViewerOpen {
                 // The viewer's key monitor closes it.
             } else if showsSettingsNotice {
-                finishSettingsNotice(choice: 0)
+                finishSettingsNotice()
             } else if showsInstallFailure {
                 viewModel.gameWithInstallFailure = nil
             } else if viewModel.gameToClose != nil {

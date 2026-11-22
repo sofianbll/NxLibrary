@@ -47,6 +47,7 @@ package struct BuildRequest: Equatable, Codable, Sendable {
     package let withoutCache: Bool
     package let rebuild: Bool
     package var localSourcesOnly = false
+    package var preferLocalCache = false
 
     package init(gameID: UUID, name: String, arguments: [String] = [], withoutCache: Bool = false,
                  rebuild: Bool = false) {
@@ -67,6 +68,7 @@ package struct BuildRequest: Equatable, Codable, Sendable {
         withoutCache = try fields.decode(Bool.self, forKey: .withoutCache)
         rebuild = try fields.decode(Bool.self, forKey: .rebuild)
         localSourcesOnly = try fields.decodeIfPresent(Bool.self, forKey: .localSourcesOnly) ?? false
+        preferLocalCache = try fields.decodeIfPresent(Bool.self, forKey: .preferLocalCache) ?? false
         // These are the only one-off overrides produced by PortingFailureReason.
         guard arguments.count <= 1,
               arguments.allSatisfy({ ["--allow-shader-regressions", "--allow-damaged"].contains($0) }) else {

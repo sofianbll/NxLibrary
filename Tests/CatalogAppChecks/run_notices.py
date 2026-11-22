@@ -27,10 +27,13 @@ with tempfile.TemporaryDirectory(prefix='catalog-notice-check-') as scratch:
     scratch = Path(scratch)
     view = ''.join(p.read_text() for p in sorted((ROOT / 'Sources/NXLibrary/Views/Shell').glob('AppShellView*.swift')))
     bridge = '\n'.join(method(view, signature) for signature in (
-        '    private func finishSettingsNotice(choice: Int)', '    private func presentLegacyNotice()'))
+        '    private func finishSettingsNotice(choice:', '    private func presentLegacyNotice()'))
     host = (ROOT / 'Tests/CatalogAppChecks/NoticeHost.swift').read_text()
+    model = (ROOT / 'Sources/NXLibrary/ViewModels/AppViewModel.swift').read_text()
+    host += '\n' + method(model, 'struct SettingsNotice: Identifiable')
     host += '\nstruct LegacyNoticeHost {\n let viewModel: AppViewModel\n'
-    host += ' func deliver() { presentLegacyNotice() }\n func dismiss() { finishSettingsNotice(choice: 0) }\n'
+    host += ' func deliver() { presentLegacyNotice() }\n func dismiss() { finishSettingsNotice() }\n'
+    host += ' func choose(_ index: Int) { finishSettingsNotice(choice: index) }\n'
     host += bridge + '\n}\n'
     main = scratch / 'main.swift'
     main.write_text(host)

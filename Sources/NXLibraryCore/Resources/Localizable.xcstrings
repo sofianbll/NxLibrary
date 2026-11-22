@@ -232,6 +232,17 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "正在检查云端编译缓存…"}}
       }
     },
+    "Rebuild with this Mac’s build cache": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Rebuild with this Mac’s build cache"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ricompila con la cache di questo Mac"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Recompiler avec le cache de ce Mac"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Mit dem Build-Cache dieses Mac neu bauen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Recompilar con la caché de este Mac"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Recompilar com o cache deste Mac"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "使用此 Mac 的编译缓存重新构建"}}
+      }
+    },
     "Rebuild without build cache": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Rebuild without build cache"}},
@@ -2573,6 +2584,17 @@
         "es": {"stringUnit": {"state": "translated", "value": "Recompilar sin caché"}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Recompilar sem cache"}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "不使用缓存重新构建"}}
+      }
+    },
+    "This Mac’s build cache differs from the cloud copy.\nDownloading keeps the local cache as a backup.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "This Mac’s build cache differs from the cloud copy.\nDownloading keeps the local cache as a backup."}},
+        "it": {"stringUnit": {"state": "translated", "value": "La cache di questo Mac è diversa dalla copia nel cloud.\nIl download conserva la cache locale come backup."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Le cache de ce Mac diffère de la copie dans le cloud.\nLe téléchargement conserve le cache local en sauvegarde."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Der Build-Cache dieses Mac unterscheidet sich von der Cloud-Kopie.\nBeim Download bleibt der lokale Cache als Sicherung erhalten."}},
+        "es": {"stringUnit": {"state": "translated", "value": "La caché de este Mac es distinta de la copia en la nube.\nAl descargarla se guarda una copia de seguridad de la caché local."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "O cache deste Mac é diferente da cópia na nuvem.\nO download mantém o cache local como backup."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "此 Mac 的编译缓存与云端副本不同。\n下载时会保留本机缓存作为备份。"}}
       }
     },
     "The build cache in the cloud has no verified local copy. Download it before rebuilding. Any existing cache is kept as a backup.": {

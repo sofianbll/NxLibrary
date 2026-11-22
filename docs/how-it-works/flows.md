@@ -130,12 +130,12 @@ flowchart TD
     B --> C["SourceSelection: titolo e versioni scelte"]
     C --> D["KeyCheck (se le sorgenti sono cifrate)<br/>NUP: identità programma e capacità del checkout"]
     D --> E["Review: GameAppDestination, GameRuntimeConfig.forReview"]
-    E --> R{"Sorgenti presenti e cache cloud verificata, se prevista?"}
+    E --> R{"Sorgenti presenti e cache uguale al cloud o locale più recente, se prevista?"}
     R -->|"sorgenti mancanti e disponibili nel cloud"| U["Conferma la dimensione e accoda il download"]
     U -->|"scaricate e verificate"| R
     U -->|"annullato o non riuscito"| P["Nessuna build"]
     R -->|"sorgenti mancanti non scaricabili"| S["Collegare i file originali"]
-    R -->|"cache non verificata"| T["Scarica la cache o conferma una build con cache temporanea"]
+    R -->|"cache non verificata"| T["Scarica la cache, scegli la copia locale valida se presente oppure conferma una build con cache temporanea"]
     T -->|"scaricata"| R
     T -->|"confermata e sorgenti presenti"| F
     R -->|"sì"| F{"Gate: CompatibilityChecker<br/>Metal certificato o override"}
@@ -165,7 +165,7 @@ Send trasmette Apple Archive in streaming a una chiave temporanea remota, senza 
 
 Con solo una copia cloud dell'app, Download sostituisce il pulsante principale e usa lo stesso ripristino del pannello: verifica hash, inventario e firma prima di pubblicare la copia mancante e riattivare Play. Il download usa Game apps per un titolo importato e non richiede sorgenti, cache o una build. La terza riga propone Send o Download per i file del gioco mancanti da un lato; con una divergenza non offre azioni.
 
-Con un manifest senza cache, Rebuild usa i file originali e una cache temporanea. Dopo l'installazione, un'app diversa dal manifest risulta «Newer on this Mac» e resta da inviare manualmente.
+Con una cache locale valida scritta dall'ultima compilazione riuscita dopo il manifest cloud, Rebuild riusa direttamente la cache locale. Se le copie differiscono ma la data non lo dimostra, il dialogo propone prima Download e permette di scegliere la cache di questo Mac, se valida. Con un manifest senza cache, Rebuild usa i file originali e una cache temporanea. Dopo l'installazione, un'app diversa dal manifest risulta «Newer on this Mac» e resta da inviare manualmente.
 
 Free up space apre una conferma con le dimensioni e una selezione per app, cache e file del gioco. Solo le copie sincronizzate sono selezionabili; app e cache partono selezionate quando disponibili, i file del gioco no. La conferma precede una nuova verifica prima del Cestino. La voce di libreria resta e lo spazio ritorna quando si svuota il Cestino. Invio, download e liberazione passano per la stessa coda. Cancel rimuove la richiesta in coda o annulla quella attiva; B chiude solo il pannello.
 

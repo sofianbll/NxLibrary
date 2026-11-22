@@ -609,6 +609,42 @@ final class CloudGameArchiveTests: XCTestCase {
         }
     }
 
+    func testRebuildKeepsNewerLocalCache() async throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let service = f.service
+        let manifest = try await service.upload(f.game)
+        let file = f.cache.appendingPathComponent("run.key")
+        try Data("different local cache".utf8).write(to: file)
+        let start = manifest.createdAt.addingTimeInterval(60)
+        let end = start.addingTimeInterval(60)
+        let build = start...end
+        try FileManager.default.setAttributes([.modificationDate: manifest.createdAt.addingTimeInterval(-60)], ofItemAtPath: file.path)
+        let older = try await service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false, lastSuccessfulBuild: build)
+        XCTAssertEqual(older.decision, .downloadCache)
+        XCTAssertNil(older.verifiedCache)
+        XCTAssertTrue(older.hasUsableLocalCache)
+        let explicit = try await service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false, preferLocalCache: true)
+        XCTAssertEqual(explicit.decision, .allowed)
+        XCTAssertEqual(explicit.verifiedCache, f.cache)
+
+        try FileManager.default.setAttributes([.modificationDate: start.addingTimeInterval(30)], ofItemAtPath: file.path)
+        let newer = try await service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false, lastSuccessfulBuild: build)
+        XCTAssertEqual(newer.decision, .allowed)
+        XCTAssertEqual(newer.verifiedCache, f.cache)
+
+        try Data().write(to: f.cache.appendingPathComponent("prod.keys"))
+        let excluded = try await service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false,
+                                                      lastSuccessfulBuild: build, preferLocalCache: true)
+        XCTAssertEqual(excluded.decision, .downloadCache)
+        XCTAssertFalse(excluded.hasUsableLocalCache)
+
+        try FileManager.default.removeItem(at: f.cache)
+        let missing = try await service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false, lastSuccessfulBuild: build)
+        XCTAssertEqual(missing.decision, .downloadCache)
+        XCTAssertFalse(missing.hasUsableLocalCache)
+    }
+
     func testInterruptedRestoreLeavesOriginalAndSuccessfulSwapKeepsPreviousCopy() async throws {
         let f = try fixture()
         defer { try? FileManager.default.removeItem(at: f.root) }

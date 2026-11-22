@@ -14,9 +14,18 @@ struct SettingsNotice: Identifiable {
     var onDismiss: (() -> Void)? = nil
     var actionTitle = "Retry"
     var cancelTitle = "Back"
-    var alternative: (title: String, run: () -> Void)?
+    var alternatives: [(title: String, run: () -> Void)] = []
+    var cancelIndex: Int { alternatives.isEmpty ? 0 : choices.count - 1 }
     var choices: [String] {
-        [cancelTitle] + (retry == nil ? [] : [actionTitle]) + (alternative.map { [$0.title] } ?? [])
+        let actions = (retry == nil ? [] : [actionTitle]) + alternatives.map(\.title)
+        return alternatives.isEmpty ? [cancelTitle] + actions : actions + [cancelTitle]
+    }
+
+    func runChoice(_ index: Int?) {
+        guard let index, index != cancelIndex else { return }
+        let actions = (retry.map { [$0] } ?? []) + alternatives.map(\.run)
+        let action = alternatives.isEmpty ? index - 1 : index
+        if actions.indices.contains(action) { actions[action]() }
     }
 }
 
@@ -56,10 +65,12 @@ final class AppViewModel: ObservableObject {
     @Published var runningGameCount = 0
 
     func showSettingsNotice(title: String, message: String, actionTitle: String = "Retry",
-                            cancelTitle: String = "Back", retry: (() -> Void)? = nil) {
-        settingsNoticeFocus = 0
-        settingsNotice = SettingsNotice(title: title, message: message, retry: retry,
-                                       actionTitle: actionTitle, cancelTitle: cancelTitle)
+                            cancelTitle: String = "Back", alternatives: [(title: String, run: () -> Void)] = [],
+                            retry: (() -> Void)? = nil) {
+        let notice = SettingsNotice(title: title, message: message, retry: retry,
+                                    actionTitle: actionTitle, cancelTitle: cancelTitle, alternatives: alternatives)
+        settingsNoticeFocus = notice.cancelIndex
+        settingsNotice = notice
     }
 
     // MARK: - Storage Keys for Persistence

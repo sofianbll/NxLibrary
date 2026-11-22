@@ -252,10 +252,11 @@ extension PortingModel {
     }
 
     func submitBuild(for game: PortedGame, extraArguments: [String], onStarted: (() -> Void)?,
-                     withoutCache: Bool = false, request: BuildRequest? = nil) {
+                     withoutCache: Bool = false, preferLocalCache: Bool = false, request: BuildRequest? = nil) {
         let rebuild = game.url.pathExtension.lowercased() == "app" && game.cloudImportPending != true
-        let request = request ?? BuildRequest(gameID: game.id, name: game.name, arguments: extraArguments,
+        var request = request ?? BuildRequest(gameID: game.id, name: game.name, arguments: extraArguments,
                                               withoutCache: withoutCache, rebuild: rebuild || withoutCache)
+        if preferLocalCache { request.preferLocalCache = true }
         guard !app.cloudLibrary.isQuitting, activeBuildRequest?.gameID != game.id,
               checkingCloudBuild?.id != game.id, !app.buildQueue.contains(game.id) else { return }
         if !hasRestoredBuildQueue || app.isBuilding || app.isCheckingCloudBuild || !app.buildQueue.isEmpty ||

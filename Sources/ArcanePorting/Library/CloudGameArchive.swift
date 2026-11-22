@@ -319,25 +319,25 @@ public actor CloudGameArchive {
         leases.end(titleID.uppercased(), token: token)
     }
 
-    public func checkRebuild(_ game: CloudArchiveGame, sourcesAvailable: Bool, withoutCache: Bool)
-        async throws -> (decision: CloudRebuildDecision, verifiedCache: URL?) {
-        guard sourcesAvailable else { return (.missingSources, nil) }
-        guard !withoutCache else { return (.allowed, nil) }
-        let manifest = try await latest(titleID: game.titleID)
-        let artifact = manifest?.artifacts.first { $0.kind == .cache }
-        if manifest != nil, artifact == nil { return (.fullRebuild, nil) }
-        let cache = try? location(.cache, for: game)
-        let verified: URL? = artifact.flatMap { artifact in
-            cache.flatMap { url in
-                guard let snapshot = try? CloudArchiveInventory.scan(url, kind: .cache),
-                      !snapshot.hasExcludedFiles, !snapshot.isSkippedOnly,
-                      Fingerprint(signature: "", sha256: snapshot.sha256,
-                                  withoutRootMtime: snapshot.withoutRootMtime).matches(artifact) else { return nil }
-                return url
-            }
-        }
-        return (.decide(sourcesAvailable: sourcesAvailable, remoteCache: artifact != nil,
-                        localVerified: verified != nil, withoutCache: withoutCache), verified)
+    public func checkRebuild(_ game: CloudArchiveGame, sourcesAvailable: Bool, withoutCache: Bool,
+                             lastSuccessfulBuild: ClosedRange<Date>? = nil, preferLocalCache: Bool = false)
+        async throws -> (decision: CloudRebuildDecision, verifiedCache: URL?, hasUsableLocalCache: Bool) {
+        guard sourcesAvailable else { return (.missingSources, nil, false) }
+        guard !withoutCache else { return (.allowed, nil, false) }
+        guard let manifest = try await latest(titleID: game.titleID) else { return (.allowed, nil, false) }
+        guard let artifact = manifest.artifacts.first(where: { $0.kind == .cache }) else { return (.fullRebuild, nil, false) }
+        guard let cache = try? location(.cache, for: game),
+              let snapshot = try? CloudArchiveInventory.scan(cache, kind: .cache),
+              !snapshot.hasExcludedFiles, !snapshot.isSkippedOnly else { return (.downloadCache, nil, false) }
+        let matches = Fingerprint(signature: "", sha256: snapshot.sha256,
+                                  withoutRootMtime: snapshot.withoutRootMtime).matches(artifact)
+        // A divergent fingerprint alone says nothing about age; the successful build must have written this cache.
+        let newer = snapshot.latestFileWrite.map {
+            $0 > manifest.createdAt && lastSuccessfulBuild?.contains($0) == true
+        } ?? false
+        let usable = snapshot.entries.count > 1
+        if matches || usable && (newer || preferLocalCache) { return (.allowed, cache, usable) }
+        return (.downloadCache, nil, usable)
     }
 
     public func latestManifests() async throws -> [CloudGameManifest] {
