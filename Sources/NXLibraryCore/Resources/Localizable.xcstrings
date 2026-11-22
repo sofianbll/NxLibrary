@@ -794,17 +794,6 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "Google 云端硬盘的上次连接测试和恢复操作。"}}
       }
     },
-    "Delete permanently": {
-      "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "Delete permanently"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Elimina definitivamente"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Supprimer définitivement"}},
-        "de": {"stringUnit": {"state": "translated", "value": "Endgültig löschen"}},
-        "es": {"stringUnit": {"state": "translated", "value": "Eliminar definitivamente"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Excluir permanentemente"}},
-        "zh-Hans": {"stringUnit": {"state": "translated", "value": "永久删除"}}
-      }
-    },
     "Published": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Published"}},
@@ -1113,15 +1102,15 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "需要经过验证的编译缓存才能构建。"}}
       }
     },
-    "Delete this game's build cache?": {
+    "Move this game's build cache to the Trash?": {
       "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "Delete this game's build cache?"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Eliminare la cache di compilazione di questo gioco?"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Supprimer le cache de compilation de ce jeu ?"}},
-        "de": {"stringUnit": {"state": "translated", "value": "Build-Cache dieses Spiels löschen?"}},
-        "es": {"stringUnit": {"state": "translated", "value": "¿Eliminar la caché de compilación de este juego?"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Excluir o cache de compilação deste jogo?"}},
-        "zh-Hans": {"stringUnit": {"state": "translated", "value": "删除此游戏的编译缓存？"}}
+        "en": {"stringUnit": {"state": "translated", "value": "Move this game's build cache to the Trash?"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Spostare nel Cestino la cache di compilazione di questo gioco?"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mettre à la Corbeille le cache de compilation de ce jeu ?"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Build-Cache dieses Spiels in den Papierkorb legen?"}},
+        "es": {"stringUnit": {"state": "translated", "value": "¿Mover a la Papelera la caché de compilación de este juego?"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Mover para o Lixo o cache de compilação deste jogo?"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "将此游戏的构建缓存移到废纸篓？"}}
       }
     },
     "App: %@ · Build cache: %@ · Logs: %@": {
@@ -26129,49 +26118,49 @@
         }
       }
     },
-    "Delete %@ of build cache for %@? This permanently removes extracted and compiled build files. The next rebuild may take longer. The game app, original game files, saves and logs are kept.": {
-      "comment": "SettingsStorageSection.swift",
+    "Move %@ of build cache for %@ to the Trash? The next rebuild may take longer. The game app, original game files, saves and logs are kept.": {
+      "comment": "SettingsPortingStorageSection.swift",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete %@ of build cache for %@? This permanently removes extracted and compiled build files. The next rebuild may take longer. The game app, original game files, saves and logs are kept."
+            "value": "Move %@ of build cache for %@ to the Trash? The next rebuild may take longer. The game app, original game files, saves and logs are kept."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eliminare %@ di cache di compilazione per %@? I file di compilazione estratti e compilati verranno rimossi definitivamente. La prossima ricompilazione potrebbe richiedere più tempo. L’app del gioco, i file originali del gioco, i salvataggi e i log vengono conservati."
+            "value": "Spostare nel Cestino %@ di cache di compilazione per %@? La prossima ricompilazione potrebbe richiedere più tempo. L’app del gioco, i file originali del gioco, i salvataggi e i log vengono conservati."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Supprimer %@ de cache de compilation pour %@ ? Cette action supprime définitivement les fichiers de compilation extraits et compilés. La prochaine recompilation peut prendre plus de temps. L’app de jeu, les fichiers de jeu d’origine, les sauvegardes et les journaux sont conservés."
+            "value": "Mettre à la Corbeille %@ de cache de compilation pour %@ ? La prochaine recompilation peut prendre plus de temps. L’app de jeu, les fichiers de jeu d’origine, les sauvegardes et les journaux sont conservés."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ Build-Cache für %@ löschen? Dadurch werden entpackte und kompilierte Build-Dateien dauerhaft entfernt. Die nächste Neuerstellung kann länger dauern. Spiele-App, ursprüngliche Spieldateien, Spielstände und Protokolle bleiben erhalten."
+            "value": "%@ Build-Cache für %@ in den Papierkorb legen? Die nächste Neuerstellung kann länger dauern. Spiele-App, ursprüngliche Spieldateien, Spielstände und Protokolle bleiben erhalten."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "¿Eliminar %@ de caché de compilación de %@? Se eliminarán permanentemente los archivos extraídos y compilados. La próxima recompilación podría tardar más. Se conservan la app del juego, los archivos originales, las partidas guardadas y los registros."
+            "value": "¿Mover a la Papelera %@ de caché de compilación de %@? La próxima recompilación podría tardar más. Se conservan la app del juego, los archivos originales, las partidas guardadas y los registros."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Apagar %@ de cache de compilação de %@? Isso remove permanentemente os arquivos de compilação extraídos e compilados. A próxima recompilação pode demorar mais. O app do jogo, os arquivos originais do jogo, os dados salvos e os logs serão mantidos."
+            "value": "Mover para o Lixo %@ de cache de compilação de %@? A próxima recompilação pode demorar mais. O app do jogo, os arquivos originais do jogo, os dados salvos e os logs serão mantidos."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "删除 %2$@ 的 %1$@ 构建缓存？这会永久移除已解包和已编译的构建文件，下次重新构建可能需要更长时间。游戏 App、原始游戏文件、存档和日志会保留。"
+            "value": "将 %2$@ 的 %1$@ 构建缓存移到废纸篓？下次重新构建可能需要更长时间。游戏 App、原始游戏文件、存档和日志会保留。"
           }
         }
       }
@@ -26223,49 +26212,49 @@
         }
       }
     },
-    "Delete a game's build cache or clear all caches after confirmation; rebuilds may take longer.": {
-      "comment": "SettingsCatalog.swift",
+    "Move one game's build cache or all build caches to the Trash after confirmation; rebuilds may take longer.": {
+      "comment": "SettingsCatalog+Porting.swift",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete a game's build cache or clear all caches after confirmation; rebuilds may take longer."
+            "value": "Move one game's build cache or all build caches to the Trash after confirmation; rebuilds may take longer."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Elimina la cache di compilazione di un gioco o tutte le cache dopo conferma; le ricompilazioni potrebbero richiedere più tempo."
+            "value": "Sposta nel Cestino la cache di compilazione di un gioco o tutte le cache dopo conferma; le ricompilazioni potrebbero richiedere più tempo."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Supprimer le cache de compilation d’un jeu ou tous les caches après confirmation ; les recompilations peuvent prendre plus de temps."
+            "value": "Mettre à la Corbeille le cache de compilation d’un jeu ou tous les caches après confirmation ; les recompilations peuvent prendre plus de temps."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Build-Cache eines Spiels oder alle Caches nach Bestätigung löschen; Neuerstellungen können länger dauern."
+            "value": "Build-Cache eines Spiels oder alle Build-Caches nach Bestätigung in den Papierkorb legen; Neuerstellungen können länger dauern."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Elimina la caché de compilación de un juego o todas las cachés tras confirmar; las recompilaciones podrían tardar más."
+            "value": "Mueve a la Papelera la caché de compilación de un juego o todas las cachés tras confirmar; las recompilaciones podrían tardar más."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Apague o cache de compilação de um jogo ou todos os caches após confirmação; as recompilações podem demorar mais."
+            "value": "Mova para o Lixo o cache de compilação de um jogo ou todos os caches após confirmação; as recompilações podem demorar mais."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "确认后删除某个游戏的构建缓存或清除所有缓存；重新构建可能需要更长时间。"
+            "value": "确认后将单个游戏的构建缓存或所有构建缓存移到废纸篓；重新构建可能需要更长时间。"
           }
         }
       }
@@ -26364,49 +26353,49 @@
         }
       }
     },
-    "Delete build caches?": {
-      "comment": "SettingsStorageSection.swift",
+    "Move build caches to the Trash?": {
+      "comment": "SettingsPortingStorageSection.swift",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete build caches?"
+            "value": "Move build caches to the Trash?"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eliminare le cache di compilazione?"
+            "value": "Spostare le cache di compilazione nel Cestino?"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Supprimer les caches de compilation ?"
+            "value": "Mettre à la Corbeille les caches de compilation ?"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Build-Caches löschen?"
+            "value": "Build-Caches in den Papierkorb legen?"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "¿Eliminar cachés de compilación?"
+            "value": "¿Mover las cachés de compilación a la Papelera?"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Apagar caches de compilação?"
+            "value": "Mover os caches de compilação para o Lixo?"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "删除构建缓存？"
+            "value": "将构建缓存移到废纸篓？"
           }
         }
       }
@@ -35921,49 +35910,49 @@
         }
       }
     },
-    "Games you hid from Game options; Show puts one back in your lists.": {
+    "Game apps you hid from Game options; Show puts one back in your lists.": {
       "comment": "SettingsCatalog.swift",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Games you hid from Game options; Show puts one back in your lists."
+            "value": "Game apps you hid from Game options; Show puts one back in your lists."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "I giochi nascosti da Opzioni del gioco; Mostra li reinserisce negli elenchi."
+            "value": "Le app di gioco nascoste da Opzioni del gioco; Mostra le reinserisce negli elenchi."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Les jeux masqués depuis Options du jeu ; Afficher les remet dans vos listes."
+            "value": "Les apps de jeu masquées depuis Options du jeu ; Afficher les remet dans vos listes."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Spiele, die du in den Spieloptionen ausgeblendet hast; „Anzeigen“ bringt sie zurück in deine Listen."
+            "value": "Spiele-Apps, die du in den Spieloptionen ausgeblendet hast; „Anzeigen“ bringt sie zurück in deine Listen."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Los juegos que has ocultado desde sus opciones; Mostrar los devuelve a tus listas."
+            "value": "Las apps de juegos que has ocultado desde sus opciones; Mostrar las devuelve a tus listas."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jogos ocultados nas Opções do jogo; Mostrar os devolve às suas listas."
+            "value": "Apps de jogos ocultados nas Opções do jogo; Mostrar os devolve às suas listas."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "你在“游戏选项”中隐藏的游戏；“显示”可将其放回列表。"
+            "value": "你在“游戏选项”中隐藏的游戏 App；“显示”可将其放回列表。"
           }
         }
       }
@@ -37002,49 +36991,49 @@
         }
       }
     },
-    "Hidden games": {
-      "comment": "SettingsCatalog.swift",
+    "Hidden game apps": {
+      "comment": "SettingsLibraryGamesSection.swift",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hidden games"
+            "value": "Hidden game apps"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Giochi nascosti"
+            "value": "App di gioco nascoste"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jeux masqués"
+            "value": "Apps de jeu masquées"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ausgeblendete Spiele"
+            "value": "Ausgeblendete Spiele-Apps"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Juegos ocultos"
+            "value": "Apps de juegos ocultas"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jogos ocultos"
+            "value": "Apps de jogos ocultos"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "隐藏的游戏"
+            "value": "隐藏的游戏 App"
           }
         }
       }
@@ -40151,49 +40140,49 @@
         }
       }
     },
-    "Intermediate files created during shader translation and staging in the app-owned workspace. Deleting them frees disk space; your built games and saves will not be touched.": {
-      "comment": "SettingsStorageSection.swift",
+    "Intermediate files created during shader translation and staging in the app-owned workspace. Empty the Trash afterward to reclaim disk space. Your built games and saves will not be touched.": {
+      "comment": "SettingsPortingStorageSection.swift",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Intermediate files created during shader translation and staging in the app-owned workspace. Deleting them frees disk space; your built games and saves will not be touched."
+            "value": "Intermediate files created during shader translation and staging in the app-owned workspace. Empty the Trash afterward to reclaim disk space. Your built games and saves will not be touched."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "File intermedi creati durante la traduzione degli shader e la preparazione nell’area di lavoro gestita dall’app. Eliminarli libera spazio su disco; i giochi compilati e i salvataggi non verranno modificati."
+            "value": "File intermedi creati durante la traduzione degli shader e la preparazione nell’area di lavoro gestita dall’app. Svuota poi il Cestino per liberare spazio su disco. I giochi compilati e i salvataggi non verranno modificati."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fichiers intermédiaires créés lors de la traduction des shaders et de la préparation dans l’espace de travail de l’app. Les supprimer libère de l’espace disque ; vos jeux compilés et sauvegardes restent intacts."
+            "value": "Fichiers intermédiaires créés lors de la traduction des shaders et de la préparation dans l’espace de travail de l’app. Videz ensuite la Corbeille pour libérer de l’espace disque. Vos jeux compilés et sauvegardes restent intacts."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zwischendateien, die beim Übersetzen von Shadern und bei der Vorbereitung im app-eigenen Arbeitsverzeichnis entstehen. Löschen gibt Speicherplatz frei; erstellte Spiele-Apps und Spielstände bleiben unverändert."
+            "value": "Zwischendateien, die beim Übersetzen von Shadern und bei der Vorbereitung im app-eigenen Arbeitsverzeichnis entstehen. Leere danach den Papierkorb, um Speicherplatz freizugeben. Erstellte Spiele-Apps und Spielstände bleiben unverändert."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Archivos intermedios creados durante la traducción de shaders y la preparación en el espacio de trabajo de la app. Eliminarlos libera espacio en disco; los juegos compilados y las partidas guardadas seguirán intactos."
+            "value": "Archivos intermedios creados durante la traducción de shaders y la preparación en el espacio de trabajo de la app. Vacía después la Papelera para liberar espacio en disco. Los juegos compilados y las partidas guardadas seguirán intactos."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Arquivos intermediários criados durante a tradução de shaders e a preparação na área de trabalho do app. Apagá-los libera espaço em disco; seus jogos compilados e dados salvos não serão alterados."
+            "value": "Arquivos intermediários criados durante a tradução de shaders e a preparação na área de trabalho do app. Esvazie o Lixo depois para liberar espaço em disco. Seus jogos compilados e dados salvos não serão alterados."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "着色器转换和暂存过程中在 App 专属工作区生成的中间文件。删除它们可以释放磁盘空间；你已构建的游戏和存档不会受影响。"
+            "value": "着色器转换和暂存过程中在 App 专属工作区生成的中间文件。之后清空废纸篓即可释放磁盘空间。你已构建的游戏和存档不会受影响。"
           }
         }
       }
@@ -45708,7 +45697,7 @@
       }
     },
     "Move to Trash": {
-      "comment": "ModsPanel.swift:218",
+      "comment": "ModsPanel.swift, SettingsPortingStorageSection.swift",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -45725,7 +45714,7 @@
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Placer dans la corbeille"
+            "value": "Mettre à la Corbeille"
           }
         },
         "de": {
@@ -49473,49 +49462,49 @@
         }
       }
     },
-    "No hidden games. Hide one from its Game options; it comes back here.": {
-      "comment": "SettingsGamesSection.swift",
+    "No hidden game apps. Hide one from its Game options; it comes back here.": {
+      "comment": "SettingsLibraryGamesSection.swift",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No hidden games. Hide one from its Game options; it comes back here."
+            "value": "No hidden game apps. Hide one from its Game options; it comes back here."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nessun gioco nascosto. Puoi nasconderne uno dalle sue Opzioni del gioco; lo ritroverai qui."
+            "value": "Nessuna app di gioco nascosta. Puoi nasconderla da Opzioni del gioco; la ritroverai qui."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aucun jeu masqué. Masquez-en un depuis ses Options du jeu ; il réapparaîtra ici."
+            "value": "Aucune app de jeu masquée. Masquez-en une depuis ses Options du jeu ; elle apparaîtra ici."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Keine ausgeblendeten Spiele. Blende ein Spiel in seinen Spieloptionen aus; hier kannst du es wieder einblenden."
+            "value": "Keine ausgeblendeten Spiele-Apps. Blende eine in ihren Spieloptionen aus; hier kannst du sie wieder einblenden."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "No hay juegos ocultos. Oculta uno desde sus opciones; aparecerá aquí."
+            "value": "No hay apps de juegos ocultas. Oculta una desde sus opciones; aparecerá aquí."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nenhum jogo oculto. Oculte um jogo em suas Opções do jogo; ele aparecerá aqui."
+            "value": "Nenhum app de jogo oculto. Oculte um nas Opções do jogo; ele aparecerá aqui."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "没有隐藏的游戏。在游戏的“游戏选项”中隐藏后，它会出现在这里。"
+            "value": "没有隐藏的游戏 App。在“游戏选项”中隐藏后，它会出现在这里。"
           }
         }
       }
@@ -55110,49 +55099,49 @@
         }
       }
     },
-    "Permanently remove %@ of build caches for all games? Future rebuilds may take longer. Your games, original game files, saves and logs will be kept. Unavailable folders will be left alone.": {
-      "comment": "SettingsStorageSection.swift",
+    "Move %@ of build caches for all games to the Trash? Future rebuilds may take longer. Your games, original game files, saves and logs will be kept. Unavailable folders will be left alone.": {
+      "comment": "SettingsPortingStorageSection.swift",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Permanently remove %@ of build caches for all games? Future rebuilds may take longer. Your games, original game files, saves and logs will be kept. Unavailable folders will be left alone."
+            "value": "Move %@ of build caches for all games to the Trash? Future rebuilds may take longer. Your games, original game files, saves and logs will be kept. Unavailable folders will be left alone."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rimuovere definitivamente %@ di cache di compilazione per tutti i giochi? Le prossime ricompilazioni potrebbero richiedere più tempo. I giochi, i file originali dei giochi, i salvataggi e i log verranno conservati. Le cartelle non disponibili non verranno modificate."
+            "value": "Spostare nel Cestino %@ di cache di compilazione per tutti i giochi? Le prossime ricompilazioni potrebbero richiedere più tempo. I giochi, i file originali dei giochi, i salvataggi e i log verranno conservati. Le cartelle non disponibili non verranno modificate."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Supprimer définitivement %@ de caches de compilation pour tous les jeux ? Les prochaines recompilations peuvent prendre plus de temps. Vos jeux, fichiers de jeu d’origine, sauvegardes et journaux seront conservés. Les dossiers indisponibles resteront intacts."
+            "value": "Mettre à la Corbeille %@ de caches de compilation pour tous les jeux ? Les prochaines recompilations peuvent prendre plus de temps. Vos jeux, fichiers de jeu d’origine, sauvegardes et journaux seront conservés. Les dossiers indisponibles resteront intacts."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ Build-Caches für alle Spiele dauerhaft entfernen? Künftige Neuerstellungen können länger dauern. Deine Spiele, ursprünglichen Spieldateien, Spielstände und Protokolle bleiben erhalten. Nicht verfügbare Ordner bleiben unverändert."
+            "value": "%@ Build-Caches für alle Spiele in den Papierkorb legen? Künftige Neuerstellungen können länger dauern. Deine Spiele, ursprünglichen Spieldateien, Spielstände und Protokolle bleiben erhalten. Nicht verfügbare Ordner bleiben unverändert."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "¿Eliminar permanentemente %@ de cachés de compilación de todos los juegos? Las próximas recompilaciones podrían tardar más. Se conservarán tus juegos, archivos originales, partidas guardadas y registros. Las carpetas no disponibles seguirán intactas."
+            "value": "¿Mover a la Papelera %@ de cachés de compilación de todos los juegos? Las próximas recompilaciones podrían tardar más. Se conservarán tus juegos, archivos originales, partidas guardadas y registros. Las carpetas no disponibles seguirán intactas."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Remover permanentemente %@ de caches de compilação de todos os jogos? As próximas recompilações podem demorar mais. Seus jogos, arquivos originais dos jogos, dados salvos e logs serão mantidos. As pastas indisponíveis não serão alteradas."
+            "value": "Mover para o Lixo %@ de caches de compilação de todos os jogos? As próximas recompilações podem demorar mais. Seus jogos, arquivos originais dos jogos, dados salvos e logs serão mantidos. As pastas indisponíveis não serão alteradas."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "永久移除所有游戏共 %@ 的构建缓存？以后重新构建可能需要更长时间。你的游戏、原始游戏文件、存档和日志都会保留。不可用的文件夹不会受影响。"
+            "value": "将所有游戏共 %@ 的构建缓存移到废纸篓？以后重新构建可能需要更长时间。你的游戏、原始游戏文件、存档和日志都会保留。不可用的文件夹不会受影响。"
           }
         }
       }
@@ -89100,190 +89089,190 @@
         }
       }
     },
-    "Choose a folder with your %@. Existing apps play without these files. Change it later in Settings → Porting → Library.": {
+    "Choose a folder with your %@. Existing apps play without these files. Change it later in Settings → Porting → Game folders.": {
       "comment": "GameFoldersCopy.swift",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose a folder with your %@. Existing apps play without these files. Change it later in Settings → Porting → Library."
+            "value": "Choose a folder with your %@. Existing apps play without these files. Change it later in Settings → Porting → Game folders."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Scegli una cartella con i tuoi %@. Le app esistenti funzionano senza questi file. Puoi cambiarla in seguito in Impostazioni → Porting → Libreria."
+            "value": "Scegli una cartella con i tuoi %@. Le app esistenti funzionano senza questi file. Puoi cambiarla in seguito in Impostazioni → Porting → Cartelle dei giochi."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choisissez un dossier contenant vos %@. Les apps existantes fonctionnent sans ces fichiers. Vous pourrez modifier ce choix dans Réglages → Porting → Bibliothèque."
+            "value": "Choisissez un dossier contenant vos %@. Les apps existantes fonctionnent sans ces fichiers. Vous pourrez modifier ce choix dans Réglages → Porting → Dossiers de jeux."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wähle einen Ordner mit deinen %@. Vorhandene Apps lassen sich ohne diese Dateien spielen. Du kannst den Ordner später unter Einstellungen → Porting → Bibliothek ändern."
+            "value": "Wähle einen Ordner mit deinen %@. Vorhandene Apps lassen sich ohne diese Dateien spielen. Du kannst den Ordner später unter Einstellungen → Porting → Spieleordner ändern."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Elige una carpeta con tus %@. Las apps existentes se pueden ejecutar sin estos archivos. Puedes cambiarlo más tarde en Ajustes → Porting → Biblioteca."
+            "value": "Elige una carpeta con tus %@. Las apps existentes se pueden ejecutar sin estos archivos. Puedes cambiarlo más tarde en Ajustes → Porting → Carpetas de juegos."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Escolha uma pasta com seus %@. Apps existentes funcionam sem esses arquivos. Altere depois em Ajustes → Porting → Biblioteca."
+            "value": "Escolha uma pasta com seus %@. Apps existentes funcionam sem esses arquivos. Altere depois em Ajustes → Porting → Pastas de jogos."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "选择存放你的%@的文件夹。现有的 App 无需这些文件即可游玩。以后可在“设置”→“移植”→“游戏库”中更改。"
+            "value": "选择存放你的%@的文件夹。现有的 App 无需这些文件即可游玩。以后可在“设置”→“移植”→“游戏文件夹”中更改。"
           }
         }
       }
     },
-    "Choose where to keep your game apps. Put any existing nxnative games (.app) here. Change it later in Settings → Porting → Library.": {
+    "Choose where to keep your game apps. Put any existing nxnative games (.app) here. Change it later in Settings → Porting → Game folders.": {
       "comment": "GameFoldersCopy.swift",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose where to keep your game apps. Put any existing nxnative games (.app) here. Change it later in Settings → Porting → Library."
+            "value": "Choose where to keep your game apps. Put any existing nxnative games (.app) here. Change it later in Settings → Porting → Game folders."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Scegli dove conservare le app dei giochi. Inserisci qui eventuali giochi nxnative (.app) esistenti. Puoi cambiarla in seguito in Impostazioni → Porting → Libreria."
+            "value": "Scegli dove conservare le app dei giochi. Inserisci qui eventuali giochi nxnative (.app) esistenti. Puoi cambiarla in seguito in Impostazioni → Porting → Cartelle dei giochi."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choisissez où conserver vos apps de jeux. Placez-y vos jeux nxnative existants (.app). Vous pourrez modifier ce choix dans Réglages → Porting → Bibliothèque."
+            "value": "Choisissez où conserver vos apps de jeux. Placez-y vos jeux nxnative existants (.app). Vous pourrez modifier ce choix dans Réglages → Porting → Dossiers de jeux."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wähle, wo deine Spiele-Apps gespeichert werden. Lege hier auch vorhandene nxnative-Spiele (.app) ab. Du kannst den Ordner später unter Einstellungen → Porting → Bibliothek ändern."
+            "value": "Wähle, wo deine Spiele-Apps gespeichert werden. Lege hier auch vorhandene nxnative-Spiele (.app) ab. Du kannst den Ordner später unter Einstellungen → Porting → Spieleordner ändern."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Elige dónde guardar tus apps de juegos. Coloca aquí tus juegos existentes de nxnative (.app). Puedes cambiarlo más tarde en Ajustes → Porting → Biblioteca."
+            "value": "Elige dónde guardar tus apps de juegos. Coloca aquí tus juegos existentes de nxnative (.app). Puedes cambiarlo más tarde en Ajustes → Porting → Carpetas de juegos."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Escolha onde manter os apps dos seus jogos. Coloque aqui os jogos existentes do nxnative (.app). Altere depois em Ajustes → Porting → Biblioteca."
+            "value": "Escolha onde manter os apps dos seus jogos. Coloque aqui os jogos existentes do nxnative (.app). Altere depois em Ajustes → Porting → Pastas de jogos."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "选择存放游戏 App 的位置。请把现有的 nxnative 游戏（.app）放在这里。以后可在“设置”→“移植”→“游戏库”中更改。"
+            "value": "选择存放游戏 App 的位置。请把现有的 nxnative 游戏（.app）放在这里。以后可在“设置”→“移植”→“游戏文件夹”中更改。"
           }
         }
       }
     },
-    "Existing game apps play without sources. Choose later in Settings → Porting → Library.": {
+    "Existing game apps play without sources. Choose later in Settings → Porting → Game folders.": {
       "comment": "SetupCheck.swift",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Existing game apps play without sources. Choose later in Settings → Porting → Library."
+            "value": "Existing game apps play without sources. Choose later in Settings → Porting → Game folders."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Le app dei giochi esistenti funzionano senza sorgenti. Puoi scegliere più tardi in Impostazioni → Porting → Libreria."
+            "value": "Le app dei giochi esistenti funzionano senza sorgenti. Puoi scegliere più tardi in Impostazioni → Porting → Cartelle dei giochi."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Les apps de jeux existantes fonctionnent sans sources. Vous pourrez choisir plus tard dans Réglages → Porting → Bibliothèque."
+            "value": "Les apps de jeux existantes fonctionnent sans sources. Vous pourrez choisir plus tard dans Réglages → Porting → Dossiers de jeux."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vorhandene Spiele-Apps lassen sich ohne Quellen spielen. Wähle sie später unter Einstellungen → Porting → Bibliothek aus."
+            "value": "Vorhandene Spiele-Apps lassen sich ohne Quellen spielen. Wähle sie später unter Einstellungen → Porting → Spieleordner aus."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Las apps de juegos existentes se pueden ejecutar sin sus archivos de origen. Puedes elegirlos más tarde en Ajustes → Porting → Biblioteca."
+            "value": "Las apps de juegos existentes se pueden ejecutar sin sus archivos de origen. Puedes elegirlos más tarde en Ajustes → Porting → Carpetas de juegos."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Apps de jogos existentes funcionam sem os arquivos de origem. Escolha depois em Ajustes → Porting → Biblioteca."
+            "value": "Apps de jogos existentes funcionam sem os arquivos de origem. Escolha depois em Ajustes → Porting → Pastas de jogos."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "现有的游戏 App 无需来源即可游玩。以后可在“设置”→“移植”→“游戏库”中选择。"
+            "value": "现有的游戏 App 无需来源即可游玩。以后可在“设置”→“移植”→“游戏文件夹”中选择。"
           }
         }
       }
     },
-    "The Game apps folder is unavailable. Reconnect it or choose another in Settings → Porting → Library.": {
+    "The Game apps folder is unavailable. Reconnect it or choose another in Settings → Porting → Game folders.": {
       "comment": "GameAppDestination.swift",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The Game apps folder is unavailable. Reconnect it or choose another in Settings → Porting → Library."
+            "value": "The Game apps folder is unavailable. Reconnect it or choose another in Settings → Porting → Game folders."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "La cartella App dei giochi non è disponibile. Ricollegala o scegline un’altra in Impostazioni → Porting → Libreria."
+            "value": "La cartella App dei giochi non è disponibile. Ricollegala o scegline un’altra in Impostazioni → Porting → Cartelle dei giochi."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Le dossier Apps de jeux est indisponible. Reconnectez-le ou choisissez-en un autre dans Réglages → Porting → Bibliothèque."
+            "value": "Le dossier Apps de jeux est indisponible. Reconnectez-le ou choisissez-en un autre dans Réglages → Porting → Dossiers de jeux."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Der Spiele-App-Ordner ist nicht verfügbar. Verbinde ihn erneut oder wähle unter Einstellungen → Porting → Bibliothek einen anderen."
+            "value": "Der Spiele-App-Ordner ist nicht verfügbar. Verbinde ihn erneut oder wähle unter Einstellungen → Porting → Spieleordner einen anderen."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "La carpeta Apps de juegos no está disponible. Vuelve a conectarla o elige otra en Ajustes → Porting → Biblioteca."
+            "value": "La carpeta Apps de juegos no está disponible. Vuelve a conectarla o elige otra en Ajustes → Porting → Carpetas de juegos."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "A pasta de Apps de jogos está indisponível. Reconecte ou escolha outra em Ajustes → Porting → Biblioteca."
+            "value": "A pasta de Apps de jogos está indisponível. Reconecte ou escolha outra em Ajustes → Porting → Pastas de jogos."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "“游戏 App”文件夹不可用。请重新连接，或在“设置”→“移植”→“游戏库”中选择其他文件夹。"
+            "value": "“游戏 App”文件夹不可用。请重新连接，或在“设置”→“移植”→“游戏文件夹”中选择其他文件夹。"
           }
         }
       }
@@ -89670,52 +89659,76 @@
         }
       }
     },
-    "Launch screen, Surprise me, session card and hidden games.": {
+    "Launch screen, Surprise me, session card and hidden game apps.": {
       "comment": "SettingsSection.swift",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Launch screen, Surprise me, session card and hidden games."
+            "value": "Launch screen, Surprise me, session card and hidden game apps."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Schermata di avvio, Sorprendimi, card della sessione e giochi nascosti."
+            "value": "Schermata di avvio, Sorprendimi, card della sessione e app di gioco nascoste."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Écran de lancement, Surprends-moi, carte de session et jeux masqués."
+            "value": "Écran de lancement, Surprends-moi, carte de session et apps de jeu masquées."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Startbildschirm, Überrasch mich, Sitzungskarte und ausgeblendete Spiele."
+            "value": "Startbildschirm, Überrasch mich, Sitzungskarte und ausgeblendete Spiele-Apps."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pantalla de inicio, Sorpréndeme, tarjeta de sesión y juegos ocultos."
+            "value": "Pantalla de inicio, Sorpréndeme, tarjeta de sesión y apps de juegos ocultas."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tela de abertura, Surpreenda-me, cartão da sessão e jogos ocultos."
+            "value": "Tela de abertura, Surpreenda-me, cartão da sessão e apps de jogos ocultos."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "启动画面、随便选一个、游戏时段卡片和隐藏的游戏。"
+            "value": "启动画面、随便选一个、游戏时段卡片和隐藏的游戏 App。"
           }
         }
+      }
+    },
+    "Game folders": {
+      "comment": "SettingsSection.swift",
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Game folders"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Cartelle dei giochi"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Dossiers de jeux"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spieleordner"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Carpetas de juegos"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Pastas de jogos"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "游戏文件夹"}}
+      }
+    },
+    "Porting storage": {
+      "comment": "SettingsSection.swift",
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Porting storage"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Spazio di porting"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Stockage de Porting"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Portierungsspeicher"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Almacenamiento de portabilidad"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Armazenamento de portabilidade"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "移植存储空间"}}
       }
     },
     "Storage usage, logs, metadata and artwork caches, save backups.": {

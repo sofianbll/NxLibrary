@@ -4,7 +4,7 @@ import Foundation
 public enum SettingsSection: String, CaseIterable, Identifiable, Equatable {
     // Declared in sidebar order (`SettingsSidebarGroup`), so `allCases` steps through it as drawn.
     // Raw values are identities and never change: `sources` is the Sources page, `library` and
-    // `games` are Porting's Library and New games.
+    // `games` are Porting's Game folders and New games.
     case search, changed
     case startUp, profiles, navigation, spotlight, soundMusic, look, controllers, multiplayer, apiServices
     case sources, libraryGames, storage
@@ -37,11 +37,11 @@ public enum SettingsSection: String, CaseIterable, Identifiable, Equatable {
         case .storage: return "Storage"
         case .engine: return "Setup and engine"
         case .keys: return "Keys"
-        case .library: return "Library"
+        case .library: return "Game folders"
         case .games: return "New games"
         case .cloudSaves: return "Cloud saves"
         case .cloudLibrary: return "Cloud library"
-        case .portingStorage: return "Storage"
+        case .portingStorage: return "Porting storage"
         case .about: return "About"
         case .console: return "Console"
         }
@@ -61,7 +61,7 @@ public enum SettingsSection: String, CaseIterable, Identifiable, Equatable {
         case .apiServices: return L10n.text("Optional connections for ratings and game artwork.")
         case .controllers: return L10n.text("Gamepad, button layout and stick deadzone for the library.")
         case .sources: return L10n.text("Steam libraries, refresh and how Play opens Steam.")
-        case .libraryGames: return L10n.text("Launch screen, Surprise me, session card and hidden games.")
+        case .libraryGames: return L10n.text("Launch screen, Surprise me, session card and hidden game apps.")
         case .storage: return L10n.text("Storage usage, logs, metadata and artwork caches, save backups.")
         case .engine: return L10n.text("Engine pin, toolchain gate and setup.")
         case .keys: return L10n.text("Import, replace or detect prod.keys.")

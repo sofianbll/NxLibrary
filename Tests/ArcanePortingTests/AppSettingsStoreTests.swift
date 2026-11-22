@@ -369,8 +369,8 @@ final class SettingsSectionTests: XCTestCase {
     func testAllSectionsArePresent() {
         XCTAssertEqual(SettingsSection.allCases.map(\.title), [
             "Search", "Changed", "Start-up", "Profiles", "Navigation", "Spotlight", "Sound & music", "Look", "Controllers",
-            "Play together", "Online services", "Sources", "Games", "Storage", "Setup and engine", "Keys", "Library", "New games",
-            "Cloud saves", "Cloud library", "Storage", "About", "Console"
+            "Play together", "Online services", "Sources", "Games", "Storage", "Setup and engine", "Keys", "Game folders", "New games",
+            "Cloud saves", "Cloud library", "Porting storage", "About", "Console"
         ])
         XCTAssertTrue(SettingsSection.allCases.allSatisfy { !$0.icon.rawValue.isEmpty })
     }
@@ -383,9 +383,9 @@ final class SettingsSectionTests: XCTestCase {
     }
 
     func testPortingSectionsAreNamedWithTheirGroupWhereSearchListsThem() {
-        XCTAssertEqual(SettingsSection.library.place, "Porting · Library")
+        XCTAssertEqual(SettingsSection.library.place, "Porting · Game folders")
         XCTAssertEqual(SettingsSection.games.place, "Porting · New games")
-        XCTAssertEqual(SettingsSection.portingStorage.place, "Porting · Storage")
+        XCTAssertEqual(SettingsSection.portingStorage.place, "Porting · Porting storage")
         XCTAssertEqual(SettingsSection.sources.place, "Sources")
         XCTAssertEqual(SettingsSection.look.place, "Look")
         XCTAssertEqual(SettingsSection.storage.place, "Storage")

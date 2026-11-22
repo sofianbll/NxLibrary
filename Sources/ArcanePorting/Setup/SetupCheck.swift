@@ -99,7 +99,7 @@ public enum SetupOverride: Equatable {
 }
 
 public enum SetupCheck {
-    /// The technical screen has no folder choices; those belong to Your games and Settings → Porting → Library.
+    /// The technical screen has no folder choices; those belong to Your games and Settings → Porting → Game folders.
     public static func requirements(_ items: [SetupItem]) -> [SetupItem] {
         items.filter { $0.id != .library && $0.id != .sources }
     }
@@ -289,7 +289,7 @@ public enum SetupCheck {
             switch f.sourcesReadable {
             case nil:
                 return SetupItem(id: id, title: GameFoldersCopy.sourcesTitle, state: .ready, chip: "OPTIONAL", about: about,
-                                 detail: L10n.text("Existing game apps play without sources. Choose later in Settings → Porting → Library."),
+                                 detail: L10n.text("Existing game apps play without sources. Choose later in Settings → Porting → Game folders."),
                                  actionTitle: L10n.text("Choose folder"), isRequired: false)
             case false?:
                 return SetupItem(id: id, title: GameFoldersCopy.sourcesTitle, state: .warning, chip: "FOLDER UNAVAILABLE", about: about,

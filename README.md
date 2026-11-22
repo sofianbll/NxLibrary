@@ -127,15 +127,15 @@ If games are found, **Open library** takes you to them. **Skip for now** enters 
 
 The default Game apps folder is `~/Applications`; first use can prepare this default without an extra picker. Remembered or custom unavailable folders are never recreated automatically. Changing folders does not move installed apps, and a rebuild updates an existing app in its current location. A read-only folder still allows discovery and Play; installing new builds needs write access.
 
-Discovery includes subfolders of **Game apps**, skips app contents and limits the search depth. **Settings → Porting → Library → Scan game apps** reports search limits and unreadable folders. If several builds of a title are found, Arcane keeps the registered app while it exists. For a newly discovered title, it uses the most recently modified build.
+Discovery includes subfolders of **Game apps**, skips app contents and limits the search depth. **Settings → Porting → Game folders → Scan game apps** reports search limits and unreadable folders. If several builds of a title are found, Arcane keeps the registered app while it exists. For a newly discovered title, it uses the most recently modified build.
 
-**Game files** is a separate optional folder preference in **Settings → Porting → Library**. Selecting individual files leaves that preference in place. Both folder choices can be changed later.
+**Game files** is a separate optional folder choice in **Settings → Porting → Game folders**. Selecting individual files leaves that choice in place. **Reset group** preserves both folders; the **Game apps** row has its own **Reset** button.
 
 Import your `prod.keys` when prompted. Arcane keeps a private copy with mode `0600` and leaves the original file unchanged. Key values are not displayed or logged.
 
 Reopen both setup steps from **Settings → Porting → Setup and engine → Open Setup** whenever needed; this keeps your library and completion state. Arcane never runs `sudo`, accepts the Xcode licence for you or changes `xcode-select`.
 
-To discover existing nxnative game apps, choose **Settings → Porting → Library → Scan game apps → Scan**. Play works with the installed app. To rebuild it, attach the original sources.
+To discover existing nxnative game apps, choose **Settings → Porting → Game folders → Scan game apps → Scan**. Play works with the installed app. To rebuild it, attach the original sources.
 
 If an installed app is moved or removed, its library entry stays with a blurred, locked tile and **App not found**. Restore it to its folder or change **Game apps**, then refresh the library. Arcane does not search elsewhere for it. Missing build inputs show **Game files not found** when there is no app to play. An existing app still plays when its source files are missing; only rebuilding is unavailable. To reconnect a game's moved inputs, use **Game Options → Edit details → Attach sources…**.
 
@@ -163,7 +163,7 @@ If you download a ported `.app` folder through Google Drive in your browser, unz
 
 Scroll down for screenshots, the game description and **More like this** when matching titles are in your library. Steam games can show playtime and an **Achievements** card with rarity, unlocked items and crystal tiers. The animated Arcane appears when every achievement is unlocked.
 
-Use **Find a game** for search, **Game Options** for title-specific actions, and the menu for themes, Settings and running-game controls. Hidden games can be restored under **Settings → Library → Games → Hidden games**.
+Use **Find a game** for search, **Game Options** for title-specific actions, and the menu for themes, Settings and running-game controls. Hidden ported apps can be restored under **Settings → Library → Games → Hidden game apps**.
 
 When you quit a game, Arcane comes back to the front, unless you had moved to another app or another game is still open. A **session card** in the top right shows how long you played this time and in total; sessions under 10 seconds show none. Turn it off in **Settings → Library → Games → Session card**.
 
@@ -355,9 +355,9 @@ App data lives in `~/Library/Application Support/NXLibrary/`. Local game data us
 
 **Send** makes a SHA-256-verified copy of the app and its registered build cache. Arcane refuses to send an app or cache containing excluded data, such as saves, converted packages or obsolete build files. **Free up space** moves one unchanged, fully backed-up local copy to the Trash only after confirmation and remote verification; the Trash still occupies disk space until emptied. **Download** from the Cloud library panel checks an archive before installing it at its registered location and does not overwrite a local copy. Sources and saves are not sent.
 
-**Settings → Porting → Storage** shows app, build cache and log sizes for every library entry, including hidden games, with the largest caches first. **Delete cache** permanently removes only the chosen game's build cache after confirmation. Its app, original game files, saves and logs stay in place. The next rebuild may take longer. Shared cache confirmations list the other affected entries. Connect unavailable drives or check folder access, then choose **Recalculate**.
+**Settings → Porting → Porting storage** shows app, build cache and log sizes for ported games, including hidden ones, with the largest caches first. **Move to Trash** moves one game's build cache or all build caches after confirmation. Apps, original game files, saves and logs stay in place. The next rebuild may take longer. Shared cache confirmations list the other affected entries.
 
-Storage can also clear all build caches or logs and open the shared backups folder. Cleanup runs without blocking navigation and is unavailable during a build or app update. **Remove Sources & Build Cache deletes the selected original source files**, while retaining the installed app and saves. Read that confirmation carefully; it differs from clearing a cache.
+**Settings → Library → Storage** can recalculate sizes, clear logs and open the shared backups folder. **Remove Sources & Build Cache** also moves selected original source files to the Trash, while retaining the installed app and saves. Read that confirmation carefully; it differs from clearing a cache.
 
 ## Documentation and development
 

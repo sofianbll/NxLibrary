@@ -229,8 +229,8 @@ final class SettingsCatalogTests: XCTestCase {
         XCTAssertEqual(SettingsCatalog.changed(in: settings).map(\.id), ["showsSessionCard"])
     }
 
-    func testSearchFindsHiddenGames() {
-        let hits = SettingsCatalog.search("hidden")
+    func testSearchFindsHiddenGameApps() {
+        let hits = SettingsCatalog.search("hidden game apps")
         XCTAssertEqual(hits.first { $0.id == "hiddenGames" }?.group, .libraryGames)
     }
 
