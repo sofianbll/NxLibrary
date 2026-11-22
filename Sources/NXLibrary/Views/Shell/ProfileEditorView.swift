@@ -26,7 +26,6 @@ struct ProfileEditorView: View {
     @State private var isCropping = false
     @State private var cropTask: Task<Void, Never>?
     @State private var discardFocus: Int?
-    @State private var discardHover = SeleneHoverFocus()
     @State private var resumeNameFocus = false
     @FocusState private var nameFocused: Bool
     @ObservedObject private var theme = ThemeStore.shared
@@ -125,18 +124,11 @@ struct ProfileEditorView: View {
     }
 
     private var discardDialog: some View {
-        let focus = Binding(get: { discardFocus ?? 1 }, set: { choice in
-            if discardHover.moved(true) { discardFocus = choice }
-        })
+        let focus = Binding(get: { discardFocus ?? 1 }, set: { discardFocus = $0 })
         return SeleneOverlay(style: .profileRemoval, onOutside: keepEditing) {
             SeleneChoiceDialog(title: "Discard changes?", message: L10n.text("Your profile changes won’t be saved."),
                                choices: ["Discard", "Keep editing"], focus: focus, cancelIndex: 1,
-                               onChoose: chooseDiscardAction)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .overlay(alignment: .bottom) {
-                    SeleneHintsBar(left: [HintItem(.b, "Back", action: keepEditing)],
-                                   right: [HintItem(.a, "Select", action: confirmDiscardChoice)])
-                }
+                               onCancel: keepEditing, onChoose: chooseDiscardAction)
         }
     }
 
@@ -492,7 +484,6 @@ struct ProfileEditorView: View {
         guard profile != original || hasCustomBackground else { onCancel(); return }
         resumeNameFocus = nameFocused
         nameFocused = false
-        discardHover = SeleneHoverFocus()
         discardFocus = 1
     }
 
