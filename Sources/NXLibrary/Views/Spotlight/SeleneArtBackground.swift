@@ -27,12 +27,6 @@ struct SeleneArtBackground: View {
 
     private var art: NSImage? { showsArt ? image : nil }
 
-    /// The entrance's background rise (`SpotlightEntrance.backgroundDuration`) on the crossfade's curve
-    /// (`OpacityFade`), the art layer's own: soft at both ends, as when moving between games.
-    static let rise = Animation.timingCurve(Double(OpacityFade.controlPoints.0), Double(OpacityFade.controlPoints.1),
-                                            Double(OpacityFade.controlPoints.2), Double(OpacityFade.controlPoints.3),
-                                            duration: SpotlightEntrance.backgroundDuration)
-
     var body: some View {
         ZStack {
             if !sharesBackdrop { Color(hex: style.palette.scrim) }

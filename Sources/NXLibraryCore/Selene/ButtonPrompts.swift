@@ -66,7 +66,9 @@ public enum ButtonPrompts {
                               reported: [PromptButton: String] = [:]) -> String? {
         if style == .automatic {
             guard connected != .none else { return nil }
-            if let name = reported[button], !name.isEmpty, !isGenericShape(name) { return name }
+            // The stick click is never the bare "R" disc: it reads as the R shoulder button.
+            if let name = reported[button], !name.isEmpty, !isGenericShape(name),
+               !(button == .rs && name.hasPrefix("r.joystick")) { return name }
         }
         switch resolved(style, connected) {
         case .nintendo: return nintendoSymbol(button)
@@ -89,6 +91,12 @@ public enum ButtonPrompts {
         "inset", "filled", "dashed", "dotted", "lefthalf", "righthalf", "tophalf", "bottomhalf"
     ]
 
+    /// The right-stick click, drawn as its family names it: RSB on Xbox, R3 on PlayStation. The Switch has
+    /// no name of its own in SF Symbols; R3 cannot be mistaken for its R shoulder button.
+    private static func stickClickSymbol(_ family: ButtonNameStyle) -> String {
+        family == .xbox ? "rsb.button.angledbottom.horizontal.right" : "r3.button.angledbottom.horizontal.right"
+    }
+
     private static func nintendoSymbol(_ b: PromptButton) -> String? {
         switch b {
         case .a: return "a.circle"
@@ -99,7 +107,7 @@ public enum ButtonPrompts {
         case .rb: return "r.rectangle.roundedbottom"
         case .lt: return "zl.rectangle.roundedtop"
         case .rt: return "zr.rectangle.roundedtop"
-        case .rs: return "r.joystick.press.down"
+        case .rs: return stickClickSymbol(.playstation)
         case .view: return "minus.circle"
         case .menu: return "plus.circle"
         case .home: return "house.circle"
@@ -118,7 +126,7 @@ public enum ButtonPrompts {
         case .rb: return "rb.rectangle.roundedbottom"
         case .lt: return "lt.rectangle.roundedtop"
         case .rt: return "rt.rectangle.roundedtop"
-        case .rs: return "r.joystick.press.down"
+        case .rs: return stickClickSymbol(.xbox)
         case .view: return "rectangle.on.rectangle.circle"
         case .menu: return "line.3.horizontal.circle"
         case .home: return "xbox.logo"
@@ -137,7 +145,7 @@ public enum ButtonPrompts {
         case .rb: return "r1.rectangle.roundedbottom"
         case .lt: return "l2.rectangle.roundedtop"
         case .rt: return "r2.rectangle.roundedtop"
-        case .rs: return "r.joystick.press.down"
+        case .rs: return stickClickSymbol(.playstation)
         case .home: return "playstation.logo"
         case .move: return "arrow.left.and.right"
         case .view, .menu, .search: return nil // Use the key's label when no glyph is defined.
@@ -163,7 +171,7 @@ public enum ButtonPrompts {
         case .rb: return "R"
         case .lt: return "ZL"
         case .rt: return "ZR"
-        case .rs: return "RS"
+        case .rs: return "R3"
         case .view: return "−"
         case .menu: return "+"
         case .home: return "⌂"
@@ -182,7 +190,7 @@ public enum ButtonPrompts {
         case .rb: return "RB"
         case .lt: return "LT"
         case .rt: return "RT"
-        case .rs: return "RS"
+        case .rs: return "RSB"
         case .view: return "View"
         case .menu: return "Menu"
         case .home: return "Xbox"

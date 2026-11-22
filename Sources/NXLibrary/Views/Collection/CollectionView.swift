@@ -122,7 +122,7 @@ struct CollectionView: View {
     private func stage(games: [CatalogGame], game: PortedGame?) -> some View {
         ZStack(alignment: .topLeading) {
             SpotlightTopBar(filter: filter, sort: settings.settings.librarySort, showClock: settings.settings.showClock,
-                            profileFocused: profileFocused, onSelect: { setFilter($0) })
+                            profileFocused: profileFocused, nextendo: viewModel.profileNextendo, onSelect: { setFilter($0) })
 
             if let game {
                 CollectionInfoView(game: game, logo: art.logo(for: game),

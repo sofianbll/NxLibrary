@@ -58,10 +58,6 @@ struct SpotlightView: View {
     @State var viewer: ViewerContext?
     /// The open Achievements screen's selection; the game is the selected Steam game.
     @State var achievementsScreen: AchievementsScreenModel?
-    /// The filter pill: shown while the filter is not All, and for 1.2 s after switching to All.
-    @State var pillFilter: LibraryFilter = .all
-    @State var pillVisible = false
-    @State var pillTask: Task<Void, Never>?
     /// The game column's block heights (`SpotlightPageBlock`), which place the page's scroll.
     @State var blocks: [SpotlightPageBlock: CGFloat] = [:]
     /// The page's scroll and fades, moved in their own transactions (`syncPage`) so
@@ -172,7 +168,6 @@ struct SpotlightView: View {
     /// Everything one render needs, computed once per body.
     struct Snapshot {
         let items: [SpotlightItem]
-        let rowGameCount: Int
         let gamesByID: [UUID: PortedGame]
         let selectedItem: SpotlightItem?
         let selectedGame: PortedGame?
@@ -189,7 +184,7 @@ struct SpotlightView: View {
         let catalog = Dictionary(visible.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         let id: UUID?
         if case .game(let selected) = item { id = selected } else { id = nil }
-        return Snapshot(items: items, rowGameCount: rowGames.count, gamesByID: gamesByID, selectedItem: item,
+        return Snapshot(items: items, gamesByID: gamesByID, selectedItem: item,
                         selectedGame: id.flatMap { gamesByID[$0] }, catalogGamesByID: catalog,
                         selectedCatalogGame: id.flatMap { catalog[$0] })
     }
@@ -314,7 +309,6 @@ struct SpotlightView: View {
             achievementsScreen = nil
             modsHost.stop()
             storeHost.close()
-            pillTask?.cancel()
             mutate { $0.cancelLift() }
         }
     }
@@ -325,10 +319,7 @@ struct SpotlightView: View {
         return content
         .onChange(of: viewModel.catalogGames) { gamesChanged() }
         .onChange(of: viewModel.catalogSourceConfigurations) { gamesChanged() }
-        .onChange(of: filter) { _, newFilter in
-            reconcile()
-            filterChanged(to: newFilter)
-        }
+        .onChange(of: filter) { reconcile() }
         .onChange(of: settings.settings.visibleSpotlightCards) { reconcile() }
         .onChange(of: settings.settings.spotlightOrder) { reconcile() }
         .onChange(of: settings.settings.librarySort) { reconcile() }

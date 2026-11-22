@@ -23,23 +23,8 @@ extension SpotlightView {
         hadGames = !viewModel.visibleCatalogGames.isEmpty
         reconcile()
         selectionChanged()
-        pillFilter = filter
-        pillVisible = filter != .all
         consumePendingMove()
         consumePendingSelect()
-    }
-
-    /// Shows the pill for any filter but All; switching to All flashes it for 1.2 s.
-    func filterChanged(to next: LibraryFilter) {
-        pillTask?.cancel()
-        pillFilter = next
-        pillVisible = true
-        guard next == .all else { return }
-        pillTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 1_200_000_000)
-            guard !Task.isCancelled else { return }
-            pillVisible = false
-        }
     }
 
     /// Selects the item whose Move was requested and lifts it.

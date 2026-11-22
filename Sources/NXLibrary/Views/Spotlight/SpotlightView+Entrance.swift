@@ -2,7 +2,7 @@ import SwiftUI
 import NXLibraryCore
 
 /// Spotlight's entrance, the app's opening: the first time the home shows after launch (`SpotlightEntrance`,
-/// Selene's flight at a calmer pace). While the welcome or Setup covers the screen, the row, the bar, the pill,
+/// Selene's flight at a calmer pace). While the welcome or Setup covers the screen, the row, the bar,
 /// the info and the art stay hidden over a shared moving moonlight. Once the cover has gone, the entrance waits for the
 /// breath on the moving moonlight and for the visible tiles' art (at most 1 s more), then the background fades in
 /// slowly, the tiles fly in from the centre while they grow and the info rises; the top bar and the button hints come in last.
@@ -29,11 +29,6 @@ extension SpotlightView {
 
     /// The pieces' clocks run (`View.entrance`): from the start of the flight on.
     var entranceLaunched: Bool { entrance == .playing || entrance == .landed }
-
-    /// The pill comes up with the background as the flight starts; landing is instant.
-    var entranceRise: Animation? {
-        entrance == .playing ? SeleneArtBackground.rise : nil
-    }
 
     var artReveal: ArtReveal {
         switch entrance {

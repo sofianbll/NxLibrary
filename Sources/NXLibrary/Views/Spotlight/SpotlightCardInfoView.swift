@@ -235,29 +235,3 @@ struct SpotlightCardMenu: View {
         .accessibilityElement(children: .contain)
     }
 }
-
-/// "Filter · count" with the LT ◂ ▸ RT hint (spec §5.1).
-struct SpotlightFilterPill: View {
-    @Environment(\.seleneCanvas) private var canvas
-
-    let filter: LibraryFilter
-    let count: Int
-
-    var body: some View {
-        HStack(spacing: canvas.u(12)) {
-            Text("\(L10n.text(filter.rawValue)) · \(count)")
-                .seleneFont(17, .semibold)
-                .foregroundColor(SeleneTheme.ink)
-            HStack(spacing: canvas.u(6)) {
-                SelenePromptBadge(button: .lt, height: 22)
-                Text("◂ ▸").seleneFont(15).foregroundColor(SeleneTheme.ink60)
-                SelenePromptBadge(button: .rt, height: 22)
-            }
-        }
-        .padding(EdgeInsets(top: canvas.u(5), leading: canvas.u(16), bottom: canvas.u(6), trailing: canvas.u(16)))
-        .background(RoundedRectangle(cornerRadius: canvas.u(17), style: .continuous).fill(SeleneTheme.glassLight))
-        .overlay(RoundedRectangle(cornerRadius: canvas.u(17), style: .continuous)
-            .strokeBorder(SeleneTheme.ink25, lineWidth: max(1, canvas.u(1))))
-        .allowsHitTesting(false)
-    }
-}
