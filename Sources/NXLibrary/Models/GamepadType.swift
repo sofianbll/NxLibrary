@@ -78,6 +78,7 @@ enum GamepadAction: Hashable {
     case menuHold          // Menu / + / Options (hold)
     case view              // View / − / Touchpad
     case search            // View / − / Touchpad (hold), or ⌘F
+    case profiles          // Home / Guide / PS (tap)
     case jumpToStart       // Left trigger
     case jumpToEnd         // Right trigger
     case rightStickPress   // R3
@@ -105,6 +106,7 @@ enum GamepadAction: Hashable {
         switch button {
         case .menu: return result == .tap ? .menu : .menuHold
         case .view: return result == .tap ? .view : .search
+        case .home: return result == .tap ? .profiles : nil
         default: return nil
         }
     }

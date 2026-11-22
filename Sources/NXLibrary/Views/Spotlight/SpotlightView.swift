@@ -235,7 +235,8 @@ struct SpotlightView: View {
                 ? [] : HintItem.homeGlobals(other: "Collection",
                                              onOther: settings.settings.viewButtonSwitches ? { handle(.view) } : nil,
                                              onMenu: { router.isMenuPresented = true },
-                                             onSearch: { handle(.search) }),
+                                             onSearch: { handle(.search) },
+                                             onProfiles: { handle(.profiles) }),
             rightHints: contextHints(model, state) + (state.focus == .row && !state.isLifted && cardMenu == nil
                 ? [LibrarySortMenu.hint(settings.settings.librarySort, action: openSort)] : []),
             rightReserve: hintReserve(state),

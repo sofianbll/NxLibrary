@@ -10,6 +10,10 @@ struct ProfileFlow {
     var atStartup = false
     var returnsToMenu = false
     var returnsToPortrait = false
+
+    static func requestPicker() {
+        NotificationCenter.default.post(name: .nxToggleProfilePicker, object: nil)
+    }
 }
 
 extension EnvironmentValues {
@@ -19,6 +23,7 @@ extension EnvironmentValues {
 extension Notification.Name {
     static let nxProfileInput = Self("NXProfileInput")
     static let nxOpenLocalProfile = Self("NXOpenLocalProfile")
+    static let nxToggleProfilePicker = Self("NXToggleProfilePicker")
 }
 
 extension AppShellView {
@@ -42,10 +47,12 @@ extension AppShellView {
             switch flow.page {
             case .picker, .editor:
                 ProfilePickerView(profiles: profiles, initialSelection: flow.selected, initialEdit: flow.page == .editor,
-                                  canClose: !flow.atStartup, games: viewModel.libraryGames,
+                                  canClose: !flow.atStartup, isOverlay: !flow.atStartup, games: viewModel.libraryGames,
                                   avatarGames: viewModel.visibleCatalogGames, artwork: artwork,
                                   onChoose: chooseProfile, onClose: closeProfile,
-                                  onActiveEdited: applyActiveProfile)
+                                  onActiveEdited: applyActiveProfile, onRemoved: { id in
+                    if settings.settings.profileStartup == .profile(id) { settings.settings.profileStartup = .ask }
+                })
             case .detail:
                 if let nextendo = viewModel.profileNextendo {
                     LocalProfilePage(profile: active, nextendo: nextendo, viewModel: viewModel,
@@ -73,24 +80,34 @@ extension AppShellView {
         profileFlow = ProfileFlow(page: page, selected: active.id, returnsToMenu: fromMenu)
     }
 
+    var launcherIsFrontmost: Bool {
+        NSApp.isActive && NSWorkspace.shared.frontmostApplication?.processIdentifier == ProcessInfo.processInfo.processIdentifier
+    }
+
+    func toggleProfilePicker() {
+        guard launcherIsFrontmost, !nativeMenus.isTracking, !nativeDialogOwnsInput,
+              !router.isScreenshotViewerOpen, !isCloseGameOpen else { return }
+        if let profileFlow {
+            if profileFlow.page == .picker, !profileFlow.atStartup { closeProfile() }
+        } else {
+            openProfile(.picker, fromMenu: router.isMenuPresented)
+        }
+    }
+
     func closeProfile() {
         if profileFlow?.returnsToPortrait == true {
             profileFlow?.page = .detail
             profileFlow?.returnsToPortrait = false
             return
         }
-        let returnToMenu = profileFlow?.returnsToMenu == true
         profileFlow = nil
         viewModel.profileOwnsInput = false
-        if !returnToMenu {
-            router.closeMenu()
-        }
     }
 
     func chooseProfile(_ id: UUID) {
         guard profiles.choose(id) else { return }
         applyActiveProfile()
-        profileFlow?.returnsToMenu = false
+        if profileFlow?.returnsToMenu == true { router.closeMenu() }
         profileFlow?.returnsToPortrait = false
         closeProfile()
     }

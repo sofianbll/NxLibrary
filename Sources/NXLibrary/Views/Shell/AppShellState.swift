@@ -22,6 +22,11 @@ final class AppShellState {
         let profiles = LocalProfileStore(settings: settings.settings,
                                          name: name.isEmpty ? L10n.text("Player") : String(name.prefix(32)))
         self.profiles = profiles
+        let startup = settings.settings.profileStartup
+        let needsPicker = profiles.needsStartupPicker(startup)
+        if profiles.active != nil, startup != startup.available(in: profiles.profiles) {
+            settings.settings.profileStartup = .ask
+        }
         if let look = profiles.active?.look, look != .init(settings.settings) {
             look.apply(to: &settings.settings)
         }
@@ -51,6 +56,6 @@ final class AppShellState {
                                                     shown: settings.settings.welcomeArcaneShown,
                                                     hasPendingRecovery: false)
         model.isWelcomeOpen = opensWithWelcome
-        model.profileOwnsInput = settings.settings.showProfilePicker && profiles.active != nil
+        model.profileOwnsInput = needsPicker
     }
 }

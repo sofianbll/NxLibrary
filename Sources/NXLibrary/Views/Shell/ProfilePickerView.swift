@@ -47,12 +47,14 @@ struct ProfilePickerView: View {
     let initialSelection: UUID?
     let initialEdit: Bool
     let canClose: Bool
+    var isOverlay = false
     let games: [PortedGame]
     var avatarGames: [CatalogGame] = []
     var artwork: ArtworkStore? = nil
     let onChoose: (UUID) -> Void
     let onClose: () -> Void
     let onActiveEdited: () -> Void
+    var onRemoved: (UUID) -> Void = { _ in }
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneReduceMotion) private var reduceMotion
     @ObservedObject private var theme = ThemeStore.shared
@@ -61,11 +63,17 @@ struct ProfilePickerView: View {
     @State var removing: LocalProfile?
     @State var removalFocus: SeleneConfirmButton = .cancel
     @State private var appeared = false
+    @AccessibilityFocusState(for: .voiceOver) private var accessibilityFocus: Tile?
+    private enum Tile: Hashable { case profile(UUID), add }
     private var selection: UUID? { appeared ? selected : initialSelection }
 
     var body: some View {
         ZStack {
-            SeleneBackdrop().still(true).environment(\.seleneSharesBackdrop, false)
+            if isOverlay {
+                SeleneTheme.scrim65.ignoresSafeArea()
+            } else {
+                SeleneBackdrop().still(true).environment(\.seleneSharesBackdrop, false)
+            }
             selector.accessibilityHidden(draft != nil || removing != nil)
                 .allowsHitTesting(draft == nil && removing == nil)
             if let draft {
@@ -87,12 +95,14 @@ struct ProfilePickerView: View {
             guard !appeared else { return }
             appeared = true
             selected = initialSelection
+            accessibilityFocus = initialSelection.map(Tile.profile) ?? .add
             if initialEdit { edit() }
         }
         .onReceive(NotificationCenter.default.publisher(for: .nxProfileInput)) { note in
             guard draft == nil, let action = note.object as? GamepadAction else { return }
             handle(action)
         }
+        .accessibilityAddTraits(.isModal)
     }
 
     private var selector: some View {
@@ -111,7 +121,7 @@ struct ProfilePickerView: View {
                         .frame(minWidth: geometry.size.width, alignment: .center)
                     }
                     .scrollIndicators(.hidden)
-                    .onChange(of: selected) { _, id in
+                    .onChange(of: selection, initial: true) { _, id in
                         if let id { scroll.scrollTo(id, anchor: .center) }
                         else { scroll.scrollTo("add", anchor: .center) }
                     }
@@ -169,6 +179,7 @@ struct ProfilePickerView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(title)
         .accessibilityAddTraits(isFocused ? .isSelected : [])
+        .accessibilityFocused($accessibilityFocus, equals: profile.map { .profile($0.id) } ?? .add)
         .animation(reduceMotion ? nil : SeleneTheme.focusIn, value: isFocused)
     }
 
@@ -188,6 +199,7 @@ struct ProfilePickerView: View {
         case .navigateLeft, .navigateRight:
             let current = ids.firstIndex(of: selected) ?? 0
             selected = ids[max(0, min(ids.count - 1, current + (action == .navigateLeft ? -1 : 1)))]
+            accessibilityFocus = selected.map(Tile.profile) ?? .add
         case .confirm: accept()
         case .menu: add()
         case .contextAction: edit()
@@ -208,6 +220,7 @@ struct ProfilePickerView: View {
 
     private func editorClosed() {
         draft = nil
+        accessibilityFocus = selected.map(Tile.profile) ?? .add
         if initialEdit { onClose() }
     }
 
@@ -230,6 +243,8 @@ struct ProfilePickerView: View {
               profiles.remove(removing.id) else { return }
         selected = profiles.profiles[min(index, profiles.profiles.count - 1)].id
         self.removing = nil
+        accessibilityFocus = selected.map(Tile.profile) ?? .add
+        onRemoved(removing.id)
         onActiveEdited()
     }
 }

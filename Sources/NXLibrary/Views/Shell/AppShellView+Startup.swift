@@ -82,6 +82,7 @@ extension AppShellView {
         GameControllerService.shared.onAction = { [weak viewModel, weak router] action in
             guard let viewModel, let router else { return }
             guard !nativeMenus.isTracking, !nativeDialogOwnsInput, viewModel.launchOverlay == nil else { return }
+            if action == .profiles, !launcherIsFrontmost { return }
             if viewModel.cloudQuitRequested {
                 cloudQuitInput(action)
                 return
@@ -121,7 +122,18 @@ extension AppShellView {
                 return
             }
             if viewModel.profileOwnsInput {
-                postProfileAction(action)
+                if action == .profiles { toggleProfilePicker() }
+                else { postProfileAction(action) }
+                return
+            }
+            if action == .profiles {
+                guard !router.isScreenshotViewerOpen else { return }
+                if router.route == .library, !router.isMenuPresented, !router.isSearchPresented, !viewModel.isGameOptionsOpen {
+                    // Spotlight still owns its entrance: ask it before covering the screen.
+                    NotificationCenter.default.post(name: .nxSpotlightGamepadAction, object: action)
+                } else {
+                    toggleProfilePicker()
+                }
                 return
             }
             if router.isMenuPresented {

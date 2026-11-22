@@ -23,7 +23,7 @@ flowchart TD
     D -->|"catalogo valido, legacy modificato"| L["Scelta Keep Arcane’s library"]
     L --> LA["Rivalida impronte → archivia catalogo, backup e legacy<br/>Mantieni i giochi Arcane e riconosci la base legacy"]
     LA --> D
-    D --> E["AppShellState prepara coordinatore, router, tema"]
+    D --> E["AppShellState risolve il profilo di avvio e prepara coordinatore, router, tema"]
     E --> F["AppShellView: AppViewModel, store, monitor, updater"]
     F --> G{"Primo avvio completato?<br/>(FirstRunSetup)"}
     G -->|"no"| H["Setup: found (Steam, app portate) → Open library<br/>oppure Porting → Get ready → Your games"]
@@ -31,7 +31,7 @@ flowchart TD
     H --> K["Prima home Spotlight: moonlight condiviso → entrata<br/>Entrance animation; niente volo con Riduci movimento"]
     I --> K
     F --> J["In background: recuperi dei salvataggi, installazioni in attesa,<br/>scansione Steam se attivo, controllo engine se attivo, aggiornamenti;<br/>avviso se la copia è temporanea (App Translocation)"]
-    P["GameController · ripiego HID 0x3F / 0x30"] --> Q["GameControllerService: GamepadAction<br/>Menu: centro / Settings; View: cambia vista / Cerca"]
+    P["GameController · ripiego HID 0x3F / 0x30"] --> Q["GameControllerService: GamepadAction<br/>Menu: centro / Settings; View: cambia vista / Cerca; Home: profili"]
     Q --> F
 ```
 
@@ -159,7 +159,7 @@ flowchart TD
 
 Durante un porting, B o Esc nasconde il pannello senza annullare il lavoro. Dopo il completamento o l'annullamento, B o Esc torna a Review se c'è una selezione nel wizard; da un Build o Rebuild aperto direttamente senza bozza, torna alla schermata di partenza.
 
-**Menu → Centro attività.** La campanella si apre con un clic o con la selezione del menu (Home sul controller, ⌘K da tastiera). Mostra l'azione e l'oggetto di ogni compilazione, trasferimento o spostamento cloud. Su/Giù sposta il focus; A, Invio o un clic su una riga di compilazione apre Porting. X, Canc o il pulsante tondo ferma il lavoro selezionato o rimuove la singola richiesta in coda. Nei Risultati, Retry (A/Invio) riaccoda lo stesso lavoro; Clear (X/Canc) rimuove la riga; Clear all (A/Invio) rimuove gli esiti senza annullare i lavori. B o Esc chiude senza fermarli.
+**Menu → Centro attività.** La campanella si apre con un clic o con la selezione del menu (Menu sul controller, ⌘K da tastiera). Mostra l'azione e l'oggetto di ogni compilazione, trasferimento o spostamento cloud. Su/Giù sposta il focus; A, Invio o un clic su una riga di compilazione apre Porting. X, Canc o il pulsante tondo ferma il lavoro selezionato o rimuove la singola richiesta in coda. Nei Risultati, Retry (A/Invio) riaccoda lo stesso lavoro; Clear (X/Canc) rimuove la riga; Clear all (A/Invio) rimuove gli esiti senza annullare i lavori. B o Esc chiude senza fermarli.
 
 Con un porting in corso, Build o Rebuild per un altro gioco accoda la richiesta; ripetere il comando per lo stesso gioco non crea duplicati. In Spotlight e Details la pillola primaria mostra lo stato in coda e diventa Annulla al focus o al passaggio del puntatore; A, Invio o clic rimuove la richiesta senza avviarla. Dalla riga delle copertine in Spotlight, A avvia ancora l'app già installata o porta alle azioni del gioco se manca. Al successo, errore o annullamento del porting attivo parte il primo in attesa e la sua pillola diventa Porting. Un titolo occupato da un trasferimento o da un lease aspetta il rilascio. Al riavvio la compilazione interrotta torna in testa. Se il gioco, i file sorgente o l'app da ricompilare non ci sono più, resta un errore nei Risultati e il lavoro non parte da solo.
 
@@ -261,9 +261,9 @@ flowchart TD
 
 Nel menu rapido, Theme apre prima i colori con anteprima viva; A applica la palette e passa alla selezione dello sfondo. Il tema Arcane conserva il blu classico e l’identità predefinita `selene`; le alternative Arcane Crystal e Arcane Flow salvano `arcane-crystal` e `arcane-flow` nello stesso `colorThemeID`. La shell conserva un backdrop persistente; le pagine ne dichiarano stile, pausa e Mods con `SeleneBackdropRequest`, mantenendo artwork e maschere locali. La shell passa la palette completa in `SeleneBackdropStyle`: cambia il valore dell’ambiente e aggiorna sfondo e maschere anche senza spostare la selezione. La superficie usa lo stesso renderer, con orologio e regole di pausa condivisi. Le particelle sono sempre morbide, senza una scelta aggiuntiva. La scelta dello sfondo mantiene il dialogo di destinazione esistente.
 
-All’avvio «Chi gioca?» permette di scegliere oppure, con l’interruttore di Start-up spento, si riprende l’ultimo profilo. Nel selettore `+` aggiunge, Y modifica, X apre una conferma con Keep a fuoco. Si salva solo dopo nome, avatar, tema e sfondo; l’anteprima non cambia l’aspetto già salvato. Una nuova immagine di sfondo si copia alla conferma. Il ritratto a sinistra della barra apre attività locale e conto Nextendo.
+Settings → Profiles → At startup passa da «Chi gioca?» a «Ultimo profilo» e poi ai nomi dei singoli profili. Il vecchio interruttore acceso equivale a «Chi gioca?», spento a «Ultimo profilo». Un profilo fisso rimosso riporta a «Chi gioca?». Nel selettore `+` aggiunge, Y modifica, X apre una conferma con Keep a fuoco. Si salva solo dopo nome, avatar, tema e sfondo; l’anteprima non cambia l’aspetto già salvato. Una nuova immagine di sfondo si copia alla conferma. Il ritratto a sinistra della barra apre attività locale e conto Nextendo.
 
-Il carosello degli avatar usa soltanto artwork già nella cache, con ritaglio sul volto rilevato o al centro; i simboli neutri restano disponibili. L’ultima tessera apre la scelta di una foto, con assi e zoom per inquadrarla; B o Esc annulla. Per le GIF si conservano i fotogrammi e i tempi; con Riduci movimento si vede solo il primo. Il menu e il ritratto aprono lo stesso selettore, senza rileggere il catalogo. Dopo la prima sessione di un altro profilo, i totali Steam esterni restano all’ultima base separabile; solo le sessioni Arcane aggiungono tempo.
+Il carosello degli avatar usa soltanto artwork già nella cache, con ritaglio sul volto rilevato o al centro; i simboli neutri restano disponibili. L’ultima tessera apre la scelta di una foto, con assi e zoom per inquadrarla; B o Esc annulla. Per le GIF si conservano i fotogrammi e i tempi; con Riduci movimento si vede solo il primo. Home, Cambia profilo nel centro di controllo e il ritratto aprono lo stesso selettore sopra la schermata corrente. A cambia profilo senza rileggere il catalogo; B o Home chiude il selettore sovrapposto senza cambiare il focus sottostante. Dopo la prima sessione di un altro profilo, i totali Steam esterni restano all’ultima base separabile; solo le sessioni Arcane aggiungono tempo.
 
 La migrazione salva i file precedenti una sola volta in `profiles-migration-backup`, senza credenziali. Per ripristinarli, con Arcane chiuso, conservare prima una copia dei dati attuali; poi rimettere i file del backup e spostare fuori dalla cartella attiva `profiles.json` e `profiles-active` se non erano presenti nel backup. La copia attuale conserva le sessioni successive alla migrazione.
 

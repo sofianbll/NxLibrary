@@ -34,6 +34,10 @@ struct SettingsSectionContent: View {
                                    onOpenGroup: onOpenGroup, onActions: onActions)
         case .startUp:
             SettingsStartUpSection(settings: settings, onActions: onActions, onChooseLanguage: onChooseLanguage, onChooseRegion: onChooseRegion)
+        case .profiles:
+            if let profiles = viewModel.localProfiles {
+                SettingsProfilesSection(settings: settings, profiles: profiles, onActions: onActions)
+            }
         case .navigation:
             SettingsNavigationSection(settings: settings, onActions: onActions)
         case .spotlight:

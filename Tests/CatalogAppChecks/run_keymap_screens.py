@@ -46,20 +46,24 @@ final class ThemeStore {
         ] {
             GameControllerService.shared.activeBrand = brand ?? .generic
             GameControllerService.shared.isGamepadConnected = brand != nil
-            let left = HintItem.homeGlobals(other: "Spotlight", onOther: {}, onMenu: {}, onSearch: {})
+            let left = HintItem.homeGlobals(other: "Spotlight", onOther: {}, onMenu: {}, onSearch: {}, onProfiles: {})
             let right = [HintItem(.a, "Play"), HintItem(.x, "Details"), HintItem(.y, "Game options"),
                          HintItem(.rs, "Sort", hold: "Recent")]
             let bar = SeleneHintsBar(left: left, right: right)
             precondition(bar.visibleLeft(connected: brand != nil).map(\.button)
-                         == (brand == nil ? [.view, .menu, .search] : [.view, .menu]))
+                         == (brand == nil ? [.view, .menu, .search, .home] : [.view, .menu, .home]))
             let buttons = (bar.visibleLeft(connected: brand != nil) + right).compactMap(\.button)
             precondition(Set(buttons).count == buttons.count)
             precondition(ButtonPrompts.keyboardKey(.rs) == .text("F3"))
             precondition(left.first?.hold == "Hold: Search")
-            let withoutSwitch = HintItem.homeGlobals(other: "Spotlight", onOther: nil, onMenu: {}, onSearch: {})
+            let withoutSwitch = HintItem.homeGlobals(other: "Spotlight", onOther: nil, onMenu: {}, onSearch: {}, onProfiles: {})
             let alternateBar = SeleneHintsBar(left: withoutSwitch)
             precondition(alternateBar.visibleLeft(connected: brand != nil).map(\.button)
-                         == (brand == nil ? [.menu, .search] : [.view, .menu]))
+                         == (brand == nil ? [.menu, .search, .home] : [.view, .menu, .home]))
+            for style: ButtonNameStyle in [.xbox, .nintendo, .playstation] {
+                precondition(ButtonPrompts.symbol(.home, style: style, connected: .none)
+                    .flatMap(SelenePromptBadge.filled) != nil, "Missing Home glyph for \(style)")
+            }
             let pad = ConnectedPad(connected: brand != nil, brand: brand ?? .generic)
             // Every controller token must render a glyph or a labeled keycap.
             for style in ButtonNameStyle.allCases {

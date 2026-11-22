@@ -140,6 +140,10 @@ extension AppShellView {
             // The open control center takes the keyboard: arrows, Return, Space and Esc go to the menu,
             // and no screen underneath sees them.
             // Typing in a menu's text field (the Theme screen's search): keys go to the field, Esc leaves it.
+            if mods == [.command, .shift], event.charactersIgnoringModifiers?.lowercased() == "p" {
+                if !event.isARepeat { GameControllerService.shared.onAction?(.profiles) }
+                return nil
+            }
             if viewModel.profileOwnsInput, !showsWelcome, !viewModel.showSetupCheck, !isCloseGameOpen {
                 return profileKey(event)
             }

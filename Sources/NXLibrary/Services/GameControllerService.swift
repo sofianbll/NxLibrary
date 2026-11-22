@@ -151,7 +151,7 @@ final class GameControllerService: ObservableObject {
             lastNavTime = now
             triggerAction(action)
         case let .button(button, pressed):
-            if button == .menu || button == .view {
+            if button == .menu || button == .view || button == .home {
                 handleHold(button, pressed: pressed)
             } else if pressed, let action = GamepadAction.onPress(button) {
                 triggerAction(action)
@@ -171,6 +171,7 @@ final class GameControllerService: ObservableObject {
         }
         guard holds[button] == nil else { return }
         holds[button, default: HoldDetector()].press(at: now)
+        guard button != .home else { return }
         if button == .menu { menuHoldStartedAt = now }
         let timer = Timer(timeInterval: HoldDetector.defaultThreshold, repeats: false) { [weak self] _ in
             guard let self, let result = self.holds[button]?.tick(at: ProcessInfo.processInfo.systemUptime),

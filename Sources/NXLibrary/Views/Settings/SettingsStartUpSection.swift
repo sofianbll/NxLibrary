@@ -49,8 +49,6 @@ struct SettingsStartUpSection: View {
             SeleneToggleRow("Entrance animation",
                             subtitle: "The library's tiles fly in with the boot sound when the app opens.",
                             isOn: $settings.settings.introAnimation)
-            SeleneToggleRow("Who's playing?", subtitle: "Choose a profile at startup instead of using the last one.",
-                            isOn: $settings.settings.showProfilePicker)
         }
         .onAppear(perform: publishActions)
         .onChange(of: settings.settings.appLanguage) { publishActions() }
@@ -75,10 +73,34 @@ struct SettingsStartUpSection: View {
             },
             .init(id: "intro", title: "Entrance animation") {
                 settings.settings.introAnimation.toggle()
-            },
-            .init(id: "showProfilePicker", title: "Who's playing?") {
-                settings.settings.showProfilePicker.toggle()
             }
         ])
+    }
+}
+
+struct SettingsProfilesSection: View {
+    @ObservedObject var settings: AppSettingsStore
+    @ObservedObject var profiles: LocalProfileStore
+    let onActions: ([SettingsRowAction]) -> Void
+    @Environment(\.nxAppLocale) private var localization
+
+    private var value: String {
+        switch settings.settings.profileStartup.available(in: profiles.profiles) {
+        case .ask: return L10n.text("Who's playing?", context: localization)
+        case .last: return L10n.text("Last profile", context: localization)
+        case .profile(let id): return profiles.profiles.first { $0.id == id }?.name ?? ""
+        }
+    }
+
+    var body: some View {
+        SeleneCycleRow("At startup", subtitle: "Choose who plays when Arcane opens.", value: value,
+                       verbatimValue: true, cycle: cycle)
+            .onAppear { onActions([.value("showProfilePicker", "At startup", cycle: cycle)]) }
+    }
+
+    func cycle(_ step: Int) {
+        let choices: [ProfileStartup] = [.ask, .last] + profiles.profiles.map { .profile($0.id) }
+        let current = settings.settings.profileStartup.available(in: profiles.profiles)
+        settings.settings.profileStartup = choices.stepped(from: current, step) ?? .ask
     }
 }

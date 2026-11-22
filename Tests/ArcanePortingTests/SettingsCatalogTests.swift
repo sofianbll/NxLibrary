@@ -74,7 +74,7 @@ final class SettingsCatalogTests: XCTestCase {
                                                "Settings group: Porting", "Settings group: System"])
         XCTAssertEqual(groups.map(\.sections), [
             [.search, .changed],
-            [.startUp, .navigation, .spotlight, .soundMusic, .look, .controllers, .multiplayer, .apiServices],
+            [.startUp, .profiles, .navigation, .spotlight, .soundMusic, .look, .controllers, .multiplayer, .apiServices],
             [.sources, .libraryGames, .storage],
             [.engine, .keys, .library, .games, .cloudSaves, .cloudLibrary, .portingStorage],
             [.about, .console],
@@ -196,9 +196,18 @@ final class SettingsCatalogTests: XCTestCase {
         XCTAssertEqual(SettingsCatalog.search("environment").first { $0.id == "engineStatus" }?.group, .engine)
     }
 
+    func testProfileStartupSearchAndResetBelongToProfiles() {
+        var settings = AppSettings()
+        settings.profileStartup = .last
+        XCTAssertEqual(SettingsCatalog.search("At startup").first { $0.id == "showProfilePicker" }?.group, .profiles)
+        XCTAssertEqual(SettingsCatalog.changed(in: settings).map(\.id), ["showProfilePicker"])
+        XCTAssertEqual(SettingsReset.resetShared(.startUp, in: settings).profileStartup, .last)
+        XCTAssertEqual(SettingsReset.resetShared(.profiles, in: settings).profileStartup, .ask)
+    }
+
     private static let generalStartUp: Set<String> = [
         "appLanguage", "appRegion", "startOn", "restoreLastGame", "startInFullscreen",
-        "checkAppUpdatesAtLaunch", "introAnimation", "showProfilePicker"
+        "checkAppUpdatesAtLaunch", "introAnimation"
     ]
 
     func testSearchMatchesAboutText() {

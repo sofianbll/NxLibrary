@@ -60,8 +60,8 @@ public enum SettingsCatalog {
             "Looks for a newer Arcane release at launch, at most once a day.") { $0.checkAppUpdatesAtLaunch },
         row("introAnimation", .startUp, "Entrance animation",
             "The library's tiles fly in with the boot sound when the app opens.") { $0.introAnimation },
-        row("showProfilePicker", .startUp, "Who's playing?",
-            "Choose a profile at startup instead of using the last one.") { $0.showProfilePicker },
+        row("showProfilePicker", .profiles, "At startup",
+            "Choose who plays when Arcane opens.") { $0.profileStartup },
 
         // Navigation
         row("showButtonHints", .navigation, "Button hints",
