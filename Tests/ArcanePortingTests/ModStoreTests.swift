@@ -4,6 +4,29 @@ import os
 @testable import ArcanePorting
 
 final class CodeModStoreTests: XCTestCase {
+    func testDisablingOnlineRiskKeepsTexturesAndAllowsReenabling() throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent("OnlineMods-\(UUID())")
+        defer { try? fm.removeItem(at: root) }
+        let store = ModStore(supportFolder: root.appendingPathComponent("game"),
+                             recordsFile: root.appendingPathComponent("mods.json"),
+                             titleID: "0100000000010000", canWrite: { true }, trash: { _ in XCTFail() })
+        for (mod, file) in [("Colors", "textures/sky.bntx"), ("Rules", "rules.byml"),
+                            ("Mixed", "model.bfres"), ("Mixed", "stage.json"), ("Unknown", "archive.pack")] {
+            let url = store.modsFolder.appendingPathComponent("\(mod)/romfs/\(file)")
+            try fm.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try Data().write(to: url)
+            try store.setOn(true, folderName: mod)
+        }
+        XCTAssertEqual(store.onlineRiskMods(), ["Mixed": .data, "Rules": .data, "Unknown": .uncertain])
+        try store.disableOnlineRiskMods()
+        XCTAssertEqual(store.mods().filter(\.isOn).map(\.folderName), ["Colors"])
+        XCTAssertTrue(store.onlineRiskMods().isEmpty)
+        XCTAssertEqual(store.mods().count, 4)
+        try store.setOn(true, folderName: "Rules")
+        XCTAssertEqual(store.onlineRiskMods(), ["Rules": .data])
+    }
+
     func testTransferredBundleLeavesIncludedCodeModsActiveWithoutLocalPatches() throws {
         let fm = FileManager.default
         let root = fm.temporaryDirectory.appendingPathComponent("CodeModStore-\(UUID())")
@@ -19,6 +42,7 @@ final class CodeModStoreTests: XCTestCase {
         }
         XCTAssertFalse(store.codeModsNeedRebuild(app: app))
         XCTAssertEqual(store.codeModsLaunchEnvironment(app: app), [:])
+        XCTAssertEqual(store.codeModsLaunchEnvironment(app: app, online: true), ["DM_MODS_OFF": "First"])
         let build = BuildRecord(outputPath: app.path, builtCodeMods: names)
         XCTAssertEqual(store.codeModsLaunchEnvironment(app: app, build: build), ["DM_MODS_OFF": "First"])
         try fm.createDirectory(at: store.codeModsFolder.appendingPathComponent("First/exefs"), withIntermediateDirectories: true)

@@ -44,7 +44,7 @@ final class SettingsCatalogTests: XCTestCase {
         "steamSource", "steamRefresh", "steamFolder", "steamInBackground", "storageUsage", "buildCaches", "logs",
         "metadataCache", "artworkCache", "saveBackups", "console", "engineFolder", "engineStatus",
         "toolchainOverride", "upstream", "newestEngine", "compare", "keys", "setup", "diagnostics", "appUpdates",
-        "projectDocs", "zeroTier", "remotePlayMode"
+        "projectDocs", "multiplayerVPN", "multiplayerDefault", "multiplayerLocalMode", "multiplayerAdapter"
     ]
 
     func testRowIDsAreUnchanged() {
@@ -74,7 +74,7 @@ final class SettingsCatalogTests: XCTestCase {
                                                "Settings group: Porting", "Settings group: System"])
         XCTAssertEqual(groups.map(\.sections), [
             [.search, .changed],
-            [.startUp, .navigation, .spotlight, .soundMusic, .look, .controllers, .apiServices],
+            [.startUp, .navigation, .spotlight, .soundMusic, .look, .controllers, .multiplayer, .apiServices],
             [.sources, .libraryGames, .storage],
             [.engine, .keys, .library, .games, .cloudSaves, .cloudLibrary, .portingStorage],
             [.about, .console],
@@ -156,7 +156,8 @@ final class SettingsCatalogTests: XCTestCase {
         "spotlightOrder", "interfaceSounds", "soundVolume", "quietLaunch", "importSeleneSounds", "colorThemeID",
         "wallpaperID", "settingsWallpaperID", "backgroundSizing", "wallpaperBrightness", "animatedBackground",
         "keepWallpaperOnGames", "backgroundShade", "readableText", "showClock", "reduceMotion", "iconAppearance",
-        "controllerStatus", "buttonLayout", "controllerDeadzone", "igdb", "steamGridDB", "zeroTier", "remotePlayMode", "steamSource",
+        "controllerStatus", "buttonLayout", "controllerDeadzone", "multiplayerVPN", "multiplayerDefault",
+        "multiplayerLocalMode", "multiplayerAdapter", "igdb", "steamGridDB", "steamSource",
         "steamRefresh", "steamFolder", "steamInBackground", "librarySort", "launchStyle", "launchMotion", "launchShade",
         "surprisePool", "showsSessionCard", "hiddenGames", "storageUsage", "logs", "metadataCache", "artworkCache",
         "saveBackups", "checkEngineAtLaunch", "engineFolder", "engineStatus", "toolchainOverride", "upstream",
@@ -235,17 +236,19 @@ final class SettingsCatalogTests: XCTestCase {
 
     func testRemotePlayPreferenceIsSearchableChangedAndResetWithoutTouchingNextendo() throws {
         let decoder = JSONDecoder()
-        XCTAssertEqual(try decoder.decode(AppSettings.self, from: Data("{}".utf8)).remotePlayMode, .automatic)
-        XCTAssertEqual(try decoder.decode(AppSettings.self, from: Data(#"{"remotePlayMode":"unknown"}"#.utf8)).remotePlayMode, .automatic)
+        XCTAssertEqual(try decoder.decode(AppSettings.self, from: Data("{}".utf8)).multiplayerVPN, .none)
+        XCTAssertEqual(try decoder.decode(AppSettings.self, from: Data(#"{"remotePlayMode":"disabled"}"#.utf8)).multiplayerVPN, .none)
+        XCTAssertEqual(try decoder.decode(AppSettings.self, from: Data(#"{"remotePlayMode":"automatic"}"#.utf8)).multiplayerVPN, .zeroTier)
+        XCTAssertEqual(try decoder.decode(AppSettings.self, from: Data(#"{"remotePlayMode":"automatic","multiplayerVPN":"none"}"#.utf8)).multiplayerVPN, .none)
         var settings = AppSettings()
-        settings.remotePlayMode = .disabled
+        settings.multiplayerVPN = .tailscale
         settings.nextendoClientID = "public-client"
-        XCTAssertEqual(try decoder.decode(AppSettings.self, from: JSONEncoder().encode(settings)).remotePlayMode, .disabled)
-        XCTAssertTrue(SettingsCatalog.search("ZeroTier").contains { $0.id == "remotePlayMode" && $0.group == .apiServices })
-        XCTAssertTrue(SettingsCatalog.changed(in: settings).contains { $0.id == "remotePlayMode" })
-        XCTAssertTrue(SettingsReset.canReset(.apiServices))
-        let reset = SettingsReset.reset(.apiServices, in: settings)
-        XCTAssertEqual(reset.remotePlayMode, .automatic)
+        XCTAssertEqual(try decoder.decode(AppSettings.self, from: JSONEncoder().encode(settings)).multiplayerVPN, .tailscale)
+        XCTAssertTrue(SettingsCatalog.search("ZeroTier").contains { $0.id == "multiplayerVPN" && $0.group == .multiplayer })
+        XCTAssertTrue(SettingsCatalog.changed(in: settings).contains { $0.id == "multiplayerVPN" })
+        XCTAssertTrue(SettingsReset.canReset(.multiplayer))
+        let reset = SettingsReset.reset(.multiplayer, in: settings)
+        XCTAssertEqual(reset.multiplayerVPN, .none)
         XCTAssertEqual(reset.nextendoClientID, settings.nextendoClientID)
     }
 

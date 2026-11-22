@@ -2,10 +2,28 @@ import Foundation
 import NXLibraryCore
 
 extension GameSettingsSnapshot {
+    public var multiplayerModes: [MultiplayerMode] {
+        NXNativeGameSettings.multiplayerModes(in: settings)
+    }
+
     /// The settings the build offers that no main-list row shows, for More settings, in the build's order.
     public var extraSettings: [LauncherSetting] {
         let shown = Set(GameOptionsRow.settingRows.compactMap(\.settingKey))
-        return settings.filter { !shown.contains($0.env) }
+        return settings.filter { !shown.contains($0.env) && !["DM_NETWORK", "DM_NET_VPN", "DM_NETWORK_INTERFACE"].contains($0.env) }
+    }
+}
+
+extension NXNativeGameSettings {
+    static func multiplayerModes(in settings: [LauncherSetting]) -> [MultiplayerMode] {
+        guard let network = NextendoLaunch.networkSetting(in: settings) else { return [] }
+        let online = network.accepts("nextendo")
+        return MultiplayerMode.allCases.filter {
+            switch $0 {
+            case .offline: return network.accepts("offline")
+            case .local: return (online ? ["ldn", "lan"] : ["auto", "ldn", "lan"]).contains(where: network.accepts)
+            case .online: return online
+            }
+        }
     }
 }
 

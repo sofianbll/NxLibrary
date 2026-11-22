@@ -7,11 +7,14 @@ public struct GameSettingsSnapshot: Equatable {
     public let settings: [LauncherSetting]
     public let values: [String: String]
     public let fixed: Set<String>
+    public let savedMultiplayerMode: MultiplayerMode?
 
-    public init(settings: [LauncherSetting], values: [String: String], fixed: Set<String>) {
+    public init(settings: [LauncherSetting], values: [String: String], fixed: Set<String>,
+                savedMultiplayerMode: MultiplayerMode? = nil) {
         self.settings = settings
         self.values = values
         self.fixed = fixed
+        self.savedMultiplayerMode = savedMultiplayerMode
     }
 
     public func setting(_ env: String) -> LauncherSetting? { settings.first { $0.env == env } }
@@ -37,11 +40,12 @@ public enum GameSettingsError: LocalizedError, Equatable {
 }
 
 /// The settings of a game built with saved choices (its Info.plist has DMSettings): kept as `launcher.<env>` in the
-/// app's preferences domain, where they differ from the build's tested default or pin a VPN choice. A build
+/// app's preferences domain, where they differ from the build's tested default. A build
 /// from before saved choices has no adapter and keeps `env.txt` (`GameRuntimeConfig.save`).
 public struct NXNativeGameSettings {
     public static let remotePlayKey = "DM_NET_VPN"
     private static let interfaceKey = "DM_NETWORK_INTERFACE"
+    private static let multiplayerKey = "arcaneMultiplayerMode"
     /// The keys NX Library wrote into every game's env.txt up to 0.1.2.
     public static let managedKeys: Set<String> = [
         "DM_FPS_TARGET", "DM_METAL_HUD", "DM_OPMODE", "DM_RENDER_SCALE", "DM_PRESENT_UPSCALE",
@@ -113,26 +117,86 @@ public struct NXNativeGameSettings {
         return explicitLaunchValue(env, environment: environment) ?? setting.defaultValue
     }
 
-    public func remotePlayLaunchValue(mode: RemotePlayMode, adapters: RemotePlayAdapters,
-                                      environment: [String: String]) -> [String: String]? {
-        let networkKey = NextendoLaunch.networkKey
-        guard mode == .automatic, adapters.zeroTier.count == 1, let name = adapters.zeroTier.first,
-              setting(Self.remotePlayKey)?.accepts("1") == true,
-              explicitLaunchValue(Self.interfaceKey, environment: environment, includeDisabledChoices: true) == nil
-        else { return nil }
-        let network = explicitLaunchValue(networkKey, environment: environment) ?? setting(networkKey)?.defaultValue
-        if network == "auto" {
-            guard effectiveLaunchValue(Self.remotePlayKey, environment: environment) == "1" else { return nil }
-            return [Self.interfaceKey: name]
+    public func multiplayerLaunch(settings app: AppSettings, adapters: RemotePlayAdapters,
+                                  environment: [String: String] = ProcessInfo.processInfo.environment)
+        -> (environment: [String: String], warning: RemotePlayAdapters.Connection?) {
+        let key = NextendoLaunch.networkKey
+        guard let network = NextendoLaunch.networkSetting(in: settings) else { return ([:], nil) }
+        let mode = multiplayerMode(default: app.multiplayerDefault, environment: environment)
+        let explicit = explicitLaunchValue(key, environment: environment, includeSavedChoices: false)
+        let selected: String
+        switch mode {
+        case .offline: selected = "offline"
+        case .online: selected = "nextendo"
+        case .local:
+            let preferred = app.multiplayerLocalMode.rawValue
+            // shortcut: auto also enables Nextendo on online builds, use LDN until the engine offers local-only auto.
+            let safe = preferred == "auto" && network.accepts("nextendo") ? "ldn" : preferred
+            selected = ([safe] + (network.accepts("nextendo") ? [] : ["auto"]) + ["ldn", "lan"])
+                .first(where: network.accepts) ?? "offline"
         }
-        guard network == "ldn" || network == "lan",
-              explicitLaunchValue(Self.remotePlayKey, environment: environment, includeDisabledChoices: true) == nil
-        else { return nil }
-        return [Self.remotePlayKey: "1", Self.interfaceKey: name]
+        let effective = explicit ?? selected
+        var overrides: [String: String] = network.accepts(selected) && explicit == nil ? [key: selected] : [:]
+        guard ["ldn", "lan", "auto"].contains(effective),
+              explicitLaunchValue(Self.remotePlayKey, environment: environment, includeSavedChoices: false) == nil,
+              explicitLaunchValue(Self.interfaceKey, environment: environment, includeSavedChoices: false) == nil
+        else { return (overrides, nil) }
+        if setting(Self.remotePlayKey)?.accepts("0") == true { overrides[Self.remotePlayKey] = "0" }
+        if let local = adapters.localInterface { overrides[Self.interfaceKey] = local }
+        let connection = adapters.connection(for: app.multiplayerVPN, manual: app.multiplayerAdapter)
+        if app.multiplayerVPN == .none {
+            if app.multiplayerAdapter != nil, case .connected(let name, _) = connection {
+                overrides[Self.interfaceKey] = name
+            }
+            return (overrides, nil)
+        }
+        guard setting(Self.remotePlayKey)?.accepts("1") == true else { return (overrides, .disconnected) }
+        if case .connected(let name, _) = connection {
+            overrides[Self.remotePlayKey] = "1"
+            overrides[Self.interfaceKey] = name
+            return (overrides, nil)
+        }
+        return (overrides, connection)
+    }
+
+    public func multiplayerMode(default defaultMode: MultiplayerMode, environment: [String: String] = [:]) -> MultiplayerMode {
+        let key = NextendoLaunch.networkKey
+        let offered = Self.multiplayerModes(in: settings)
+        let explicit = explicitLaunchValue(key, environment: environment, includeSavedChoices: false)
+        let mode = explicit.flatMap(Self.mode) ?? savedMultiplayerMode() ?? defaultMode
+        return offered.contains(mode) ? mode : .offline
+    }
+
+    public func setMultiplayerMode(_ mode: MultiplayerMode) throws {
+        guard Self.multiplayerModes(in: settings).contains(mode) else {
+            throw GameSettingsError.refused(NextendoLaunch.networkKey, mode.rawValue)
+        }
+        try store.set(mode.rawValue, Self.multiplayerKey, domain: domain)
+    }
+
+    private func savedMultiplayerMode() -> MultiplayerMode? {
+        let network = NextendoLaunch.networkKey
+        if let saved = store.value(Self.multiplayerKey, domain: domain).flatMap(MultiplayerMode.init(rawValue:)) {
+            return saved
+        }
+        if let legacy = store.value(network, domain: domain).flatMap(Self.mode) { return legacy }
+        // The old VPN switch did not enable multiplayer by itself.
+        if store.value(Self.remotePlayKey, domain: domain) == "1",
+           setting(network)?.defaultValue.flatMap(Self.mode) == .local { return .local }
+        return nil
+    }
+
+    private static func mode(_ value: String) -> MultiplayerMode? {
+        switch value {
+        case "offline": return .offline
+        case "ldn", "lan", "auto": return .local
+        case "nextendo": return .online
+        default: return nil
+        }
     }
 
     private func explicitLaunchValue(_ env: String, environment: [String: String],
-                                     includeDisabledChoices: Bool = false) -> String? {
+                                     includeSavedChoices: Bool = true) -> String? {
         if let inherited = environment[env] { return inherited }
         var ignoreSaved = environment["DM_SAVED_CHOICES"]
         for url in [envURL, bundleEnvURL] {
@@ -147,8 +211,8 @@ public struct NXNativeGameSettings {
                 if key == "DM_SAVED_CHOICES", ignoreSaved == nil { ignoreSaved = String(value) }
             }
         }
-        if includeDisabledChoices || ignoreSaved != "0",
-           let saved = store.value(env, domain: domain), setting(env)?.accepts(saved) ?? includeDisabledChoices {
+        if includeSavedChoices, ignoreSaved != "0",
+           let saved = store.value(env, domain: domain), setting(env)?.accepts(saved) == true {
             return saved
         }
         return nil
@@ -170,19 +234,26 @@ public struct NXNativeGameSettings {
                 values[setting.env] = setting.defaultValue ?? ""
             }
         }
-        return GameSettingsSnapshot(settings: settings, values: values, fixed: fixed)
+        return GameSettingsSnapshot(settings: settings, values: values, fixed: fixed, savedMultiplayerMode: savedMultiplayerMode())
     }
 
-    /// The build default removes the key, except for an explicit VPN choice which wins over Arcane's automatic mode.
+    public static func multiplayerMode(in snapshot: GameSettingsSnapshot, default defaultMode: MultiplayerMode) -> MultiplayerMode {
+        let explicit = snapshot.fixed.contains(NextendoLaunch.networkKey) ? snapshot.value(NextendoLaunch.networkKey) : nil
+        let mode = explicit.flatMap(Self.mode) ?? snapshot.savedMultiplayerMode ?? defaultMode
+        return snapshot.multiplayerModes.contains(mode) ? mode : .offline
+    }
+
+    /// The build default removes the key.
     public func set(_ env: String, to value: String) throws {
         guard let setting = setting(env) else { throw GameSettingsError.notOffered(env) }
         guard setting.accepts(value) else { throw GameSettingsError.refused(env, value) }
-        try store.set(env != Self.remotePlayKey && setting.isDefault(value) ? nil : value, env, domain: domain)
+        try store.set(setting.isDefault(value) ? nil : value, env, domain: domain)
     }
 
     /// Every setting back to the build's tested default.
     public func resetAll() throws {
         for setting in settings { try store.set(nil, setting.env, domain: domain) }
+        try store.set(nil, Self.multiplayerKey, domain: domain)
     }
 
     // MARK: - The typed view

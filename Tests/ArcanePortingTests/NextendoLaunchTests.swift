@@ -13,12 +13,16 @@ final class NextendoLaunchTests: XCTestCase {
         return try XCTUnwrap(NextendoLaunch.networkSetting(in: [setting]))
     }
 
-    func testNetworkIsAnOrdinaryEngineChoice() throws {
+    func testNetworkMovesOutOfMoreSettingsAndOnlineRequiresBuildSupport() throws {
         let setting = try networkSetting(online: true)
         let snapshot = GameSettingsSnapshot(settings: [setting], values: ["DM_NETWORK": "offline"], fixed: [])
-        XCTAssertEqual(snapshot.extraSettings, [setting])
-        XCTAssertEqual(GameSettingValues.stepped(setting, from: "ldn", by: 1), "nextendo")
-        XCTAssertEqual(GameSettingValues.stepped(try networkSetting(online: false), from: "ldn", by: 1), "offline")
+        XCTAssertTrue(snapshot.extraSettings.isEmpty)
+        XCTAssertEqual(snapshot.multiplayerModes, [.offline, .local, .online])
+        let local = GameSettingsSnapshot(settings: [try networkSetting(online: false)], values: [:], fixed: [])
+        XCTAssertEqual(local.multiplayerModes, [.offline, .local])
+        XCTAssertEqual(GameOptionsPresentation(supportsRenderScale: false, isPlayable: true, sourcesDetached: false,
+                                               settings: local).focusableRows(level: .main, origin: .details).first,
+                       .multiplayer)
         XCTAssertNil(NextendoLaunch.networkSetting(in: []))
     }
 
@@ -66,11 +70,12 @@ final class NextendoLaunchTests: XCTestCase {
     func testSearchAndChangedDoNotSurfaceUnsupportedConnection() {
         var settings = AppSettings()
         settings.nextendoClientID = "sample-client"
-        // Remote play mentions Nextendo in its help, but the account and client ID are conditional.
         let nextendoRows = ["nextendo", "nextendoClientID"]
         XCTAssertTrue(SettingsCatalog.search("Nextendo").allSatisfy { !nextendoRows.contains($0.id) })
         XCTAssertTrue(SettingsCatalog.changed(in: settings).isEmpty)
         XCTAssertEqual(SettingsCatalog.search("Nextendo", supportsNextendo: true).map(\.id).filter(nextendoRows.contains), nextendoRows)
+        XCTAssertTrue(SettingsCatalog.search("Nextendo", supportsNextendo: true).filter { nextendoRows.contains($0.id) }
+            .allSatisfy { $0.group == .multiplayer })
         XCTAssertEqual(SettingsCatalog.changed(in: settings, supportsNextendo: true).map(\.id), ["nextendoClientID"])
     }
 }

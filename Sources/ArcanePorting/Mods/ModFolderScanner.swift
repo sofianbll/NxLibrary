@@ -4,6 +4,34 @@ import NXLibraryCore
 /// Reads a game's `mods` folder: which subfolders there are, where each one's RomFS tree is, and the files in it.
 /// A mod's RomFS is what the engine's `DM_ROMFS_OVERLAY` reads before the game's own (dm/host/hle_fs.c).
 public enum ModFolderScanner {
+    public enum OnlineContent: Equatable, Sendable { case visual, data, uncertain }
+
+    public static func onlineContent(under romfs: URL) -> OnlineContent {
+        let keys: Set<URLResourceKey> = [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey]
+        var uncertain = false
+        var hasVisual = false
+        guard let walker = FileManager.default.enumerator(at: romfs, includingPropertiesForKeys: Array(keys),
+            errorHandler: { _, _ in uncertain = true; return false }) else { return .uncertain }
+        for case let url as URL in walker {
+            if url.lastPathComponent == ".DS_Store" { continue }
+            guard let values = try? url.resourceValues(forKeys: keys), values.isSymbolicLink == false else {
+                uncertain = true
+                continue
+            }
+            if values.isDirectory == true { continue }
+            guard values.isRegularFile == true else { uncertain = true; continue }
+            switch url.pathExtension.lowercased() {
+            case "bntx", "dds", "ktx", "ktx2", "astc", "bfres":
+                hasVisual = true
+            case "byml", "byaml", "bgyml", "json", "csv", "yaml", "yml", "xml", "lua", "bin", "trpfd":
+                return .data
+            default:
+                uncertain = true
+            }
+        }
+        return hasVisual && !uncertain ? .visual : .uncertain
+    }
+
     /// The mod's RomFS tree: `<folder>/romfs`, else the Atmosphère layouts `<folder>/atmosphere/contents/<TID>/romfs`
     /// and `<folder>/contents/<TID>/romfs` (title ID in either case). A real directory, never a symlink, so an overlay
     /// path cannot lead out of the mods folder.

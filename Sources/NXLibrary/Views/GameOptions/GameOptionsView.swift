@@ -69,9 +69,21 @@ struct GameOptionsView: View {
     @State var savesOpen = false
     /// The Mods panel, likewise.
     @State var modsOpen: Bool
+    @State var multiplayerAdapters = RemotePlayAdapters()
+    @State var onlineRiskMods: [String: ModFolderScanner.OnlineContent] = [:]
+    @State var modsRevision = UUID()
+    var appNetworkSettings: AppSettings { viewModel.settingsStore?.settings ?? AppSettings() }
+    var multiplayerMode: MultiplayerMode {
+        guard let snapshot else { return .offline }
+        return NXNativeGameSettings.multiplayerMode(in: snapshot, default: appNetworkSettings.multiplayerDefault)
+    }
     private var modsValue: String {
         get { files.modsValue }
         nonmutating set { files.modsValue = newValue }
+    }
+    func reloadMods() {
+        modsValue = viewModel.modsRowValue(for: current)
+        modsRevision = UUID()
     }
     @State var moreOpen = false
     var cheatsValue: String? {
@@ -135,7 +147,8 @@ struct GameOptionsView: View {
             canDeleteBundle: game.canDeleteAppBundle(),
             cheatsValue: cheatsValue ?? "",
             modsValue: modsValue,
-            settings: snapshot
+            settings: snapshot,
+            onlineRiskMods: multiplayerMode == .online && !onlineRiskMods.isEmpty
         )
     }
 
@@ -197,11 +210,11 @@ struct GameOptionsView: View {
             }
 
             if modsOpen {
-                ModsPanel(viewModel: viewModel, game: current, settings: snapshot, onRebuild: {
+                ModsPanel(viewModel: viewModel, game: current, online: multiplayerMode == .online, onRebuild: {
                     rebuild(current)
                 }, onClose: {
                     modsOpen = false
-                    modsValue = viewModel.modsRowValue(for: current)
+                    reloadMods()
                 })
                 .transition(.opacity)
                 .zIndex(2)
@@ -234,7 +247,20 @@ struct GameOptionsView: View {
         .animation(reduceMotion ? nil : SeleneTheme.quick, value: panelOpen)
         .onAppear {
             installKeyMonitor()
+            multiplayerAdapters = .current()
             setup.prepareBuildEnvironmentIfNeeded()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            multiplayerAdapters = .current()
+            modsRevision = UUID()
+        }
+        .task(id: OnlineModsRequest(online: multiplayerMode == .online, revision: modsRevision)) {
+            guard multiplayerMode == .online, let store = viewModel.modStore(for: current) else {
+                onlineRiskMods = [:]
+                return
+            }
+            let result = await Task.detached(priority: .userInitiated) { store.onlineRiskMods() }.value
+            if !Task.isCancelled { onlineRiskMods = result }
         }
         .onDisappear(perform: removeKeyMonitor)
         .task {
@@ -251,6 +277,10 @@ struct GameOptionsView: View {
         }
     }
 
+    private struct OnlineModsRequest: Equatable {
+        let online: Bool
+        let revision: UUID
+    }
 }
 
 /// Scroll bookkeeping for Game options. A reference type, so writing it on every

@@ -229,8 +229,9 @@ final class AppSettingsStoreTests: XCTestCase {
         settings.lastSelectedGameID = UUID()
         settings.wallpaperID = "moon"
         settings.settingsWallpaperID = "moon"
+        settings.multiplayerAdapter = "utun8"
         let output = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(settings)) as? [String: Any])
-        XCTAssertEqual(Set(output.keys), Set(AppSettings.CodingKeys.allCases.map(\.stringValue)))
+        XCTAssertEqual(Set(output.keys), Set(AppSettings.CodingKeys.allCases.map(\.stringValue)).subtracting(["remotePlayMode"]))
     }
 
     func testOldJSONWithoutSpotlightFieldsDecodesDefaults() throws {
@@ -357,7 +358,7 @@ final class SettingsSectionTests: XCTestCase {
     func testAllSectionsArePresent() {
         XCTAssertEqual(SettingsSection.allCases.map(\.title), [
             "Search", "Changed", "Start-up", "Navigation", "Spotlight", "Sound & music", "Look", "Controllers",
-            "Online services", "Sources", "Games", "Storage", "Setup and engine", "Keys", "Library", "New games",
+            "Play together", "Online services", "Sources", "Games", "Storage", "Setup and engine", "Keys", "Library", "New games",
             "Cloud saves", "Cloud library", "Storage", "About", "Console"
         ])
         XCTAssertTrue(SettingsSection.allCases.allSatisfy { !$0.icon.rawValue.isEmpty })

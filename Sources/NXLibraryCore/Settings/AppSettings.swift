@@ -129,14 +129,50 @@ public enum LaunchShade: String, Codable, CaseIterable, Identifiable, Equatable 
     }
 }
 
-public enum RemotePlayMode: String, Codable, CaseIterable {
-    case automatic, disabled
+public enum MultiplayerVPN: String, Codable, CaseIterable, Sendable {
+    case none, zeroTier, tailscale, netBird
+
+    public var label: String {
+        switch self {
+        case .none: return "None"
+        case .zeroTier: return "ZeroTier"
+        case .tailscale: return "Tailscale"
+        case .netBird: return "NetBird"
+        }
+    }
+}
+
+public enum MultiplayerMode: String, Codable, CaseIterable, Sendable {
+    case offline, local, online
+
+    public var label: String {
+        switch self {
+        case .offline: return "Offline"
+        case .local: return "Local"
+        case .online: return "Online"
+        }
+    }
+}
+
+public enum MultiplayerLocalMode: String, Codable, CaseIterable, Sendable {
+    case auto, lan, ldn
+
+    public var label: String {
+        switch self {
+        case .auto: return "Automatic"
+        case .lan: return "LAN"
+        case .ldn: return "Local communication"
+        }
+    }
 }
 
 public struct AppSettings: Codable, Equatable {
     public var appLanguage: AppLanguage = .automatic
     public var appRegion: String? = nil
-    public var remotePlayMode: RemotePlayMode = .automatic
+    public var multiplayerVPN: MultiplayerVPN = .none
+    public var multiplayerDefault: MultiplayerMode = .offline
+    public var multiplayerLocalMode: MultiplayerLocalMode = .auto
+    public var multiplayerAdapter: String? = nil
     public var backgroundShade: BackgroundShade
     public var readableText: Bool
     public var reduceMotion: Bool
@@ -278,6 +314,7 @@ public struct AppSettings: Codable, Equatable {
 
     enum CodingKeys: String, CodingKey, CaseIterable {
         case appLanguage, appRegion, remotePlayMode
+        case multiplayerVPN, multiplayerDefault, multiplayerLocalMode, multiplayerAdapter
         case backgroundShade, readableText, reduceMotion, showButtonHints, showClock
         case restoreLastGame, checkEngineAtLaunch, refreshLibraryAtLaunch, lastSelectedGameID
         case startInFullscreen
@@ -298,7 +335,11 @@ public struct AppSettings: Codable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         appLanguage = (try container.decodeIfPresent(String.self, forKey: .appLanguage)).flatMap(AppLanguage.init(rawValue:)) ?? .automatic
         appRegion = AppLocale.validRegion(try container.decodeIfPresent(String.self, forKey: .appRegion))
-        remotePlayMode = (try? container.decode(RemotePlayMode.self, forKey: .remotePlayMode)) ?? .automatic
+        multiplayerVPN = (try? container.decode(MultiplayerVPN.self, forKey: .multiplayerVPN))
+            ?? ((try? container.decode(String.self, forKey: .remotePlayMode)) == "automatic" ? .zeroTier : .none)
+        multiplayerDefault = (try? container.decode(MultiplayerMode.self, forKey: .multiplayerDefault)) ?? .offline
+        multiplayerLocalMode = (try? container.decode(MultiplayerLocalMode.self, forKey: .multiplayerLocalMode)) ?? .auto
+        multiplayerAdapter = try? container.decode(String.self, forKey: .multiplayerAdapter)
         self.backgroundShade = try container.decodeIfPresent(BackgroundShade.self, forKey: .backgroundShade) ?? .balanced
         self.readableText = try container.decodeIfPresent(Bool.self, forKey: .readableText) ?? true
         self.reduceMotion = try container.decodeIfPresent(Bool.self, forKey: .reduceMotion) ?? false
@@ -373,7 +414,10 @@ public struct AppSettings: Codable, Equatable {
         try c.encode(startingTab, forKey: .startingTab)
         try c.encode(librarySort, forKey: .librarySort)
         try c.encode(surprisePool, forKey: .surprisePool)
-        try c.encode(remotePlayMode, forKey: .remotePlayMode)
+        try c.encode(multiplayerVPN, forKey: .multiplayerVPN)
+        try c.encode(multiplayerDefault, forKey: .multiplayerDefault)
+        try c.encode(multiplayerLocalMode, forKey: .multiplayerLocalMode)
+        try c.encodeIfPresent(multiplayerAdapter, forKey: .multiplayerAdapter)
         try c.encode(showsCloudPlayIcon, forKey: .showsCloudPlayIcon)
         try c.encode(showsCloudDetailsLink, forKey: .showsCloudDetailsLink)
         try c.encode(cloudTileBadges, forKey: .cloudTileBadges)

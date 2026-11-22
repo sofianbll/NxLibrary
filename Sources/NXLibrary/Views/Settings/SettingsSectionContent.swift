@@ -15,6 +15,7 @@ struct SettingsSectionContent: View {
     let onSearchSubmit: () -> Void
     let searchFieldRequest: Int
     @Binding var cloudAdvanced: Bool
+    @Binding var multiplayerAdvanced: Bool
     let onEditCloud: () -> Void
     let onEditCloudLibraryFolder: () -> Void
     let onEditCloudSources: () -> Void
@@ -41,7 +42,11 @@ struct SettingsSectionContent: View {
         case .look:
             SettingsLookSection(viewModel: viewModel, settings: settings, onActions: onActions)
         case .apiServices:
-            SettingsAPISection(viewModel: viewModel, settings: settings, supportsNextendo: supportsNextendo, onActions: onActions)
+            SettingsAPISection(viewModel: viewModel, settings: settings, showsMultiplayer: false,
+                               supportsNextendo: false, advanced: .constant(false), onActions: onActions)
+        case .multiplayer:
+            SettingsAPISection(viewModel: viewModel, settings: settings, showsMultiplayer: true,
+                               supportsNextendo: supportsNextendo, advanced: $multiplayerAdvanced, onActions: onActions)
         case .libraryGames:
             SettingsLibraryGamesSection(viewModel: viewModel, settings: settings, onActions: onActions)
         case .games:

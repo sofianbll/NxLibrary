@@ -1,6 +1,281 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "No network": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "No network"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Senza rete"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Sans réseau"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Kein Netzwerk"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Sin red"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Sem rede"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "不连接网络"}}
+      }
+    },
+    "Play together": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Play together"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Gioca in compagnia"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Jouer à plusieurs"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Zusammen spielen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Jugar en compañía"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Jogar em grupo"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "多人游玩"}}
+      }
+    },
+    "Local": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Local"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Locale"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Local"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Lokal"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Local"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Local"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "本地联机"}}
+      }
+    },
+    "Private network (VPN)": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Private network (VPN)"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Rete privata (VPN)"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Réseau privé (VPN)"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Privates Netzwerk (VPN)"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Red privada (VPN)"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Rede privada (VPN)"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "专用网络 (VPN)"}}
+      }
+    },
+    "Default for games": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Default for games"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Modalità predefinita dei giochi"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mode par défaut des jeux"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Standardmodus für Spiele"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Modo de juego predeterminado"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Modo padrão dos jogos"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "游戏默认模式"}}
+      }
+    },
+    "Local network mode": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Local network mode"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Modalità di rete locale"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mode de jeu local"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Lokaler Netzwerkmodus"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Modo de red local"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Modo de rede local"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "本地联机模式"}}
+      }
+    },
+    "Network adapter": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Network adapter"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scheda di rete"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Adaptateur réseau"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Netzwerkadapter"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Adaptador de red"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Adaptador de rede"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "网络适配器"}}
+      }
+    },
+    "Choose how your ported games connect to other players.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose how your ported games connect to other players."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli come connettere i giochi portati agli altri giocatori."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez comment vos jeux portés se connectent aux autres joueurs."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle, wie sich portierte Spiele mit anderen Spielern verbinden."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige cómo se conectan tus juegos portados con otros jugadores."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha como seus jogos portados se conectam a outros jogadores."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "选择移植游戏连接其他玩家的方式。"}}
+      }
+    },
+    "Use ZeroTier, Tailscale or NetBird for local play away from home.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Use ZeroTier, Tailscale or NetBird for local play away from home."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Usa ZeroTier, Tailscale o NetBird per giocare in locale a distanza."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Utilisez ZeroTier, Tailscale ou NetBird pour jouer en local à distance."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Nutze ZeroTier, Tailscale oder NetBird für lokales Spielen aus der Ferne."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Usa ZeroTier, Tailscale o NetBird para jugar en local a distancia."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Use ZeroTier, Tailscale ou NetBird para jogar em rede local a distância."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "通过 ZeroTier、Tailscale 或 NetBird 远程进行本地联机。"}}
+      }
+    },
+    "Applies to games without their own multiplayer choice.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Applies to games without their own multiplayer choice."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Vale per i giochi senza una scelta specifica per il multigiocatore."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Pour les jeux sans choix multijoueur propre."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Gilt für Spiele ohne eigene Mehrspieler-Einstellung."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Se aplica a juegos sin un modo multijugador propio."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Vale para jogos sem um modo multijogador escolhido."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "适用于未单独设置多人模式的游戏。"}}
+      }
+    },
+    "Force LAN or local wireless instead of letting the game choose.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Force LAN or local wireless instead of letting the game choose."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Forza LAN o comunicazione locale invece di far scegliere al gioco."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Forcez le LAN ou le sans-fil local au lieu de laisser le jeu choisir."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Erzwinge LAN oder lokales Drahtlosspiel, statt das Spiel wählen zu lassen."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Fuerza LAN o comunicación local en vez de dejar que el juego elija."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Force LAN ou comunicação local em vez de deixar o jogo escolher."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "强制使用局域网或本地无线，不由游戏选择。"}}
+      }
+    },
+    "Select an interface manually if Arcane cannot identify your VPN.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Select an interface manually if Arcane cannot identify your VPN."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli l’interfaccia a mano se Arcane non riconosce la VPN."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez l’interface à la main si Arcane ne reconnaît pas votre VPN."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle die Schnittstelle manuell, wenn Arcane dein VPN nicht erkennt."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige la interfaz manualmente si Arcane no reconoce tu VPN."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha a interface manualmente se o Arcane não reconhecer sua VPN."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "如果 Arcane 无法识别 VPN，请手动选择网络接口。"}}
+      }
+    },
+    "Choose the network adapter in Advanced.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose the network adapter in Advanced."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli la scheda di rete nelle impostazioni avanzate."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez l’adaptateur réseau dans Avancé."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle den Netzwerkadapter unter Erweitert."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige el adaptador de red en Avanzado."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha o adaptador de rede em Avançado."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "在高级设置中选择网络适配器。"}}
+      }
+    },
+    "Connected · %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Connected · %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Connesso · %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Connecté · %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Verbunden · %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Conectado · %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Conectado · %@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "已连接 · %@"}}
+      }
+    },
+    "Ignored · another VPN is active": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Ignored · another VPN is active"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ignorato · un’altra VPN è attiva"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ignoré · un autre VPN est actif"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Ignoriert · ein anderes VPN ist aktiv"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ignorado · hay otra VPN activa"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Ignorado · outra VPN está ativa"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "已忽略 · 另一个 VPN 正在运行"}}
+      }
+    },
+    "Adapter not identified": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Adapter not identified"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scheda non identificata"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Adaptateur non identifié"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Adapter nicht erkannt"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Adaptador no identificado"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Adaptador não identificado"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "未能识别适配器"}}
+      }
+    },
+    "Same Wi-Fi": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Same Wi-Fi"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Stessa rete Wi-Fi"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Même Wi-Fi"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Gleiches WLAN"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Misma red Wi-Fi"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Mesmo Wi-Fi"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "同一 Wi-Fi"}}
+      }
+    },
+    "Via %@": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Via %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Tramite %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Par %@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Über %@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "A través de %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Via %@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "通过 %@"}}
+      }
+    },
+    "VPN unavailable · same Wi-Fi": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "VPN unavailable · same Wi-Fi"}},
+        "it": {"stringUnit": {"state": "translated", "value": "VPN non disponibile · stessa rete Wi-Fi"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "VPN indisponible · même Wi-Fi"}},
+        "de": {"stringUnit": {"state": "translated", "value": "VPN nicht verfügbar · gleiches WLAN"}},
+        "es": {"stringUnit": {"state": "translated", "value": "VPN no disponible · misma red Wi-Fi"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "VPN indisponível · mesmo Wi-Fi"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "VPN 不可用 · 同一 Wi-Fi"}}
+      }
+    },
+    "VPN unavailable": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "VPN unavailable"}},
+        "it": {"stringUnit": {"state": "translated", "value": "VPN non disponibile"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "VPN indisponible"}},
+        "de": {"stringUnit": {"state": "translated", "value": "VPN nicht verfügbar"}},
+        "es": {"stringUnit": {"state": "translated", "value": "VPN no disponible"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "VPN indisponível"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "VPN 不可用"}}
+      }
+    },
+    "This game can start on your local network instead. Players on the VPN will not be reachable.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "This game can start on your local network instead. Players on the VPN will not be reachable."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Puoi avviare il gioco sulla rete locale. I giocatori sulla VPN non saranno raggiungibili."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Vous pouvez lancer le jeu sur le réseau local. Les joueurs sur le VPN ne seront pas joignables."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Du kannst das Spiel im lokalen Netzwerk starten. Spieler im VPN sind nicht erreichbar."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Puedes iniciar el juego en la red local. No podrás conectar con los jugadores de la VPN."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Você pode iniciar o jogo na rede local. Os jogadores na VPN não estarão acessíveis."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "可以改为在本地网络启动游戏，但无法连接 VPN 上的玩家。"}}
+      }
+    },
+    "Play on the local network": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Play on the local network"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Gioca sulla rete locale"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Jouer sur le réseau local"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Im lokalen Netzwerk spielen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Jugar en la red local"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Jogar na rede local"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "在本地网络游玩"}}
+      }
+    },
+    "Code mods off": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Code mods off"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Mod di codice disattivate"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Mods de code coupés"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Code-Mods deaktiviert"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Mods de código desactivados"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Mods de código desativados"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "代码模组已关闭"}}
+      }
+    },
+    "File mods may block online trades. Re-enable them in Mods.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "File mods may block online trades. Re-enable them in Mods."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Le mod dei file possono bloccare gli scambi online. Riattivale in Mod."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Des mods de fichiers peuvent bloquer les échanges en ligne. Réactivez-les dans Mods."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Datei-Mods können den Online-Tausch blockieren. Unter Mods wieder einschalten."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Los mods de archivos pueden impedir los intercambios en línea. Reactívalos en Mods."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Mods de arquivos podem impedir trocas online. Reative-os em Mods."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "文件模组可能阻止在线交换。可在模组页面重新启用。"}}
+      }
+    },
+    "Turn off for online play": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Turn off for online play"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Disattiva per giocare online"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Couper pour jouer en ligne"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Für Onlinespiele ausschalten"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Desactivar para jugar en línea"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Desativar para jogar online"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "关闭后在线游玩"}}
+      }
+    },
     "Status": {
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Status"}},
@@ -3719,16 +3994,16 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "重新构建以应用代码模组的更改。"}}
       }
     },
-    "Apply at the next launch. Also work online.": {
+    "Apply at the next launch.": {
       "comment": "ModsPanel.swift: RomFS section subtitle",
       "localizations": {
-        "de": {"stringUnit": {"state": "translated", "value": "Gelten ab dem nächsten Start. Funktionieren auch online."}},
-        "en": {"stringUnit": {"state": "translated", "value": "Apply at the next launch. Also work online."}},
-        "es": {"stringUnit": {"state": "translated", "value": "Se aplican en el próximo inicio. También funcionan en línea."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "S'appliquent au prochain lancement. Fonctionnent aussi en ligne."}},
-        "it": {"stringUnit": {"state": "translated", "value": "Si applicano al prossimo avvio. Funzionano anche online."}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Valem na próxima inicialização. Também funcionam online."}},
-        "zh-Hans": {"stringUnit": {"state": "translated", "value": "下次启动时生效。联机时也可用。"}}
+        "en": {"stringUnit": {"state": "translated", "value": "Apply at the next launch."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Gelten ab dem nächsten Start."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Se aplican en el próximo inicio."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "S’appliquent au prochain lancement."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Si applicano al prossimo avvio."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Valem na próxima inicialização."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "下次启动时生效。"}}
       }
     },
     "1 mod, off": {

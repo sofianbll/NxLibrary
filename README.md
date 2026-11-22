@@ -73,9 +73,6 @@ Automated checks cover the application code, publication inputs, compilation and
 
 Porting uses nxnative commit `99224562` with Xcode 27.2 and Metal 32023.922. Porting Setup retrieves that commit. Installed game apps use the engine they were built with. See the [engine upgrade notes](docs/history/engine-upgrades/README.md).
 
-Nextendo is a free community service for online play, not a Nintendo service. If your selected engine supports it, open **Settings → General → Online services → Nextendo** to sign in with a Nextendo account. Arcane builds with Nextendo when the selected engine supports `--nextendo` and a public client ID is configured in **Online services** or bundled with Arcane. Building does not require signing in. Rebuild a game that was built without Nextendo, then select **Nextendo (online)** under **Game Options → More settings → Network** if the game app offers it. The engine pin does not change.
-
-After signing in, open **Friends** to add someone by friend code, answer incoming requests, see pending requests or remove a friend. **Recently played with** shows recent players and lets you add them when their friend code is available.
 
 ## Getting started
 
@@ -255,6 +252,14 @@ Changes apply at the next Play and are written only while the game is closed. An
 
 Cheats change values while you play, for one game version only. New items, looks or gameplay are mods.
 
+### Multiplayer
+
+Open **Settings → General → Play together** to choose a default: **Offline**, **Local** or **Online**. The first row in **Game Options** overrides it for that game. Older builds without network settings do not show the row. Existing per-game network choices carry over.
+
+- **Local** uses your local network or your selected VPN: ZeroTier, Tailscale or NetBird. If Arcane cannot select an adapter, it asks before starting on the local network instead. Use **Advanced** to select an adapter, or to force LAN or local wireless. Automatic uses both local modes on builds without Nextendo and local wireless on Nextendo builds, where the engine's automatic mode also enables online services. For a VPN that does not carry room discovery, `DM_NET_DISCOVERY_PEER` in the player's `env.txt` can point to the host's VPN IPv4 address.
+- **Online** requires a Nextendo-enabled game build and an account. Nextendo is a free community service, not a Nintendo service. Sign in from **Play together**. Use **Friends** to add by code, manage requests or add recent players when their code is available. Building does not require signing in: a compatible engine needs a public client ID from **Advanced** or the Arcane bundle. Rebuild a game that does not offer Online. The engine pin does not change.
+- **Mods in Online:** Arcane leaves code mods off for the session. **Turn off for online play** disables enabled RomFS mods that are not clearly textures or models, without uninstalling them. Switch them back on in **Mods**.
+
 ### Mods
 
 Arcane manages RomFS mods and, with an nxnative checkout that supports `--mods`, ExeFS code patches for Mac builds.
@@ -263,7 +268,7 @@ Arcane manages RomFS mods and, with an nxnative checkout that supports `--mods`,
 - **A game's Mods band.** Each game page lists popular compatible GameBanana mods and the ones you installed. Choose **Search mods** to enter a name or paste a GameBanana mod link, or **Show more** to browse the next batch of popular mods. Open a mod for its images, author, version and requirements, then press **Install**; **Update** appears when the author replaces the file. If the game's GameBanana page is uncertain, the band asks once, and **Wrong game?** picks another.
 - **Your own mods.** Put RomFS mods into the game's mods folder. For a folder with `exefs` containing `.pchtxt` or `.ips` patches, use **Game Options → Mods → Import code mod** to copy it. The original stays in place. Switch mods independently and reorder them within **File mods** or **Code mods**; **Remove** moves an installed copy to the Trash.
 
-RomFS changes apply at the next launch, with the top mod winning when two change the same file. nxnative puts all selected ExeFS patches into one copy of the game code. When playing from Arcane, turn them all off or turn the same set back on without rebuilding. A different non-empty selection or changed patch files show **Rebuild**. Patches must match the game version, and overlapping patches fail the build. If a patch changes the main module, Nextendo mode takes precedence and skips the entire code mod set.
+RomFS changes apply at the next launch, with the top mod winning when two change the same file. nxnative puts all selected ExeFS patches into one copy of the game code. When playing from Arcane, turn them all off or turn the same set back on without rebuilding. A different non-empty selection or changed patch files show **Rebuild**. Patches must match the game version, and overlapping patches fail the build.
 
 GameBanana archives can contain RomFS, ExeFS, or both side by side under one root for this game. Arcane rejects archives with multiple variants in different roots, replacement modules and mods that require external loaders or tools (exlaunch, Skyline, ARCropolis, mod managers). Install code mods only from sources you trust.
 

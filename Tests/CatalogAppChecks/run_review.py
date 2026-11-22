@@ -243,7 +243,7 @@ enum GameResourceState {
     // ACTUAL_PRIMARY_ACTION
 }
 struct ModsPanelHost {
-    var settings: GameSettingsSnapshot?
+    var online: Bool
     let mods: [LocalMod]
     var warningVisible: Bool { !inactiveOnlineCodeMods.isEmpty }
     var badgedMods: Set<String> { inactiveOnlineCodeMods }
@@ -571,32 +571,21 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
         require(RunningGameMonitor.effects == ["org.nxnative.resume.411", "activate 411"],
                 "Resume must recover a hidden host if Arcane missed the pause notification")
 
-        let network = try! JSONDecoder().decode(LauncherSetting.self, from: Data("""
-            {"env":"DM_NETWORK","kind":"choice","section":"Game","label":"Network","default":"offline",
-             "options":[["offline","Offline"],["nextendo","Nextendo (online)"]]}
-            """.utf8))
-        func settings(_ mode: String, network: LauncherSetting) -> GameSettingsSnapshot {
-            .init(settings: [network], values: [network.env: mode], fixed: [])
-        }
         let mods = [
             LocalMod(folderName: "On", folder: root, romfs: nil, exefs: root, isOn: true),
             LocalMod(folderName: "Mixed", folder: root, romfs: root, exefs: root, isOn: true),
             LocalMod(folderName: "Off", folder: root, romfs: nil, exefs: root, isOn: false),
             LocalMod(folderName: "RomFS", folder: root, romfs: root, isOn: true)
         ]
-        var modsPanel = ModsPanelHost(settings: settings("nextendo", network: network), mods: mods)
+        var modsPanel = ModsPanelHost(online: true, mods: mods)
         require(modsPanel.warningVisible && modsPanel.badgedMods == ["On", "Mixed"],
                 "Nextendo online must warn and badge only enabled code mods")
-        let noActiveCode = ModsPanelHost(settings: modsPanel.settings, mods: Array(mods.suffix(2)))
+        let noActiveCode = ModsPanelHost(online: true, mods: Array(mods.suffix(2)))
         require(!noActiveCode.warningVisible && noActiveCode.badgedMods.isEmpty,
                 "Nextendo online without any enabled code mods must not warn")
-        var unsupported = network
-        unsupported.options?.removeAll { $0.value == "nextendo" }
-        for snapshot in [settings("offline", network: network), settings("nextendo", network: unsupported), nil] {
-            modsPanel.settings = snapshot
-            require(!modsPanel.warningVisible && modsPanel.badgedMods.isEmpty,
-                    "Offline mode and unknown or unsupported Nextendo must not warn or badge code mods")
-        }
+        modsPanel.online = false
+        require(!modsPanel.warningVisible && modsPanel.badgedMods.isEmpty,
+                "Offline mode must not warn or badge code mods")
         if failures > 0 { exit(1) }
         print("Actual app review checks passed: achievement startup, logo platform, wheel focus, Mods reads and Nextendo warnings, Steam launch, native dialogs, input routing and Resume.")
     }

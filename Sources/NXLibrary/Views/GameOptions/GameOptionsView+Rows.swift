@@ -99,7 +99,9 @@ extension GameOptionsView {
         let downloadsSources = row == .rebuild && p.sourcesDetached && viewModel.canCheckCloudSources(for: current)
         let checking = row == .rebuild && checkingRebuild
         let title = checking ? L10n.text("Checking the build cache…") : row.title
-        let about = checking ? nil : downloadsSources && !p.toolchainBlocked
+        let about = row == .multiplayer && !p.isFixed(row) ? multiplayerRoute
+            : row == .mods && multiplayerMode == .online ? L10n.text("Code mods off")
+            : checking ? nil : downloadsSources && !p.toolchainBlocked
             ? L10n.text("Arcane checks the cloud for missing game files.") : p.about(row)
         return SeleneOptionRow(icon: row.icon,
                         title: title,
@@ -138,6 +140,23 @@ extension GameOptionsView {
         .accessibilityAction { activate(row) }
     }
 
+    private var multiplayerRoute: String? {
+        switch multiplayerMode {
+        case .offline: return L10n.text("No network")
+        case .online: return "Nextendo · Koya"
+        case .local:
+            let app = appNetworkSettings
+            let vpn = app.multiplayerVPN
+            if vpn == .none { return L10n.text("Same Wi-Fi") }
+            guard snapshot?.setting(NXNativeGameSettings.remotePlayKey)?.accepts("1") == true else {
+                return L10n.text("VPN unavailable · same Wi-Fi")
+            }
+            let connection = multiplayerAdapters.connection(for: vpn, manual: app.multiplayerAdapter)
+            if case .connected = connection { return L10n.format("Via %@", [vpn.label]) }
+            return L10n.text("VPN unavailable · same Wi-Fi")
+        }
+    }
+
     /// Y opens the focused row's explanation, when it has one.
     func rightHints(_ p: GameOptionsPresentation) -> [HintItem] {
         if confirm == nil, focusedRow == .rebuild, checkingRebuild { return [HintItem(.a, L10n.text("Cancel"))] }
@@ -165,6 +184,8 @@ extension GameOptionsView {
         if row.isToggle {
             // The row takes the click; the switch only shows the state.
             SeleneSwitch(isOn: .constant(toggleValue(row))).allowsHitTesting(false)
+        } else if row == .multiplayer && !presentation.isFixed(row) {
+            SeleneCycleValue(title: row.title, value: choiceText(row)) { adjust(row, by: $0) }
         } else if row.isChoice {
             SeleneValueChip(text: choiceText(row))
         } else if row == .cheats || row == .mods {
@@ -200,6 +221,7 @@ extension GameOptionsView {
     }
 
     private func choiceText(_ row: GameOptionsRow) -> String {
+        if row == .multiplayer { return L10n.text(multiplayerMode.label) }
         if let (setting, value) = settingValue(row) { return L10n.text(GameSettingValues.label(setting, value)) }
         switch row {
         case .consoleMode:

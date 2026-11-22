@@ -7,10 +7,10 @@ public enum SettingsReset {
     public static func canReset(_ section: SettingsSection) -> Bool {
         switch section {
         case .startUp, .navigation, .spotlight, .soundMusic, .look, .controllers, .libraryGames, .library, .games, .cloudLibrary,
-             .apiServices:
+             .multiplayer:
             return true
         case .search, .changed, .sources, .storage, .engine, .keys, .cloudSaves, .portingStorage,
-             .about, .console:
+             .about, .console, .apiServices:
             return false
         }
     }
@@ -67,10 +67,13 @@ public enum SettingsReset {
             next.showsCloudPlayIcon = defaults.showsCloudPlayIcon
             next.showsCloudDetailsLink = defaults.showsCloudDetailsLink
             next.cloudTileBadges = defaults.cloudTileBadges
-        case .apiServices:
-            next.remotePlayMode = defaults.remotePlayMode
+        case .multiplayer:
+            next.multiplayerVPN = defaults.multiplayerVPN
+            next.multiplayerDefault = defaults.multiplayerDefault
+            next.multiplayerLocalMode = defaults.multiplayerLocalMode
+            next.multiplayerAdapter = defaults.multiplayerAdapter
         case .games, .controllers, .search, .changed, .sources, .storage, .engine, .keys, .cloudSaves,
-             .portingStorage, .about, .console:
+             .portingStorage, .about, .console, .apiServices:
             break
         }
         return next

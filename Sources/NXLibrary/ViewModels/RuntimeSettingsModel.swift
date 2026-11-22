@@ -39,6 +39,12 @@ final class RuntimeSettingsModel {
         }
     }
 
+    func setMultiplayerMode(_ mode: MultiplayerMode, for game: PortedGame) {
+        guard let settings = gameSettings(for: game) else { return }
+        do { try settings.setMultiplayerMode(mode) }
+        catch { settingsNotSaved(game, error) }
+    }
+
     /// Use new game defaults: every setting to the build's default, then Arcane's new-game defaults.
     func restoreGameDefaults(for game: PortedGame) {
         guard let settings = gameSettings(for: game) else { return }

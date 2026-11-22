@@ -34,8 +34,8 @@ extension SettingsCatalog {
     }
 
     private static let includingNextendo = ordered(baseRows + portingRows + [
-        action("nextendo", .apiServices, "Nextendo", "Free community online play for compatible nxnative games. Requires a Nextendo account."),
-        row("nextendoClientID", .apiServices, "Nextendo client ID",
+        action("nextendo", .multiplayer, "Nextendo", "Free community online play for compatible nxnative games. Requires a Nextendo account."),
+        row("nextendoClientID", .multiplayer, "Nextendo client ID",
             "Public OAuth client ID for sign-in and online play. Clear the field to use the build default.") { $0.nextendoClientID },
     ])
 

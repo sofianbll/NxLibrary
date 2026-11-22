@@ -6,7 +6,7 @@ public enum SettingsSection: String, CaseIterable, Identifiable, Equatable {
     // Raw values are identities and never change: `sources` is the Sources page, `library` and
     // `games` are Porting's Library and New games.
     case search, changed
-    case startUp, navigation, spotlight, soundMusic, look, controllers, apiServices
+    case startUp, navigation, spotlight, soundMusic, look, controllers, multiplayer, apiServices
     case sources, libraryGames, storage
     case engine, keys, library, games, cloudSaves, cloudLibrary, portingStorage
     case about, console
@@ -28,6 +28,7 @@ public enum SettingsSection: String, CaseIterable, Identifiable, Equatable {
         case .spotlight: return "Spotlight"
         case .soundMusic: return "Sound & music"
         case .look: return "Look"
+        case .multiplayer: return "Play together"
         case .apiServices: return "Online services"
         case .controllers: return "Controllers"
         case .sources: return "Settings section: Sources"
@@ -54,6 +55,7 @@ public enum SettingsSection: String, CaseIterable, Identifiable, Equatable {
         case .spotlight: return L10n.text("Which cards show on Spotlight and where it opens.")
         case .soundMusic: return L10n.text("Interface sounds, volume and the launch screen.")
         case .look: return L10n.text("How Arcane looks and moves.")
+        case .multiplayer: return L10n.text("Choose how your ported games connect to other players.")
         case .apiServices: return L10n.text("Optional connections for ratings and game artwork.")
         case .controllers: return L10n.text("Gamepad, button layout and stick deadzone for the library.")
         case .sources: return L10n.text("Steam libraries, refresh and how Play opens Steam.")
@@ -81,6 +83,7 @@ public enum SettingsSection: String, CaseIterable, Identifiable, Equatable {
         case .spotlight: return .spotlight
         case .soundMusic: return .volume
         case .look: return .palette
+        case .multiplayer: return .gamepad
         case .apiServices: return .link
         case .controllers: return .gamepad
         case .sources: return .collections
@@ -131,7 +134,7 @@ public struct SettingsSidebarGroup: Identifiable, Equatable {
 
     public static let all: [SettingsSidebarGroup] = [
         .init(heading: nil, sections: [.search, .changed], isPlatform: false),
-        .init(heading: "Settings group: General", sections: [.startUp, .navigation, .spotlight, .soundMusic, .look, .controllers, .apiServices], isPlatform: false),
+        .init(heading: "Settings group: General", sections: [.startUp, .navigation, .spotlight, .soundMusic, .look, .controllers, .multiplayer, .apiServices], isPlatform: false),
         .init(heading: "Settings group: Library", sections: [.sources, .libraryGames, .storage], isPlatform: false),
         .init(heading: "Settings group: Porting", sections: [.engine, .keys, .library, .games, .cloudSaves, .cloudLibrary, .portingStorage], isPlatform: true),
         .init(heading: "Settings group: System", sections: [.about, .console], isPlatform: false),

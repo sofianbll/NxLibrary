@@ -15,7 +15,7 @@ public enum GameOptionsLevel: Equatable, Sendable {
 
 /// Every focusable row of Game options. Headings and notes are not rows (see `GameOptionsEntry`).
 public enum GameOptionsRow: String, CaseIterable, Sendable {
-    case play, move, favorite, hidden
+    case play, multiplayer, disableOnlineRiskMods, move, favorite, hidden
     case fullscreen, fps60, frameRate, metalFX, gameUpscaler, metalHUD, consoleMode, language, rumble, rumbleStrength
     case renderScale, moreSettings, restoreDefaults
     case cheats, mods, rebuild, showInFinder, openSaves, editDetails, removeGame
@@ -24,6 +24,8 @@ public enum GameOptionsRow: String, CaseIterable, Sendable {
     public var title: String {
         switch self {
         case .play: return L10n.text("Play")
+        case .multiplayer: return L10n.text("Play together")
+        case .disableOnlineRiskMods: return L10n.text("Turn off for online play")
         case .move: return L10n.text("Move")
         case .favorite: return L10n.text("Favorite")
         case .hidden: return L10n.text("Hidden")
@@ -60,6 +62,8 @@ public enum GameOptionsRow: String, CaseIterable, Sendable {
     public var icon: MaterialIcon {
         switch self {
         case .play: return .play
+        case .multiplayer: return .gamepad
+        case .disableOnlineRiskMods: return .puzzle
         case .move: return .swap
         case .favorite: return .star
         case .hidden: return .hidden
@@ -101,7 +105,7 @@ public enum GameOptionsRow: String, CaseIterable, Sendable {
     /// A value chip on the trailing edge: Left/Right cycle it, A cycles forward.
     public var isChoice: Bool {
         switch self {
-        case .consoleMode, .language, .rumbleStrength, .renderScale, .frameRate, .gameUpscaler: return true
+        case .multiplayer, .consoleMode, .language, .rumbleStrength, .renderScale, .frameRate, .gameUpscaler: return true
         default: return false
         }
     }
@@ -114,6 +118,7 @@ public enum GameOptionsRow: String, CaseIterable, Sendable {
     /// The engine setting a row shows, for a build with saved choices.
     public var settingKey: String? {
         switch self {
+        case .multiplayer: return "DM_NETWORK"
         case .fullscreen: return "DM_FULLSCREEN"
         case .fps60, .frameRate: return "DM_FPS_TARGET"
         case .metalFX: return "DM_PRESENT_UPSCALE"
@@ -195,6 +200,7 @@ public struct GameOptionsPresentation: Equatable {
     public let cheatsValue: String
     /// The Mods row's value (ModStore.rowValue).
     public let modsValue: String
+    public let onlineRiskMods: Bool
     /// What the build's settings decide about the rows, for a build with saved choices; nil keeps the fixed rows
     /// of older builds.
     public let buildSettings: GameOptionsBuildSettings?
@@ -203,9 +209,11 @@ public struct GameOptionsPresentation: Equatable {
                 toolchainBlocked: Bool = false, toolchainHint: String? = nil, hasStorePage: Bool = false,
                 offersStoreSearch: Bool = false,
                 gameName: String = "", appPath: String = "", canDeleteBundle: Bool = false,
-                cheatsValue: String = "None", modsValue: String = "None", buildSettings: GameOptionsBuildSettings? = nil) {
+                cheatsValue: String = "None", modsValue: String = "None", buildSettings: GameOptionsBuildSettings? = nil,
+                onlineRiskMods: Bool = false) {
         self.cheatsValue = cheatsValue
         self.modsValue = modsValue
+        self.onlineRiskMods = onlineRiskMods
         self.buildSettings = buildSettings
         self.showRenderScale = supportsRenderScale
         self.canPlay = isPlayable
@@ -276,6 +284,8 @@ public struct GameOptionsPresentation: Equatable {
         }
         switch row {
         case .play: return L10n.text("Launch the installed Mac app.")
+        case .multiplayer: return nil
+        case .disableOnlineRiskMods: return L10n.text("File mods may block online trades. Re-enable them in Mods.")
         case .cheats: return L10n.text("Install and switch this game's cheats.")
         case .mods: return L10n.text("Manage RomFS and code mods for this game.")
         case .move: return L10n.text("Change its place on Spotlight.")
@@ -336,7 +346,11 @@ public struct GameOptionsPresentation: Equatable {
     public func entries(level: GameOptionsLevel, origin: GameOptionsOrigin) -> [GameOptionsEntry] {
         switch level {
         case .main:
-            var entries: [GameOptionsEntry] = [.row(.play), .row(.editDetails), .row(.cheats), .row(.mods), .row(.openSaves)]
+            var entries: [GameOptionsEntry] = []
+            if buildSettings?.visible.contains("DM_NETWORK") == true { entries.append(.row(.multiplayer)) }
+            entries += [.row(.play), .row(.editDetails), .row(.cheats), .row(.mods)]
+            if onlineRiskMods { entries.append(.row(.disableOnlineRiskMods)) }
+            entries.append(.row(.openSaves))
             if origin == .spotlight { entries.append(.row(.move)) }
             entries += [.row(.favorite), .row(.hidden), .heading("Next launch")]
             if let buildSettings {

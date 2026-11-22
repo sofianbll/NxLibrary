@@ -284,11 +284,24 @@ struct SeleneCycleRow: View {
 
     var body: some View {
         SeleneRow(title, subtitle: subtitle, info: info) {
-            HStack(spacing: 6) {
-                arrow(.chevronLeft, -1)
-                SeleneValueChip(text: verbatimValue ? value : L10n.text(value, context: localization))
-                arrow(.chevron, 1)
-            }
+            SeleneCycleValue(title: L10n.text(title, context: localization),
+                             value: verbatimValue ? value : L10n.text(value, context: localization), cycle: cycle)
+        }
+    }
+}
+
+struct SeleneCycleValue: View {
+    @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.nxAppLocale) private var localization
+    let title: String
+    let value: String
+    let cycle: (Int) -> Void
+
+    var body: some View {
+        HStack(spacing: canvas.u(6)) {
+            arrow(.chevronLeft, -1)
+            SeleneValueChip(text: value)
+            arrow(.chevron, 1)
         }
     }
 
@@ -300,7 +313,7 @@ struct SeleneCycleRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.format(delta < 0 ? "Previous %@" : "Next %@",
-                                       [L10n.text(title, context: localization)], context: localization))
+                                       [title], context: localization))
     }
 }
 

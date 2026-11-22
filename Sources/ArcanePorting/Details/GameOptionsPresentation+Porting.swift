@@ -11,7 +11,8 @@ extension GameOptionsBuildSettings {
             choiceNotes[key] = note
         }
         self.init(fixed: snapshot.fixed,
-                  visible: Set(GameOptionsRow.settingRows.compactMap(\.settingKey).filter(snapshot.visible)),
+                  visible: Set(GameOptionsRow.settingRows.compactMap(\.settingKey).filter(snapshot.visible))
+                    .union(snapshot.multiplayerModes.isEmpty ? [] : [NextendoLaunch.networkKey]),
                   offersRenderScale: snapshot.isOffered("DM_RENDER_SCALE"),
                   hasMoreSettings: !snapshot.extraSettings.isEmpty, choiceNotes: choiceNotes)
     }
@@ -23,11 +24,12 @@ extension GameOptionsPresentation {
                 toolchainBlocked: Bool = false, toolchainHint: String? = nil, hasStorePage: Bool = false,
                 offersStoreSearch: Bool = false,
                 gameName: String = "", appPath: String = "", canDeleteBundle: Bool = false,
-                cheatsValue: String = "None", modsValue: String = "None", settings: GameSettingsSnapshot?) {
+                cheatsValue: String = "None", modsValue: String = "None", settings: GameSettingsSnapshot?,
+                onlineRiskMods: Bool = false) {
         self.init(supportsRenderScale: supportsRenderScale, isPlayable: isPlayable, sourcesDetached: sourcesDetached,
                   toolchainBlocked: toolchainBlocked, toolchainHint: toolchainHint, hasStorePage: hasStorePage,
                   offersStoreSearch: offersStoreSearch, gameName: gameName, appPath: appPath,
                   canDeleteBundle: canDeleteBundle, cheatsValue: cheatsValue, modsValue: modsValue,
-                  buildSettings: settings.map(GameOptionsBuildSettings.init))
+                  buildSettings: settings.map(GameOptionsBuildSettings.init), onlineRiskMods: onlineRiskMods)
     }
 }

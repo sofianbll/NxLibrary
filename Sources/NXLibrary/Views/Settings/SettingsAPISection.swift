@@ -7,7 +7,9 @@ import ArcanePorting
 struct SettingsAPISection: View {
     @ObservedObject var viewModel: AppViewModel
     @ObservedObject var settings: AppSettingsStore
+    let showsMultiplayer: Bool
     let supportsNextendo: Bool
+    @Binding var advanced: Bool
     let onActions: ([SettingsRowAction]) -> Void
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneFocusedRowID) private var focusedRow
@@ -22,8 +24,8 @@ struct SettingsAPISection: View {
     @State private var friendCode = ""
     @FocusState private var friendCodeFocused: Bool
     @State private var copiedCode: String?
-    @State private var zeroTierURL: URL?
-    @State private var remotePlayAdapters = RemotePlayAdapters()
+    @State var remotePlayAdapters = RemotePlayAdapters()
+    @State private var vpnAppURL: URL?
 
     private var clientID: String? { settings.settings.nextendoClientID ?? NextendoLaunch.buildClientID }
     private let accountRowID = "Nextendo"
@@ -39,8 +41,8 @@ struct SettingsAPISection: View {
     private var friends: [NextendoAccountSnapshot.Friend]? { friendData?.friends }
     private var canUpdateFriends: Bool { !nextendo.isBusy && !nextendo.friendsNeedRefresh && clientID != nil }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: canvas.u(8)) {
+    private var serviceRows: some View {
+        Group {
             Text(L10n.text("Connect optional services to enrich your library with ratings and artwork. Public sources remain available without API keys."))
                 .seleneFont(16)
                 .foregroundColor(SeleneTheme.ink60)
@@ -73,8 +75,12 @@ struct SettingsAPISection: View {
                 steamGridDBAction()
             }
 
-            if supportsNextendo { nextendoRows }
-            remotePlayRows
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: canvas.u(8)) {
+            if showsMultiplayer { multiplayerRows } else { serviceRows }
         }
         .onAppear {
             refreshRemotePlay()
@@ -85,6 +91,11 @@ struct SettingsAPISection: View {
             refreshRemotePlay()
             publishActions()
         }
+        .onChange(of: settings.settings.multiplayerVPN) { _, _ in
+            refreshRemotePlay()
+            if showsMultiplayer { publishActions() }
+        }
+        .onChange(of: advanced) { if showsMultiplayer { publishActions() } }
         .onChange(of: igdb.revision) { publishActions() }
         .onChange(of: supportsNextendo) { _, supported in
             if supported { nextendo.check(clientID: clientID) }
@@ -126,52 +137,103 @@ struct SettingsAPISection: View {
         }
     }
 
-    private var remotePlayRows: some View {
-        let status: (String, Color)
-        if remotePlayAdapters.zeroTier.count > 1 {
-            status = ("Multiple active ZeroTier adapters", SeleneTheme.untested)
-        } else if remotePlayAdapters.zeroTier.count == 1 {
-            status = ("ZeroTier connected", SeleneTheme.statusOK)
-        } else if zeroTierURL != nil {
-            status = ("ZeroTier installed, not connected", SeleneTheme.untested)
-        } else {
-            status = ("ZeroTier not installed", SeleneTheme.ink60)
-        }
-        return Group {
-            SettingsSubheading(text("Remote play"))
-            SeleneRow("ZeroTier") {
-                SeleneStatusDot(text: text(status.0), color: status.1)
-                Button(text(zeroTierActionTitle), action: openZeroTier)
+    private var vpn: MultiplayerVPN { settings.settings.multiplayerVPN }
+    private var connection: RemotePlayAdapters.Connection {
+        remotePlayAdapters.connection(for: vpn, manual: settings.settings.multiplayerAdapter)
+    }
+
+    @ViewBuilder var multiplayerRows: some View {
+        SeleneCycleRow("Private network (VPN)", value: vpn.label, cycle: stepVPN)
+        if vpn != .none {
+            SeleneRow(vpn.label, id: "multiplayerVPNStatus", subtitle: vpnSubtitle) {
+                SeleneStatusDot(text: vpnStatus, color: vpnColor)
+                Button(text(vpnActionTitle), action: openVPN)
                     .buttonStyle(.plain)
                     .seleneFont(15, .semibold)
                     .foregroundColor(SeleneTheme.glyph)
             }
-            SeleneCycleRow("Remote play via ZeroTier", subtitle: SettingsCatalog.remotePlayHelp,
-                           value: settings.settings.remotePlayMode == .automatic ? "Automatic" : "Disabled",
-                           cycle: stepRemotePlay)
+        }
+        if supportsNextendo { nextendoRows }
+        SeleneCycleRow("Default for games", value: settings.settings.multiplayerDefault.label, cycle: stepDefault)
+        SeleneButtonRow("Advanced", id: "multiplayerAdvanced", buttonTitle: advanced ? "Hide" : "Show") { advanced.toggle() }
+            .accessibilityValue(text(advanced ? "Expanded" : "Collapsed"))
+        if advanced {
+            SeleneCycleRow("Local network mode", value: settings.settings.multiplayerLocalMode.label, cycle: stepLocalMode)
+            SeleneCycleRow("Network adapter", value: settings.settings.multiplayerAdapter ?? text("Automatic"),
+                           verbatimValue: true, cycle: stepAdapter)
+            if supportsNextendo { nextendoClientRow }
         }
     }
 
-    private var zeroTierActionTitle: String { zeroTierURL == nil ? "Download ZeroTier" : "Open ZeroTier" }
+    private var vpnSubtitle: String? {
+        if case .ambiguous = connection { return "Choose the network adapter in Advanced." }
+        return nil
+    }
+
+    private var vpnStatus: String {
+        switch connection {
+        case .connected(_, let ip): return L10n.format("Connected · %@", [ip], context: localization)
+        case .ignored: return text("Ignored · another VPN is active")
+        case .ambiguous: return text("Adapter not identified")
+        case .disconnected: return text("Not connected")
+        }
+    }
+
+    private var vpnColor: Color {
+        if case .connected = connection { return SeleneTheme.statusOK }
+        return SeleneTheme.untested
+    }
+
+    private var vpnActionTitle: String { vpnAppURL == nil ? "Download" : "Open" }
 
     private func refreshRemotePlay() {
-        let standardURL = URL(fileURLWithPath: "/Applications/ZeroTier.app")
-        zeroTierURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.zerotier.ZeroTier-UI")
-            ?? (FileManager.default.fileExists(atPath: standardURL.path) ? standardURL : nil)
+        guard showsMultiplayer else { return }
         remotePlayAdapters = .current()
+        let app = URL(fileURLWithPath: "/Applications/\(vpn.label).app")
+        let identifiers: [String]
+        switch vpn {
+        case .none: identifiers = []
+        case .zeroTier: identifiers = ["com.zerotier.ZeroTier-UI"]
+        case .tailscale: identifiers = ["io.tailscale.ipn.macsys", "io.tailscale.ipn.macos"]
+        case .netBird: identifiers = ["io.netbird.client"]
+        }
+        vpnAppURL = identifiers.lazy.compactMap { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) }.first
+            ?? (FileManager.default.fileExists(atPath: app.path) ? app : nil)
     }
 
-    private func openZeroTier() {
-        if let zeroTierURL { NSWorkspace.shared.open(zeroTierURL) }
-        else if let url = URL(string: "https://www.zerotier.com/download/") { openURL(url) }
+    private func openVPN() {
+        if let vpnAppURL { NSWorkspace.shared.open(vpnAppURL); return }
+        let url: String
+        switch vpn {
+        case .none: return
+        case .zeroTier: url = "https://www.zerotier.com/download/"
+        case .tailscale: url = "https://tailscale.com/download/mac"
+        case .netBird: url = "https://netbird.io/download"
+        }
+        openURL(URL(string: url)!)
     }
 
-    private func stepRemotePlay(_ step: Int) {
-        settings.settings.remotePlayMode = settings.settings.remotePlayMode.stepped(step)
+    private func stepVPN(_ step: Int) {
+        var value = settings.settings
+        value.multiplayerVPN = vpn.stepped(step)
+        value.multiplayerAdapter = nil
+        settings.settings = value
+    }
+
+    private func stepDefault(_ step: Int) {
+        settings.settings.multiplayerDefault = settings.settings.multiplayerDefault.stepped(step)
+    }
+
+    private func stepLocalMode(_ step: Int) {
+        settings.settings.multiplayerLocalMode = settings.settings.multiplayerLocalMode.stepped(step)
+    }
+
+    private func stepAdapter(_ step: Int) {
+        let values: [String?] = [nil] + remotePlayAdapters.interfaceNames.map(Optional.some)
+        settings.settings.multiplayerAdapter = values.stepped(from: settings.settings.multiplayerAdapter, step) ?? nil
     }
 
     @ViewBuilder private var nextendoRows: some View {
-        SettingsSubheading(text("Online play"))
         nextendoAccountRow
         if showFriends {
             let title = friends.map {
@@ -185,7 +247,10 @@ struct SettingsAPISection: View {
                 friendsPanel
             }
         }
-        SeleneRow("Advanced", id: advancedRowID, subtitle: "Public client ID") {
+    }
+
+    private var nextendoClientRow: some View {
+        SeleneRow("Nextendo client ID", id: advancedRowID, subtitle: "Public client ID") {
             Text(settings.settings.nextendoClientID ?? text(clientID == nil ? "Not set" : "Built-in value"))
                 .seleneFont(15)
                 .foregroundColor(SeleneTheme.ink60)
@@ -477,13 +542,20 @@ struct SettingsAPISection: View {
         else { viewModel.isEditingSteamGridDBKey = true }
     }
     private func publishActions() {
-        var actions: [SettingsRowAction] = [
+        if !showsMultiplayer {
+            onActions([
             .init(id: "IGDB", title: "IGDB",
                   secondary: igdb.isConfigured ? (title: "Remove", activate: { Task { await igdb.remove() }; return }) : nil) {
                 igdb.isEditing = true
             },
             .init(id: "SteamGridDB", title: "SteamGridDB") { steamGridDBAction() },
-        ]
+            ])
+            return
+        }
+        var actions: [SettingsRowAction] = [.value("multiplayerVPN", "Private network (VPN)", cycle: stepVPN)]
+        if vpn != .none {
+            actions.append(.init(id: "multiplayerVPNStatus", title: vpnActionTitle, rowID: "multiplayerVPNStatus", activate: openVPN))
+        }
         if supportsNextendo {
             let buttons = accountButtons
             actions.append(.init(id: "nextendo", title: "Nextendo", rowID: accountRowID, isEnabled: canActivateNextendo,
@@ -511,14 +583,20 @@ struct SettingsAPISection: View {
                     actions.append(.init(id: linksRowID, title: openProfile.title, rowID: linksRowID, activate: openProfile.action))
                 }
             }
-            actions.append(.init(id: "nextendoClientID", title: "Nextendo client ID", rowID: advancedRowID, isEnabled: !nextendo.isBusy) {
-                nextendo.isEditingClient = true
-            })
         }
         actions += [
-            .init(id: "zeroTier", title: zeroTierActionTitle, rowID: "ZeroTier", activate: openZeroTier),
-            .value("remotePlayMode", "Remote play via ZeroTier", cycle: stepRemotePlay),
+            .value("multiplayerDefault", "Default for games", cycle: stepDefault),
+            .init(id: "multiplayerAdvanced", title: "Advanced") { advanced.toggle() },
         ]
+        if advanced {
+            actions += [.value("multiplayerLocalMode", "Local network mode", cycle: stepLocalMode),
+                        .value("multiplayerAdapter", "Network adapter", cycle: stepAdapter)]
+            if supportsNextendo {
+                actions.append(.init(id: "nextendoClientID", title: "Nextendo client ID", rowID: advancedRowID, isEnabled: !nextendo.isBusy) {
+                    nextendo.isEditingClient = true
+                })
+            }
+        }
         onActions(actions)
     }
 

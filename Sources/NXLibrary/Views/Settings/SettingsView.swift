@@ -22,6 +22,7 @@ struct SettingsView: View {
     @State private var cloudAssistant: CloudSetupAssistant.Entry?
     private var showingCloudAssistant: Bool { cloudAssistant != nil }
     @State private var cloudAdvanced = false
+    @State private var multiplayerAdvanced = false
     @State private var localePicker: LocalePickerMode?
     @State private var focusArea: SettingsFocusArea = .sidebar
     @State private var rowFocus = FocusIndex()
@@ -136,6 +137,7 @@ struct SettingsView: View {
         }
         .onChange(of: section) { _, section in
             if section != .cloudLibrary { cloudAdvanced = false }
+            if section != .multiplayer { multiplayerAdvanced = false }
             rowActions = []
             rowFocus = FocusIndex()
             rowButton = 0
@@ -235,6 +237,7 @@ struct SettingsView: View {
                         onSearchSubmit: enterRows,
                         searchFieldRequest: searchFieldRequest,
                         cloudAdvanced: $cloudAdvanced,
+                        multiplayerAdvanced: $multiplayerAdvanced,
                         onEditCloud: { cloudAssistant = viewModel.cloudLibrary.preference.remote == nil ? .account : .credentials },
                         onEditCloudLibraryFolder: { cloudAssistant = .library },
                         onEditCloudSources: { cloudAssistant = .sources },
@@ -298,6 +301,7 @@ struct SettingsView: View {
     private func openGroup(_ row: SettingDescriptor) {
         section = row.group
         cloudAdvanced = SettingsCatalog.opensCloudAdvanced(row.id)
+        multiplayerAdvanced = ["multiplayerLocalMode", "multiplayerAdapter", "nextendoClientID"].contains(row.id)
         focusArea = .sidebar
         SoundEffectService.shared.play(.click)
     }

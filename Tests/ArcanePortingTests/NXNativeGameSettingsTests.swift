@@ -42,7 +42,7 @@ final class NXNativeGameSettingsTests: XCTestCase {
         var envURL: URL { support.appendingPathComponent("040074A01BF12000/env.txt") }
     }
 
-    private func fixture(dmSettings: Bool = true, env: String? = nil, vpn: Bool = false) throws -> Fixture {
+    private func fixture(dmSettings: Bool = true, env: String? = nil, vpn: Bool = false, online: Bool = true) throws -> Fixture {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("NXSettings-\(UUID().uuidString)")
         addTeardownBlock { try? FileManager.default.removeItem(at: root) }
         let app = root.appendingPathComponent("Donkey Kong Bananza.app")
@@ -52,7 +52,8 @@ final class NXNativeGameSettingsTests: XCTestCase {
             ,{"env":"DM_NET_VPN","kind":"toggle","section":"Game","label":"Play over a VPN","default":"0","on":"1","off":"0"},
             {"env":"DM_NETWORK","kind":"choice","section":"Game","label":"Network","default":"lan","options":[["auto","Automatic"],["offline","Offline"],["ldn","Local communication"],["lan","LAN"],["nextendo","Online"]]}]}
             """ : launcherJSON
-        try Data(json.utf8).write(to: dm.appendingPathComponent("launcher.json"))
+        try Data((online ? json : json.replacingOccurrences(of: #",["nextendo","Online"]"#, with: "")).utf8)
+            .write(to: dm.appendingPathComponent("launcher.json"))
         var info: [String: Any] = ["CFBundleIdentifier": domain, "DMTitleID": titleID]
         if dmSettings { info["DMSettings"] = [["env": "DM_RUMBLE", "values": ["1", "0"]]] }
         try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0)
@@ -163,8 +164,11 @@ final class NXNativeGameSettingsTests: XCTestCase {
     }
 
     func testRemotePlayLaunchUsesOneDistinctZeroTierAdapterDespiteTailscale() throws {
-        let f = try fixture(vpn: true)
+        let f = try fixture(vpn: true, online: false)
         let s = try settings(f)
+        var app = AppSettings()
+        app.multiplayerDefault = .local
+        app.multiplayerVPN = .zeroTier
         let up = UInt32(IFF_UP)
         var adapters = RemotePlayAdapters()
         let otherAdapters: [(String, UInt32)] = [
@@ -177,103 +181,78 @@ final class NXNativeGameSettingsTests: XCTestCase {
         adapters.consider("lo0", flags: up | UInt32(IFF_LOOPBACK), ipv4: 0x7f000001)
         adapters.consider("zt0", flags: 0, ipv4: 0x0ac7920c)
         adapters.consider("zt1", flags: up, ipv4: 0xa9fe7003)
-        XCTAssertNil(s.remotePlayLaunchValue(mode: .automatic, adapters: adapters, environment: [:]))
-        let autoVPN = ["DM_NETWORK": "auto", "DM_NET_VPN": "1"]
-        XCTAssertNil(s.remotePlayLaunchValue(mode: .automatic, adapters: adapters, environment: autoVPN))
+        XCTAssertEqual(s.multiplayerLaunch(settings: app, adapters: adapters, environment: [:]).warning, .ignored)
 
         adapters.consider("feth3971", flags: up, ipv4: 0x0ac7920b)
         adapters.consider("feth3971", flags: up, ipv4: 0x0ac7920c)
-        XCTAssertEqual(adapters.zeroTier, ["feth3971"])
-        XCTAssertEqual(s.remotePlayLaunchValue(mode: .automatic, adapters: adapters, environment: [:]),
-                       ["DM_NET_VPN": "1", "DM_NETWORK_INTERFACE": "feth3971"])
-        XCTAssertEqual(s.remotePlayLaunchValue(mode: .automatic, adapters: adapters, environment: autoVPN),
-                       ["DM_NETWORK_INTERFACE": "feth3971"])
-        XCTAssertNil(s.remotePlayLaunchValue(mode: .disabled, adapters: adapters, environment: [:]))
-        XCTAssertNil(s.remotePlayLaunchValue(mode: .disabled, adapters: adapters, environment: autoVPN))
-        let unsupported = try settings(fixture())
-        XCTAssertNil(unsupported.remotePlayLaunchValue(mode: .automatic, adapters: adapters, environment: [:]))
+        XCTAssertEqual(adapters.connection(for: .zeroTier, manual: nil), .connected(name: "feth3971", ipv4: "10.199.146.11"))
+        XCTAssertEqual(adapters.connection(for: .tailscale, manual: nil), .ambiguous)
+        XCTAssertEqual(adapters.connection(for: .netBird, manual: nil), .ambiguous)
+        XCTAssertEqual(adapters.connection(for: .netBird, manual: "utun8"), .connected(name: "utun8", ipv4: "100.90.128.16"))
+        adapters.reportedProviders["utun8"] = .tailscale
+        XCTAssertEqual(adapters.connection(for: .tailscale, manual: nil), .connected(name: "utun8", ipv4: "100.90.128.16"))
+        XCTAssertEqual(adapters.connection(for: .netBird, manual: nil), .ignored)
+        XCTAssertEqual(s.multiplayerLaunch(settings: app, adapters: adapters, environment: [:]).environment,
+                       ["DM_NETWORK": "auto", "DM_NET_VPN": "1", "DM_NETWORK_INTERFACE": "feth3971"])
+        app.multiplayerVPN = .tailscale
+        XCTAssertEqual(s.multiplayerLaunch(settings: app, adapters: adapters, environment: [:]).environment,
+                       ["DM_NETWORK": "auto", "DM_NET_VPN": "1", "DM_NETWORK_INTERFACE": "utun8"])
 
         adapters.consider("zt0", flags: up, ipv4: 0x0ac7920d)
-        XCTAssertEqual(adapters.zeroTier, ["feth3971", "zt0"])
-        XCTAssertNil(s.remotePlayLaunchValue(mode: .automatic, adapters: adapters, environment: [:]))
-        XCTAssertNil(s.remotePlayLaunchValue(mode: .automatic, adapters: adapters, environment: autoVPN))
+        XCTAssertEqual(adapters.connection(for: .zeroTier, manual: nil), .ambiguous)
     }
 
-    func testRemotePlayAutomaticNetworkUsesOnlyAnAlreadyEnabledVPN() throws {
+    func testLegacyNetworkModesMapWithoutDeletingOldChoices() throws {
         let f = try fixture(vpn: true)
         let s = try settings(f)
-        var adapters = RemotePlayAdapters()
-        adapters.consider("feth3971", flags: UInt32(IFF_UP), ipv4: 0x0ac7920b)
-        func override(_ environment: [String: String] = [:]) -> [String: String]? {
-            s.remotePlayLaunchValue(mode: .automatic, adapters: adapters, environment: environment)
+        var app = AppSettings()
+        app.multiplayerDefault = .local
+        XCTAssertEqual(s.multiplayerLaunch(settings: app, adapters: .init(), environment: [:]).environment["DM_NETWORK"], "ldn",
+                       "Nextendo builds do not offer an automatic mode that is local only")
+        app.multiplayerLocalMode = .lan
+        XCTAssertEqual(s.multiplayerLaunch(settings: app, adapters: .init(), environment: [:]).environment["DM_NETWORK"], "lan")
+        for (raw, mode) in [("offline", MultiplayerMode.offline), ("ldn", .local), ("lan", .local), ("auto", .local), ("nextendo", .online)] {
+            try f.store.set(raw, "DM_NETWORK", domain: domain)
+            XCTAssertEqual(NXNativeGameSettings.multiplayerMode(in: s.snapshot(), default: .offline), mode)
+            XCTAssertEqual(s.multiplayerMode(default: .offline), mode)
         }
-        try s.set("DM_NETWORK", to: "auto")
-        XCTAssertNil(override(), "Automatic network alone must not opt into VPN")
-        try s.set("DM_NET_VPN", to: "1")
-        XCTAssertEqual(override(), ["DM_NETWORK_INTERFACE": "feth3971"])
-        XCTAssertNil(override(["DM_NET_VPN": "0"]))
-        XCTAssertNil(override(["DM_NETWORK": "nextendo"]))
-        XCTAssertNil(override(["DM_NETWORK_INTERFACE": "utun8"]))
-        XCTAssertNil(override(["DM_NETWORK_INTERFACE": ""]))
-        XCTAssertNil(override(["DM_NETWORK": "auto", "DM_SAVED_CHOICES": "0"]))
-
-        try f.store.set("utun8", "DM_NETWORK_INTERFACE", domain: domain)
-        XCTAssertNil(override())
-        try f.store.set(nil, "DM_NETWORK_INTERFACE", domain: domain)
+        try s.setMultiplayerMode(.offline)
+        XCTAssertEqual(s.multiplayerLaunch(settings: app, adapters: .init(), environment: [:]).environment, ["DM_NETWORK": "offline"])
+        XCTAssertEqual(f.store.value("DM_NETWORK", domain: domain), "nextendo")
         try s.resetAll()
-        let bundled = f.game.url.appendingPathComponent("Contents/Resources/dm/env.txt")
-        try Data("DM_NETWORK=auto\nDM_NET_VPN=1\n".utf8).write(to: bundled)
-        XCTAssertEqual(override(), ["DM_NETWORK_INTERFACE": "feth3971"])
+        XCTAssertEqual(s.multiplayerMode(default: .local), .local)
+        XCTAssertThrowsError(try settings(fixture(vpn: true, online: false)).setMultiplayerMode(.online))
     }
 
     func testRemotePlayLaunchRequiresLocalModeAndPreservesExplicitChoices() throws {
-        let f = try fixture(vpn: true)
+        let f = try fixture(vpn: true, online: false)
         let s = try settings(f)
+        var app = AppSettings()
+        app.multiplayerDefault = .local
+        app.multiplayerVPN = .zeroTier
         var adapters = RemotePlayAdapters()
         adapters.consider("zt0", flags: UInt32(IFF_UP), ipv4: 0x0ac7920b)
-        let injected = ["DM_NET_VPN": "1", "DM_NETWORK_INTERFACE": "zt0"]
-        func override(environment: [String: String] = [:]) -> [String: String]? {
-            s.remotePlayLaunchValue(mode: .automatic, adapters: adapters, environment: environment)
+        let injected = ["DM_NETWORK": "auto", "DM_NET_VPN": "1", "DM_NETWORK_INTERFACE": "zt0"]
+        func override(_ environment: [String: String] = [:]) -> [String: String] {
+            s.multiplayerLaunch(settings: app, adapters: adapters, environment: environment).environment
         }
+        try f.store.set("1", "DM_NET_VPN", domain: domain)
+        XCTAssertEqual(s.multiplayerMode(default: .offline), .local, "An old VPN choice on a local-default build keeps Local")
         XCTAssertEqual(override(), injected)
-        XCTAssertEqual(override(environment: ["DM_NETWORK": "ldn"]), injected)
-        for network in ["offline", "nextendo", "auto", ""] {
-            XCTAssertNil(override(environment: ["DM_NETWORK": network]))
+        let fallback = s.multiplayerLaunch(settings: app, adapters: .init(), environment: [:])
+        XCTAssertEqual(fallback.warning, .disconnected)
+        XCTAssertEqual(fallback.environment, ["DM_NETWORK": "auto", "DM_NET_VPN": "0"])
+        for network in ["offline", "nextendo", ""] {
+            XCTAssertTrue(override(["DM_NETWORK": network]).isEmpty)
         }
-        XCTAssertNil(override(environment: ["DM_NET_VPN": "0"]))
-        XCTAssertNil(override(environment: ["DM_NETWORK_INTERFACE": "utun8"]))
-        XCTAssertNil(override(environment: ["DM_NETWORK_INTERFACE": ""]))
-        XCTAssertFalse(FileManager.default.fileExists(atPath: f.envURL.path))
-        XCTAssertNil(f.store.values[domain]?["DM_NET_VPN"])
-
-        try s.set("DM_NET_VPN", to: "0")
-        XCTAssertNil(override(), "An explicit off wins even when it matches the build default")
-        XCTAssertNil(override(environment: ["DM_SAVED_CHOICES": "0"]), "Ignoring saved choices does not opt into the VPN")
-        XCTAssertEqual(s.effectiveLaunchValue("DM_NET_VPN", environment: [:]), "0")
-        try s.set("DM_NET_VPN", to: "1")
-        XCTAssertNil(override(), "An explicit on already applies without injection")
-        try s.resetAll()
-        XCTAssertEqual(override(), injected)
-        try s.set("DM_NETWORK", to: "nextendo")
-        XCTAssertNil(override())
-        try s.resetAll()
-
-        try f.store.set("utun8", "DM_NETWORK_INTERFACE", domain: domain)
-        XCTAssertNil(override(), "An explicit interface prevents both automatic overrides")
-        try f.store.set(nil, "DM_NETWORK_INTERFACE", domain: domain)
-
+        XCTAssertEqual(override(["DM_NET_VPN": "0"]), ["DM_NETWORK": "auto"])
+        XCTAssertEqual(override(["DM_NETWORK_INTERFACE": "utun8"]), ["DM_NETWORK": "auto"])
         try FileManager.default.createDirectory(at: f.envURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try Data("DM_NET_VPN=0\n".utf8).write(to: f.envURL)
-        XCTAssertNil(override())
+        XCTAssertEqual(override(), ["DM_NETWORK": "auto"])
         XCTAssertEqual(try String(contentsOf: f.envURL, encoding: .utf8), "DM_NET_VPN=0\n")
         try Data("DM_NETWORK_INTERFACE=utun8\n".utf8).write(to: f.envURL)
-        XCTAssertNil(override())
-        try FileManager.default.removeItem(at: f.envURL)
-        let bundled = f.game.url.appendingPathComponent("Contents/Resources/dm/env.txt")
-        for line in ["DM_NET_VPN=1\n", "DM_NETWORK_INTERFACE=utun8\n", "DM_NETWORK=offline\n"] {
-            try Data(line.utf8).write(to: bundled)
-            XCTAssertNil(override())
-        }
+        XCTAssertEqual(override(), ["DM_NETWORK": "auto"])
     }
 
     func testApplyWritesOnlyChangedTypedFields() throws {

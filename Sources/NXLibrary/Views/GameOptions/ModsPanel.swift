@@ -11,7 +11,7 @@ import ArcanePorting
 struct ModsPanel: View {
     @ObservedObject var viewModel: AppViewModel
     let game: PortedGame
-    let settings: GameSettingsSnapshot?
+    let online: Bool
     let onRebuild: () -> Void
     let onClose: () -> Void
 
@@ -34,11 +34,11 @@ struct ModsPanel: View {
 
     private typealias Row = ModsPanelPresentation.Row
 
-    init(viewModel: AppViewModel, game: PortedGame, settings: GameSettingsSnapshot?,
+    init(viewModel: AppViewModel, game: PortedGame, online: Bool,
          onRebuild: @escaping () -> Void, onClose: @escaping () -> Void) {
         self.viewModel = viewModel
         self.game = game
-        self.settings = settings
+        self.online = online
         self.onRebuild = onRebuild
         self.onClose = onClose
         _running = State(initialValue: RunningGameMonitor.runningApplication(for: game) != nil)
@@ -54,9 +54,7 @@ struct ModsPanel: View {
     }
 
     private var inactiveOnlineCodeMods: Set<String> {
-        guard let settings, let network = NextendoLaunch.networkSetting(in: settings.settings),
-              network.accepts("nextendo"), (settings.value(network.env) ?? network.defaultValue) == "nextendo"
-        else { return [] }
+        guard online else { return [] }
         return Set(mods.filter { $0.isOn && $0.exefs != nil }.map(\.folderName))
     }
 
@@ -138,7 +136,7 @@ struct ModsPanel: View {
     }
 
     @ViewBuilder private func noticeArea(hasInactiveOnlineMods: Bool) -> some View {
-        let notices = (hasInactiveOnlineMods ? [L10n.text("Nextendo online mode: Code mods don't load. Set Network to Offline to use them.", context: locale)] : [])
+        let notices = (hasInactiveOnlineMods ? [L10n.text("Code mods off", context: locale)] : [])
             + (running ? [ModsCopy.running(gameName: game.name)] : [])
             + (needsRebuild ? [L10n.text("Rebuild to apply code mod changes.", context: locale)] : [])
         if !notices.isEmpty || message != nil || !conflicts.isEmpty {
@@ -175,7 +173,9 @@ struct ModsPanel: View {
                     }
                     ForEach(Array(rows.enumerated()), id: \.element) { index, row in
                         if row == presentation.fileRows.first {
-                            sectionHeader("File mods", subtitle: "Apply at the next launch. Also work online.")
+                            sectionHeader("File mods", subtitle: online
+                                ? "File mods may block online trades. Re-enable them in Mods."
+                                : "Apply at the next launch.")
                         }
                         if row == presentation.codeRows.first {
                             sectionHeader("Code mods", subtitle: "Rebuild the game after making changes. Turning off all code mods or re-enabling the entire built set needs no rebuild. Inactive online (Nextendo).")

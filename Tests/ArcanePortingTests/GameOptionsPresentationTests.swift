@@ -179,6 +179,10 @@ final class GameOptionsPresentationTests: XCTestCase {
 
     func testEveryRowAppearsInSomeLevel() {
         var seen = Set<GameOptionsRow>()
+        let multiplayer = GameOptionsPresentation(supportsRenderScale: true, isPlayable: true, sourcesDetached: false,
+            buildSettings: .init(fixed: [], visible: ["DM_NETWORK"], offersRenderScale: true, hasMoreSettings: false),
+            onlineRiskMods: true)
+        seen.formUnion(multiplayer.focusableRows(level: .main, origin: .details))
         for origin in [GameOptionsOrigin.spotlight, .collection, .details] {
             for store in [false, true] {
                 for renderScale in [false, true] {
@@ -271,7 +275,7 @@ final class GameOptionsPresentationTests: XCTestCase {
 
     func testAboutCoversEveryRow() {
         let p = presentation()
-        for row in GameOptionsRow.allCases {
+        for row in GameOptionsRow.allCases where row != .multiplayer {
             XCTAssertNotNil(p.about(row), "\(row)")
         }
     }

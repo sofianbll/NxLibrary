@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render real cloud views offscreen with synthetic states; never start the launcher."""
+"""Render cloud and multiplayer views offscreen with synthetic states; never start the launcher."""
 import os
 import re
 import shutil
@@ -22,6 +22,7 @@ import ArcanePorting
         let output = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
         let font = URL(fileURLWithPath: CommandLine.arguments[2])
         precondition(CTFontManagerRegisterFontsForURL(font as CFURL, .process, nil))
+        NSApplication.shared.applicationIconImage = NSImage(contentsOfFile: CommandLine.arguments[3])
         let data = AppData.supportRoot
         let settings = AppSettingsStore(fileURL: data.appendingPathComponent("settings.json"))
         let vm = AppViewModel(settingsStore: settings, catalog: .init(), repository: .init(store: .init(directory: data)))
@@ -94,6 +95,7 @@ import ArcanePorting
                 showsCloudBadges: true, onSelect: { _ in }, onActivate: { _ in }),
             size: .init(width: 400, height: 440))
         // TYPED_PATH_CHECK
+        // MULTIPLAYER_CHECK
     }
 
     @MainActor static func render<V: View>(_ name: String, _ output: URL, _ view: V,
@@ -112,6 +114,135 @@ import ArcanePorting
 }
 '''
 
+MULTIPLAYER = r'''
+        let frLocale = AppLocale(language: .french, region: "FR")
+        L10n.setContext(frLocale)
+        let dm = game.url.appendingPathComponent("Contents/Resources/dm")
+        try FileManager.default.createDirectory(at: dm, withIntermediateDirectories: true)
+        let info: [String: Any] = ["CFBundleIdentifier": "local.arcane.screen-multiplayer", "DMSettings": []]
+        try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0)
+            .write(to: game.url.appendingPathComponent("Contents/Info.plist"))
+        try Data("""
+            {"schema":1,"game":"0100000000001000","settings":[
+             {"env":"DM_NETWORK","kind":"choice","section":"Game","label":"Network","default":"offline",
+              "options":[["offline","Offline"],["ldn","Local communication"],["lan","LAN mode"],["auto","Automatic"],["nextendo","Online (Nextendo)"]]},
+             {"env":"DM_NET_VPN","kind":"toggle","section":"Game","label":"Play over a VPN","default":"0","on":"1","off":"0"}]}
+            """.utf8).write(to: dm.appendingPathComponent("launcher.json"))
+        // MULTIPLAYER_STATES
+'''
+
+MULTIPLAYER_STATES = r'''
+        settings.settings.multiplayerVPN = .zeroTier
+        settings.settings.multiplayerDefault = .local
+        func settingsPage() -> some View {
+            SettingsView(initialSection: .multiplayer, viewModel: vm, settings: settings,
+                         router: AppRouter(), artwork: ArtworkStore())
+                .environment(\.nxAppLocale, frLocale)
+        }
+        ScreenVPN.connected = true
+        try render("multiplayer-settings", output, settingsPage(), size: .init(width: 1920, height: 1080))
+        ScreenVPN.connected = false
+        try render("multiplayer-vpn-disconnected", output, settingsPage(), size: .init(width: 1920, height: 1080))
+        vm.showMultiplayerVPNFallback {}
+        let warning = vm.settingsNotice!
+        precondition(warning.choices == ["Cancel", "Play on the local network"])
+        try render("multiplayer-vpn-warning", output,
+                   SeleneChoiceDialog(title: warning.title, message: warning.message, choices: warning.choices,
+                                      focus: .constant(warning.initialFocus), vertical: warning.vertical, onChoose: { _ in })
+                       .environment(\.nxAppLocale, frLocale), size: .init(width: 1100, height: 630))
+        func gameOptions() -> some View {
+            GameOptionsView(viewModel: vm, game: game, origin: .details, onClose: {}, onShowBuild: {}, onMove: {})
+                .environment(\.nxAppLocale, frLocale)
+        }
+        ScreenVPN.connected = true
+        try render("multiplayer-game-options", output, gameOptions(),
+                   size: .init(width: 1920, height: 1080))
+        settings.settings.multiplayerDefault = .online
+        ScreenVPN.mods = true
+        try render("multiplayer-online-mods", output, gameOptions(),
+                   size: .init(width: 1920, height: 1080))
+'''
+
+MULTIPLAYER_BEFORE = r'''
+        let page = SettingsView(initialSection: .apiServices, viewModel: vm, settings: settings,
+                                router: AppRouter(), artwork: ArtworkStore())
+        ScreenVPN.connected = true
+        try render("multiplayer-settings", output, page.environment(\.nxAppLocale, frLocale),
+                   size: .init(width: 1920, height: 1080))
+        ScreenVPN.connected = false
+        try render("multiplayer-vpn-disconnected", output, page.environment(\.nxAppLocale, frLocale),
+                   size: .init(width: 1920, height: 1080))
+        try render("multiplayer-game-options", output,
+                   MoreSettingsPanel(viewModel: vm, game: game, onClose: {}).environment(\.nxAppLocale, frLocale),
+                   size: .init(width: 1920, height: 1080))
+        let snapshot = vm.runtimeSettings.settingsSnapshot(for: game)!
+        try render("multiplayer-online-mods", output,
+                   ModsPanel(viewModel: vm, game: game,
+                             settings: .init(settings: snapshot.settings, values: ["DM_NETWORK": "nextendo"], fixed: []),
+                             onRebuild: {}, onClose: {}).environment(\.nxAppLocale, frLocale),
+                   size: .init(width: 1920, height: 1080))
+'''
+
+def multiplayer_fixture(app, host, before):
+    settings_view = app / "Views/Settings/SettingsView.swift"
+    change(settings_view, r'        ScrollViewReader \{ proxy in\n            ScrollView \{\n', '')
+    change(settings_view, r'            }\n            \.scrollIndicators\(\.hidden\).*?(?=\n    }\n\n    private var reduceMotion)', '')
+    change(settings_view, r'    private var supportsNextendo: Bool \{ [^\n]* \}', '    private var supportsNextendo: Bool { true }')
+    change(settings_view, r'        \.background\(SeleneBackdrop\(\)\.environment[^\n]*\n', '')
+    sidebar = app / "Views/Settings/SettingsSidebar.swift"
+    change(sidebar, r'            ScrollViewReader \{ proxy in.*?(?=\n        }\n    })', '            groups')
+    change(sidebar, r'ForEach\(SettingsSidebarGroup.all\)', 'ForEach(Array(SettingsSidebarGroup.all.prefix(2)))')
+    nextendo = app / "ViewModels/NextendoSettings.swift"
+    change(nextendo, r'    func check\(clientID: String\?\) \{.*?(?=\n    func updateFriend)', '    func check(clientID: String?) {}\n')
+    model = app / "ViewModels/RuntimeSettingsModel.swift"
+    change(model, r'NXNativeGameSettings\.forGame\(game\)', '''NXNativeGameSettings.forGame(game, store: MemorySavedChoices(),
+            supportDirectory: AppData.supportRoot, preferences: AppData.preferences)''')
+    section = app / "Views/Settings/SettingsAPISection.swift"
+    change(section, r'remotePlayAdapters = \.current\(\)', 'remotePlayAdapters = ScreenVPN.adapters')
+    # No filesystem-backed credentials, real mods or engine checks during fixture rendering.
+    mods_model = app / "ViewModels/AppViewModel+Mods.swift"
+    change(mods_model, r'    func modStore\(for game: PortedGame\) -> ModStore\? \{.*?(?=\n    func modsRowValue)',
+           '    func modStore(for game: PortedGame) -> ModStore? { nil }\n')
+    setup = app / "ViewModels/SetupModel.swift"
+    change(setup, r'    func prepareBuildEnvironmentIfNeeded\(\) \{.*?\n    }', '    func prepareBuildEnvironmentIfNeeded() {}')
+    with section.open("a") as swift:
+        swift.write('''
+enum ScreenVPN {
+    static var connected = false
+    static var mods = false
+    static var adapters: RemotePlayAdapters { .screenFixture(connected: connected) }
+}
+''')
+    if before:
+        change(section, r'private var remotePlayAdapters = RemotePlayAdapters\(\)', 'private var remotePlayAdapters = ScreenVPN.adapters')
+        more = app / "Views/GameOptions/MoreSettingsPanel.swift"
+        change(more, r'        ScrollViewReader \{ proxy in\n            ScrollView \{\n                LazyVStack', '        VStack')
+        change(more, r'            }\n            \.scrollIndicators\(\.hidden\).*?(?=\n    }\n\n    private func value)', '')
+        mods = app / "Views/GameOptions/ModsPanel.swift"
+        change(mods, r'private var mods: \[LocalMod\] = \[\]', '''private var mods: [LocalMod] = [
+        .init(folderName: "Rules", folder: AppData.supportRoot, romfs: AppData.supportRoot, isOn: true),
+        .init(folderName: "Code patch", folder: AppData.supportRoot, romfs: nil, exefs: AppData.supportRoot, isOn: true)
+    ]''')
+        change(mods, r'        return ScrollViewReader \{ proxy in\n            ScrollView \{\n', '        return Group {\n')
+        change(mods, r'            }\n            \.scrollIndicators\(\.hidden\).*?(?=\n        }\n    }\n\n    private func sectionHeader)', '')
+        change(mods, r'            sync\(preservingFocus: false\)\n', '')
+        return host.replace("// MULTIPLAYER_CHECK", MULTIPLAYER.replace("// MULTIPLAYER_STATES", MULTIPLAYER_BEFORE))
+    change(section, r'@State var remotePlayAdapters = RemotePlayAdapters\(\)', '@State var remotePlayAdapters = ScreenVPN.adapters')
+    options = app / "Views/GameOptions/GameOptionsView.swift"
+    change(options, r'@State var multiplayerAdapters = RemotePlayAdapters\(\)', '@State var multiplayerAdapters = ScreenVPN.adapters')
+    change(options, r'            multiplayerAdapters = \.current\(\)', '            multiplayerAdapters = ScreenVPN.adapters')
+    change(options, r'@State var onlineRiskMods: \[String: ModFolderScanner.OnlineContent\] = \[:\]',
+           '@State var onlineRiskMods: [String: ModFolderScanner.OnlineContent] = ScreenVPN.mods ? ["Rules": .data] : [:]')
+    change(options, r'cheatsValue = viewModel.cheats.cheatRowValue\(for: game\)', 'cheatsValue = L10n.text("None")')
+    change(options, r'modsValue = viewModel.modsRowValue\(for: game\)', 'modsValue = ScreenVPN.mods ? "2" : L10n.text("None")')
+    change(options, r'        \.task\(id: OnlineModsRequest.*?(?=\n        \.task \{)', '')
+    rows = app / "Views/GameOptions/GameOptionsView+Rows.swift"
+    change(rows, r'            ScrollViewReader \{ proxy in\n                ScrollView \{\n', '')
+    change(rows, r'                }\n                \.scrollIndicators\(\.hidden\).*?\n            }\n            \.id\(level\)\n', '')
+    change(rows, r'let entries = p\.entries\(level: level, origin: origin\)',
+           'let entries = p.entries(level: level, origin: origin).prefix(7)')
+    return host.replace("// MULTIPLAYER_CHECK", MULTIPLAYER.replace("// MULTIPLAYER_STATES", MULTIPLAYER_STATES))
+
 
 def change(file, old, new):
     text, count = re.subn(old, lambda _: new, file.read_text(), count=1, flags=re.S)
@@ -123,10 +254,15 @@ def main():
     # Without a folder, as a release regression, render into a throwaway folder under work/.
     output = Path(sys.argv[1] if len(sys.argv) > 1 else tempfile.mkdtemp(prefix="cloud-screens-", dir=ROOT / "work")).resolve()
     output.mkdir(parents=True, exist_ok=True)
+    before = len(sys.argv) > 2 and sys.argv[2] == "--before"
     with tempfile.TemporaryDirectory(prefix="cloud-screen-", dir=output.parent) as temp:
         package = Path(temp)
         shutil.copyfile(ROOT / "Package.swift", package / "Package.swift")
-        shutil.copytree(ROOT / "Sources", package / "Sources")
+        if before:
+            archived = subprocess.check_output(["git", "-C", str(ROOT), "archive", "528f4fb", "Sources"])
+            subprocess.run(["tar", "-xf", "-", "-C", str(package)], input=archived, check=True)
+        else:
+            shutil.copytree(ROOT / "Sources", package / "Sources")
         for name in ("NXLibraryCoreTests", "ArcanePortingTests"):
             folder = package / "Tests" / name
             folder.mkdir(parents=True)
@@ -262,6 +398,18 @@ extension CloudSetupAssistant {
 '''.strip())
             change(assistant, r'@State private var selectingSources = false', '@State private var selectingSources = true')
             change(assistant, r'@State private var sourcesPath = ""', '@State private var sourcesPath = "Games/GameFiles"')
+        host = multiplayer_fixture(app, host, before)
+        adapters = package / "Sources/ArcanePorting/GameSettings/RemotePlayAdapters.swift"
+        with adapters.open("a") as swift:
+            swift.write('''
+extension RemotePlayAdapters {
+    public static func screenFixture(connected: Bool) -> Self {
+        var adapters = Self()
+        if connected { adapters.consider("feth3971", flags: UInt32(IFF_UP), ipv4: 0x0ac7920b) }
+        return adapters
+    }
+}
+''')
         (app / "CloudScreenProbe.swift").write_text(host)
         with (app / "ViewModels/AppViewModel+CloudLibrary.swift").open("a") as swift:
             swift.write('''
@@ -285,7 +433,8 @@ extension CloudArtifactStatus {
 }
 ''')
         font = ROOT / "Resources/Selene/Fonts/MaterialIcons-Regular.ttf"
-        subprocess.run(["swift", "run", "--package-path", str(package), "NXLibrary", str(output), str(font)],
+        icon = ROOT / "Resources/AppIcon-Light.png"
+        subprocess.run(["swift", "run", "--package-path", str(package), "NXLibrary", str(output), str(font), str(icon)],
                        check=True, env=dict(os.environ, HOME=temp))
 
 

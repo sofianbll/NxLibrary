@@ -7,7 +7,7 @@ import ArcanePorting
 
 /// Launching a Switch game: the launch screen, its checks and watching the launch.
 extension AppViewModel {
-    func launchGame(_ game: PortedGame) {
+    func launchGame(_ game: PortedGame, acceptsLocalFallback: Bool = false) {
         // One launch at a time: the launch screen covers the library, and input reaching it changes nothing.
         guard launchingGameId == nil, launchOverlay == nil else { return }
         // A running game is brought forward, never started a second time.
@@ -60,14 +60,23 @@ extension AppViewModel {
             return
         }
 
+        let gameSettings = runtimeSettings.gameSettings(for: game)
+        let appSettings = settingsStore?.settings ?? AppSettings()
+        let multiplayer = gameSettings?.multiplayerLaunch(settings: appSettings, adapters: .current())
+        if multiplayer?.warning != nil && !acceptsLocalFallback {
+            showMultiplayerVPNFallback { [weak self] in
+                self?.launchGame(game, acceptsLocalFallback: true)
+            }
+            return
+        }
         guard let saveLaunchToken = saveGate.begin(titleID: titleId) else {
             alertMessage = SaveFailure.busy.localizedDescription
             return
         }
         launchingGameId = game.id
-        let gameSettings = runtimeSettings.gameSettings(for: game)
         let setting = gameSettings.flatMap { NextendoLaunch.networkSetting(in: $0.settings) }
-        let mode = setting?.accepts("nextendo") == true ? gameSettings?.effectiveLaunchValue(NextendoLaunch.networkKey) : nil
+        let multiplayerEnvironment = multiplayer?.environment ?? [:]
+        let mode = multiplayerEnvironment[NextendoLaunch.networkKey] ?? gameSettings?.effectiveLaunchValue(NextendoLaunch.networkKey)
         if NextendoLaunch.requiresSignIn(setting: setting, mode: mode) {
             let clientID = settingsStore?.settings.nextendoClientID ?? NextendoLaunch.buildClientID
             Task { @MainActor [weak self] in
@@ -79,7 +88,7 @@ extension AppViewModel {
                         try await NextendoOAuth(store: store).accountName(clientID: client) != nil
                     }
                     self.startGame(game, titleId: titleId, token: saveLaunchToken, gameSettings: gameSettings,
-                                   environment: environment)
+                                   environment: multiplayerEnvironment.merging(environment) { _, online in online })
                 } catch {
                     self.saveGate.end(titleID: titleId, token: saveLaunchToken)
                     self.launchingGameId = nil
@@ -87,10 +96,10 @@ extension AppViewModel {
                     let hint = problem.localizedDescription
                     SoundEffectService.shared.play(.error)
                     if [.clientID, .signedOut, .expired, .authorization].contains(problem) {
-                        self.showSettingsNotice(title: "Nextendo", message: hint, actionTitle: "Online services") { [weak self] in
+                        self.showSettingsNotice(title: "Nextendo", message: hint, actionTitle: "Play together") { [weak self] in
                             guard let self else { return }
                             self.gameForSettingsSheet = nil
-                            self.router?.openSettings(.apiServices)
+                            self.router?.openSettings(.multiplayer)
                         }
                     } else {
                         self.showSettingsNotice(title: "Nextendo", message: hint)
@@ -99,7 +108,13 @@ extension AppViewModel {
             }
             return
         }
-        startGame(game, titleId: titleId, token: saveLaunchToken, gameSettings: gameSettings)
+        startGame(game, titleId: titleId, token: saveLaunchToken, gameSettings: gameSettings, environment: multiplayerEnvironment)
+    }
+
+    func showMultiplayerVPNFallback(_ proceed: @escaping () -> Void) {
+        showSettingsNotice(title: "VPN unavailable",
+                           message: L10n.text("This game can start on your local network instead. Players on the VPN will not be reachable."),
+                           actionTitle: "Play on the local network", cancelTitle: "Cancel", retry: proceed)
     }
 
     private func startGame(_ game: PortedGame, titleId: String, token saveLaunchToken: UUID,
@@ -145,20 +160,13 @@ extension AppViewModel {
             let appURL = game.url
             let supported = await InstalledEngineCapabilities.shared.supportsHomeMenu(in: appURL, engineFolder: setup.nxnativePath)
             let homeMenu = HomeMenu.environment(supported: supported, launcherBundleID: Bundle.main.bundleIdentifier)
+            let online = environment[NextendoLaunch.clientIDKey] != nil
             let codeMods = await Task.detached(priority: .userInitiated) {
-                store?.codeModsLaunchEnvironment(app: appURL, build: game.lastBuild) ?? [:]
+                store?.codeModsLaunchEnvironment(app: appURL, build: game.lastBuild, online: online) ?? [:]
             }.value
-            var overrides = (gameSettings == nil ? config.toEnvironmentDict() : environment)
+            let overrides = (gameSettings == nil ? config.toEnvironmentDict() : environment)
                 .merging(homeMenu) { _, launcher in launcher }
                 .merging(codeMods) { _, mods in mods }
-            let remotePlayMode = settingsStore?.settings.remotePlayMode ?? .automatic
-            if let gameSettings {
-                let inherited = ProcessInfo.processInfo.environment.merging(overrides) { _, override in override }
-                let adapters: RemotePlayAdapters = remotePlayMode == .automatic ? .current() : .init()
-                if let remotePlay = gameSettings.remotePlayLaunchValue(mode: remotePlayMode, adapters: adapters, environment: inherited) {
-                    overrides.merge(remotePlay) { existing, _ in existing }
-                }
-            }
             openGame(game, titleId: titleId, token: saveLaunchToken, environment: overrides)
         }
     }

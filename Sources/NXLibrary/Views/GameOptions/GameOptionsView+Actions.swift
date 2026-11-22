@@ -35,6 +35,18 @@ extension GameOptionsView {
 
     /// Left/Right on a choice row: step backwards or forwards.
     func adjust(_ row: GameOptionsRow, by delta: Int) {
+        if row == .multiplayer {
+            guard !presentation.isFixed(row),
+                  let mode = snapshot?.multiplayerModes.stepped(from: multiplayerMode, delta) else {
+                SoundEffectService.shared.play(.error)
+                return
+            }
+            setFocus(row)
+            SoundEffectService.shared.play(.click)
+            viewModel.runtimeSettings.setMultiplayerMode(mode, for: current)
+            snapshot = viewModel.runtimeSettings.settingsSnapshot(for: current)
+            return
+        }
         if snapshot != nil, row.settingKey != nil {
             changeSetting(row, by: delta)
             return
@@ -64,6 +76,7 @@ extension GameOptionsView {
 
     /// The row's action. A on a choice row steps it forwards.
     func perform(_ row: GameOptionsRow) {
+        if row == .multiplayer { adjust(row, by: 1); return }
         if snapshot != nil, row.settingKey != nil {
             changeSetting(row, by: 1)
             return
@@ -102,8 +115,16 @@ extension GameOptionsView {
         case .metalHUD:
             SoundEffectService.shared.play(.click)
             config.enableMetalHUD.toggle()
-        case .consoleMode, .language, .rumbleStrength, .renderScale, .frameRate, .gameUpscaler:
+        case .multiplayer, .consoleMode, .language, .rumbleStrength, .renderScale, .frameRate, .gameUpscaler:
             adjust(row, by: 1)
+        case .disableOnlineRiskMods:
+            guard let store = viewModel.modStore(for: current) else { return }
+            if let message = viewModel.performModChange({ try store.disableOnlineRiskMods() }) {
+                viewModel.showSettingsNotice(title: L10n.text("Mods"), message: L10n.text(message))
+            } else {
+                setFocus(.mods)
+                reloadMods()
+            }
         case .moreSettings:
             SoundEffectService.shared.play(.click)
             moreOpen = true

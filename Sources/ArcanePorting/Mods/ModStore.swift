@@ -198,6 +198,24 @@ public struct ModStore {
 
     // MARK: - Changing
 
+    public func onlineRiskMods() -> [String: ModFolderScanner.OnlineContent] {
+        Dictionary(mods().compactMap { mod in
+            guard mod.isOn, let romfs = mod.romfs else { return nil }
+            let content = ModFolderScanner.onlineContent(under: romfs)
+            return content == .visual ? nil : (mod.folderName, content)
+        }, uniquingKeysWith: { first, _ in first })
+    }
+
+    public func disableOnlineRiskMods() throws {
+        try change { list in
+            for index in list.indices where list[index].isOn {
+                if let romfs = list[index].romfs, ModFolderScanner.onlineContent(under: romfs) != .visual {
+                    list[index].isOn = false
+                }
+            }
+        }
+    }
+
     public func setOn(_ on: Bool, folderName: String) throws {
         try change { list in
             guard let index = list.firstIndex(where: { $0.folderName == folderName }) else { return }
@@ -436,7 +454,8 @@ public struct ModStore {
         codeModState(app: app, build: build).needsRebuild
     }
 
-    public func codeModsLaunchEnvironment(app: URL, build: BuildRecord? = nil) -> [String: String] {
+    public func codeModsLaunchEnvironment(app: URL, build: BuildRecord? = nil, online: Bool = false) -> [String: String] {
+        if online, let first = Self.bundledCodeMods(in: app)?.first { return ["DM_MODS_OFF": first] }
         guard let off = codeModState(app: app, build: build).off else { return [:] }
         return ["DM_MODS_OFF": off]
     }
