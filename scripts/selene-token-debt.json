@@ -154,9 +154,6 @@
     ".seleneFont(15": 1,
     ".seleneFont(17": 1
   },
-  "Sources/NXLibrary/Views/Components/SeleneSwitch.swift": {
-    ".padding(canvas.u(4": 1
-  },
   "Sources/NXLibrary/Views/Components/SeleneTileRing.swift": {
     ".padding(canvas.u(1": 1
   },

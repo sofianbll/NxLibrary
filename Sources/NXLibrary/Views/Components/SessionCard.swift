@@ -181,6 +181,6 @@ struct SessionCardLayer: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         .allowsHitTesting(false)
-        .animation(.easeOut(duration: 0.25), value: presenter.shown?.id)
+        .animation(Motion.toast(reduceMotion), value: presenter.shown?.id)
     }
 }

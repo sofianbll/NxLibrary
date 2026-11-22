@@ -56,7 +56,7 @@ Esempio completo: Steam, documentato in [steam.md](../how-it-works/steam.md).
 
 Esempi: `AchievementsScreen` con `AchievementsScreenModel` (schermata intera), `SavesPanel` con `SavePanelModel` (pannello), `ModStorePage` con `ModStoreHost` (pagina che scorre).
 
-- **Misure in unità del canvas** 1920×1080: `canvas.u(…)` da `seleneCanvas` (`SeleneCanvasEnvironment.swift`), mai punti fissi. Colori, curve e font vengono da `SeleneTheme` e `SeleneFonts`, le icone da `MaterialIcon`.
+- **Misure in unità del canvas** 1920×1080: `canvas.u(…)` da `seleneCanvas` (`SeleneCanvasEnvironment.swift`), mai punti fissi per il layout della scena. Usare `SeleneTokens` per tipografia, spazi, raggi ed effetti, `SeleneTheme` per i colori della palette, `Motion` per le curve e `MaterialIcon` per le icone.
 - **Componenti condivisi prima di tutto** (`Views/Components`):
   - `SeleneOptionRow`, `SeleneRow`, `SeleneToggleRow`, `SeleneValueRow`, `SeleneCycleRow` (in `SeleneSettingsRow.swift`);
   - `SelenePillButton`, `SeleneSwitch`, `SeleneValueChip`, `SeleneStatusDot` (stato in testo con punto decorativo: Cloud e Nextendo);

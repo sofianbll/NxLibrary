@@ -42,10 +42,6 @@ struct SpotlightRowView: View {
     static let host = SpotlightRowGeometry.host
     static let grow = SpotlightRowGeometry.grow
 
-    /// The row's glide: a critically damped spring of about the old 0.32 s. A quick run of presses retargets it
-    /// and it carries its speed on (a timing curve restarted at full speed on every press, so the row surged).
-    static let glide = Animation.spring(response: 0.32, dampingFraction: 1)
-
     var body: some View {
         // A key that is not in the row (yet) means no selection, not the first item.
         let selected = selectedKey.flatMap { key in items.firstIndex { $0.key == key } }
@@ -102,12 +98,10 @@ struct SpotlightRowView: View {
         .modifier(CameraGlide(position: position, unit: canvas.u(1)))
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .frame(height: canvas.u(260), alignment: .topLeading)
-        // A glide, not a jump: the row and the growing tile glide together
-        // (under reduce motion the ring and size still fade, without the slide).
-        .animation(reduceMotion ? .easeOut(duration: 0.2) : Self.glide, value: selectedKey)
-        .animation(reduceMotion ? nil : Self.glide, value: items.map(\.key))
-        .animation(reduceMotion ? nil : Self.glide, value: liftedKey)
-        .animation(.easeOut(duration: 0.3), value: isEmptyFilter)
+        .animation(Motion.rail(reduceMotion, .spotlight), value: selectedKey)
+        .animation(Motion.rail(reduceMotion, .spotlight), value: items.map(\.key))
+        .animation(Motion.rail(reduceMotion, .spotlight), value: liftedKey)
+        .animation(Motion.rowMessage(reduceMotion), value: isEmptyFilter)
         .onAppear { scheduleTitle(delay: 0) }
         .onChange(of: selectedKey) { _, key in
             if key != lastLifted { lastLifted = nil }

@@ -30,9 +30,6 @@ struct CollectionCoverRow: View {
     /// The first cover lines up with Spotlight's 80 margin (Selene's list had 14).
     private static let startInset: CGFloat = 80
 
-    /// A critically damped spring of about the old 0.18 s: quick presses retarget it without a surge.
-    private static let glide = Animation.spring(response: 0.18, dampingFraction: 1)
-
     var body: some View {
         let selected = selectedID.flatMap { id in games.firstIndex { $0.id == id } }
         let offset = selected.map(CollectionRow.scrollOffset(selectedIndex:)) ?? 0
@@ -52,8 +49,8 @@ struct CollectionCoverRow: View {
         .offset(x: canvas.u(-CGFloat(offset) * CollectionRow.pitch))
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .frame(height: canvas.u(CollectionRow.bandHeight), alignment: .topLeading)
-        .animation(reduceMotion ? nil : Self.glide, value: selectedID)
-        .animation(reduceMotion ? nil : Self.glide, value: games.map(\.id))
+        .animation(Motion.rail(reduceMotion, .collection), value: selectedID)
+        .animation(Motion.rail(reduceMotion, .collection), value: games.map(\.id))
     }
 
     /// Covers from a few left of the screen to a few past its right edge (the same spare as Spotlight's row).

@@ -196,6 +196,11 @@ La variante asincrona attende su una coda utility e invia SIGTERM al sottoproces
 `check_selene_tokens.py` impedisce alla CI di accettare nuovi argomenti numerici
 per font, padding e raggi. Rimuovere dalla baseline le occorrenze sostituite con token.
 
+`SeleneTokens` conserva le misure di riferimento del canvas e gli effetti condivisi;
+`SeleneTheme` applica la palette corrente. `Motion` definisce le curve per ruolo.
+Il rail di Spotlight e Collection ripunta la molla critica alla nuova selezione;
+con Riduci movimento la posizione e gli interruttori cambiano direttamente.
+
 - `AppRouter` gestisce schermata corrente, cronologia di ritorno e richieste di selezione. `SpotlightState`, `LibrarySelectionState`, `DetailsFocus`, `MenuSelectionModel` e `FocusIndex` descrivono il focus indipendentemente dal disegno SwiftUI. `LibraryQuery` applica ricerca, filtri e ordinamento a qualunque gioco che dia `LibraryQueryRecord` (id, nome, preferito, nascosto, installato, termini di ricerca); le entrate per `PortedGame` di filtro, selezione e Surprise me sono estensioni in `ArcanePorting/Library/`.
 - Le viste principali sono Spotlight, Collection e Details. Ricerca, Add Game, Console, Game Options e Settings si raggiungono dalla shell e dalle azioni del router. Le estensioni `…+Input.swift` traducono tastiera, mouse e controller in modifiche ai modelli di focus.
 - **Righe di tessere.**
