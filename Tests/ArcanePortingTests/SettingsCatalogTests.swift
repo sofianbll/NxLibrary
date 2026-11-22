@@ -25,8 +25,8 @@ final class SettingsCatalogTests: XCTestCase {
         XCTAssertTrue(changed.allSatisfy { $0.about.contains("new ported games") })
     }
 
-    /// Every unconditional row identity: moving rows never renames them.
-    private static let rowIDs: Set<String> = [
+    /// Every row identity: moving rows never renames them.
+    private static let rowIDs = Set([
         "appLanguage", "appRegion", "startOn", "restoreLastGame", "startInFullscreen", "checkEngineAtLaunch",
         "refreshLibraryAtLaunch", "checkAppUpdatesAtLaunch", "introAnimation", "showProfilePicker", "showButtonHints", "buttonNames",
         "viewButtonSwitches", "spotlightCards", "startingTab", "spotlightOrder", "interfaceSounds", "soundVolume",
@@ -44,8 +44,10 @@ final class SettingsCatalogTests: XCTestCase {
         "steamSource", "steamRefresh", "steamFolder", "steamInBackground", "storageUsage", "buildCaches", "logs",
         "metadataCache", "artworkCache", "saveBackups", "console", "engineFolder", "engineStatus",
         "toolchainOverride", "upstream", "newestEngine", "compare", "keys", "setup", "diagnostics", "appUpdates",
-        "projectDocs", "multiplayerVPN", "multiplayerDefault", "multiplayerLocalMode", "multiplayerAdapter"
-    ]
+        "projectDocs", "multiplayerVPN", "multiplayerDefault", "multiplayerLocalMode", "multiplayerAdapter",
+        "profileName", "profileAvatar", "profilePortrait", "profileLock", "appearsOnline", "showsCurrentGame",
+        "nextendo", "nextendoFriends", "nextendoAddFriend", "nextendoClientID"
+    ] + ProfilePageCard.allCases.map { "profile-card-\($0.rawValue)" })
 
     func testRowIDsAreUnchanged() {
         XCTAssertEqual(SettingsCatalog.all.count, Self.rowIDs.count)
@@ -68,20 +70,31 @@ final class SettingsCatalogTests: XCTestCase {
         XCTAssertEqual(groups["logs"], .storage)
         XCTAssertEqual(groups["controllerDeadzone"], .controllers)
         XCTAssertEqual(groups["inGameHomeButton"], .controllers)
+        for (section, ids) in [
+            (SettingsSection.profileIdentity, ["profileName", "profileAvatar", "profilePortrait"]),
+            (.profileLook, ["colorThemeID", "wallpaperID", "settingsWallpaperID", "backgroundSizing"]),
+            (.profileSecurity, ["profileLock"]),
+            (.profileNextendo, ["appearsOnline", "showsCurrentGame", "nextendo", "nextendoFriends", "nextendoAddFriend"]),
+            (.profileCards, ProfilePageCard.allCases.map { "profile-card-\($0.rawValue)" }),
+        ] {
+            XCTAssertEqual(SettingsCatalog.all.filter { $0.group == section }.map(\.id), ids)
+        }
+        XCTAssertEqual(groups["nextendoClientID"], .multiplayer)
     }
 
     func testSidebarGroupsInOrder() {
         let groups = SettingsSidebarGroup.all
-        XCTAssertEqual(groups.map(\.heading), [nil, "Settings group: General", "Settings group: Library",
+        XCTAssertEqual(groups.map(\.heading), [nil, "Settings group: Profile", "Settings group: General", "Settings group: Library",
                                                "Settings group: Porting", "Settings group: System"])
         XCTAssertEqual(groups.map(\.sections), [
             [.search, .changed],
-            [.startUp, .profiles, .navigation, .spotlight, .soundMusic, .look, .controllers, .multiplayer, .apiServices],
+            [.profileIdentity, .profileLook, .profileSecurity, .profileNextendo, .profileCards],
+            [.startUp, .navigation, .spotlight, .soundMusic, .look, .controllers, .multiplayer, .apiServices],
             [.sources, .libraryGames, .storage],
             [.engine, .keys, .library, .games, .cloudSaves, .cloudLibrary, .portingStorage],
             [.about, .console],
         ])
-        XCTAssertEqual(groups.map(\.isPlatform), [false, false, false, true, false])
+        XCTAssertEqual(groups.map(\.isPlatform), [false, false, false, false, true, false])
         XCTAssertEqual(SettingsSection.allCases, groups.flatMap(\.sections), "allCases follows the sidebar")
     }
 
@@ -90,6 +103,7 @@ final class SettingsCatalogTests: XCTestCase {
         XCTAssertEqual(SettingsSection.engine.place(in: Self.english), "Porting · Setup and engine")
         XCTAssertEqual(SettingsSection.sources.place(in: Self.english), "Sources")
         XCTAssertEqual(SettingsSection.apiServices.title(in: Self.english), "Online services")
+        XCTAssertEqual(SettingsSection.profileNextendo.place(in: .init(language: .french, region: "FR")), "Profil · Nextendo")
     }
 
     func testGroupResetCoversMovedRows() {
@@ -153,13 +167,16 @@ final class SettingsCatalogTests: XCTestCase {
     /// The rows in screen order, as before the Porting rows moved to their module.
     func testRowsKeepTheirScreenOrder() {
         XCTAssertEqual(SettingsCatalog.all.map(\.id), [
+        "profileName", "profileAvatar", "profilePortrait", "colorThemeID", "wallpaperID", "settingsWallpaperID",
+        "backgroundSizing", "profileLock", "appearsOnline", "showsCurrentGame", "nextendo", "nextendoFriends", "nextendoAddFriend",
+        ] + ProfilePageCard.allCases.map { "profile-card-\($0.rawValue)" } + [
         "appLanguage", "appRegion", "startOn", "restoreLastGame", "startInFullscreen", "checkAppUpdatesAtLaunch",
         "introAnimation", "showProfilePicker", "showButtonHints", "buttonNames", "viewButtonSwitches", "spotlightCards", "startingTab",
-        "spotlightOrder", "interfaceSounds", "soundVolume", "quietLaunch", "importSeleneSounds", "colorThemeID",
-        "wallpaperID", "settingsWallpaperID", "backgroundSizing", "wallpaperBrightness", "animatedBackground",
+        "spotlightOrder", "interfaceSounds", "soundVolume", "quietLaunch", "importSeleneSounds",
+        "wallpaperBrightness", "animatedBackground",
         "keepWallpaperOnGames", "backgroundShade", "readableText", "showClock", "reduceMotion", "iconAppearance",
         "controllerStatus", "buttonLayout", "controllerDeadzone", "inGameHomeButton", "multiplayerVPN", "multiplayerDefault",
-        "multiplayerLocalMode", "multiplayerAdapter", "igdb", "steamGridDB", "steamSource",
+        "multiplayerLocalMode", "multiplayerAdapter", "nextendoClientID", "igdb", "steamGridDB", "steamSource",
         "steamRefresh", "steamFolder", "steamInBackground", "librarySort", "launchStyle", "launchMotion", "launchShade",
         "surprisePool", "showsSessionCard", "hiddenGames", "storageUsage", "logs", "metadataCache", "artworkCache",
         "saveBackups", "checkEngineAtLaunch", "engineFolder", "engineStatus", "toolchainOverride", "upstream",
@@ -179,7 +196,7 @@ final class SettingsCatalogTests: XCTestCase {
         let porting = try XCTUnwrap(SettingsSidebarGroup.all.first { $0.heading == "Settings group: Porting" }).sections
         XCTAssertFalse(SettingsCatalog.baseRows.contains { porting.contains($0.group) })
         XCTAssertEqual(SettingsCatalog.all.count,
-                       SettingsCatalog.baseRows.count + SettingsCatalog.all.filter { porting.contains($0.group) }.count)
+                       SettingsCatalog.baseRows.count + SettingsCatalog.all.filter { porting.contains($0.group) }.count + 4)
     }
 
     func testSwitchOnlyRowsLiveInTheSwitchSections() {
@@ -198,18 +215,70 @@ final class SettingsCatalogTests: XCTestCase {
         XCTAssertEqual(SettingsCatalog.search("environment").first { $0.id == "engineStatus" }?.group, .engine)
     }
 
-    func testProfileStartupSearchAndResetBelongToProfiles() {
+    func testProfileStartupSearchAndResetBelongToStartUp() {
         var settings = AppSettings()
         settings.profileStartup = .last
-        XCTAssertEqual(SettingsCatalog.search("At startup").first { $0.id == "showProfilePicker" }?.group, .profiles)
+        XCTAssertEqual(SettingsCatalog.search("At startup").first { $0.id == "showProfilePicker" }?.group, .startUp)
         XCTAssertEqual(SettingsCatalog.changed(in: settings).map(\.id), ["showProfilePicker"])
-        XCTAssertEqual(SettingsReset.resetShared(.startUp, in: settings).profileStartup, .last)
-        XCTAssertEqual(SettingsReset.resetShared(.profiles, in: settings).profileStartup, .ask)
+        XCTAssertEqual(SettingsReset.resetShared(.profileCards, in: settings).profileStartup, .last)
+        XCTAssertEqual(SettingsReset.resetShared(.startUp, in: settings).profileStartup, .ask)
+    }
+
+    func testProfileSearchAndChangedUseTheSameDestinations() throws {
+        var profile = LocalProfile(name: "Alex", look: .init(AppSettings()))
+        profile.rename(to: "Lunar")
+        profile.avatar = 4
+        profile.portrait = Data([1])
+        XCTAssertTrue(profile.setPIN("1234"))
+        profile.appearsOnline = true
+        profile.showsCurrentGame = true
+        profile.pageCards = .init()
+        profile.pageCards?.toggle(.week)
+        let modified = SettingsCatalog.profileChanges(profile)
+        let changed = SettingsCatalog.changed(in: AppSettings(), externalChanges: modified, hasProfileAccount: true)
+        XCTAssertEqual(Set(changed.map(\.id)), ["profileName", "profileAvatar", "profilePortrait", "profileLock",
+                                                "appearsOnline", "showsCurrentGame", "profile-card-week"])
+        for row in changed {
+            XCTAssertEqual(SettingsCatalog.search(row.title, hasProfileAccount: true).first { $0.id == row.id }?.group,
+                           row.group)
+        }
+        XCTAssertEqual(SettingsCatalog.search("Nextendo", hasProfileAccount: true).first { $0.id == "nextendo" }?.group,
+                       .profileNextendo)
+        XCTAssertNil(SettingsCatalog.search("Nextendo", hasProfileAccount: true).first { $0.id == "nextendoClientID" })
+        XCTAssertEqual(SettingsCatalog.search("Nextendo", supportsNextendo: true).first { $0.id == "nextendoClientID" }?.group,
+                       .multiplayer)
+    }
+
+    func testSettingsKeepLegacyProfileKeysAndResetOnlyTheMovedValues() throws {
+        let legacy = #"{"showProfilePicker":false,"colorThemeID":"arcane-flow","wallpaperID":"a","settingsWallpaperID":"b","backgroundSizing":"fit","nextendoClientID":"fixture"}"#
+        let settings = try JSONDecoder().decode(AppSettings.self, from: Data(legacy.utf8))
+        XCTAssertEqual(settings.profileStartup, .last)
+        let look = SettingsReset.reset(.look, in: settings)
+        XCTAssertEqual(LocalProfile.Look(look), LocalProfile.Look(settings))
+        let reset = SettingsReset.reset(.profileLook, in: settings)
+        XCTAssertEqual(LocalProfile.Look(reset), LocalProfile.Look(AppSettings()))
+        XCTAssertEqual(reset.profileStartup, .last)
+        XCTAssertEqual(reset.nextendoClientID, "fixture")
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(settings)) as? [String: Any])
+        XCTAssertEqual(json["colorThemeID"] as? String, "arcane-flow")
+        XCTAssertEqual(json["wallpaperID"] as? String, "a")
+        XCTAssertEqual(json["settingsWallpaperID"] as? String, "b")
+        XCTAssertEqual(json["backgroundSizing"] as? String, "fit")
+        XCTAssertEqual(json["nextendoClientID"] as? String, "fixture")
+        XCTAssertEqual(json["showProfilePicker"] as? Bool, false)
+        let profile = LocalProfile(name: "Alex", look: .init(settings))
+        let legacyProfile = try JSONEncoder().encode(profile)
+        var decoded = try JSONDecoder().decode(LocalProfile.self, from: legacyProfile)
+        decoded.rename(to: "Lunar")
+        let roundTrip = try JSONDecoder().decode(LocalProfile.self, from: JSONEncoder().encode(decoded))
+        XCTAssertEqual(roundTrip.defaultName, "Alex")
+        XCTAssertEqual(roundTrip.name, "Lunar")
+        XCTAssertEqual(roundTrip.look, profile.look)
     }
 
     private static let generalStartUp: Set<String> = [
         "appLanguage", "appRegion", "startOn", "restoreLastGame", "startInFullscreen",
-        "checkAppUpdatesAtLaunch", "introAnimation"
+        "checkAppUpdatesAtLaunch", "introAnimation", "showProfilePicker"
     ]
 
     func testSearchMatchesAboutText() {

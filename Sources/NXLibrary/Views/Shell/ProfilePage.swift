@@ -20,9 +20,12 @@ struct ProfilePage: View {
     @ObservedObject var router: AppRouter
     @Binding var focus: Focus?
     var isGuest = false
-    let onEdit: () -> Void
     let onSwitch: () -> Void
-    let onAccount: () -> Void
+    private func onEdit() { router.openSettings(.profileIdentity) }
+    private func onAccount() {
+        showFriends = false
+        router.openSettings(.profileNextendo)
+    }
 
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneReduceMotion) private var reduceMotion
@@ -252,7 +255,7 @@ struct ProfilePage: View {
         if !isGuest { pill("Edit profile", icon: "pencil", id: .edit, data: data) }
         pill("Switch profile", icon: "arrow.left.arrow.right", id: .change, data: data)
         if nextendo != nil { pill("Nextendo settings", icon: "gearshape", id: .account, data: data) }
-        else if !isGuest { pill("Profile lock", icon: "lock", id: .lock, data: data) }
+        if !isGuest { pill("Profile lock", icon: "lock", id: .lock, data: data) }
     }
 
     private func pill(_ title: String, icon: String, id: Focus, data: PageData) -> some View {
@@ -626,7 +629,8 @@ struct ProfilePage: View {
         switch id {
         case .edit: onEdit()
         case .change: onSwitch()
-        case .account, .lock: onAccount()
+        case .account: onAccount()
+        case .lock: router.openSettings(.profileSecurity)
         case .card(.friends):
             friendIndex = 0
             showFriends = account != nil
@@ -677,7 +681,7 @@ struct ProfilePage: View {
         case .cancel: router.back()
         case .confirm: activate(current, data: data)
         case .menu: router.isMenuPresented = true
-        case .menuHold: router.openSettings(.profiles)
+        case .menuHold: router.openSettings(.profileCards)
         case .contextAction where !isGuest: focus = .edit; onEdit()
         case .tabNext, .tabPrevious:
             let ordered = frames.sorted { ($0.value.minY, $0.value.minX) < ($1.value.minY, $1.value.minX) }.map(\.key)

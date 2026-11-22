@@ -64,11 +64,6 @@ import SwiftUI
             $0.needsKeys && $0.destination == nil && $0.issue == "Clés manquantes : importez-les pour identifier ce fichier"
         })
         try render("07-inbox-missing-keys", page: view.page, to: output, locale: locale)
-        let profile = LocalProfileStore(directory: support, settings: settings.settings, name: "Alex")
-        try render("08-profile-no-account", page: LocalProfilePage(profile: profile.active!,
-            nextendo: NextendoSettings(store: NextendoTokenStore(directory: support.appendingPathComponent("nextendo"))),
-            viewModel: app, settings: settings,
-            onClose: {}, onUpdate: { _ in true }, onSwitch: {}), to: output, locale: locale, showsHints: false)
         let inputs = GameInbox.inputs(files)
         let metadata: [URL: PackageReading] = [
             files[0]: .contents([.init(kind: .base, titleId: title, version: 0)]),
@@ -234,17 +229,6 @@ def main():
 """, "")
         change(setup, "@State private var risen = false", "@State private var risen = true")
         change(setup, "@State var focus: SetupFocus = .carryOn", "@State var focus: SetupFocus = .card(4)")
-        # As in run_profiles.py, render the profile's content without its AppKit-backed scroll container.
-        profile_page = app / "Views/Shell/LocalProfilePage.swift"
-        change(profile_page, "@State private var checked = false", "@State private var checked = true")
-        change(profile_page, "            ScrollViewReader { proxy in\n                ScrollView {",
-               "            Group {\n                Group {")
-        change(profile_page, """                .onChange(of: row) { _, value in
-                    if let value { proxy.scrollTo("selene-row-\\(value)") }
-                }
-""", "")
-        change(app / "Views/Settings/SettingsAPISection.swift",
-               "            if supportsNextendo { nextendo.check(clientID: clientID) }\n", "")
         # ImageRenderer needs a still SwiftUI image rather than the hosted Metal view.
         change(app / "Views/Theme/SeleneBackdrop.swift", "tint: modsTint ? 1 : 0, moving: moving,\n",
                "tint: modsTint ? 1 : 0, moving: false, asImage: true,\n")

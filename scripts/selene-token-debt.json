@@ -629,11 +629,6 @@
     ".padding(.vertical,canvas.u(9": 1,
     ".seleneFont(19": 1
   },
-  "Sources/NXLibrary/Views/Shell/LocalProfilePage.swift": {
-    ".padding(.bottom,canvas.u(134": 1,
-    ".padding(.horizontal,canvas.u(70": 1,
-    ".padding(.top,canvas.u(100": 1
-  },
   "Sources/NXLibrary/Views/Shell/ProfileEditorView.swift": {
     ".padding(.bottom,canvas.u(124": 1,
     ".padding(.bottom,canvas.u(154": 1,

@@ -125,9 +125,12 @@ final class NextendoLaunchTests: XCTestCase {
         let nextendoRows = ["nextendo", "nextendoClientID"]
         XCTAssertTrue(SettingsCatalog.search("Nextendo").allSatisfy { !nextendoRows.contains($0.id) })
         XCTAssertTrue(SettingsCatalog.changed(in: settings).isEmpty)
-        XCTAssertEqual(SettingsCatalog.search("Nextendo", supportsNextendo: true).map(\.id).filter(nextendoRows.contains), nextendoRows)
-        XCTAssertTrue(SettingsCatalog.search("Nextendo", supportsNextendo: true).filter { nextendoRows.contains($0.id) }
-            .allSatisfy { $0.group == .multiplayer })
+        let engine = SettingsCatalog.search("Nextendo", supportsNextendo: true).filter { nextendoRows.contains($0.id) }
+        XCTAssertEqual(engine.map(\.id), ["nextendoClientID"])
+        XCTAssertEqual(engine.map(\.group), [.multiplayer])
+        let account = SettingsCatalog.search("Nextendo", hasProfileAccount: true).filter { nextendoRows.contains($0.id) }
+        XCTAssertEqual(account.map(\.id), ["nextendo"])
+        XCTAssertEqual(account.map(\.group), [.profileNextendo])
         XCTAssertEqual(SettingsCatalog.all.filter { $0.group == .apiServices }.map(\.id), ["igdb", "steamGridDB"])
         XCTAssertEqual(SettingsCatalog.changed(in: settings, supportsNextendo: true).map(\.id), ["nextendoClientID"])
     }

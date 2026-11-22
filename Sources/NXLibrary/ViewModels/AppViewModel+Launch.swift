@@ -152,10 +152,10 @@ extension AppViewModel {
                     let hint = problem.localizedDescription
                     SoundEffectService.shared.play(.error)
                     if [.clientID, .signedOut, .expired, .authorization].contains(problem) {
-                        self.showSettingsNotice(title: "Nextendo", message: hint, actionTitle: "Open profile") { [weak self] in
+                        self.showSettingsNotice(title: "Nextendo", message: hint, actionTitle: "Nextendo settings") { [weak self] in
                             guard let self else { return }
                             self.gameForSettingsSheet = nil
-                            NotificationCenter.default.post(name: .nxOpenLocalProfile, object: nil)
+                            self.router?.openSettings(.profileNextendo)
                         }
                     } else {
                         self.showSettingsNotice(title: "Nextendo", message: hint)

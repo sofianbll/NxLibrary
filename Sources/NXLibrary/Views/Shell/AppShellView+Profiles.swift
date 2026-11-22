@@ -5,12 +5,11 @@ import NXLibraryCore
 import ArcanePorting
 
 struct ProfileFlow {
-    enum Page { case picker, editor, account }
+    enum Page { case picker }
     var page: Page
     var selected: UUID?
     var atStartup = false
     var returnsToMenu = false
-    var returnsToPortrait = false
     var change: Change?
 
     struct Change: Equatable {
@@ -63,18 +62,22 @@ extension AppShellView {
     }
 
     @ViewBuilder var profileLayer: some View {
-        if let flow = profileFlow, let active = profiles.active {
+        if let flow = profileFlow, profiles.active != nil {
             switch flow.page {
-            case .picker, .editor:
+            case .picker:
                 ZStack {
-                    ProfilePickerView(profiles: profiles, initialSelection: flow.selected, initialEdit: flow.page == .editor,
+                    ProfilePickerView(profiles: profiles, initialSelection: flow.selected,
                                       canClose: !flow.atStartup, isOverlay: !flow.atStartup, games: viewModel.libraryGames,
                                       avatarGames: viewModel.visibleCatalogGames, artwork: artwork,
                                       onChoose: chooseProfile, onClose: closeProfile,
                                       onActiveEdited: applyActiveProfile, onRemoved: { id in
                         if settings.settings.profileStartup == .profile(id) { settings.settings.profileStartup = .ask }
                     }, onGuest: { requestProfile($0, startsGuest: true) }, canRemove: canRemoveProfile,
-                       canEdit: { !$0.isLocked || (!flow.atStartup && $0.id == profiles.active?.id) },
+                       onEditActive: flow.atStartup || profiles.guest != nil ? nil : {
+                           closeProfile()
+                           router.closeMenu()
+                           router.openSettings(.profileIdentity)
+                       },
                        dialogOwnsInput: flow.change != nil)
                     .seleneOverlayOwnership(flow.change == nil)
                     if let change = flow.change {
@@ -104,14 +107,6 @@ extension AppShellView {
                     }
                 }
                 .animation(Motion.overlay(reduceMotion), value: flow.change?.step)
-            case .account:
-                LocalProfilePage(profile: active, nextendo: viewModel.profileNextendo, viewModel: viewModel,
-                                 settings: settings, onClose: closeProfile,
-                                 onUpdate: profiles.update, onSwitch: {
-                    profileFlow?.page = .picker
-                    profileFlow?.returnsToPortrait = true
-                }, isGuest: profiles.guest != nil)
-                .id(active.id)
             }
         }
     }
@@ -120,8 +115,7 @@ extension AppShellView {
         guard let active = profiles.active, profileFlow == nil, viewModel.launchOverlay == nil,
               !viewModel.showSetupCheck, !showsWelcome, !isCloseGameOpen else { return }
         viewModel.profileOwnsInput = true
-        profileFlow = ProfileFlow(page: page == .editor && profiles.guest != nil ? .account : page,
-                                  selected: active.id, returnsToMenu: fromMenu)
+        profileFlow = ProfileFlow(page: page, selected: active.id, returnsToMenu: fromMenu)
     }
 
     var launcherIsFrontmost: Bool {
@@ -147,11 +141,6 @@ extension AppShellView {
     }
 
     func closeProfile() {
-        if profileFlow?.returnsToPortrait == true {
-            profileFlow?.page = .account
-            profileFlow?.returnsToPortrait = false
-            return
-        }
         profileFlow = nil
         viewModel.profileOwnsInput = false
     }
@@ -228,7 +217,6 @@ extension AppShellView {
             return
         }
         if change.quits {
-            profileFlow?.returnsToPortrait = false
             closeProfile()
             AppDelegate.quitAfterGuestConfirmation()
             return
@@ -239,7 +227,6 @@ extension AppShellView {
         guard success else { cancelProfileChange(); return }
         applyActiveProfile()
         if profileFlow?.returnsToMenu == true { router.closeMenu() }
-        profileFlow?.returnsToPortrait = false
         closeProfile()
     }
 

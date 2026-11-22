@@ -168,7 +168,7 @@ struct AppShellView: View {
     static let profileOverlayBlur = SeleneOverlayStyle.deep.backdropBlur
 
     var contentBlur: CGFloat {
-        if let flow = profileFlow, flow.page != .account, !flow.atStartup { return Self.profileOverlayBlur }
+        if let flow = profileFlow, !flow.atStartup { return Self.profileOverlayBlur }
         // A card or the Power pills open over the control center: the page behind must not read through them.
         if router.isMenuPresented, router.menuSelection.isSubmenuOpen { return Self.profileOverlayBlur }
         return !viewModel.isGameOptionsOpen && !router.route.isOverlay ? 0 : SeleneOverlayStyle.options.backdropBlur
@@ -331,8 +331,7 @@ struct AppShellView: View {
                 ProfilePage(profile: profile, viewModel: viewModel, history: playSessions, artwork: artwork,
                             nextendo: viewModel.profileNextendo, router: router, focus: $profilePageFocus,
                             isGuest: profiles.guest != nil,
-                            onEdit: { openProfile(.editor) }, onSwitch: { openProfile(.picker) },
-                            onAccount: { openProfile(.account) })
+                            onSwitch: { openProfile(.picker) })
                 .id(profile.id)
                 .task(id: profileFlow == nil) {
                     guard profileFlow == nil, router.route == .profile else { return }

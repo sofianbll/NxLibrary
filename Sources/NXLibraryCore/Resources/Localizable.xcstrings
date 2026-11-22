@@ -1,6 +1,66 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Settings group: Profile": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Profile"}}, "it": {"stringUnit":{"state":"translated","value":"Profilo"}}, "fr": {"stringUnit":{"state":"translated","value":"Profil"}}, "de": {"stringUnit":{"state":"translated","value":"Profil"}}, "es": {"stringUnit":{"state":"translated","value":"Perfil"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Perfil"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"个人资料"}}
+    }},
+    "Identity": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Identity"}}, "it": {"stringUnit":{"state":"translated","value":"Identità"}}, "fr": {"stringUnit":{"state":"translated","value":"Identité"}}, "de": {"stringUnit":{"state":"translated","value":"Identität"}}, "es": {"stringUnit":{"state":"translated","value":"Identidad"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Identidade"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"身份"}}
+    }},
+    "Theme and background": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Theme and background"}}, "it": {"stringUnit":{"state":"translated","value":"Tema e sfondo"}}, "fr": {"stringUnit":{"state":"translated","value":"Thème et fond"}}, "de": {"stringUnit":{"state":"translated","value":"Design und Hintergrund"}}, "es": {"stringUnit":{"state":"translated","value":"Tema y fondo"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Tema e fundo"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"主题和背景"}}
+    }},
+    "Security": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Security"}}, "it": {"stringUnit":{"state":"translated","value":"Sicurezza"}}, "fr": {"stringUnit":{"state":"translated","value":"Sécurité"}}, "de": {"stringUnit":{"state":"translated","value":"Sicherheit"}}, "es": {"stringUnit":{"state":"translated","value":"Seguridad"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Segurança"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"安全"}}
+    }},
+    "Profile page": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Profile page"}}, "it": {"stringUnit":{"state":"translated","value":"Pagina del profilo"}}, "fr": {"stringUnit":{"state":"translated","value":"Page du profil"}}, "de": {"stringUnit":{"state":"translated","value":"Profilseite"}}, "es": {"stringUnit":{"state":"translated","value":"Página del perfil"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Página do perfil"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"个人资料页"}}
+    }},
+    "Active profile": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Active profile"}}, "it": {"stringUnit":{"state":"translated","value":"Profilo attivo"}}, "fr": {"stringUnit":{"state":"translated","value":"Profil actif"}}, "de": {"stringUnit":{"state":"translated","value":"Aktives Profil"}}, "es": {"stringUnit":{"state":"translated","value":"Perfil activo"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Perfil ativo"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"当前个人资料"}}
+    }},
+    "Created %@": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Created %@"}}, "it": {"stringUnit":{"state":"translated","value":"Creato il %@"}}, "fr": {"stringUnit":{"state":"translated","value":"Créé le %@"}}, "de": {"stringUnit":{"state":"translated","value":"Erstellt am %@"}}, "es": {"stringUnit":{"state":"translated","value":"Creado el %@"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Criado em %@"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"创建于 %@"}}
+    }},
+    "%@ played": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"%@ played"}}, "it": {"stringUnit":{"state":"translated","value":"%@ di gioco"}}, "fr": {"stringUnit":{"state":"translated","value":"%@ de jeu"}}, "de": {"stringUnit":{"state":"translated","value":"%@ gespielt"}}, "es": {"stringUnit":{"state":"translated","value":"%@ de juego"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"%@ de jogo"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"已游玩 %@"}}
+    }},
+    "Presence": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Presence"}}, "it": {"stringUnit":{"state":"translated","value":"Presenza"}}, "fr": {"stringUnit":{"state":"translated","value":"Présence"}}, "de": {"stringUnit":{"state":"translated","value":"Onlinestatus"}}, "es": {"stringUnit":{"state":"translated","value":"Presencia"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Presença"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"在线状态"}}
+    }},
+    "Account": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Account"}}, "it": {"stringUnit":{"state":"translated","value":"Account"}}, "fr": {"stringUnit":{"state":"translated","value":"Compte"}}, "de": {"stringUnit":{"state":"translated","value":"Konto"}}, "es": {"stringUnit":{"state":"translated","value":"Cuenta"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Conta"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"账号"}}
+    }},
+    "Avatar": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Avatar"}}, "it": {"stringUnit":{"state":"translated","value":"Avatar"}}, "fr": {"stringUnit":{"state":"translated","value":"Avatar"}}, "de": {"stringUnit":{"state":"translated","value":"Avatar"}}, "es": {"stringUnit":{"state":"translated","value":"Avatar"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Avatar"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"头像"}}
+    }},
+    "Shown on your profile and to your friends.": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Shown on your profile and to your friends."}}, "it": {"stringUnit":{"state":"translated","value":"Visibile nel tuo profilo e ai tuoi amici."}}, "fr": {"stringUnit":{"state":"translated","value":"Affiché sur ta page de profil et chez tes amis."}}, "de": {"stringUnit":{"state":"translated","value":"In deinem Profil und für deine Freunde sichtbar."}}, "es": {"stringUnit":{"state":"translated","value":"Se muestra en tu perfil y a tus amigos."}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Visível no seu perfil e para seus amigos."}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"显示在个人资料中，你的好友也可以看到。"}}
+    }},
+    "One of Arcane’s 28 illustrations.": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"One of Arcane’s 28 illustrations."}}, "it": {"stringUnit":{"state":"translated","value":"Una delle 28 illustrazioni di Arcane."}}, "fr": {"stringUnit":{"state":"translated","value":"Une des 28 illustrations d’Arcane."}}, "de": {"stringUnit":{"state":"translated","value":"Eine der 28 Illustrationen von Arcane."}}, "es": {"stringUnit":{"state":"translated","value":"Una de las 28 ilustraciones de Arcane."}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Uma das 28 ilustrações do Arcane."}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"Arcane 的 28 个插画之一。"}}
+    }},
+    "Personal image": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Personal image"}}, "it": {"stringUnit":{"state":"translated","value":"Immagine personale"}}, "fr": {"stringUnit":{"state":"translated","value":"Image personnelle"}}, "de": {"stringUnit":{"state":"translated","value":"Eigenes Bild"}}, "es": {"stringUnit":{"state":"translated","value":"Imagen personal"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Imagem pessoal"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"自定义图片"}}
+    }},
+    "PNG, JPEG or animated GIF, up to 4 MB.": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"PNG, JPEG or animated GIF, up to 4 MB."}}, "it": {"stringUnit":{"state":"translated","value":"PNG, JPEG o GIF animata, fino a 4 MB."}}, "fr": {"stringUnit":{"state":"translated","value":"PNG, JPEG ou GIF animé, 4 Mo au plus."}}, "de": {"stringUnit":{"state":"translated","value":"PNG, JPEG oder animiertes GIF bis 4 MB."}}, "es": {"stringUnit":{"state":"translated","value":"PNG, JPEG o GIF animado, hasta 4 MB."}}, "pt-BR": {"stringUnit":{"state":"translated","value":"PNG, JPEG ou GIF animado de até 4 MB."}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"PNG、JPEG 或 GIF 动图，不超过 4 MB。"}}
+    }},
+    "Choose an image…": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Choose an image…"}}, "it": {"stringUnit":{"state":"translated","value":"Scegli un’immagine…"}}, "fr": {"stringUnit":{"state":"translated","value":"Choisir une image…"}}, "de": {"stringUnit":{"state":"translated","value":"Bild auswählen…"}}, "es": {"stringUnit":{"state":"translated","value":"Elegir una imagen…"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Escolher uma imagem…"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"选择图片…"}}
+    }},
+    "Remove image": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Remove image"}}, "it": {"stringUnit":{"state":"translated","value":"Rimuovi immagine"}}, "fr": {"stringUnit":{"state":"translated","value":"Retirer l’image"}}, "de": {"stringUnit":{"state":"translated","value":"Bild entfernen"}}, "es": {"stringUnit":{"state":"translated","value":"Quitar imagen"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Remover imagem"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"移除图片"}}
+    }},
+    "Choose a valid image.": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Choose a valid image."}}, "it": {"stringUnit":{"state":"translated","value":"Scegli un’immagine valida."}}, "fr": {"stringUnit":{"state":"translated","value":"Choisis une image valide."}}, "de": {"stringUnit":{"state":"translated","value":"Wähle ein gültiges Bild."}}, "es": {"stringUnit":{"state":"translated","value":"Elige una imagen válida."}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Escolha uma imagem válida."}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"请选择有效的图片。"}}
+    }},
+    "Arcane works without an account. These settings only apply to %@.": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Optional: Arcane works without an account. These settings only apply to %@."}}, "it": {"stringUnit":{"state":"translated","value":"Facoltativo: Arcane funziona senza account. Queste impostazioni valgono solo per %@."}}, "fr": {"stringUnit":{"state":"translated","value":"Facultatif : Arcane fonctionne sans compte. Ces réglages ne concernent que le profil %@."}}, "de": {"stringUnit":{"state":"translated","value":"Optional: Arcane funktioniert ohne Konto. Diese Einstellungen gelten nur für %@."}}, "es": {"stringUnit":{"state":"translated","value":"Opcional: Arcane funciona sin cuenta. Estos ajustes solo se aplican a %@."}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Opcional: o Arcane funciona sem conta. Estas configurações se aplicam apenas a %@."}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"可选：Arcane 无需账号即可使用。这些设置仅适用于 %@。"}}
+    }},
+    "Share your Nextendo presence.": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Share your Nextendo presence."}}, "it": {"stringUnit":{"state":"translated","value":"Condividi il tuo stato su Nextendo."}}, "fr": {"stringUnit":{"state":"translated","value":"Partage ta présence sur Nextendo."}}, "de": {"stringUnit":{"state":"translated","value":"Teile deinen Onlinestatus auf Nextendo."}}, "es": {"stringUnit":{"state":"translated","value":"Comparte tu estado en Nextendo."}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Compartilhe seu status no Nextendo."}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"分享你在 Nextendo 上的在线状态。"}}
+    }},
     "Nextendo — optional online play": {"localizations": {
       "en": {"stringUnit":{"state":"translated","value":"Nextendo — optional online play"}}, "it": {"stringUnit":{"state":"translated","value":"Nextendo — gioco online facoltativo"}}, "fr": {"stringUnit":{"state":"translated","value":"Nextendo — jeu en ligne facultatif"}}, "de": {"stringUnit":{"state":"translated","value":"Nextendo — optionales Online-Spiel"}}, "es": {"stringUnit":{"state":"translated","value":"Nextendo — juego en línea opcional"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Nextendo — jogo online opcional"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"Nextendo — 可选在线游玩"}}
     }},

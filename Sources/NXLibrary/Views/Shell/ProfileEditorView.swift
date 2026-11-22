@@ -13,6 +13,7 @@ struct ProfileEditorView: View {
     var avatarGames: [CatalogGame] = []
     var artwork: ArtworkStore? = nil
     let isNew: Bool
+    let nameOnly: Bool
     let onCancel: () -> Void
     let onSave: (LocalProfile) -> Bool
     @State var step: Step = .name
@@ -44,7 +45,7 @@ struct ProfileEditorView: View {
     private var itemCount: Int { [keys.count, ownAvatar + 1, palettes.count, wallpapers.count + 1][step.rawValue] }
 
     init(profile: LocalProfile, games: [PortedGame], avatarGames: [CatalogGame] = [], artwork: ArtworkStore? = nil,
-         isNew: Bool, onCancel: @escaping () -> Void, onSave: @escaping (LocalProfile) -> Bool,
+         isNew: Bool, nameOnly: Bool = false, onCancel: @escaping () -> Void, onSave: @escaping (LocalProfile) -> Bool,
          step: Step = .name, cachedPortraits: [CachedAvatar] = []) {
         original = profile
         _profile = State(initialValue: profile)
@@ -52,6 +53,7 @@ struct ProfileEditorView: View {
         self.avatarGames = avatarGames
         self.artwork = artwork
         self.isNew = isNew
+        self.nameOnly = nameOnly
         self.onCancel = onCancel
         self.onSave = onSave
         _step = State(initialValue: step)
@@ -83,15 +85,17 @@ struct ProfileEditorView: View {
                     .frame(maxHeight: .infinity, alignment: .bottom)
                     .padding(.bottom, canvas.u(154))
             }
-            HStack(spacing: canvas.u(10)) {
-                ForEach(Step.allCases, id: \.rawValue) { dot in
-                    Circle().fill(SeleneTheme.ink.opacity(dot == step ? 1 : 0.3))
-                        .frame(width: canvas.u(8), height: canvas.u(8))
+            if !nameOnly {
+                HStack(spacing: canvas.u(10)) {
+                    ForEach(Step.allCases, id: \.rawValue) { dot in
+                        Circle().fill(SeleneTheme.ink.opacity(dot == step ? 1 : 0.3))
+                            .frame(width: canvas.u(8), height: canvas.u(8))
+                    }
                 }
+                .accessibilityHidden(true)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .padding(.bottom, canvas.u(124))
             }
-            .accessibilityHidden(true)
-            .frame(maxHeight: .infinity, alignment: .bottom)
-            .padding(.bottom, canvas.u(124))
             SeleneHintsBar(left: backHints, right: editorHints)
                 .frame(maxHeight: .infinity, alignment: .bottom)
                 .seleneOverlayOwnership(cropDraft == nil)
@@ -430,7 +434,7 @@ struct ProfileEditorView: View {
             guard !name.isEmpty && name.count <= 32 else { error = "Enter a name of 1 to 32 characters."; return }
             profile.name = name
             nameFocused = false
-            if saveOnName { save(); return }
+            if nameOnly || saveOnName { save(); return }
         case .avatar:
             if index < cachedPortraits.count {
                 profile.portrait = cachedPortraits[index].image
