@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 22 novembre 2026. Copertura di **911 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 22 novembre 2026. Copertura di **914 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -89,7 +89,8 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 | [Sources/NXLibrary/Views/Shell/ProfilePickerView.swift](../../Sources/NXLibrary/Views/Shell/ProfilePickerView.swift) | «Chi gioca?» all’avvio e in sovrapposizione, ritratto condiviso, aggiunta, modifica e conferma di rimozione. |
 | [Sources/NXLibrary/Views/Shell/ProfileEditorView.swift](../../Sources/NXLibrary/Views/Shell/ProfileEditorView.swift) | Bozza dei quattro passi, tastiera a schermo, avatar, ritaglio e anteprima del tema. |
 | [Sources/NXLibrary/Views/Shell/ProfileAvatar.swift](../../Sources/NXLibrary/Views/Shell/ProfileAvatar.swift) | Ritaglia artwork locale o file scelti e conserva le GIF animate con i loro tempi. |
-| [Sources/NXLibrary/Views/Shell/LocalProfilePage.swift](../../Sources/NXLibrary/Views/Shell/LocalProfilePage.swift) | Identità e attività anche senza conto; codice, presenza, visibilità del gioco e pannello Nextendo facoltativo. |
+| [Sources/NXLibrary/Views/Shell/LocalProfilePage.swift](../../Sources/NXLibrary/Views/Shell/LocalProfilePage.swift) | Pannello di gestione: codice, presenza, visibilità del gioco e conto Nextendo facoltativo. |
+| [Sources/NXLibrary/Views/Shell/ProfilePage.swift](../../Sources/NXLibrary/Views/Shell/ProfilePage.swift) | Pagina profilo: banner, statistiche locali, schede con focus, obiettivi e amici se collegati. |
 | [Sources/NXLibrary/Views/Shell/ActivityCenterView.swift](../../Sources/NXLibrary/Views/Shell/ActivityCenterView.swift) | Mostra Compilazione e Cloud anche vuote, code e aggiornamento pronto in grigio, progressi Selene ed esiti. |
 | [Sources/NXLibraryCore/Selene/ActivityCenterFocus.swift](../../Sources/NXLibraryCore/Selene/ActivityCenterFocus.swift) | Identità e navigazione delle righe attive, in coda, concluse e del comando Clear all. |
 | [Sources/NXLibraryCore/NXLibraryCore.swift](../../Sources/NXLibraryCore/NXLibraryCore.swift) | Espone la versione nominale del modulo Core. |
@@ -232,6 +233,7 @@ Cartella `Sources/NXLibraryCore/Library/`.
 | [Sources/NXLibraryCore/Library/LibraryPresentation.swift](../../Sources/NXLibraryCore/Library/LibraryPresentation.swift) | Formatta metadati e statistiche temporali per le schermate della libreria: i valori pronti e la strada Steam; quella Switch sta in `ArcanePorting/Library/LibraryPresentation+Porting.swift`. |
 | [Sources/NXLibraryCore/Library/PlaySession.swift](../../Sources/NXLibraryCore/Library/PlaySession.swift) | Descrive una sessione persistibile con gioco e riferimenti temporali. |
 | [Sources/NXLibraryCore/Library/ActivitySummary.swift](../../Sources/NXLibraryCore/Library/ActivitySummary.swift) | Aggrega sessioni, giorni e tempi della settimana per la scheda Activity. |
+| [Sources/NXLibraryCore/Library/ProfilePageCards.swift](../../Sources/NXLibraryCore/Library/ProfilePageCards.swift) | Ordine e visibilità per profilo, gruppi dell’attività e geometria della griglia. |
 | [Sources/NXLibraryCore/Library/PlaySessionStore.swift](../../Sources/NXLibraryCore/Library/PlaySessionStore.swift) | Registra avvio (per id, identità della fonte e bundle ID facoltativo), heartbeat, fine e riconciliazione delle sessioni di gioco; unisce i totali esterni (Steam) con le sessioni successive. |
 | [Sources/NXLibraryCore/Library/LocalProfileStore.swift](../../Sources/NXLibraryCore/Library/LocalProfileStore.swift) | Identità, preferiti, presenza e visibilità, codice e profilo di avvio; ospite in memoria e file illeggibile conservato. |
 | [Sources/NXLibraryCore/Library/GameFocus.swift](../../Sources/NXLibraryCore/Library/GameFocus.swift) | Quando un gioco che esce riporta Arcane davanti: solo se era l’app in primo piano e nessun altro gioco della libreria è aperto. |
@@ -735,7 +737,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Sources/NXLibrary/Views/Settings/SettingsSidebar.swift](../../Sources/NXLibrary/Views/Settings/SettingsSidebar.swift) | Disegna intestazione e sezioni per gruppo, con icona a due persone per Play together. |
 | [Sources/NXLibrary/Views/Settings/SettingsSectionContent.swift](../../Sources/NXLibrary/Views/Settings/SettingsSectionContent.swift) | Instrada le sezioni, distingue Play together da Online services e passa gli ingressi cloud. |
 | [Sources/NXLibrary/Views/Settings/SettingsSearchSection.swift](../../Sources/NXLibrary/Views/Settings/SettingsSearchSection.swift) | Presenta ricerca e Changed, con apertura del gruppo della riga selezionata. |
-| [Sources/NXLibrary/Views/Settings/SettingsStartUpSection.swift](../../Sources/NXLibrary/Views/Settings/SettingsStartUpSection.swift) | Espone schermata iniziale, animazione d’entrata e aggiornamenti; `SettingsProfilesSection` offre la scelta del profilo all’avvio. |
+| [Sources/NXLibrary/Views/Settings/SettingsStartUpSection.swift](../../Sources/NXLibrary/Views/Settings/SettingsStartUpSection.swift) | Espone schermata iniziale, animazione d’entrata e aggiornamenti; `SettingsProfilesSection` offre scelta del profilo all’avvio, ordine e visibilità delle sue schede. |
 | [Sources/NXLibrary/Views/Settings/SettingsNavigationSection.swift](../../Sources/NXLibrary/Views/Settings/SettingsNavigationSection.swift) | Espone le preferenze di navigazione e dei suggerimenti dei tasti. |
 | [Sources/NXLibrary/Views/Settings/SettingsSpotlightSection.swift](../../Sources/NXLibrary/Views/Settings/SettingsSpotlightSection.swift) | Espone card, ordine e preferenze della home Spotlight. |
 | [Sources/NXLibrary/Views/Settings/SettingsSoundSection.swift](../../Sources/NXLibrary/Views/Settings/SettingsSoundSection.swift) | Espone volume e suoni e importa risorse da una cartella Selene. |
@@ -877,6 +879,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | File | Responsabilità |
 |---|---|
 | [Tests/NXLibraryCoreTests/ActivitySummaryTests.swift](../../Tests/NXLibraryCoreTests/ActivitySummaryTests.swift) | Totali settimanali, distribuzione giornaliera, sessioni aperte e passaggi di mezzanotte. |
+| [Tests/NXLibraryCoreTests/ProfilePageCardsTests.swift](../../Tests/NXLibraryCoreTests/ProfilePageCardsTests.swift) | Ordine persistente, visibilità senza conto, geometria adattiva e isolamento delle sessioni. |
 | [Tests/NXLibraryCoreTests/AppBundleRenameTests.swift](../../Tests/NXLibraryCoreTests/AppBundleRenameTests.swift) | Rinomina alla chiusura: nome vecchio, `Arcane.app` già presente, cartella in sola lettura, copia Dev, traslocata o occupata, altri nomi, spostamento fallito. |
 | [Tests/NXLibraryCoreTests/AppRouterTests.swift](../../Tests/NXLibraryCoreTests/AppRouterTests.swift) | Route, overlay, precedenza fullscreen, tasti di ogni sottomenu del control center e navigazione sicura del centro attività. |
 | [Tests/ArcanePortingTests/AppSettingsStoreTests.swift](../../Tests/ArcanePortingTests/AppSettingsStoreTests.swift) | Default, errori, recupero, sezioni, chiavi correnti e chiavi del modulo, ultima selezione in background e alla chiusura. |
@@ -1083,7 +1086,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [run_keymap_screens.py](../../Tests/CatalogAppChecks/run_keymap_screens.py) | Verifica tutti i glifi e rende la barra Selene per Xbox, Switch, DualSense e tastiera senza aprire finestre. |
 | [run_inbox_screens.py](../../Tests/CatalogAppChecks/run_inbox_screens.py) | Rende Inbox vuota, tre file, un file ambiguo, la conferma Selene e la card Spotlight su un profilo fittizio, senza finestre. |
 | [run_cloud_screens.py](../../Tests/CatalogAppChecks/run_cloud_screens.py) | Verifica pulsante Cloud e glifi; rende copertina, scheda, pannello, attività, My library, riferimento e Play together; verifica azioni e trasferimento durante Play con fixture locali. |
-| [run_profiles.py](../../Tests/CatalogAppChecks/run_profiles.py) | Rende profili con/senza conto, cambio in gioco, ospite, PIN, menu (sottomenu sopra Details e pillole misurate in tutte le lingue), My library nei sei stati e schermate della libreria; controlla avvio e salvataggi, senza finestre né dati reali. |
+| [run_profiles.py](../../Tests/CatalogAppChecks/run_profiles.py) | Rende profili in più formati con/senza conto, impostazioni delle schede, cambio in gioco, ospite, PIN, menu e schermate della libreria; controlla l’apertura da Spotlight, avvio e salvataggi, senza finestre né dati reali. |
 | [run_startup_recovery.py](../../Tests/CatalogAppChecks/run_startup_recovery.py) | Coordinatore di avvio reale su profili sintetici: conflitto, scelta esplicita, offerta obsoleta, Retry e fallimento della preparazione; nessuna finestra. |
 | [run_source_access.py](../../Tests/CatalogAppChecks/run_source_access.py) | Esegue avvio, observer, selettori e preparazione dei file da My library: scansione limitata, cartella ricordata e nessuna build dalla preparazione. |
 | [run_onboarding.py](../../Tests/CatalogAppChecks/run_onboarding.py) | Esegue observer e ripristino del Setup, uscita durante lettura pendente con annullamento, input sotto modali, scelte acceso/spento/nil, radice della fonte, focus dopo Retry e richiesta notifiche su dati sintetici; nessuna finestra. |

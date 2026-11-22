@@ -18,6 +18,8 @@ public struct LocalProfile: Codable, Equatable, Identifiable {
     public var avatar: Int
     public var portrait: Data?
     public var look: Look
+    public var createdAt: Date? = nil
+    public var pageCards: ProfilePageCards? = nil
     public var appearsOnline: Bool? = nil
     public var showsCurrentGame: Bool? = nil
     public var sharesPresence: Bool { appearsOnline == true }
@@ -32,6 +34,7 @@ public struct LocalProfile: Codable, Equatable, Identifiable {
         self.avatar = avatar
         self.portrait = portrait
         self.look = look
+        self.createdAt = .now
     }
 
     public static let pinLength = 4

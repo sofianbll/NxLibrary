@@ -83,6 +83,9 @@ struct SettingsProfilesSection: View {
     @ObservedObject var profiles: LocalProfileStore
     let onActions: ([SettingsRowAction]) -> Void
     @Environment(\.nxAppLocale) private var localization
+    @Environment(\.seleneCanvas) private var canvas
+
+    private var cards: ProfilePageCards { profiles.active?.pageCards ?? .init() }
 
     private var value: String {
         switch settings.settings.profileStartup.available(in: profiles.profiles) {
@@ -93,9 +96,55 @@ struct SettingsProfilesSection: View {
     }
 
     var body: some View {
-        SeleneCycleRow("At startup", subtitle: "Choose who plays when Arcane opens.", value: value,
-                       verbatimValue: true, cycle: cycle)
-            .onAppear { onActions([.value("showProfilePicker", "At startup", cycle: cycle)]) }
+        VStack(spacing: canvas.u(SeleneTokens.Space.compact)) {
+            SeleneCycleRow("At startup", subtitle: "Choose who plays when Arcane opens.", value: value,
+                           verbatimValue: true, cycle: cycle)
+            if profiles.active != nil {
+                SettingsSubheading(L10n.text("Profile page cards"))
+                ForEach(cards.ordered) { card in
+                    SeleneRow(card.title) {
+                        HStack(spacing: canvas.u(SeleneTokens.Space.medium)) {
+                            SeleneCycleValue(title: orderTitle(card), value: position(card)) { move(card, by: $0) }
+                            Toggle(L10n.text(card.title), isOn: Binding(get: { cards.isEnabled(card) }, set: { _ in toggle(card) }))
+                                .labelsHidden()
+                                .toggleStyle(SeleneToggleStyle())
+                        }
+                    }
+                }
+            }
+        }
+        .onAppear(perform: publishActions)
+        .onChange(of: cards) { publishActions() }
+        .onChange(of: profiles.active?.id) { publishActions() }
+    }
+
+    private func orderTitle(_ card: ProfilePageCard) -> String {
+        L10n.format("Position: %@", [L10n.text(card.title, context: localization)], context: localization)
+    }
+
+    private func position(_ card: ProfilePageCard) -> String {
+        ((cards.ordered.firstIndex(of: card) ?? 0) + 1).formatted(.number.locale(localization.formatLocale))
+    }
+
+    private func changeCards(_ change: (inout ProfilePageCards) -> Void) {
+        guard var profile = profiles.active else { return }
+        var updated = cards
+        change(&updated)
+        guard updated != cards else { return }
+        profile.pageCards = updated
+        if !profiles.update(profile) {
+            NotificationCenter.default.post(name: .nxProfileCardsSaveFailed, object: nil)
+        }
+    }
+
+    private func move(_ card: ProfilePageCard, by step: Int) { changeCards { $0.move(card, by: step) } }
+    private func toggle(_ card: ProfilePageCard) { changeCards { $0.toggle(card) } }
+
+    private func publishActions() {
+        let actions: [SettingsRowAction] = profiles.active == nil ? [] : cards.ordered.map { card in
+            .init(id: "profile-card-\(card.rawValue)", title: card.title, cycle: { move(card, by: $0) }) { toggle(card) }
+        }
+        onActions([.value("showProfilePicker", "At startup", cycle: cycle)] + actions)
     }
 
     func cycle(_ step: Int) {

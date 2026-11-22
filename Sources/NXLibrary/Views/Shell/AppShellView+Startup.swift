@@ -156,7 +156,7 @@ extension AppShellView {
                 NotificationCenter.default.post(name: .nxGameOptionsGamepadAction, object: action)
                 return
             }
-            if router.isSearchPresented, router.route == .library || router.route == .collection {
+            if router.isSearchPresented, isHomeRoute {
                 NotificationCenter.default.post(name: .nxFindGameGamepadAction, object: action)
                 return
             }
@@ -164,8 +164,10 @@ extension AppShellView {
             switch router.route {
             case .library:
                 NotificationCenter.default.post(name: .nxSpotlightGamepadAction, object: action)
-            case .collection:
+            case .collection, .profileCollection:
                 NotificationCenter.default.post(name: .nxCollectionGamepadAction, object: action)
+            case .profile:
+                postProfileAction(action)
             case .detail:
                 NotificationCenter.default.post(name: .nxDetailGamepadAction, object: action)
             case .settings:

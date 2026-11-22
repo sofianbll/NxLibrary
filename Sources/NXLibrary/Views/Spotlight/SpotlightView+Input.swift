@@ -81,6 +81,12 @@ extension SpotlightView {
             confirm()
         case .cancel:
             if router.isSearchPresented { router.isSearchPresented = false }
+            else if router.previousRoute == .profile {
+                let key = router.takeProfileSpotlightKey()
+                mutate { $0.selectedKey = key; $0.focus = .row }
+                router.back()
+                return
+            }
             mutate { if $0.focus != .row { $0.focus = .row; moved = true } }
         case .secondaryAction:
             // X scrolls to the game's page (the pills), like Down from the row.
@@ -346,7 +352,8 @@ extension SpotlightView {
         case .card(.surprise):
             surprise()
         case .card(.activity):
-            break // Down enters its top games; the full screen comes later.
+            SoundEffectService.shared.play(.click)
+            router.navigate(to: .profile)
         case .card(.mods):
             enterStore()
         case .card(.addGame):
@@ -452,6 +459,7 @@ extension SpotlightView {
         guard let id = router.pendingSpotlightSelect else { return }
         router.pendingSpotlightSelect = nil
         selectGame(id)
+        if router.previousRoute == .profile { mutate { _ = $0.showGameDetails() } }
     }
 
     /// Selects a game in the row, switching to All games when the current

@@ -47,8 +47,22 @@ struct CollectionView: View {
     /// The filter is shared with Spotlight.
     var filter: LibraryFilter { viewModel.librarySelection.query.filter }
 
+    var profileCard: ProfilePageCard? {
+        if case .profileCollection(let card) = router.route { return card }
+        return nil
+    }
+
+    var catalogScope: [CatalogGame] {
+        let games = viewModel.visibleCatalogGames
+        guard let card = profileCard else { return games }
+        let now = Date.now
+        return card.games(in: games, activity: playSessions.profileActivity(at: now),
+                          week: Activity.summary(sessions: playSessions.sessions, now: now, calendar: .current,
+                                                 topLimit: games.count), now: now)
+    }
+
     var games: [CatalogGame] {
-        viewModel.librarySelection.query.applyCatalog(to: viewModel.visibleCatalogGames, history: playSessions)
+        viewModel.librarySelection.query.applyCatalog(to: catalogScope, history: playSessions)
     }
 
     var hasAnyGame: Bool { !viewModel.visibleCatalogGames.isEmpty }
@@ -67,7 +81,7 @@ struct CollectionView: View {
         let games = self.games
         let game = selectedGame(in: games)
         SeleneHomeChrome(
-            leftHints: HintItem.homeGlobals(other: "Spotlight",
+            leftHints: profileCard != nil ? [HintItem(.b, "Back", action: router.back)] : HintItem.homeGlobals(other: "Spotlight",
                                              onOther: settings.settings.viewButtonSwitches ? { handle(.view) } : nil,
                                              onMenu: { router.isMenuPresented = true },
                                              onSearch: { handle(.search) },
@@ -121,8 +135,15 @@ struct CollectionView: View {
 
     private func stage(games: [CatalogGame], game: PortedGame?) -> some View {
         ZStack(alignment: .topLeading) {
-            SpotlightTopBar(filter: filter, sort: settings.settings.librarySort, showClock: settings.settings.showClock,
-                            profileFocused: profileFocused, nextendo: viewModel.profileNextendo, onSelect: { setFilter($0) })
+            if let profileCard {
+                Text(L10n.text(profileCard.title)).seleneFont(.screenTitle, .semibold)
+                    .accessibilityAddTraits(.isHeader)
+                    .padding(.horizontal, canvas.u(SeleneTokens.Space.chromeGutter))
+                    .frame(height: canvas.u(SeleneTokens.Space.stageHeader))
+            } else {
+                SpotlightTopBar(filter: filter, sort: settings.settings.librarySort, showClock: settings.settings.showClock,
+                                profileFocused: profileFocused, nextendo: viewModel.profileNextendo, onSelect: { setFilter($0) })
+            }
 
             if let game {
                 CollectionInfoView(game: game, logo: art.logo(for: game),
@@ -171,6 +192,10 @@ struct CollectionView: View {
     private var emptyState: some View {
         if viewModel.isScanningLibrary {
             EmptyView()
+        } else if profileCard != nil {
+            Text(L10n.text("No games in this view."))
+                .seleneFont(.dialogTitle)
+                .foregroundColor(SeleneTheme.ink)
         } else if hasAnyGame {
             Text(L10n.format("No games in %@", [L10n.text(filter.rawValue)]))
                 .seleneFont(.dialogTitle)
@@ -237,7 +262,7 @@ struct CollectionView: View {
     func reconcile() {
         var state = viewModel.librarySelection
         state.query.sort = settings.settings.librarySort
-        state.reconcileCatalog(with: viewModel.visibleCatalogGames, history: playSessions,
+        state.reconcileCatalog(with: catalogScope, history: playSessions,
                         preferredGameID: settings.settings.restoreLastGame ? settings.lastSelectedGameID : nil)
         if state != viewModel.librarySelection { viewModel.librarySelection = state }
     }

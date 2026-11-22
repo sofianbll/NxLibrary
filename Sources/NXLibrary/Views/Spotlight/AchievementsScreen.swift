@@ -83,7 +83,7 @@ struct AchievementsScreen: View {
                                bottom: SeleneBottomScrim.hintsBottom, leftInset: 18)
             }
         }
-        .animation(SeleneTheme.quick, value: state.isDetailOpen)
+        .animation(Motion.overlay(reduceMotion), value: state.isDetailOpen)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(L10n.text("Achievements"))

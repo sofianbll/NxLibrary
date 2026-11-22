@@ -65,7 +65,7 @@ struct SpotlightCardInfoView: View {
         switch card {
         case .collection: return L10n.text("Every game in your library, in one row.")
         case .surprise: return L10n.text("Can't decide? Pick a game for me.")
-        case .activity: return L10n.text("What you played this week.")
+        case .activity: return L10n.text("Open your profile and see what you played.")
         case .mods: return L10n.text("Mods that work with your games, from GameBanana.")
         case .addGame: return L10n.text("Build a game from your own dumps.")
         case .inbox: return L10n.text("Incoming files are ready to review.")

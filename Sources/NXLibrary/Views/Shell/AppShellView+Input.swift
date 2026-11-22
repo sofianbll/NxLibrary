@@ -144,7 +144,9 @@ extension AppShellView {
                 if !event.isARepeat { GameControllerService.shared.onAction?(.profiles) }
                 return nil
             }
-            if viewModel.profileOwnsInput, !showsWelcome, !viewModel.showSetupCheck, !isCloseGameOpen {
+            if viewModel.profileOwnsInput || (router.route == .profile && !router.isMenuPresented
+                && !viewModel.isGameOptionsOpen && !nativeDialogOwnsInput),
+               !showsWelcome, !viewModel.showSetupCheck, !isCloseGameOpen {
                 return profileKey(event)
             }
             if router.isMenuPresented, router.activityCenterFocus != nil {
@@ -195,7 +197,7 @@ extension AppShellView {
                 if typing || !isHomeRoute { return event }
                 action = .view
             case (_, "f", [.command]):              // Cmd+F
-                if typing || !isHomeRoute { return event }
+                if typing || (router.route != .library && router.route != .collection) { return event }
                 action = .search
             case (_, ",", [.command]):              // Cmd+,
                 // Same as holding Menu. Consumed, so the menu-bar Settings command does not open Settings a second time.
@@ -279,7 +281,7 @@ extension AppShellView {
     func runMenuEntry(_ entry: MenuEntry) {
         router.closeEntryMenu()
         switch entry {
-        case .myProfile: openProfile(.detail, fromMenu: true)
+        case .myProfile: router.closeMenu(); openProfilePage()
         case .switchProfile: openProfile(.picker, fromMenu: true)
         case .editProfile: openProfile(.editor, fromMenu: true)
         case .theme:

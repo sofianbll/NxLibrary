@@ -6,6 +6,8 @@ public enum AppRoute: Equatable {
     case library
     /// The whole library as one grid (Selene's Collection).
     case collection
+    case profile
+    case profileCollection(ProfilePageCard)
     case detail(UUID)
     case settings(SettingsSection)
     case addGame
@@ -15,6 +17,10 @@ public enum AppRoute: Equatable {
 
     /// Drawn over the screen it was opened from, which stays behind, blurred.
     public var isOverlay: Bool { self == .addGame || self == .console }
+    public var isCollection: Bool {
+        if case .profileCollection = self { return true }
+        return self == .collection
+    }
 }
 
 /// A full-screen page covers lower UI layers while their shared background stays mounted.
@@ -68,6 +74,7 @@ public final class AppRouter: ObservableObject {
     @Published public var pendingSpotlightSelect: UUID?
 
     private var history: [AppRoute] = []
+    private var profileSpotlightKey: String?
 
     public init() {}
 
@@ -178,6 +185,18 @@ public final class AppRouter: ObservableObject {
     public func openGameInbox() { navigate(to: .gameInbox) }
     public func openConsole() { navigate(to: .console) }
     public func openCollection() { navigate(to: .collection) }
+    public var previousRoute: AppRoute? { history.last }
+
+    public func openSpotlightDetails(_ id: UUID, returningTo selection: String?) {
+        profileSpotlightKey = selection
+        requestSpotlightSelect(id)
+        navigate(to: .library)
+    }
+
+    public func takeProfileSpotlightKey() -> String? {
+        defer { profileSpotlightKey = nil }
+        return profileSpotlightKey
+    }
 
     public func showLibrary() {
         isReturningFromBack = false

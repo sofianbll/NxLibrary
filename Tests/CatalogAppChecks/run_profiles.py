@@ -20,7 +20,7 @@ import NXLibraryCore
 import ArcanePorting
 
 @main struct ProfileScreenProbe {
-    @MainActor static func main() throws {
+    @MainActor static func main() async throws {
         let out = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
         let font = URL(fileURLWithPath: CommandLine.arguments[2])
         let refs = URL(fileURLWithPath: CommandLine.arguments[3], isDirectory: true)
@@ -115,6 +115,60 @@ import ArcanePorting
         try render("08-profile-linked-real", LocalProfilePage(profile: alex, nextendo: linked, viewModel: vm,
                    settings: settings, history: localHistory, onClose: {}, onUpdate: { _ in true }, onSwitch: {}),
                    in: out, refs, "none")
+        var profileGames = avatarGames
+        var achievementGame = profileGames[1].nxnativeGame!
+        let profilePack = LocalAchievementPack.linksAwakening!
+        achievementGame.titleId = profilePack.titleID
+        achievementGame.versionString = profilePack.gameVersion
+        profileGames[1] = CatalogGame(nxnative: achievementGame)
+        let oldArt = art.cacheDirectory.appendingPathComponent(avatarGames[1].personalizationKey).appendingPathComponent("hero.png")
+        let newArt = art.cacheDirectory.appendingPathComponent(profileGames[1].personalizationKey).appendingPathComponent("hero.png")
+        try FileManager.default.createDirectory(at: newArt.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.copyItem(at: oldArt, to: newArt)
+        vm.applyCatalog(.init(sources: [.init(integration: .nxnative, isEnabled: true)], games: profileGames))
+        precondition(vm.visibleCatalogGames.count == profileGames.count)
+        _ = vm.localAchievementStore.record([.seashells: 10], in: profilePack, profile: alex.id, at: .now)
+        var date = Date.now.addingTimeInterval(-3 * 3600)
+        let pageHistory = PlaySessionStore(fileURL: data.appendingPathComponent("profile-page-sessions.json"), now: { date })
+        for (index, item) in profileGames.prefix(5).enumerated() {
+            precondition(pageHistory.start(gameID: item.id, sourceID: item.personalizationKey, announces: false))
+            date.addTimeInterval(index == 0 ? 5_400 : 900)
+            _ = pageHistory.end(gameID: item.id)
+        }
+        for item in profileGames {
+            _ = await GameArtLoader.shared.hero(for: item.nxnativeGame!, metadata: nil, artwork: art,
+                                                personalizations: vm.personalizations)
+        }
+        var pageProfile = alex
+        pageProfile.appearsOnline = true
+        linked.setScreenFixture(.connected)
+        linked.setPresenceFixture()
+        precondition(linked.account?.friends?.isEmpty == false)
+        let pageRouter = AppRouter()
+        let activityCard = SpotlightView(viewModel: vm, router: pageRouter, settings: settings, playSessions: pageHistory,
+                                         runningGames: RunningGameMonitor(), artwork: art, storeHost: ModStoreHost())
+        activityCard.activate(.card(.activity))
+        precondition(pageRouter.route == .profile)
+        pageRouter.back()
+        precondition(pageRouter.route == .library)
+        L10n.setContext(french)
+        for (name, size, account) in [
+            ("16-9-linked", CGSize(width: 1440, height: 810), linked),
+            ("16-9-local", CGSize(width: 1440, height: 810), nil),
+            ("16-10", CGSize(width: 1280, height: 800), linked),
+            ("21-9", CGSize(width: 1890, height: 810), linked),
+            ("small", CGSize(width: 680, height: 470), linked)
+        ] {
+            let page = ProfilePage(profile: pageProfile, viewModel: vm, history: pageHistory, artwork: art,
+                                   nextendo: account, router: pageRouter, focus: .constant(.game(.recent, profileGames[3].id)),
+                                   onEdit: {}, onSwitch: {}, onAccount: {})
+            try render("profile-page-\(name)", page.environment(\.nxAppLocale, french), in: out, refs,
+                       "profile-page.png", size: size)
+        }
+        try render("profile-page-cards-settings", SettingsView(initialSection: .profiles, viewModel: vm, settings: settings,
+                   router: pageRouter, artwork: art).environment(\.nxAppLocale, french),
+                   in: out, refs, "none")
+        L10n.setContext(.init(language: .english, region: "US"))
         let switchToSam = ProfileFlow.Change(target: sam, startsGuest: false, step: .confirm)
         precondition(switchToSam.requiresConfirmation(current: alex.id, running: true, endsGuest: false))
         precondition(!switchToSam.canCommit(current: alex.id, running: true))
@@ -599,8 +653,7 @@ import ArcanePorting
     static let screenSize = CGSize(width: 1440, height: 810)
 
     @MainActor static func render<V: View>(_ name: String, _ view: V, in out: URL, _ refs: URL, _ reference: String,
-                                          reduced: Bool = true, names: ButtonNameStyle = .xbox) throws {
-        let size = screenSize
+                                          reduced: Bool = true, names: ButtonNameStyle = .xbox, size: CGSize = screenSize) throws {
         let image = try bitmap(view
             .environment(\.seleneCanvas, SeleneCanvas(size: size))
             .environment(\.seleneReduceMotion, reduced)
@@ -712,6 +765,15 @@ def main():
         replace(app / "Views/Theme/SeleneBackdrop.swift",
                 r"tint: modsTint \? 1 : 0, moving: moving,\n",
                 "tint: modsTint ? 1 : 0, moving: false, asImage: true,\n")
+        # ImageRenderer does not draw the AppKit scroll host. Keep the real SwiftUI layout and clip it
+        # to the same viewport for screenshots; scroll/input are not verified by the PNGs.
+        replace(app / "Views/Shell/ProfilePage.swift",
+                r"                ScrollViewReader \{ proxy in\n                    ScrollView \{(.*?)"
+                r"                    \}\n                    \.onChange\(of: focus, initial: true\).*?"
+                r"\n                \}\n            \}\n            if ownsPage",
+                lambda m: "                Color.clear.overlay(alignment: .top) {" + m[1] +
+                "                        .fixedSize(horizontal: false, vertical: true)\n"
+                "                    }.clipped()\n            }\n            if ownsPage")
         # ImageRenderer paints any AppKit-backed view as a full-screen yellow "no entry" placeholder: the game-art
         # layer is one. Arcane itself shows the Selene backdrop there when a game has no art.
         replace(app / "Views/Spotlight/SeleneArtBackground.swift",

@@ -1,12 +1,12 @@
 import Foundation
 
-/// This week's play time, for the Activity card and (later) its screen.
+/// This week's play time, for Spotlight and the profile page.
 public struct ActivitySummary: Equatable {
     /// Total play time this week.
     public var thisWeek: TimeInterval
     /// Seven days, Monday through Sunday of the current week.
     public var perDay: [TimeInterval]
-    /// Games by play time this week, most first, at most `maxTopGames`.
+    /// Games by play time this week, most first.
     public var topGames: [UUID]
 
     public static let maxTopGames = 6
@@ -22,7 +22,8 @@ public struct ActivitySummary: Equatable {
 public enum Activity {
     /// Sessions spanning midnight are split by day; a running session counts
     /// up to `now`; time outside the current week is ignored.
-    public static func summary(sessions: [PlaySession], now: Date, calendar: Calendar) -> ActivitySummary {
+    public static func summary(sessions: [PlaySession], now: Date, calendar: Calendar,
+                               topLimit: Int = ActivitySummary.maxTopGames) -> ActivitySummary {
         // The week is Monday-first regardless of the user's locale.
         var calendar = calendar
         calendar.firstWeekday = 2
@@ -54,7 +55,7 @@ public enum Activity {
             .sorted { a, b in
                 perGame[a]! != perGame[b]! ? perGame[a]! > perGame[b]! : firstSeen[a]! < firstSeen[b]!
             }
-            .prefix(ActivitySummary.maxTopGames)
+            .prefix(topLimit)
         return ActivitySummary(thisWeek: days.reduce(0, +), perDay: days, topGames: Array(top))
     }
 }

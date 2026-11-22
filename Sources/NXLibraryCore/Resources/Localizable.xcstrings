@@ -1,6 +1,54 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Profile page cards": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Profile page cards"}}, "it": {"stringUnit":{"state":"translated","value":"Schede della pagina profilo"}}, "fr": {"stringUnit":{"state":"translated","value":"Cartes de la page profil"}}, "de": {"stringUnit":{"state":"translated","value":"Karten der Profilseite"}}, "es": {"stringUnit":{"state":"translated","value":"Tarjetas de la página de perfil"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Cartões da página de perfil"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"个人资料页卡片"}}
+    }},
+    "Position: %@": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Position: %@"}}, "it": {"stringUnit":{"state":"translated","value":"Posizione: %@"}}, "fr": {"stringUnit":{"state":"translated","value":"Position : %@"}}, "de": {"stringUnit":{"state":"translated","value":"Position: %@"}}, "es": {"stringUnit":{"state":"translated","value":"Posición: %@"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Posição: %@"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"位置：%@"}}
+    }},
+    "Open your profile and see what you played.": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Open your profile and see what you played."}}, "it": {"stringUnit":{"state":"translated","value":"Apri il profilo e guarda a cosa hai giocato."}}, "fr": {"stringUnit":{"state":"translated","value":"Ouvrez votre profil pour retrouver vos jeux et vos sessions."}}, "de": {"stringUnit":{"state":"translated","value":"Öffne dein Profil und sieh nach, was du gespielt hast."}}, "es": {"stringUnit":{"state":"translated","value":"Abre tu perfil y consulta a qué has jugado."}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Abra seu perfil e veja o que jogou."}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"打开个人资料，查看你的游戏记录。"}}
+    }},
+    "Playtime this week": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Playtime this week"}}, "it": {"stringUnit":{"state":"translated","value":"Tempo di gioco della settimana"}}, "fr": {"stringUnit":{"state":"translated","value":"Temps de jeu de la semaine"}}, "de": {"stringUnit":{"state":"translated","value":"Spielzeit diese Woche"}}, "es": {"stringUnit":{"state":"translated","value":"Tiempo de juego esta semana"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Tempo de jogo nesta semana"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"本周游戏时长"}}
+    }},
+    "Most played": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Most played"}}, "it": {"stringUnit":{"state":"translated","value":"Più giocati"}}, "fr": {"stringUnit":{"state":"translated","value":"Les plus joués"}}, "de": {"stringUnit":{"state":"translated","value":"Am meisten gespielt"}}, "es": {"stringUnit":{"state":"translated","value":"Más jugados"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Mais jogados"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"游玩最多"}}
+    }},
+    "Pick up again": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Pick up again"}}, "it": {"stringUnit":{"state":"translated","value":"Da riprendere"}}, "fr": {"stringUnit":{"state":"translated","value":"À reprendre"}}, "de": {"stringUnit":{"state":"translated","value":"Weiterspielen"}}, "es": {"stringUnit":{"state":"translated","value":"Para retomar"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Para retomar"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"继续游玩"}}
+    }},
+    "Never played": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Never played"}}, "it": {"stringUnit":{"state":"translated","value":"Mai giocati"}}, "fr": {"stringUnit":{"state":"translated","value":"Jamais joués"}}, "de": {"stringUnit":{"state":"translated","value":"Noch nie gespielt"}}, "es": {"stringUnit":{"state":"translated","value":"Nunca jugados"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Nunca jogados"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"从未游玩"}}
+    }},
+    "Playtime": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Playtime"}}, "it": {"stringUnit":{"state":"translated","value":"Tempo di gioco"}}, "fr": {"stringUnit":{"state":"translated","value":"Temps de jeu"}}, "de": {"stringUnit":{"state":"translated","value":"Spielzeit"}}, "es": {"stringUnit":{"state":"translated","value":"Tiempo de juego"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Tempo de jogo"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"游戏时长"}}
+    }},
+    "This week": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"This week"}}, "it": {"stringUnit":{"state":"translated","value":"Questa settimana"}}, "fr": {"stringUnit":{"state":"translated","value":"Cette semaine"}}, "de": {"stringUnit":{"state":"translated","value":"Diese Woche"}}, "es": {"stringUnit":{"state":"translated","value":"Esta semana"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Nesta semana"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"本周"}}
+    }},
+    "Member since": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Member since"}}, "it": {"stringUnit":{"state":"translated","value":"Membro da"}}, "fr": {"stringUnit":{"state":"translated","value":"Membre depuis"}}, "de": {"stringUnit":{"state":"translated","value":"Mitglied seit"}}, "es": {"stringUnit":{"state":"translated","value":"Miembro desde"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Membro desde"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"加入时间"}}
+    }},
+    "Nextendo settings": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Nextendo settings"}}, "it": {"stringUnit":{"state":"translated","value":"Impostazioni Nextendo"}}, "fr": {"stringUnit":{"state":"translated","value":"Paramètres Nextendo"}}, "de": {"stringUnit":{"state":"translated","value":"Nextendo-Einstellungen"}}, "es": {"stringUnit":{"state":"translated","value":"Ajustes de Nextendo"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Configurações do Nextendo"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"Nextendo 设置"}}
+    }},
+    "No games in this view.": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"No games in this view."}}, "it": {"stringUnit":{"state":"translated","value":"Nessun gioco in questa vista."}}, "fr": {"stringUnit":{"state":"translated","value":"Aucun jeu dans cette vue."}}, "de": {"stringUnit":{"state":"translated","value":"Keine Spiele in dieser Ansicht."}}, "es": {"stringUnit":{"state":"translated","value":"No hay juegos en esta vista."}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Nenhum jogo nesta visualização."}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"此视图中没有游戏。"}}
+    }},
+    "No local achievements available.": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"No local achievements available."}}, "it": {"stringUnit":{"state":"translated","value":"Nessun obiettivo locale disponibile."}}, "fr": {"stringUnit":{"state":"translated","value":"Aucun succès local disponible."}}, "de": {"stringUnit":{"state":"translated","value":"Keine lokalen Erfolge verfügbar."}}, "es": {"stringUnit":{"state":"translated","value":"No hay logros locales disponibles."}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Nenhuma conquista local disponível."}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"没有可用的本地成就。"}}
+    }},
+    "Overall progress": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Overall progress"}}, "it": {"stringUnit":{"state":"translated","value":"Progresso totale"}}, "fr": {"stringUnit":{"state":"translated","value":"Progression globale"}}, "de": {"stringUnit":{"state":"translated","value":"Gesamtfortschritt"}}, "es": {"stringUnit":{"state":"translated","value":"Progreso global"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Progresso geral"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"总体进度"}}
+    }},
+    "Playing": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Playing"}}, "it": {"stringUnit":{"state":"translated","value":"In gioco"}}, "fr": {"stringUnit":{"state":"translated","value":"En jeu"}}, "de": {"stringUnit":{"state":"translated","value":"Spielt gerade"}}, "es": {"stringUnit":{"state":"translated","value":"Jugando"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Jogando"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"游戏中"}}
+    }},
+    "Friends list unavailable.": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Friends list unavailable."}}, "it": {"stringUnit":{"state":"translated","value":"Elenco amici non disponibile."}}, "fr": {"stringUnit":{"state":"translated","value":"Liste d’amis indisponible."}}, "de": {"stringUnit":{"state":"translated","value":"Freundesliste nicht verfügbar."}}, "es": {"stringUnit":{"state":"translated","value":"Lista de amigos no disponible."}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Lista de amigos indisponível."}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"好友列表不可用。"}}
+    }},
     "My profile": {"localizations": {
       "en": {"stringUnit":{"state":"translated","value":"My profile"}}, "it": {"stringUnit":{"state":"translated","value":"Il mio profilo"}}, "fr": {"stringUnit":{"state":"translated","value":"Mon profil"}}, "de": {"stringUnit":{"state":"translated","value":"Mein Profil"}}, "es": {"stringUnit":{"state":"translated","value":"Mi perfil"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Meu perfil"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"我的个人资料"}}
     }},

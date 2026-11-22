@@ -164,6 +164,16 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
         return [recent, carried[gameID]?.lastPlayed, external[gameID]?.lastPlayed].compactMap { $0 }.max()
     }
 
+    /// Arcane-recorded activity only, including sessions folded out of the recent file.
+    public func profileActivity(at date: Date) -> [UUID: CarriedPlaytime] {
+        sessions.reduce(into: carried) { result, session in
+            var entry = result[session.gameID] ?? CarriedPlaytime(duration: 0, lastPlayed: session.startedAt)
+            entry.duration += max(0, min(session.endedAt ?? date, date).timeIntervalSince(session.startedAt))
+            entry.lastPlayed = max(entry.lastPlayed, session.startedAt)
+            result[session.gameID] = entry
+        }
+    }
+
     public func isRunning(gameID: UUID) -> Bool {
         history.contains { $0.gameID == gameID && $0.isActive }
     }

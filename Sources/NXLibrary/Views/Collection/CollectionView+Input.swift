@@ -20,7 +20,7 @@ extension CollectionView {
             }
         }
         var moved = false
-        let all = viewModel.visibleCatalogGames
+        let all = catalogScope
         switch action {
         case .navigateLeft, .navigateRight:
             let before = viewModel.librarySelection.selectedGameID
@@ -28,7 +28,7 @@ extension CollectionView {
                                             in: all, history: playSessions)
             moved = viewModel.librarySelection.selectedGameID != before
         case .navigateUp:
-            if profile != nil {
+            if profile != nil, profileCard == nil {
                 profileFocused = true
                 SoundEffectService.shared.play(.focus)
             }
@@ -38,15 +38,15 @@ extension CollectionView {
             viewModel.librarySelection.jumpCatalog(toEnd: action == .jumpToEnd, in: all, history: playSessions)
             moved = viewModel.librarySelection.selectedGameID != before
         case .tabPrevious:
-            setFilter(filter.shifted(by: -1))
+            if profileCard == nil { setFilter(filter.shifted(by: -1)) }
         case .tabNext:
-            setFilter(filter.shifted(by: 1))
+            if profileCard == nil { setFilter(filter.shifted(by: 1)) }
         case .rightStickPress:
             openSort()
         case .confirm:
             if let record = selectedCatalogGame {
                 activateCatalog(record)
-            } else if !hasAnyGame, !viewModel.isScanningLibrary {
+            } else if profileCard == nil, !hasAnyGame, !viewModel.isScanningLibrary {
                 SoundEffectService.shared.play(.click)
                 router.openAddGame()
             }
@@ -65,9 +65,9 @@ extension CollectionView {
         case .cancel:
             router.back()
         case .view:
-            if settings.settings.viewButtonSwitches { router.setInitialRoute(.library) }
+            if profileCard == nil, settings.settings.viewButtonSwitches { router.setInitialRoute(.library) }
         case .search:
-            router.isSearchPresented = true
+            if profileCard == nil { router.isSearchPresented = true }
         case .menu:
             router.isMenuPresented = true
         case .menuHold:
@@ -106,7 +106,7 @@ extension CollectionView {
             guard !router.isMenuPresented,
                   !NativeMenuCommands.shared.isTracking,
                   !router.isSearchPresented,
-                  router.route == .collection,
+                  router.route.isCollection,
                   viewModel.cloudLibraryGameID == nil,
                   viewModel.alertMessage == nil, viewModel.settingsNotice == nil,
                   !viewModel.isGameOptionsOpen,

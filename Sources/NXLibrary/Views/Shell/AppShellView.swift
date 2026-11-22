@@ -15,6 +15,7 @@ struct AppShellView: View {
     @StateObject var playSessions = PlaySessionStore()
     @ObservedObject var profiles: LocalProfileStore
     @State var profileFlow: ProfileFlow?
+    @State var profilePageFocus: ProfilePage.Focus?
     @State var steamBlocksIdlePresence = false
     @State var onlinePlayers: [String: Int] = [:]
     static let onlineCounts = NextendoOnlineCounts()
@@ -84,7 +85,7 @@ struct AppShellView: View {
 
     /// Spotlight or Collection: the screens that pick a game.
     var isHomeRoute: Bool {
-        router.route == .library || router.route == .collection
+        router.route == .library || router.route.isCollection
     }
 
     /// A shell dialog is open; menu commands wait for it.
@@ -167,7 +168,7 @@ struct AppShellView: View {
     static let profileOverlayBlur = SeleneOverlayStyle.deep.backdropBlur
 
     var contentBlur: CGFloat {
-        if let flow = profileFlow, flow.page != .detail, !flow.atStartup { return Self.profileOverlayBlur }
+        if let flow = profileFlow, flow.page != .account, !flow.atStartup { return Self.profileOverlayBlur }
         // A card or the Power pills open over the control center: the page behind must not read through them.
         if router.isMenuPresented, router.menuSelection.isSubmenuOpen { return Self.profileOverlayBlur }
         return !viewModel.isGameOptionsOpen && !router.route.isOverlay ? 0 : SeleneOverlayStyle.options.backdropBlur
@@ -254,6 +255,8 @@ struct AppShellView: View {
                 viewModel.cloudLibraryGameID = nil
             } else if profileFlow != nil {
                 postProfileAction(.cancel)
+            } else if router.route == .profile && !router.isMenuPresented {
+                postProfileAction(.cancel)
             } else if viewModel.isGameOptionsOpen {
                 // Game options steps back (dialog, then Edit details) or closes.
                 NotificationCenter.default.post(name: .nxGameOptionsGamepadAction, object: GamepadAction.cancel)
@@ -315,7 +318,7 @@ struct AppShellView: View {
                 artwork: artwork,
                 storeHost: modStoreHost
             )
-        case .collection:
+        case .collection, .profileCollection:
             CollectionView(
                 viewModel: viewModel,
                 router: router,
@@ -323,6 +326,24 @@ struct AppShellView: View {
                 playSessions: playSessions,
                 artwork: artwork
             )
+        case .profile:
+            if let profile = profiles.active {
+                ProfilePage(profile: profile, viewModel: viewModel, history: playSessions, artwork: artwork,
+                            nextendo: viewModel.profileNextendo, router: router, focus: $profilePageFocus,
+                            isGuest: profiles.guest != nil,
+                            onEdit: { openProfile(.editor) }, onSwitch: { openProfile(.picker) },
+                            onAccount: { openProfile(.account) })
+                .id(profile.id)
+                .task(id: profileFlow == nil) {
+                    guard profileFlow == nil, router.route == .profile else { return }
+                    let client = settings.settings.nextendoClientID ?? NextendoLaunch.buildClientID
+                    if let nextendo = viewModel.profileNextendo, !nextendo.isBusy {
+                        nextendo.check(clientID: client)
+                    }
+                }
+            } else {
+                Color.clear.onAppear { router.back() }
+            }
         case .detail(let id):
             if let game = viewModel.libraryGames.first(where: { $0.id == id }) {
                 GameDetailView(
