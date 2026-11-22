@@ -434,9 +434,6 @@ final class CloudGameArchiveTests: XCTestCase {
         let mixed = try await f.service.copyStatuses(f.game, manifest: .success(modern))
         XCTAssertFalse(CloudArtifactStatus.canUploadAlone(.app, statuses: mixed))
         XCTAssertTrue(CloudArtifactStatus.canUploadAlone(.cache, statuses: mixed))
-        let migrated = try await f.service.upload(f.game, kinds: [.cache])
-        XCTAssertEqual(migrated.artifacts.first, modern.artifacts.first)
-        XCTAssertTrue(migrated.artifacts.allSatisfy { $0.files != nil })
         for object in legacy.artifacts.flatMap({ $0.objects(titleID: title) }) {
             try await f.backend.verify(object)
         }
@@ -448,6 +445,9 @@ final class CloudGameArchiveTests: XCTestCase {
         XCTAssertEqual(stamp.1, 123_456_789)
         XCTAssertEqual(stamp.2, 0o640)
         XCTAssertEqual(try SaveFiles.attributes(cached)["org.arcane.test"], Data([42]))
+        let migrated = try await f.service.upload(f.game, kinds: [.cache])
+        XCTAssertEqual(migrated.artifacts.first, modern.artifacts.first)
+        XCTAssertTrue(migrated.artifacts.allSatisfy { $0.files != nil })
     }
 
     func testRebuildDecisionRequiresSourcesAndVerifiedRemoteCacheUnlessExplicitlyOverridden() {
