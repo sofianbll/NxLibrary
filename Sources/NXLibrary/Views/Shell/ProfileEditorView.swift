@@ -98,7 +98,7 @@ struct ProfileEditorView: View {
             guard !Task.isCancelled, !found.isEmpty else { return }
             let current = indexes[Step.avatar.rawValue]
             cachedPortraits = found
-            indexes[Step.avatar.rawValue] = profile.portrait == nil && current == 0 ? 0 : current + found.count
+            indexes[Step.avatar.rawValue] = isNew && profile.portrait == nil && current == 0 ? 0 : current + found.count
         }
         .onDisappear { cropTask?.cancel() }
         .onReceive(NotificationCenter.default.publisher(for: .nxProfileInput)) { note in
@@ -230,11 +230,11 @@ struct ProfileEditorView: View {
     nonisolated static func loadAvatars(_ games: [CatalogGame], artwork: ArtworkStore) -> [CachedAvatar] {
         var avatars: [CachedAvatar] = []
         for game in games.prefix(120) {
-            if avatars.count == 16 || Task.isCancelled { break }
+            if avatars.count == LocalProfile.avatarCount || Task.isCancelled { break }
             let id = game.personalizationKey
-            guard let url = artwork.cachedURL(titleID: id, kind: .hero) ?? artwork.cachedURL(titleID: id, kind: .square)
-                    ?? artwork.cachedURL(titleID: id, kind: .boxart),
-                  let data = ProfileAvatar.cachedPortrait(url) else { continue }
+            let data = [ArtworkKind.hero, .square, .boxart].lazy
+                .compactMap { artwork.cachedURL(titleID: id, kind: $0).flatMap(ProfileAvatar.cachedPortrait) }.first
+            guard let data else { continue }
             avatars.append(.init(name: game.name, image: data))
         }
         return avatars

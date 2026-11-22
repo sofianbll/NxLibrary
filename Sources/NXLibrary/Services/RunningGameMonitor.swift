@@ -109,6 +109,10 @@ final class RunningGameMonitor: ObservableObject {
         runningGameIDs.contains(game.id)
     }
 
+    func isRunningForProfileSwitch(_ game: PortedGame) -> Bool {
+        homeMenus[game.id]?.host?.isAlive == true || Self.runningApplication(for: game) != nil
+    }
+
     /// Brings a running game's app forward, resuming its host if paused. Never starts a second copy.
     func resume(_ game: PortedGame) {
         if let watch = homeMenus[game.id], let host = watch.host, host.isAlive {
@@ -130,9 +134,9 @@ final class RunningGameMonitor: ObservableObject {
 
     /// Asks the game to quit; after 5 s it is force-quit if it is still running.
     /// The caller asks the player first (Close Game confirmation).
-    func close(_ game: PortedGame) {
+    func close(_ game: PortedGame, forceIfUnresponsive: Bool = true) {
         if pausedGameIDs.contains(game.id) {
-            quitPaused(game.id)
+            quitPaused(game.id, forceIfUnresponsive: forceIfUnresponsive)
             return
         }
         guard let bundleID = game.effectiveBundleId,
@@ -142,6 +146,7 @@ final class RunningGameMonitor: ObservableObject {
             return
         }
         app.terminate()
+        guard forceIfUnresponsive else { return }
         closeTasks[bundleID]?.cancel()
         // The instance we asked to quit, not a fresh lookup: a relaunch within the delay must not be force-quit.
         closeTasks[bundleID] = Task { @MainActor [weak self] in
@@ -238,7 +243,7 @@ final class RunningGameMonitor: ObservableObject {
     private func reconcileHomeMenus(_ ids: Set<UUID>) {
         for (id, watch) in homeMenus where !ids.contains(id) || watch.app.isTerminated {
             // LaunchServices can register the host instead of the wrapper when its window appears.
-            if ids.contains(id), watch.host?.isAlive == true { continue }
+            if watch.host?.isAlive == true { continue }
             stopHomeMenu(id)
         }
         for game in games where ids.contains(game.id) && homeMenus[game.id] == nil {
@@ -298,7 +303,7 @@ final class RunningGameMonitor: ObservableObject {
         if !host.isAlive { stopHomeMenu(id) }
     }
 
-    private func quitPaused(_ id: UUID) {
+    private func quitPaused(_ id: UUID, forceIfUnresponsive: Bool) {
         guard let watch = homeMenus[id], let host = watch.host, host.isAlive else {
             stopHomeMenu(id)
             return
@@ -311,7 +316,7 @@ final class RunningGameMonitor: ObservableObject {
             guard !Task.isCancelled, let self, let watch, self.homeMenus[id] === watch,
                   watch.session?.phase == .quitting else { return }
             guard host.isAlive else { self.stopHomeMenu(id); return }
-            host.terminate()
+            if forceIfUnresponsive { host.terminate() }
             watch.session?.quitTimedOut()
         }
     }

@@ -6,6 +6,7 @@ import NXLibraryCore
 /// What the shell starts when it appears, and the first launch's choices and the last home screen.
 extension AppShellView {
     func startRuntime() {
+        AppDelegate.requestGuestQuit = requestGuestQuit
         if profiles.failed {
             viewModel.showSettingsNotice(title: L10n.text("Profiles could not be loaded."),
                                          message: L10n.text("Defaults are in use. Your previous settings file has been kept."))
@@ -32,6 +33,15 @@ extension AppShellView {
         SteamPlayCoordinator.shared.setGames(viewModel.catalogGames, sources: viewModel.catalogSourceConfigurations)
         SteamPlayCoordinator.shared.nativeGames = runningGames
         SteamPlayCoordinator.shared.isLaunchScreenShowing = { [weak viewModel] in viewModel?.launchOverlay != nil }
+        SteamPlayCoordinator.shared.profileAllowsPlay = { [weak viewModel] in
+            guard let viewModel, !viewModel.profileOwnsInput else { return false }
+            guard viewModel.localProfiles?.guest == nil else {
+                viewModel.showSettingsNotice(title: L10n.text("Guest"),
+                                             message: L10n.text("Steam saves cannot be isolated for a guest."))
+                return false
+            }
+            return true
+        }
         SteamPlayCoordinator.shared.start(sessions: playSessions, settings: settings)
         viewModel.installPendingBuilds()
         viewModel.appIcon.syncPendingAppIcons()

@@ -29,7 +29,7 @@ public enum MenuAction: String, CaseIterable, Identifiable, Equatable {
     /// What the icon's card lists, top to bottom; empty when the icon acts at once.
     public var entries: [MenuEntry] {
         switch self {
-        case .profile: return [.switchProfile, .editProfile, .theme]
+        case .profile: return [.myProfile, .switchProfile, .editProfile, .theme]
         case .library: return [.addGame, .manageSources, .refreshLibrary, .gameInbox]
         default: return []
         }
@@ -38,11 +38,12 @@ public enum MenuAction: String, CaseIterable, Identifiable, Equatable {
 
 /// One line of the Profile or Library card.
 public enum MenuEntry: String, CaseIterable, Identifiable, Equatable {
-    case switchProfile, editProfile, theme, addGame, manageSources, refreshLibrary, gameInbox
+    case myProfile, switchProfile, editProfile, theme, addGame, manageSources, refreshLibrary, gameInbox
     public var id: String { rawValue }
 
     public var title: String {
         switch self {
+        case .myProfile: return L10n.text("My profile")
         case .switchProfile: return L10n.text("Switch profile")
         case .editProfile: return L10n.text("Edit profile")
         case .theme: return L10n.text("Theme")
@@ -55,7 +56,7 @@ public enum MenuEntry: String, CaseIterable, Identifiable, Equatable {
 
     public var icon: MaterialIcon {
         switch self {
-        case .switchProfile: return .person
+        case .myProfile, .switchProfile: return .person
         case .editProfile: return .edit
         case .theme: return .palette
         case .addGame: return .add
@@ -98,7 +99,7 @@ public struct MenuSelectionModel: Equatable {
     /// The focused pill while the Power pills are open.
     public var power: PowerAction = .quit
     /// The focused entry while the Profile or Library card is open.
-    public var entry: MenuEntry = .switchProfile
+    public var entry: MenuEntry = .myProfile
     public private(set) var isPowerOpen = false
     public private(set) var isEntryOpen = false
 

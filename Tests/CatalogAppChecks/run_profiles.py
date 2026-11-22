@@ -65,10 +65,12 @@ import ArcanePorting
                           for: "nxnative|\(game.id)" as NSString)
         let cachedPortraits = ProfileEditorView.loadAvatars(avatarGames, artwork: art)
         precondition(cachedPortraits.count == avatarGames.count)
+        precondition(ProfilePortrait.symbols.count == LocalProfile.avatarCount)
         try checkGIF(in: data)
         func picker(selected: UUID?, removing: LocalProfile? = nil, editing: LocalProfile? = nil, overlay: Bool = false) -> some View {
             ProfilePickerView(profiles: profiles, initialSelection: selected, initialEdit: false, canClose: overlay, isOverlay: overlay,
                               games: [game], avatarGames: avatarGames, artwork: art, onChoose: { _ in }, onClose: {}, onActiveEdited: {},
+                              onGuest: { _ in },
                               selected: selected, draft: editing, removing: removing)
         }
         try render("01-who", picker(selected: alex.id), in: out, refs, "web/reddit-showcase-who-05s.png", reduced: false)
@@ -97,10 +99,44 @@ import ArcanePorting
             nextendo.setScreenFixture(presence)
             try render("08-profile-\(name)", ProfilePageLayout(profile: alex, presence: presence, games: history, onClose: {}) {
                 SettingsAPISection(viewModel: vm, settings: settings, showsMultiplayer: true, supportsNextendo: true,
-                                   accountOnly: true, accountOffline: presence == .offline, appearOnline: .constant(true),
+                                   accountOnly: true, accountOffline: presence == .offline,
                                    advanced: .constant(false), onActions: { _ in }, nextendo: nextendo)
             }, in: out, refs, "screenshots/activity.png")
         }
+        let localHistory = PlaySessionStore(fileURL: data.appendingPathComponent("profile-page-history.json"))
+        vm.localProfiles = nil
+        precondition(vm.profileNextendo == nil)
+        try render("08-profile-without-nextendo-real", LocalProfilePage(profile: alex, nextendo: nil, viewModel: vm,
+                   settings: settings, history: localHistory, onClose: {}, onUpdate: { _ in true }, onSwitch: {}),
+                   in: out, refs, "none")
+        vm.localProfiles = profiles
+        let linked = fakeAccount(data.appendingPathComponent("profile-page-account"))
+        linked.setScreenFixture(.connected)
+        try render("08-profile-linked-real", LocalProfilePage(profile: alex, nextendo: linked, viewModel: vm,
+                   settings: settings, history: localHistory, onClose: {}, onUpdate: { _ in true }, onSwitch: {}),
+                   in: out, refs, "none")
+        let switchToSam = ProfileFlow.Change(target: sam, startsGuest: false, step: .confirm)
+        precondition(switchToSam.requiresConfirmation(current: alex.id, running: true, endsGuest: false))
+        precondition(!switchToSam.canCommit(current: alex.id, running: true))
+        precondition(switchToSam.canCommit(current: alex.id, running: false))
+        precondition(!switchToSam.requiresConfirmation(current: sam.id, running: true, endsGuest: false))
+        precondition(switchToSam.requiresConfirmation(current: alex.id, running: false, endsGuest: true))
+        for (name, starting, ending, running) in [("switch", false, false, true), ("guest-start", true, false, false),
+                                                 ("guest-end", false, true, false)] {
+            try render("32-\(name)", ZStack {
+                picker(selected: alex.id).seleneOverlayOwnership(false)
+                SeleneOverlay(style: .profileRemoval) {
+                    ProfileSwitchDialog(startsGuest: starting, endsGuest: ending, hasGame: running, hasSteam: false,
+                                        waiting: false, onCancel: {}, onConfirm: {})
+                }
+            }, in: out, refs, "none")
+        }
+        try render("33-profile-lock", ZStack {
+            picker(selected: alex.id).seleneOverlayOwnership(false)
+            SeleneOverlay(style: .profileRemoval) {
+                ProfilePINDialog(title: "Unlock profile", onCancel: {}, onPIN: { _ in nil })
+            }
+        }, in: out, refs, "none")
         func stage<Bar: View>(_ top: Bar, showsSort: Bool = true, player: LocalProfile? = nil) -> some View {
             ZStack(alignment: .top) {
                 SeleneBackdrop().still(true)
@@ -297,6 +333,19 @@ import ArcanePorting
         try PropertyListSerialization.data(fromPropertyList: ["DMTitleID": pack.titleID], format: .xml, options: 0)
             .write(to: plist)
         let scopedSave = try vm.profileSaveLocation(for: zelda, profileID: sam.id)
+        let guest = LocalProfile(name: "Guest", look: alex.look)
+        precondition(profiles.beginGuest(guest) && vm.profileNextendo == nil)
+        let guestSave = try vm.defaultSaveLocation(for: zelda)
+        let legacySave = try vm.legacySaveLocation(for: zelda)
+        let guestEnvironment = try guestSave.profileLaunchEnvironment(shared: legacySave)
+        precondition(guestSave != scopedSave && guestSave != legacySave && guestEnvironment["DM_SAVE_SYNC"] == "0")
+        precondition(guestEnvironment["DM_SAVE"]?.contains(guest.id.uuidString) == true)
+        precondition(profiles.choose(sam.id))
+        let anotherGuest = LocalProfile(name: "Guest", look: alex.look)
+        precondition(profiles.beginGuest(anotherGuest))
+        let anotherSave = try vm.defaultSaveLocation(for: zelda)
+        precondition(anotherSave != guestSave)
+        precondition(profiles.choose(sam.id))
         let selectedSave = try vm.saveContext(for: zelda, launchProfileID: sam.id).location
         precondition(scopedSave == selectedSave)
         try render("30-profile-saves", ZStack {
@@ -327,7 +376,7 @@ import ArcanePorting
         try render("18-second-profile-nextendo", ProfilePageLayout(profile: sam, presence: .connected,
             games: [.init(id: secondGame, name: game.name, last: .now, duration: 123)], onClose: {}, onSwitch: {}) {
             SettingsAPISection(viewModel: vm, settings: settings, showsMultiplayer: true, supportsNextendo: true,
-                               accountOnly: true, appearOnline: .constant(true), advanced: .constant(false),
+                               accountOnly: true, advanced: .constant(false),
                                onActions: { _ in }, nextendo: samAccount)
         }.environment(\.nxAppLocale, french), in: out, refs, "screenshots/activity.png")
         L10n.setContext(.init(language: .english, region: "US"))

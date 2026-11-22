@@ -9,7 +9,7 @@ import ArcanePorting
 extension AppViewModel {
     @MainActor func launchGame(_ game: PortedGame, acceptsLocalFallback: Bool = false) {
         // One launch at a time: the launch screen covers the library, and input reaching it changes nothing.
-        guard launchingGameId == nil, launchOverlay == nil else { return }
+        guard !profileOwnsInput, launchingGameId == nil, launchOverlay == nil else { return }
         if let title = game.titleId, cloudLibrary.appInstall?.title == title.uppercased() {
             cloudLibrary.playAfterAppInstall = { [weak self] in
                 guard let self, let current = self.libraryGames.first(where: { $0.id == game.id }) else { return }
@@ -76,7 +76,8 @@ extension AppViewModel {
 
         let gameSettings = runtimeSettings.gameSettings(for: game)
         let appSettings = settingsStore?.settings ?? AppSettings()
-        let multiplayer = gameSettings?.multiplayerLaunch(settings: appSettings, adapters: .current())
+        let isGuest = localProfiles?.guest != nil
+        let multiplayer = isGuest ? nil : gameSettings?.multiplayerLaunch(settings: appSettings, adapters: .current())
         if multiplayer?.warning != nil && !acceptsLocalFallback {
             showMultiplayerVPNFallback { [weak self] in
                 self?.launchGame(game, acceptsLocalFallback: true)
@@ -107,15 +108,20 @@ extension AppViewModel {
         launchingGameId = game.id
         playSessionStore?.expectStart(gameID: game.id)
         let setting = gameSettings.flatMap { NextendoLaunch.networkSetting(in: $0.settings) }
-        let multiplayerEnvironment = (multiplayer?.environment ?? [:]).merging(saveEnvironment) { _, save in save }
+        let multiplayerEnvironment = (isGuest ? NextendoLaunch.guestEnvironment() : multiplayer?.environment ?? [:])
+            .merging(saveEnvironment) { _, save in save }
         let mode = multiplayerEnvironment[NextendoLaunch.networkKey] ?? gameSettings?.effectiveLaunchValue(NextendoLaunch.networkKey)
         if NextendoLaunch.requiresSignIn(setting: setting, mode: mode) {
             let scoped = !usesSharedNextendo
             let tokenStore = NextendoLaunch.tokenStore(profileID: localProfiles?.active?.id, originalID: localProfiles?.originalID)
+            let profile = localProfiles?.active
             let clientID = settingsStore?.settings.nextendoClientID ?? NextendoLaunch.buildClientID
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 do {
+                    let presence = try await Task.detached(priority: .userInitiated) {
+                        try NextendoLaunch.presenceEnvironment(profile: profile, in: game.url)
+                    }.value
                     // Validate access under the engine's lock, including credentials written by other frontends.
                     if scoped {
                         let supported = await Task.detached(priority: .userInitiated) {
@@ -136,7 +142,8 @@ extension AppViewModel {
                     }
                     self.startGame(game, titleId: titleId, token: saveLaunchToken, gameSettings: gameSettings,
                                    overlayData: checkedOverlay,
-                                   environment: multiplayerEnvironment.merging(environment) { _, online in online })
+                                   environment: multiplayerEnvironment.merging(environment) { _, online in online }
+                                       .merging(presence) { _, policy in policy })
                 } catch {
                     self.playSessionStore?.abandonStart(gameID: game.id)
                     self.saveGate.end(titleID: titleId, token: saveLaunchToken)
@@ -242,7 +249,7 @@ extension AppViewModel {
         snapshot.color = SelenePaletteCatalog.resolve(profile.look.theme, in: ThemeStore.shared.palettes).glyph
         if let nextendo = profileNextendo, !nextendo.isSigningOut {
             snapshot.nextendoName = nextendo.overlayUsername
-            if profile.appearsOnline != false, nextendo.presenceShared == true { snapshot.presence = .online }
+            if profile.sharesPresence, nextendo.presenceShared == true { snapshot.presence = .online }
             snapshot.friends = nextendo.overlayFriends
             snapshot.friendGameTitles = nextendo.knownGameTitles
             for friend in nextendo.overlayFriends ?? [] where friend.game == nil {

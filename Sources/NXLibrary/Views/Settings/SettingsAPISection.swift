@@ -11,7 +11,6 @@ struct SettingsAPISection: View {
     let supportsNextendo: Bool
     var accountOnly = false
     var accountOffline = false
-    var appearOnline: Binding<Bool>?
     @Binding var advanced: Bool
     let onActions: ([SettingsRowAction]) -> Void
     @Environment(\.seleneCanvas) private var canvas
@@ -34,7 +33,6 @@ struct SettingsAPISection: View {
     private let accountRowID = "Nextendo"
     private let friendsRowID = "nextendoFriends"
     private let refreshFriendsRowID = "nextendoRefreshFriends"
-    private let appearOnlineRow = "Appear online"
     private let addRowID = "nextendoAddFriend"
     private let recentRowID = "nextendoRecentPlayers"
     private let linksRowID = "nextendoLinks"
@@ -256,10 +254,6 @@ struct SettingsAPISection: View {
 
     @ViewBuilder private var nextendoRows: some View {
         nextendoAccountRow
-        if let appearOnline {
-            SeleneToggleRow(appearOnlineRow, subtitle: !appearOnline.wrappedValue || nextendo.presenceShared == false
-                            ? "Presence not shared" : nil, isOn: appearOnline)
-        }
         if showFriends {
             let title = friends.map {
                 L10n.format("Friends · %lld online out of %lld", [$0.filter { $0.presence != .offline }.count, $0.count],
@@ -609,9 +603,6 @@ struct SettingsAPISection: View {
             actions.append(.init(id: "nextendo", title: "Nextendo", rowID: accountRowID, isEnabled: canActivateNextendo,
                                  secondary: buttons.dropFirst().first.map { ($0.title, $0.action) },
                                  additionalButtons: buttons.dropFirst(2).map(\.action), activate: buttons[0].action))
-            if let appearOnline {
-                actions.append(.init(id: appearOnlineRow, title: appearOnlineRow) { appearOnline.wrappedValue.toggle() })
-            }
             if showFriends {
                 actions.append(.init(id: friendsRowID, title: "Friends", rowID: friendsRowID, activate: toggleFriends))
                 if accountOnly || friendsExpanded {

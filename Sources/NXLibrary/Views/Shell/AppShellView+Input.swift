@@ -278,6 +278,7 @@ extension AppShellView {
     func runMenuEntry(_ entry: MenuEntry) {
         router.closeEntryMenu()
         switch entry {
+        case .myProfile: openProfile(.detail, fromMenu: true)
         case .switchProfile: openProfile(.picker, fromMenu: true)
         case .editProfile: openProfile(.editor, fromMenu: true)
         case .theme:
@@ -328,6 +329,10 @@ extension AppShellView {
     /// the new one must start after this one has gone.
     private func relaunchApp() {
         router.closeMenu()
+        guard profiles.guest == nil else {
+            viewModel.showSettingsNotice(title: L10n.text("Restart app"), message: L10n.text("End the guest session before restarting."))
+            return
+        }
         guard !viewModel.cloudLibrary.isWorking else {
             viewModel.showSettingsNotice(title: L10n.text("Restart app"), message: L10n.text("After the cloud transfer"))
             return

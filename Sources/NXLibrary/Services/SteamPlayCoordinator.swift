@@ -86,6 +86,7 @@ final class SteamPlayCoordinator: ObservableObject {
 
     /// A Steam game's own app is running.
     var hasRunningGame: Bool { states.values.contains { if case .running = $0.phase { return true }; return false } }
+    var profileAllowsPlay: () -> Bool = { true }
     static func blocksIdlePresence(_ states: [UUID: SteamPlayState]) -> Bool {
         states.values.contains { switch $0.phase { case .starting, .running: true; default: false } }
     }
@@ -209,6 +210,7 @@ final class SteamPlayCoordinator: ObservableObject {
     }
 
     func play(_ game: CatalogGame) {
+        guard profileAllowsPlay() else { return }
         // A game that quit since the last notification is not resumed: read the processes first.
         refresh()
         let presentation = CatalogGamePresentation(game: game, sourceEnabled: steamEnabled)
@@ -304,7 +306,7 @@ final class SteamPlayCoordinator: ObservableObject {
         refresh()
     }
 
-    private func refresh(heartbeat: Bool = false) {
+    func refresh(heartbeat: Bool = false) {
         // Before `start` there is no session store: a game seen now would turn "running" with no session.
         guard sessions != nil else { return }
         // The list drops an app when it quits (no `isTerminated` round trip to LaunchServices per app), and a pid's
