@@ -90,7 +90,8 @@ struct ProfileEditorView: View {
         .task(id: step) {
             guard step == .avatar, cachedPortraits.isEmpty, let artwork else { return }
             let games = avatarGames
-            let found = await Task.detached(priority: .utility) { Self.loadAvatars(games, artwork: artwork) }.value
+            let task = Task.detached(priority: .utility) { Self.loadAvatars(games, artwork: artwork) }
+            let found = await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
             guard !Task.isCancelled, !found.isEmpty else { return }
             let current = indexes[Step.avatar.rawValue]
             cachedPortraits = found
@@ -442,7 +443,7 @@ struct ProfileEditorView: View {
                 cropSlider("Horizontal position", \.x, 0...1, fallback: 0.5)
                 cropSlider("Vertical position", \.y, 0...1, fallback: 0.5)
                 cropSlider("Zoom", \.zoom, 1...3, fallback: 1)
-                if isCropping { ProgressView().controlSize(.small).accessibilityLabel(L10n.text("Preparing…")) }
+                if isCropping { ProgressView().controlSize(.small).accessibilityLabel(L10n.text("Loading…")) }
                 HStack(spacing: canvas.u(14)) {
                     SelenePillButton(title: "Cancel", focused: false, action: cancelCrop)
                     SelenePillButton(title: "Done", focused: true, enabled: !isCropping, action: saveCrop)
@@ -478,6 +479,7 @@ struct ProfileEditorView: View {
 
     private func cancelCrop() {
         cropTask?.cancel()
+        cropTask = nil
         isCropping = false
         cropDraft = nil
     }
@@ -489,7 +491,9 @@ struct ProfileEditorView: View {
             let task = Task.detached(priority: .userInitiated) { ProfileAvatar.render(draft.url, crop: draft.crop) }
             let data = await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
             guard !Task.isCancelled else { return }
-            cancelCrop()
+            cropTask = nil
+            isCropping = false
+            cropDraft = nil
             guard let data else { error = "Couldn't add the picture"; return }
             profile.portrait = data
             indexes[Step.avatar.rawValue] = ownAvatar

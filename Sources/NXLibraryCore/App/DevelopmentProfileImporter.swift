@@ -30,7 +30,7 @@ public struct DevelopmentProfileImporter {
         fm = fileManager
         self.checks = checks
     }
-    private static let files = ["library.json", "library.json.bak", "catalog.json", "catalog.json.bak", "settings.json", "profiles.json", "play-sessions.json", "play-sessions-totals.json", "metadata-picks.json", "integrations/steam/metadata-picks.json", "app-sizes.json"]
+    private static let files = ["library.json", "library.json.bak", "catalog.json", "catalog.json.bak", "settings.json", "profiles.json", "profiles-active", "play-sessions.json", "play-sessions-totals.json", "metadata-picks.json", "integrations/steam/metadata-picks.json", "app-sizes.json"]
     private static let folders = ["artwork-picks", "integrations/steam/artwork-picks", "artwork", "metadata", "SeleneImports", "app-icons", "mods", "gamebanana"]
     private static let marker = ".development-import.json"
     private static let preferenceFile = ".import-preferences.plist"

@@ -264,7 +264,7 @@ All’avvio «Chi gioca?» permette di scegliere oppure, con l’interruttore di
 
 Il carosello degli avatar usa soltanto artwork già nella cache, con ritaglio sul volto rilevato o al centro; i simboli neutri restano disponibili. La foto personale si inquadra con gli assi e lo zoom. Per le GIF si conservano i fotogrammi e i tempi; con Riduci movimento si vede solo il primo. Il menu e il ritratto aprono lo stesso selettore, senza rileggere il catalogo. Dopo la prima sessione di un altro profilo, i totali Steam esterni restano all’ultima base separabile; solo le sessioni Arcane aggiungono tempo.
 
-La migrazione salva i file precedenti una sola volta in `profiles-migration-backup`, senza credenziali. Per ripristinarli, con Arcane chiuso, conservare prima una copia dei dati attuali; poi rimettere i file del backup e, se in origine non c’era, spostare `profiles.json` fuori dalla cartella attiva. La copia attuale conserva le sessioni successive alla migrazione.
+La migrazione salva i file precedenti una sola volta in `profiles-migration-backup`, senza credenziali. Per ripristinarli, con Arcane chiuso, conservare prima una copia dei dati attuali; poi rimettere i file del backup e spostare fuori dalla cartella attiva `profiles.json` e `profiles-active` se non erano presenti nel backup. La copia attuale conserva le sessioni successive alla migrazione.
 
 La barra laterale segue `SettingsSidebarGroup`: General, Library, Porting e System. Ogni sezione mostra solo le righe di `SettingsCatalog` che le appartengono.
 

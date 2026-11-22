@@ -54,6 +54,7 @@ public final class LocalProfileStore: ObservableObject {
     @Published private var document: Document?
     @Published public private(set) var failed = false
     private let url: URL
+    private let selectionURL: URL
 
     public var profiles: [LocalProfile] { document?.profiles ?? [] }
     public var active: LocalProfile? { profiles.first { $0.id == document?.activeID } }
@@ -61,14 +62,19 @@ public final class LocalProfileStore: ObservableObject {
 
     public init(directory: URL = AppData.supportRoot, settings: AppSettings, name: String) {
         url = directory.appendingPathComponent("profiles.json")
+        selectionURL = directory.appendingPathComponent("profiles-active")
         do { try Self.backup(in: directory) }
         catch { failed = true; return }
         do {
-            let saved = try JSONDecoder().decode(Document.self, from: Data(contentsOf: url))
+            var saved = try JSONDecoder().decode(Document.self, from: Data(contentsOf: url))
             guard Set(saved.profiles.map(\.id)).count == saved.profiles.count,
                   saved.profiles.contains(where: { $0.id == saved.activeID }) else {
                 failed = true
                 return
+            }
+            if let text = try? String(contentsOf: selectionURL, encoding: .utf8), let id = UUID(uuidString: text),
+               saved.profiles.contains(where: { $0.id == id }) {
+                saved.activeID = id
             }
             document = saved
         } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
@@ -82,8 +88,16 @@ public final class LocalProfileStore: ObservableObject {
     @discardableResult public func choose(_ id: UUID) -> Bool {
         guard var next = document, next.profiles.contains(where: { $0.id == id }) else { return false }
         guard next.activeID != id else { return true }
-        next.activeID = id
-        return save(next)
+        do {
+            try Data(id.uuidString.utf8).write(to: selectionURL, options: .atomic)
+            next.activeID = id
+            document = next
+            failed = false
+            return true
+        } catch {
+            failed = true
+            return false
+        }
     }
 
     @discardableResult public func update(_ value: LocalProfile) -> Bool {
@@ -137,7 +151,7 @@ public final class LocalProfileStore: ObservableObject {
         let stage = directory.appendingPathComponent(".profiles-backup-\(UUID().uuidString)")
         try manager.createDirectory(at: stage, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         defer { try? manager.removeItem(at: stage) }
-        for name in ["profiles.json", "settings.json", "catalog.json", "catalog.json.bak",
+        for name in ["profiles.json", "profiles-active", "settings.json", "catalog.json", "catalog.json.bak",
                      "library.json", "library.json.bak", "play-sessions.json", "play-sessions-totals.json"] {
             let source = directory.appendingPathComponent(name)
             if manager.fileExists(atPath: source.path) {

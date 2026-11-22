@@ -25,7 +25,7 @@ public enum NextendoLaunch {
     }
 
     public static func requiresSignIn(setting: LauncherSetting?, mode: String?) -> Bool {
-        mode == "nextendo" && setting?.accepts("nextendo") == true
+        (mode == "nextendo" || mode == "auto") && setting?.accepts("nextendo") == true
     }
 
     public static func environment(setting: LauncherSetting?, mode: String?, clientID: String?,

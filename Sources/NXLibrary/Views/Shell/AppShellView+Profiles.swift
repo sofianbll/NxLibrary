@@ -100,6 +100,8 @@ extension AppShellView {
         case 36, 49, 76: action = .confirm
         case 53: action = .cancel
         case 51: action = .secondaryAction
+        case 12: action = .tabPrevious
+        case 14: action = .tabNext
         case 48: action = event.modifierFlags.contains(.shift) ? .navigateLeft : .navigateRight
         default:
             switch key {

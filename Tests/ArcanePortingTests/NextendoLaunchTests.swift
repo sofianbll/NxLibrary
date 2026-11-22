@@ -69,6 +69,9 @@ final class NextendoLaunchTests: XCTestCase {
         let environment = try await NextendoLaunch.environment(setting: setting, mode: "nextendo", clientID: "sample-client",
                                                                tokenStore: store) { _ in true }
         XCTAssertEqual(environment[NextendoLaunch.loginDirectoryKey], store.directory.path)
+        let auto = try await NextendoLaunch.environment(setting: setting, mode: "auto", clientID: "sample-client",
+                                                        tokenStore: store) { _ in true }
+        XCTAssertEqual(auto, environment)
         let offline = try await NextendoLaunch.environment(setting: setting, mode: "offline", clientID: nil,
                                                            tokenStore: store) { _ in false }
         XCTAssertTrue(offline.isEmpty)
