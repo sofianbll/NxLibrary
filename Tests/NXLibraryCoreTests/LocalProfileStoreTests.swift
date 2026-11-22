@@ -49,6 +49,25 @@ final class LocalProfileStoreTests: XCTestCase {
         }
     }
 
+    func testBackupIsCreatedOnceAndCanRestoreLegacyFiles() throws {
+        try withDirectory { url in
+            let settingsURL = url.appendingPathComponent("settings.json")
+            let original = try JSONEncoder().encode(AppSettings())
+            try original.write(to: settingsURL)
+            let store = LocalProfileStore(directory: url, settings: .init(), name: "Original")
+            XCTAssertNotNil(store.active)
+            let backup = url.appendingPathComponent("profiles-migration-backup/settings.json")
+            XCTAssertEqual(try Data(contentsOf: backup), original)
+            let after = Data("new settings".utf8)
+            try after.write(to: settingsURL)
+            let again = LocalProfileStore(directory: url, settings: .init(), name: "Do not reimport")
+            XCTAssertEqual(again.active, store.active)
+            XCTAssertEqual(try Data(contentsOf: backup), original)
+            try Data(contentsOf: backup).write(to: settingsURL, options: .atomic)
+            XCTAssertEqual(try Data(contentsOf: settingsURL), original)
+        }
+    }
+
     func testHistoryMigratesWithoutChangingLegacyAndKeepsLaunchOwner() throws {
         try withDirectory { url in
             let file = url.appendingPathComponent("play-sessions.json")

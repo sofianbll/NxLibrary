@@ -13,7 +13,9 @@ ROOT = Path(__file__).resolve().parents[2]
 HOST = r'''
 import AppKit
 import CoreText
+import ImageIO
 import SwiftUI
+import UniformTypeIdentifiers
 import NXLibraryCore
 import ArcanePorting
 
@@ -32,6 +34,29 @@ import ArcanePorting
         let game = PortedGame(name: "Lunar Observatory", url: data.appendingPathComponent("Fixture.app"),
                               platform: .macApp, sizeBytes: 0, modificationDate: .now, titleId: "0100000000001000")
         let slate = LocalProfile(name: "", look: alex.look)
+        let avatarGames = (0..<7).map { index -> CatalogGame in
+            var item = game
+            item.name = "Observatory \(index + 1)"
+            item.titleId = String(format: "010%013X", index + 1)
+            return .init(nxnative: item)
+        }
+        let art = ArtworkStore(cacheDirectory: data.appendingPathComponent("avatar-fixtures"))
+        for (index, game) in avatarGames.enumerated() {
+            let url = art.cacheDirectory.appendingPathComponent(game.personalizationKey).appendingPathComponent("hero.png")
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            let hue = Double(index) / Double(avatarGames.count)
+            let face = ZStack {
+                LinearGradient(colors: [.init(hue: hue, saturation: 0.7, brightness: 0.8), .black],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                Image(systemName: ["person.crop.circle.fill", "theatermasks.fill", "sparkles", "moon.fill",
+                                   "hare.fill", "bird.fill", "mountain.2.fill"][index])
+                    .font(.system(size: 118)).foregroundStyle(.white.opacity(0.84))
+            }.frame(width: 460, height: 300)
+            try save(bitmap(face), to: url)
+        }
+        let cachedPortraits = ProfileEditorView.loadAvatars(avatarGames, artwork: art)
+        precondition(cachedPortraits.count == avatarGames.count)
+        try checkGIF(in: data)
         func picker(selected: UUID?, removing: LocalProfile? = nil) -> some View {
             ProfilePickerView(profiles: profiles, initialSelection: selected, initialEdit: false, canClose: false,
                               games: [game], onChoose: { _ in }, onClose: {}, onActiveEdited: {},
@@ -46,6 +71,14 @@ import ArcanePorting
                 ProfileEditorView(profile: slate, games: [game], isNew: true, onCancel: {}, onSave: { _ in true }, step: step)
             }, in: out, refs, ref)
         }
+        let french = AppLocale(language: .french, region: "FR")
+        L10n.setContext(french)
+        try render("04-wizard-avatar", ZStack {
+            SeleneBackdrop().still(true)
+            ProfileEditorView(profile: slate, games: [game], isNew: true, onCancel: {}, onSave: { _ in true },
+                              step: .avatar, cachedPortraits: cachedPortraits)
+        }.environment(\.nxAppLocale, french), in: out, refs, "web/182-12.png", reduced: false)
+        L10n.setContext(.init(language: .english, region: "US"))
         let current = LibrarySort.recent
         let history = [ProfileRecentGame(id: game.id, name: game.name,
                        last: Date(timeIntervalSince1970: 1_791_014_400), duration: 9450)]
@@ -61,13 +94,14 @@ import ArcanePorting
         }
         let router = AppRouter()
         router.menuSelection.selected = .switchProfile
-        func stage<Bar: View>(_ top: Bar, showsSort: Bool = true) -> some View {
+        func stage<Bar: View>(_ top: Bar, showsSort: Bool = true, player: LocalProfile? = nil) -> some View {
             ZStack(alignment: .top) {
                 SeleneBackdrop().still(true)
                 top
                 VStack {
                     Spacer()
-                    CollectionCoverRow(games: [.init(nxnative: game)], selectedID: game.id,
+                    CollectionCoverRow(games: player == nil ? [.init(nxnative: game)] : Array(avatarGames.prefix(4)),
+                        selectedID: player == nil ? game.id : avatarGames[1].id,
                         artwork: ArtworkStore(), boxArt: vm.boxArt, boxArtIndexVersion: 0,
                         officialName: { _ in nil }, needsMetadata: { _ in }, cloud: vm.cloudLibrary,
                         showsCloudBadges: true, onSelect: { _ in }, onActivate: { _ in })
@@ -78,7 +112,7 @@ import ArcanePorting
                         .frame(maxHeight: .infinity, alignment: .bottom)
                 }
             }
-            .environment(\.profilePortrait, showsSort ? alex : nil)
+            .environment(\.profilePortrait, showsSort ? player ?? alex : nil)
             .environment(\.onlinePlayersByTitle, [game.titleId!.lowercased(): 12])
         }
         let after = stage(SpotlightTopBar(filter: .all, sort: current))
@@ -91,6 +125,35 @@ import ArcanePorting
         try render("10-online-tile", after, in: out, refs, "screenshots/library.png")
         precondition(profiles.update(sam))
         try render("11-remove", picker(selected: sam.id, removing: sam), in: out, refs, "web/182-15.png")
+        try render("16-switch-profile", picker(selected: sam.id), in: out, refs, "web/reddit-showcase-who-05s.png", reduced: false)
+        try render("17-second-profile-collection", stage(SpotlightTopBar(filter: .recentlyPlayed, sort: current), player: sam),
+                   in: out, refs, "screenshots/library.png")
+        let historyStore = PlaySessionStore(fileURL: data.appendingPathComponent("fixture-history.json"))
+        let firstGame = UUID(), secondGame = UUID()
+        precondition(historyStore.start(gameID: firstGame, sourceID: "fixture"))
+        precondition(profiles.choose(sam.id))
+        historyStore.profileID = sam.id
+        precondition(historyStore.lastPlayed(for: firstGame) == nil)
+        precondition(historyStore.start(gameID: secondGame, sourceID: "fixture"))
+        let native = CatalogGame(nxnative: game)
+        var originalGame = native
+        originalGame.setFavorite(true)
+        vm.localProfiles = profiles
+        vm.applyCatalog(.init(games: [originalGame]))
+        precondition(vm.catalogGames.first?.isFavorite == false)
+        let revision = vm.catalogSnapshot.revision
+        precondition(profiles.choose(alex.id))
+        vm.refreshProfileFavorites()
+        precondition(vm.catalogSnapshot.revision == revision && vm.catalogGames.first?.isFavorite == true)
+        let accountDir = NextendoLaunch.tokenStore(profileID: sam.id, originalID: alex.id, root: data).directory
+        precondition(accountDir != NextendoLaunch.tokenStore(profileID: alex.id, originalID: alex.id, root: data).directory)
+        let samAccount = NextendoSettings(store: .init(directory: accountDir))
+        samAccount.setScreenFixture(.connected, second: true)
+        try render("18-second-profile-nextendo", ProfilePageLayout(profile: sam, presence: .connected,
+            games: [.init(id: secondGame, name: game.name, last: .now, duration: 123)], onClose: {}, onSwitch: {}) {
+            SettingsAPISection(viewModel: vm, settings: settings, showsMultiplayer: true, supportsNextendo: true,
+                               accountOnly: true, advanced: .constant(false), onActions: { _ in }, nextendo: samAccount)
+        }, in: out, refs, "screenshots/activity.png")
         try render("12-sort-before", stage(BeforeSortTopBar(), showsSort: false), in: out, refs, "screenshots/library.png")
         try render("13-sort-after", after, in: out, refs, "screenshots/library.png")
         var focus: LibrarySort? = current
@@ -108,6 +171,28 @@ import ArcanePorting
             panel(NSImage(contentsOf: beforeImage)!, "Arcane · avant")
             panel(NSImage(contentsOf: afterImage)!, "Arcane · après")
         }), to: out.appendingPathComponent("15-sort-avant-apres.png"))
+    }
+
+    @MainActor static func checkGIF(in root: URL) throws {
+        let url = root.appendingPathComponent("fixture.gif")
+        let out = root.appendingPathComponent("cropped.gif")
+        let encoder = CGImageDestinationCreateWithURL(url as CFURL, UTType.gif.identifier as CFString, 2, nil)!
+        for color in [Color.red, .blue] {
+            CGImageDestinationAddImage(encoder, try bitmap(color.frame(width: 100, height: 60)),
+                [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFDelayTime: 0.2]] as CFDictionary)
+        }
+        precondition(CGImageDestinationFinalize(encoder))
+        let crop = ProfileAvatar.Crop(x: 1, y: 0, zoom: 2)
+        precondition(crop.rectangle(width: 100, height: 60) == CGRect(x: 70, y: 0, width: 30, height: 30))
+        let result = ProfileAvatar.render(url, crop: crop)!
+        precondition(ProfileAvatar.isGIF(result))
+        try result.write(to: out)
+        let source = ProfileAvatar.source(out)!
+        precondition(CGImageSourceGetCount(source) == 2)
+        precondition(ProfileAvatar.thumbnail(source)?.width == 30)
+        let values = CGImageSourceCopyPropertiesAtIndex(source, 1, nil) as? [CFString: Any]
+        let timing = values?[kCGImagePropertyGIFDictionary] as? [CFString: Any]
+        precondition(timing?[kCGImagePropertyGIFDelayTime] as? Double == 0.2)
     }
 
     struct BeforeSortTopBar: View {
@@ -216,8 +301,8 @@ def main():
         with (package / "Sources/ArcanePorting/Launch/NextendoAccountService.swift").open("a") as swift:
             swift.write(r'''
 extension NextendoAccountSnapshot {
-    package static var screenFixture: Self {
-        .init(name: "Lunar Pilot", username: "fixture", countryCode: nil, friendCode: nil, avatar: nil,
+    package static func screenFixture(second: Bool) -> Self {
+        .init(name: second ? "Solar Pilot" : "Lunar Pilot", username: second ? "fixture2" : "fixture", countryCode: nil, friendCode: nil, avatar: nil,
               avatarPID: nil, friends: [.init(id: 1, name: "Sol", favorite: false, presence: .online, game: nil, gameID: nil)],
               requests: [], sent: [], recentPlayers: [], failure: nil)
     }
@@ -226,9 +311,9 @@ extension NextendoAccountSnapshot {
         with (app / "ViewModels/NextendoSettings.swift").open("a") as swift:
             swift.write(r'''
 extension NextendoSettings {
-    func setScreenFixture(_ presence: ProfilePresence) {
+    func setScreenFixture(_ presence: ProfilePresence, second: Bool = false) {
         switch presence {
-        case .connected: status = .signedIn; account = .screenFixture; accountName = account?.name
+        case .connected: status = .signedIn; account = .screenFixture(second: second); accountName = account?.name
         case .offline: status = .unavailable
         case .loading: isBusy = true
         case .expired: status = .expired

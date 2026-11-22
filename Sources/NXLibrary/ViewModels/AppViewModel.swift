@@ -121,7 +121,7 @@ final class AppViewModel: ObservableObject {
     // MARK: - Library
     @Published private(set) var libraryGames: [PortedGame] = []
     @Published private(set) var catalogGames: [CatalogGame] = []
-    private var catalogSnapshot = CatalogDocument()
+    private(set) var catalogSnapshot = CatalogDocument()
     @Published private(set) var catalogSourceConfigurations: [CatalogSourceConfiguration] = []
     @Published private(set) var personalizations = CatalogPersonalizations.empty
     /// Finished file operations whose catalog save must still be retried.

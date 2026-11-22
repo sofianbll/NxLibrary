@@ -1,9 +1,24 @@
 import Foundation
+import NXLibraryCore
 
 /// The build advertises modes in the same settings contract the game launcher consumes.
 public enum NextendoLaunch {
     public static let networkKey = "DM_NETWORK"
     public static let clientIDKey = "DM_NEXTENDO_CLIENT_ID"
+    public static let loginDirectoryKey = "DM_NEXTENDO_LOGIN_DIR"
+
+    public static func tokenStore(profileID: UUID?, originalID: UUID?, root: URL = AppData.supportRoot) -> NextendoTokenStore {
+        guard let profileID, profileID != originalID else { return .init() }
+        return .init(directory: root.appendingPathComponent("profile-credentials", isDirectory: true)
+            .appendingPathComponent(profileID.uuidString, isDirectory: true))
+    }
+
+    /// Prove the installed host knows the override, not just that the selected source checkout does.
+    public static func supportsProfileLogin(in app: URL) -> Bool {
+        let host = app.appendingPathComponent("Contents/MacOS/dmhost")
+        guard let data = try? Data(contentsOf: host, options: .mappedIfSafe) else { return false }
+        return data.range(of: Data((loginDirectoryKey + "\0").utf8)) != nil
+    }
 
     public static func networkSetting(in settings: [LauncherSetting]) -> LauncherSetting? {
         settings.first { $0.env == networkKey && $0.kind == "choice" && $0.options?.isEmpty == false }
@@ -14,11 +29,14 @@ public enum NextendoLaunch {
     }
 
     public static func environment(setting: LauncherSetting?, mode: String?, clientID: String?,
+                                   tokenStore: NextendoTokenStore? = nil,
                                    sessionAvailable: (String) async throws -> Bool) async throws -> [String: String] {
         guard requiresSignIn(setting: setting, mode: mode) else { return [:] }
         guard let clientID, NextendoAuthorization.validClientID(clientID) else { throw NextendoError.clientID }
         guard try await sessionAvailable(clientID) else { throw NextendoError.signedOut }
-        return [clientIDKey: clientID]
+        var environment = [clientIDKey: clientID]
+        if let tokenStore { environment[loginDirectoryKey] = tokenStore.directory.path }
+        return environment
     }
 
     static let buildFlag = "--nextendo"

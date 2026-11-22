@@ -86,21 +86,22 @@ extension AppViewModel {
         let multiplayerEnvironment = multiplayer?.environment ?? [:]
         let mode = multiplayerEnvironment[NextendoLaunch.networkKey] ?? gameSettings?.effectiveLaunchValue(NextendoLaunch.networkKey)
         if NextendoLaunch.requiresSignIn(setting: setting, mode: mode) {
-            guard usesSharedNextendo else {
-                playSessionStore?.abandonStart(gameID: game.id)
-                saveGate.end(titleID: titleId, token: saveLaunchToken)
-                launchingGameId = nil
-                showSettingsNotice(title: "Nextendo", message: L10n.text("Online play uses the original profile on this Mac."))
-                return
-            }
+            let scoped = !usesSharedNextendo
+            let tokenStore = NextendoLaunch.tokenStore(profileID: localProfiles?.active?.id, originalID: localProfiles?.originalID)
             let clientID = settingsStore?.settings.nextendoClientID ?? NextendoLaunch.buildClientID
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 do {
                     // Validate access under the engine's lock, including credentials written by other frontends.
-                    let store = NextendoTokenStore()
-                    let environment = try await NextendoLaunch.environment(setting: setting, mode: mode, clientID: clientID) { client in
-                        try await NextendoOAuth(store: store).accountName(clientID: client) != nil
+                    if scoped {
+                        let supported = await Task.detached(priority: .userInitiated) {
+                            NextendoLaunch.supportsProfileLogin(in: game.url)
+                        }.value
+                        guard supported else { throw NextendoError.profileHost }
+                    }
+                    let environment = try await NextendoLaunch.environment(setting: setting, mode: mode, clientID: clientID,
+                                                                           tokenStore: tokenStore) { client in
+                        try await NextendoOAuth(store: tokenStore).accountName(clientID: client) != nil
                     }
                     self.startGame(game, titleId: titleId, token: saveLaunchToken, gameSettings: gameSettings,
                                    environment: multiplayerEnvironment.merging(environment) { _, online in online })
@@ -112,10 +113,10 @@ extension AppViewModel {
                     let hint = problem.localizedDescription
                     SoundEffectService.shared.play(.error)
                     if [.clientID, .signedOut, .expired, .authorization].contains(problem) {
-                        self.showSettingsNotice(title: "Nextendo", message: hint, actionTitle: "Play together") { [weak self] in
+                        self.showSettingsNotice(title: "Nextendo", message: hint, actionTitle: "Open profile") { [weak self] in
                             guard let self else { return }
                             self.gameForSettingsSheet = nil
-                            self.router?.openSettings(.multiplayer)
+                            NotificationCenter.default.post(name: .nxOpenLocalProfile, object: nil)
                         }
                     } else {
                         self.showSettingsNotice(title: "Nextendo", message: hint)

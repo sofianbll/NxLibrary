@@ -9,6 +9,8 @@ struct ProfileEditorView: View {
     enum Step: Int, CaseIterable { case name, avatar, theme, background }
     @State var profile: LocalProfile
     let games: [PortedGame]
+    var avatarGames: [CatalogGame] = []
+    var artwork: ArtworkStore? = nil
     let isNew: Bool
     let onCancel: () -> Void
     let onSave: (LocalProfile) -> Bool
@@ -18,6 +20,10 @@ struct ProfileEditorView: View {
     @State private var shift = false
     @State private var customBackground: URL?
     @State private var savedBackgroundID: String?
+    @State var cachedPortraits: [CachedAvatar] = []
+    @State private var cropDraft: AvatarCropDraft?
+    @State private var isCropping = false
+    @State private var cropTask: Task<Void, Never>?
     @FocusState private var nameFocused: Bool
     @ObservedObject private var theme = ThemeStore.shared
     @Environment(\.seleneCanvas) private var canvas
@@ -30,7 +36,8 @@ struct ProfileEditorView: View {
     private var customBackgroundSelected: Bool { step == .background && index == wallpapers.count }
     private var index: Int { indexes[step.rawValue] }
     private var columns: Int { [10, 10, 5, 3][step.rawValue] }
-    private var itemCount: Int { [keys.count, ProfilePortrait.symbols.count + 1, palettes.count, wallpapers.count + 1][step.rawValue] }
+    private var ownAvatar: Int { cachedPortraits.count + ProfilePortrait.symbols.count }
+    private var itemCount: Int { [keys.count, ownAvatar + 1, palettes.count, wallpapers.count + 1][step.rawValue] }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -48,7 +55,9 @@ struct ProfileEditorView: View {
                 case .theme, .background: lookStep
                 }
             }
-            .padding(.top, canvas.u(step == .name ? 300 : 285))
+            .padding(.top, canvas.u(step == .name ? 300 : step == .avatar ? 352 : 285))
+            .accessibilityHidden(cropDraft != nil)
+            .allowsHitTesting(cropDraft == nil)
             if let error {
                 Text(L10n.text(error)).seleneFont(18)
                     .frame(maxHeight: .infinity, alignment: .bottom)
@@ -63,17 +72,31 @@ struct ProfileEditorView: View {
             .accessibilityHidden(true)
             .frame(maxHeight: .infinity, alignment: .bottom)
             .padding(.bottom, canvas.u(124))
-            SeleneHintsBar(left: [HintItem(.b, "Back", action: back), HintItem(nil, "Cancel", glyph: .close, action: onCancel)],
+            SeleneHintsBar(left: [HintItem(.b, "Back", action: back), HintItem(nil, "Cancel", glyph: .close, action: onCancel)]
+                           + (step == .avatar ? [HintItem(.x, "Your own picture", action: importAvatar)] : []),
                            right: [HintItem(.a, customBackgroundSelected && customBackground == nil ? "Add a picture"
                             : step == .background ? (isNew ? "Create profile" : "Save") : "Next", action: advance)])
                 .frame(maxHeight: .infinity, alignment: .bottom)
+                .accessibilityHidden(cropDraft != nil)
+                .allowsHitTesting(cropDraft == nil)
+            if let cropDraft { cropPanel(cropDraft) }
         }
         .foregroundStyle(SeleneTheme.ink)
         .onAppear {
-            indexes[Step.avatar.rawValue] = profile.portrait == nil ? profile.avatar : ProfilePortrait.symbols.count
+            indexes[Step.avatar.rawValue] = profile.portrait == nil ? profile.avatar : ownAvatar
             indexes[Step.theme.rawValue] = palettes.firstIndex { $0.id == profile.look.theme } ?? 0
             indexes[Step.background.rawValue] = wallpapers.firstIndex(of: profile.look.wallpaper) ?? 0
         }
+        .task(id: step) {
+            guard step == .avatar, cachedPortraits.isEmpty, let artwork else { return }
+            let games = avatarGames
+            let found = await Task.detached(priority: .utility) { Self.loadAvatars(games, artwork: artwork) }.value
+            guard !Task.isCancelled, !found.isEmpty else { return }
+            let current = indexes[Step.avatar.rawValue]
+            cachedPortraits = found
+            indexes[Step.avatar.rawValue] = profile.portrait == nil && current == 0 ? 0 : current + found.count
+        }
+        .onDisappear { cropTask?.cancel() }
         .onReceive(NotificationCenter.default.publisher(for: .nxProfileInput)) { note in
             if let action = note.object as? GamepadAction { handle(action) }
         }
@@ -91,7 +114,7 @@ struct ProfileEditorView: View {
     private var subtitle: String {
         switch step {
         case .name: "This is the name on your profile. Type, or use the keys below."
-        case .avatar: "Pick one, or use your own picture."
+        case .avatar: "Pick one, or use your own picture. A GIF keeps moving."
         case .theme: "Colors for all of Arcane. Move through them to see each one in the preview."
         case .background: "Choose the picture behind your library."
         }
@@ -146,23 +169,60 @@ struct ProfileEditorView: View {
     }
 
     private var avatarStep: some View {
-        grid(count: itemCount, width: 118) { item in
-            let custom = item == ProfilePortrait.symbols.count
-            let face = LocalProfile(name: profile.name, avatar: item, portrait: custom ? profile.portrait : nil, look: profile.look)
-            button(item, label: custom ? L10n.text("Add a picture") : L10n.format("Avatar %lld", [item + 1]),
-                   action: { accept() }) {
-                Group {
-                    if custom && profile.portrait == nil {
-                        Circle().fill(SeleneTheme.glass).overlay(MaterialIconView(.add, size: 44))
-                            .frame(width: canvas.u(96), height: canvas.u(96))
-                    } else {
-                        ProfilePortrait(profile: face, size: 96)
+        let count = itemCount
+        return VStack(spacing: canvas.u(24)) {
+            ZStack {
+                ForEach(-3...3, id: \.self) { offset in
+                    let item = (index + offset + count) % count
+                    let selected = item == index
+                    let data = item < cachedPortraits.count ? cachedPortraits[item].image : item == ownAvatar ? profile.portrait : nil
+                    let face = LocalProfile(name: "", avatar: item - cachedPortraits.count, portrait: data, look: profile.look)
+                    button(item, label: avatarLabel(item), action: {
+                        if selected { accept() }
+                    }) {
+                        Group {
+                            if item == ownAvatar && data == nil {
+                                Circle().fill(SeleneTheme.glass).overlay(MaterialIconView(.image, size: 52))
+                                    .frame(width: canvas.u(176), height: canvas.u(176))
+                            } else {
+                                ProfilePortrait(profile: face, size: 176)
+                            }
+                        }
+                        .modifier(TileFocus(focused: selected, radius: 88, scale: 1.16))
                     }
+                    .offset(x: canvas.u(CGFloat(offset) * 210))
+                    .opacity(selected ? 1 : 0.81)
+                    .zIndex(selected ? 1 : 0)
                 }
-                .modifier(TileFocus(focused: index == item, radius: 48, scale: 1.1))
-                .frame(height: canvas.u(118))
             }
+            .frame(width: canvas.u(1360), height: canvas.u(230))
+            .clipped()
+            .animation(reduceMotion ? nil : SeleneTheme.quick, value: index)
+            Text(avatarLabel(index)).seleneFont(23).foregroundStyle(SeleneTheme.ink75)
         }
+    }
+
+    private func avatarLabel(_ item: Int) -> String {
+        if cachedPortraits.indices.contains(item) { return cachedPortraits[item].name }
+        return item == ownAvatar ? L10n.text("Your own picture") : L10n.format("Avatar %lld", [item - cachedPortraits.count + 1])
+    }
+
+    struct CachedAvatar {
+        let name: String
+        let image: Data
+    }
+
+    nonisolated static func loadAvatars(_ games: [CatalogGame], artwork: ArtworkStore) -> [CachedAvatar] {
+        var avatars: [CachedAvatar] = []
+        for game in games.prefix(120) {
+            if avatars.count == 16 || Task.isCancelled { break }
+            let id = game.personalizationKey
+            guard let url = artwork.cachedURL(titleID: id, kind: .hero) ?? artwork.cachedURL(titleID: id, kind: .square)
+                    ?? artwork.cachedURL(titleID: id, kind: .boxart),
+                  let data = ProfileAvatar.cachedPortrait(url) else { continue }
+            avatars.append(.init(name: game.name, image: data))
+        }
+        return avatars
     }
 
     private var lookStep: some View {
@@ -243,6 +303,7 @@ struct ProfileEditorView: View {
     }
 
     private func handle(_ action: GamepadAction) {
+        if cropDraft != nil { handleCrop(action); return }
         switch action {
         case .navigateLeft, .navigateRight, .navigateUp, .navigateDown:
             let next: Int
@@ -258,6 +319,9 @@ struct ProfileEditorView: View {
                     next = index + (action == .navigateLeft ? -1 : 1)
                     guard keyRows[row].contains(next) else { return }
                 }
+            } else if step == .avatar {
+                guard action == .navigateLeft || action == .navigateRight else { return }
+                next = (index + itemCount + (action == .navigateLeft ? -1 : 1)) % itemCount
             } else {
                 let delta = action == .navigateLeft ? -1 : action == .navigateRight ? 1 : action == .navigateUp ? -columns : columns
                 next = index + delta
@@ -270,6 +334,7 @@ struct ProfileEditorView: View {
         case .menu: advance()
         case .menuHold: onCancel()
         case .secondaryAction where step == .name: selectKey(keys.count - 2)
+        case .secondaryAction where step == .avatar: importAvatar()
         case .contextAction where step == .name: selectKey(keys.count - 3)
         default: break
         }
@@ -283,9 +348,6 @@ struct ProfileEditorView: View {
     private func accept() {
         switch step {
         case .name: selectKey(index)
-        case .avatar where index == ProfilePortrait.symbols.count:
-            guard importAvatar() || profile.portrait != nil else { return }
-            advance()
         default: advance()
         }
     }
@@ -298,10 +360,12 @@ struct ProfileEditorView: View {
             guard !profile.name.isEmpty && profile.name.count <= 32 else { error = "Enter a name of 1 to 32 characters."; return }
             nameFocused = false
         case .avatar:
-            if index < ProfilePortrait.symbols.count {
-                profile.avatar = index
+            if index < cachedPortraits.count {
+                profile.portrait = cachedPortraits[index].image
+            } else if index < ownAvatar {
+                profile.avatar = index - cachedPortraits.count
                 profile.portrait = nil
-            } else if profile.portrait == nil && !importAvatar() { return }
+            } else if profile.portrait == nil { importAvatar(); return }
         case .theme:
             profile.look.theme = palettes[index].id
         case .background:
@@ -347,27 +411,88 @@ struct ProfileEditorView: View {
         else if profile.name.count < 32 { profile.name += key == "Space" ? " " : shift ? key : key.lowercased() }
     }
 
-    private func importAvatar() -> Bool {
-        let picker = NSOpenPanel()
-        picker.allowedContentTypes = [.image]
-        guard picker.runModal() == .OK, let url = picker.url else { return false }
-        // Decode a bounded thumbnail first, then center-crop a square for the circular portrait.
-        let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
-        let thumbnail = [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceCreateThumbnailWithTransform: true,
-                         kCGImageSourceThumbnailMaxPixelSize: 512] as CFDictionary
-        guard let source = CGImageSourceCreateWithURL(url as CFURL, sourceOptions),
-              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnail),
-              let data = Self.crop(image), data.count <= 512_000 else {
-            error = "Couldn't add the picture"
-            return false
-        }
-        profile.portrait = data
-        return true
+    private struct AvatarCropDraft {
+        let url: URL
+        let preview: CGImage
+        var crop = ProfileAvatar.Crop()
     }
 
-    nonisolated static func crop(_ image: CGImage) -> Data? {
-        let side = min(image.width, image.height)
-        guard let square = image.cropping(to: CGRect(x: (image.width - side) / 2, y: (image.height - side) / 2, width: side, height: side)) else { return nil }
-        return NSBitmapImageRep(cgImage: square).representation(using: .jpeg, properties: [.compressionFactor: 0.88])
+    private func importAvatar() {
+        guard cropDraft == nil else { return }
+        let picker = NSOpenPanel()
+        picker.allowedContentTypes = [.image]
+        guard picker.runModal() == .OK, let url = picker.url else { return }
+        guard let source = ProfileAvatar.source(url), let image = ProfileAvatar.thumbnail(source) else {
+            error = "Couldn't add the picture"
+            return
+        }
+        cropDraft = AvatarCropDraft(url: url, preview: image)
+    }
+
+    private func cropPanel(_ draft: AvatarCropDraft) -> some View {
+        ZStack {
+            SeleneTheme.scrim65.ignoresSafeArea()
+            VStack(spacing: canvas.u(18)) {
+                Text(L10n.text("Frame your picture")).seleneFont(34).accessibilityAddTraits(.isHeader)
+                if let crop = draft.preview.cropping(to: draft.crop.rectangle(width: draft.preview.width, height: draft.preview.height)) {
+                    Image(decorative: crop, scale: 1).resizable()
+                        .frame(width: canvas.u(240), height: canvas.u(240)).clipShape(Circle())
+                        .accessibilityHidden(true)
+                }
+                cropSlider("Horizontal position", \.x, 0...1, fallback: 0.5)
+                cropSlider("Vertical position", \.y, 0...1, fallback: 0.5)
+                cropSlider("Zoom", \.zoom, 1...3, fallback: 1)
+                if isCropping { ProgressView().controlSize(.small).accessibilityLabel(L10n.text("Preparing…")) }
+                HStack(spacing: canvas.u(14)) {
+                    SelenePillButton(title: "Cancel", focused: false, action: cancelCrop)
+                    SelenePillButton(title: "Done", focused: true, enabled: !isCropping, action: saveCrop)
+                }
+            }
+            .disabled(isCropping)
+            .modifier(SeleneDialogCard())
+        }
+    }
+
+    private func cropSlider(_ name: String, _ field: WritableKeyPath<ProfileAvatar.Crop, CGFloat>,
+                            _ range: ClosedRange<CGFloat>, fallback: CGFloat) -> some View {
+        Slider(value: Binding(get: { cropDraft?.crop[keyPath: field] ?? fallback },
+                              set: { cropDraft?.crop[keyPath: field] = $0 }), in: range) {
+            Text(L10n.text(name)).seleneFont(18)
+        }
+    }
+
+    private func handleCrop(_ action: GamepadAction) {
+        guard let crop = cropDraft?.crop else { return }
+        switch action {
+        case .cancel: cancelCrop()
+        case .confirm: saveCrop()
+        case .navigateLeft: cropDraft?.crop.x = max(0, crop.x - 0.05)
+        case .navigateRight: cropDraft?.crop.x = min(1, crop.x + 0.05)
+        case .navigateUp: cropDraft?.crop.y = max(0, crop.y - 0.05)
+        case .navigateDown: cropDraft?.crop.y = min(1, crop.y + 0.05)
+        case .tabPrevious: cropDraft?.crop.zoom = max(1, crop.zoom - 0.15)
+        case .tabNext: cropDraft?.crop.zoom = min(3, crop.zoom + 0.15)
+        default: break
+        }
+    }
+
+    private func cancelCrop() {
+        cropTask?.cancel()
+        isCropping = false
+        cropDraft = nil
+    }
+
+    private func saveCrop() {
+        guard let draft = cropDraft, !isCropping else { return }
+        isCropping = true
+        cropTask = Task {
+            let task = Task.detached(priority: .userInitiated) { ProfileAvatar.render(draft.url, crop: draft.crop) }
+            let data = await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
+            guard !Task.isCancelled else { return }
+            cancelCrop()
+            guard let data else { error = "Couldn't add the picture"; return }
+            profile.portrait = data
+            indexes[Step.avatar.rawValue] = ownAvatar
+        }
     }
 }

@@ -62,6 +62,12 @@ final class SteamPlaytimeCoordinator {
             sessions.setExternal([:])
             return
         }
+        if sessions.hasScopedSessions {
+            // Steam's account totals cannot separate Arcane profiles. Keep the last imported baseline;
+            // subsequent play is counted by Arcane's sessions rather than attributed to the wrong player.
+            sessions.setExternal(sync.baselines.external(for: games))
+            return
+        }
         guard let ticket = queue.request() else { return }
         let known = sync.stamp
         Task.detached(priority: .utility) {
@@ -72,8 +78,8 @@ final class SteamPlaytimeCoordinator {
 
     private func finish(_ result: SteamPlaytimeReading, ticket: Int) {
         let step = queue.finish(ticket)
-        if step.apply, let sessions {
-            let outcome = sync.handle(result, games: games, shownTotal: { sessions.totalDuration(for: $0, with: $1) }, now: Date())
+        if step.apply, let sessions, !sessions.hasScopedSessions {
+            let outcome = sync.handle(result, games: games, shownTotal: { sessions.originalDuration(for: $0, with: $1) }, now: Date())
             switch outcome {
             case .clear:
                 sessions.setExternal([:])

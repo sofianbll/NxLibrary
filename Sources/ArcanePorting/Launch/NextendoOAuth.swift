@@ -4,7 +4,7 @@ import NXLibraryCore
 import Security
 
 public enum NextendoError: LocalizedError, Equatable {
-    case clientID, browser, timeout, authorization, service, expired, storage, signedOut, onlinePlayUnavailable
+    case clientID, browser, timeout, authorization, service, expired, storage, signedOut, onlinePlayUnavailable, profileHost
 
     public var errorDescription: String? {
         switch self {
@@ -17,6 +17,7 @@ public enum NextendoError: LocalizedError, Equatable {
         case .storage: return L10n.text("Could not access the shared Nextendo sign-in. Close any running games and try again.")
         case .signedOut: return L10n.text("Sign in to Nextendo in Online services before playing online.")
         case .onlinePlayUnavailable: return L10n.text("Nextendo does not allow online play for this account. Check your profile on the website.")
+        case .profileHost: return L10n.text("Rebuild this game to use this profile’s Nextendo account.")
         }
     }
 }

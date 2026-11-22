@@ -6,6 +6,7 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
     @Published private var history: [PlaySession] = []
     @Published public var profileID: UUID?
     public var sessions: [PlaySession] { history.filter { $0.profileID == profileID } }
+    public var hasScopedSessions: Bool { history.contains { $0.profileID != nil } || archive.keys.contains { $0 != nil } }
     /// Play time and last start of sessions trimmed from `sessions`, per game,
     /// so totals and last-played survive trimming.
     @Published private var archive: [UUID?: [UUID: CarriedPlaytime]] = [:]
@@ -135,14 +136,23 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
 
     /// The total under a given external value (nil: none), whatever is published.
     public func totalDuration(for gameID: UUID, with external: ExternalPlaytime?) -> TimeInterval {
+        duration(for: gameID, owner: profileID, external: profileID == nil ? external : nil)
+    }
+
+    public func originalDuration(for gameID: UUID, with external: ExternalPlaytime?) -> TimeInterval {
+        duration(for: gameID, owner: nil, external: external)
+    }
+
+    private func duration(for gameID: UUID, owner: UUID?, external: ExternalPlaytime?) -> TimeInterval {
         let date = now()
-        let own = history.filter { $0.gameID == gameID && $0.profileID == profileID }
-        guard let base = profileID == nil ? external : nil else {
-            return own.reduce(carried[gameID]?.duration ?? 0) { total, session in
+        let own = history.filter { $0.gameID == gameID && $0.profileID == owner }
+        let folded = archive[owner]?[gameID]
+        guard let base = external else {
+            return own.reduce(folded?.duration ?? 0) { total, session in
                 total + max(0, (session.endedAt ?? date).timeIntervalSince(session.startedAt))
             }
         }
-        let trimmed = carried[gameID].flatMap { $0.externalSince == base.since ? $0.afterExternal : nil } ?? 0
+        let trimmed = folded.flatMap { $0.externalSince == base.since ? $0.afterExternal : nil } ?? 0
         return own.reduce(base.duration + trimmed) { total, session in
             let end = min(session.endedAt ?? date, date)
             return total + max(0, end.timeIntervalSince(max(session.startedAt, base.since)))

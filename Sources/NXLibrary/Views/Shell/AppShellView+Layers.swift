@@ -280,10 +280,9 @@ extension AppShellView {
             steamWatcher.stop()
             removeGestureKeyMonitor()
         }
-        .onChange(of: viewModel.libraryGames) { _, games in
-            runningGames.setGames(games)
-        }
-        .onChange(of: viewModel.catalogGames) { _, games in
+        .onChange(of: viewModel.catalogSnapshot.revision) {
+            let games = viewModel.catalogSnapshot.games
+            runningGames.setGames(viewModel.catalogSnapshot.nxnativeGames)
             SteamPlayCoordinator.shared.setGames(games, sources: viewModel.catalogSourceConfigurations)
             SteamPlaytimeCoordinator.shared.setGames(games, sources: viewModel.catalogSourceConfigurations)
         }

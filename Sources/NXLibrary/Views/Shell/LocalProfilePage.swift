@@ -28,6 +28,7 @@ struct LocalProfilePage: View {
     @ObservedObject var history: PlaySessionStore
     @StateObject private var nextendo: NextendoSettings
     let onClose: () -> Void
+    let onSwitch: () -> Void
     @State private var actions: [SettingsRowAction] = []
     @State private var row: String?
     @State private var button = 0
@@ -35,15 +36,16 @@ struct LocalProfilePage: View {
     @State private var checked = false
     @State private var removalFocus: SeleneConfirmButton = .cancel
 
-    init(profile: LocalProfile, usesSharedAccount: Bool, viewModel: AppViewModel, settings: AppSettingsStore,
-         history: PlaySessionStore, onClose: @escaping () -> Void) {
+    init(profile: LocalProfile, originalID: UUID?, viewModel: AppViewModel, settings: AppSettingsStore,
+         history: PlaySessionStore, onClose: @escaping () -> Void, onSwitch: @escaping () -> Void) {
         self.profile = profile
         self.viewModel = viewModel
         self.settings = settings
         self.history = history
         self.onClose = onClose
-        _nextendo = StateObject(wrappedValue: usesSharedAccount ? .shared : NextendoSettings(store: .init(directory:
-            AppData.supportRoot.appendingPathComponent("profile-credentials/\(profile.id.uuidString)", isDirectory: true))))
+        self.onSwitch = onSwitch
+        let store = NextendoLaunch.tokenStore(profileID: profile.id, originalID: originalID)
+        _nextendo = StateObject(wrappedValue: profile.id == originalID ? .shared : NextendoSettings(store: store))
     }
 
     private var presence: ProfilePresence {
@@ -57,7 +59,7 @@ struct LocalProfilePage: View {
 
     var body: some View {
         ZStack {
-            ProfilePageLayout(profile: profile, presence: presence, games: recent, onClose: onClose) {
+            ProfilePageLayout(profile: profile, presence: presence, games: recent, onClose: onClose, onSwitch: onSwitch) {
                 SettingsAPISection(viewModel: viewModel, settings: settings, showsMultiplayer: true,
                                    supportsNextendo: true, accountOnly: true, accountOffline: online == false, advanced: .constant(false),
                                    onActions: updateActions, nextendo: nextendo)
@@ -133,6 +135,7 @@ struct LocalProfilePage: View {
             return
         }
         if action == .cancel { onClose(); return }
+        if action == .menu { onSwitch(); return }
         guard let idx = actions.firstIndex(where: { $0.rowID == row }) else { return }
         let current = actions[idx]
         switch action {
@@ -167,6 +170,7 @@ struct ProfilePageLayout<Account: View>: View {
     let presence: ProfilePresence
     let games: [Recent]
     let onClose: () -> Void
+    var onSwitch: (() -> Void)? = nil
     @ViewBuilder let account: () -> Account
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.nxAppLocale) private var locale
@@ -214,7 +218,8 @@ struct ProfilePageLayout<Account: View>: View {
                 }
             }
             .frame(maxHeight: .infinity, alignment: .top)
-            SeleneHintsBar(left: [HintItem(.b, "Back", action: onClose)])
+            SeleneHintsBar(left: [HintItem(.b, "Back", action: onClose)],
+                           right: onSwitch.map { [HintItem(.menu, "Switch profile", keyboard: .text("+"), action: $0)] } ?? [])
         }
         .foregroundStyle(SeleneTheme.ink)
     }

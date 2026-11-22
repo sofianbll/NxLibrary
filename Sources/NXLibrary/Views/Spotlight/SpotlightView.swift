@@ -374,6 +374,7 @@ struct SpotlightView: View {
     private func tasks(_ model: Snapshot, on content: some View) -> some View {
         content
         .onChange(of: playSessions.sessions.count) { reconcile() }
+        .onChange(of: playSessions.profileID) { reconcile() }
         .task(id: art.heroTaskKey(model.selectedGame, metadata: model.selectedGame.flatMap { store.storeMetadata[$0.id] })) { await loadHero(model.selectedGame) }
         .task(id: art.steamHeroTaskKey(model.selectedCatalogGame)) {
             await art.loadSteamHero(game: model.selectedCatalogGame, current: { selectedCatalogGame?.id }, artwork: artwork, settle: 420_000_000)

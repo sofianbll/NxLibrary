@@ -11,7 +11,8 @@ Come si aggiorna:
 
 | Parte | Stato | Prove ancora da fare |
 |---|---|---|
-| Profili locali e menu di ordinamento | in attesa | Su un profilo di prova, migrare senza perdere preferiti e cronologia, cambiare giocatore durante un gioco, annullare la modifica e rimuovere dopo conferma. Provare ritratto, connessione e stati Nextendo, tasti A/Y/X/+, S e R3, ripristino del focus, VoiceOver, Riduci movimento e testi nelle 7 lingue. Il probe `run_profiles.py` rende le schermate con dati sintetici. |
+| Profili locali e menu di ordinamento (fase 1) | validato da Sofian, tranne la scelta dell’avatar | L’avatar passa alla verifica della fase 2. |
+| Avatar rinnovato, isolamento dei profili e Nextendo (fase 2) | in attesa | Con due profili di prova confrontare preferiti, cronologia e aspetto in Spotlight, Collection, Attività e Details. Provare ritaglio/GIF con tastiera, controller, VoiceOver e Riduci movimento; collegare due conti Nextendo e verificare due lanci online, un host precedente e il backup/ripristino su una copia. |
 | Pin del motore nel bundle e aggiornamento perso | in attesa | Dal Mac del giocatore controllare l'offerta, le note e il riavvio; in Setup provare Clone su una cartella nuova e Update o Switch su un checkout pulito con `origin` upstream. Verificare SHA raggiunto, `origin` invariato, checkout sporco intatto e un gioco esistente ancora giocabile. |
 
 ## 0.2.1 (pubblicata il 20 nov 2026)

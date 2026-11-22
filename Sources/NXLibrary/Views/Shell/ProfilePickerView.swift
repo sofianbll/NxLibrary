@@ -8,6 +8,8 @@ struct ProfilePortrait: View {
     let size: CGFloat
     var ring = false
     @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.seleneReduceMotion) private var motion
+    @Environment(\.accessibilityReduceMotion) private var systemMotion
     @ObservedObject private var theme = ThemeStore.shared
     static let symbols = ["person.fill", "moon.stars.fill", "hare.fill", "cat.fill", "tortoise.fill",
                           "bird.fill", "leaf.fill", "bolt.fill", "flame.fill", "drop.fill",
@@ -23,7 +25,9 @@ struct ProfilePortrait: View {
         let tint = Color(hex: Self.colors[index % Self.colors.count])
         ZStack {
             Circle().fill(tint.gradient)
-            if let data = profile.portrait, let image = NSImage(data: data) {
+            if let data = profile.portrait, ProfileAvatar.isGIF(data), !motion && !systemMotion {
+                AnimatedProfilePortrait(data: data)
+            } else if let data = profile.portrait, let image = NSImage(data: data) {
                 Image(nsImage: image).resizable().scaledToFill()
             } else {
                 Image(systemName: Self.symbols[index])
@@ -44,6 +48,8 @@ struct ProfilePickerView: View {
     let initialEdit: Bool
     let canClose: Bool
     let games: [PortedGame]
+    var avatarGames: [CatalogGame] = []
+    var artwork: ArtworkStore? = nil
     let onChoose: (UUID) -> Void
     let onClose: () -> Void
     let onActiveEdited: () -> Void
@@ -64,6 +70,7 @@ struct ProfilePickerView: View {
                 .allowsHitTesting(draft == nil && removing == nil)
             if let draft {
                 ProfileEditorView(profile: draft, games: games,
+                                  avatarGames: avatarGames, artwork: artwork,
                                   isNew: !profiles.profiles.contains { $0.id == draft.id },
                                   onCancel: editorClosed, onSave: save)
             }

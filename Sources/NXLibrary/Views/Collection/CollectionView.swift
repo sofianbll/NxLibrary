@@ -109,6 +109,7 @@ struct CollectionView: View {
             select(id)
         }
         .onChange(of: playSessions.sessions.count) { reconcile() }
+        .onChange(of: playSessions.profileID) { reconcile() }
         .onChange(of: viewModel.isScanningLibrary) { reconcile() }
         .task(id: art.heroTaskKey(game, metadata: game.flatMap { store.storeMetadata[$0.id] })) { await loadHero(game) }
         .task(id: art.steamHeroTaskKey(selectedCatalogGame)) { await art.loadSteamHero(game: selectedCatalogGame, current: { selectedCatalogGame?.id }, artwork: artwork) }

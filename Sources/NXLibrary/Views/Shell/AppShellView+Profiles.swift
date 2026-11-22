@@ -8,6 +8,7 @@ struct ProfileFlow {
     var selected: UUID?
     var atStartup = false
     var returnsToMenu = false
+    var returnsToPortrait = false
 }
 
 extension EnvironmentValues {
@@ -26,11 +27,15 @@ extension AppShellView {
             case .picker, .editor:
                 ProfilePickerView(profiles: profiles, initialSelection: flow.selected, initialEdit: flow.page == .editor,
                                   canClose: !flow.atStartup, games: viewModel.libraryGames,
+                                  avatarGames: viewModel.visibleCatalogGames, artwork: artwork,
                                   onChoose: chooseProfile, onClose: closeProfile,
                                   onActiveEdited: applyActiveProfile)
             case .detail:
-                LocalProfilePage(profile: active, usesSharedAccount: active.id == profiles.originalID,
-                                 viewModel: viewModel, settings: settings, history: playSessions, onClose: closeProfile)
+                LocalProfilePage(profile: active, originalID: profiles.originalID, viewModel: viewModel,
+                                 settings: settings, history: playSessions, onClose: closeProfile) {
+                    profileFlow?.page = .picker
+                    profileFlow?.returnsToPortrait = true
+                }
             }
         }
     }
@@ -43,6 +48,11 @@ extension AppShellView {
     }
 
     func closeProfile() {
+        if profileFlow?.returnsToPortrait == true {
+            profileFlow?.page = .detail
+            profileFlow?.returnsToPortrait = false
+            return
+        }
         let returnToMenu = profileFlow?.returnsToMenu == true
         profileFlow = nil
         viewModel.profileOwnsInput = false
@@ -55,6 +65,7 @@ extension AppShellView {
         guard profiles.choose(id) else { return }
         applyActiveProfile()
         profileFlow?.returnsToMenu = false
+        profileFlow?.returnsToPortrait = false
         closeProfile()
     }
 

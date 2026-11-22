@@ -56,6 +56,29 @@ final class NextendoLaunchTests: XCTestCase {
         } catch let error as NextendoError { XCTAssertEqual(error, .signedOut) }
     }
 
+    func testProfileDirectoriesStaySeparateAndOnlyPassToOnlineGames() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+        let first = UUID(), second = UUID(), third = UUID()
+        XCTAssertEqual(NextendoLaunch.tokenStore(profileID: first, originalID: first, root: root).directory,
+                       NextendoTokenStore().directory)
+        let store = NextendoLaunch.tokenStore(profileID: second, originalID: first, root: root)
+        XCTAssertNotEqual(store.directory, NextendoLaunch.tokenStore(profileID: third, originalID: first, root: root).directory)
+        XCTAssertTrue(store.directory.path.hasPrefix(root.path + "/profile-credentials/"))
+        let setting = try networkSetting(online: true)
+        let environment = try await NextendoLaunch.environment(setting: setting, mode: "nextendo", clientID: "sample-client",
+                                                               tokenStore: store) { _ in true }
+        XCTAssertEqual(environment[NextendoLaunch.loginDirectoryKey], store.directory.path)
+        let offline = try await NextendoLaunch.environment(setting: setting, mode: "offline", clientID: nil,
+                                                           tokenStore: store) { _ in false }
+        XCTAssertTrue(offline.isEmpty)
+        let host = root.appendingPathComponent("Contents/MacOS/dmhost")
+        XCTAssertFalse(NextendoLaunch.supportsProfileLogin(in: root))
+        try FileManager.default.createDirectory(at: host.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("host\0DM_NEXTENDO_LOGIN_DIR\0".utf8).write(to: host)
+        XCTAssertTrue(NextendoLaunch.supportsProfileLogin(in: root))
+    }
+
     func testEngineProbeRequiresBuildFlagAndActualSetting() throws {
         let repo = FileManager.default.temporaryDirectory.appendingPathComponent("NextendoEngine-\(UUID())")
         addTeardownBlock { try? FileManager.default.removeItem(at: repo) }

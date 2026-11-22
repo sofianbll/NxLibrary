@@ -44,6 +44,7 @@ public struct LocalProfile: Codable, Equatable, Identifiable {
 
 /// The first profile inherits the existing catalog favorites and play history without rewriting either file.
 public final class LocalProfileStore: ObservableObject {
+    public static let maximumPortraitBytes = 4_000_000
     private struct Document: Codable {
         let originalID: UUID
         var activeID: UUID
@@ -60,6 +61,8 @@ public final class LocalProfileStore: ObservableObject {
 
     public init(directory: URL = AppData.supportRoot, settings: AppSettings, name: String) {
         url = directory.appendingPathComponent("profiles.json")
+        do { try Self.backup(in: directory) }
+        catch { failed = true; return }
         do {
             let saved = try JSONDecoder().decode(Document.self, from: Data(contentsOf: url))
             guard Set(saved.profiles.map(\.id)).count == saved.profiles.count,
@@ -88,7 +91,7 @@ public final class LocalProfileStore: ObservableObject {
         var profile = value
         profile.name = value.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !profile.name.isEmpty, profile.name.count <= 32,
-              (0..<20).contains(profile.avatar), (profile.portrait?.count ?? 0) <= 512_000 else { return false }
+              (0..<20).contains(profile.avatar), (profile.portrait?.count ?? 0) <= Self.maximumPortraitBytes else { return false }
         if let index = next.profiles.firstIndex(where: { $0.id == value.id }) {
             profile.favorites = next.profiles[index].favorites
             guard next.profiles[index] != profile else { return true }
@@ -124,5 +127,23 @@ public final class LocalProfileStore: ObservableObject {
             failed = true
             return false
         }
+    }
+
+    /// Publish the original files together, once, without touching the credential store.
+    private static func backup(in directory: URL) throws {
+        let manager = FileManager.default
+        let backup = directory.appendingPathComponent("profiles-migration-backup")
+        guard !manager.fileExists(atPath: backup.path) else { return }
+        let stage = directory.appendingPathComponent(".profiles-backup-\(UUID().uuidString)")
+        try manager.createDirectory(at: stage, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        defer { try? manager.removeItem(at: stage) }
+        for name in ["profiles.json", "settings.json", "catalog.json", "catalog.json.bak",
+                     "library.json", "library.json.bak", "play-sessions.json", "play-sessions-totals.json"] {
+            let source = directory.appendingPathComponent(name)
+            if manager.fileExists(atPath: source.path) {
+                try manager.copyItem(at: source, to: stage.appendingPathComponent(name))
+            }
+        }
+        try manager.moveItem(at: stage, to: backup)
     }
 }

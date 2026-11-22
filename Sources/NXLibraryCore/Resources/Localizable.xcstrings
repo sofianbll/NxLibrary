@@ -91186,6 +91186,94 @@
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Enter"}},
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "回车"}}
       }
+    },
+    "Pick one, or use your own picture. A GIF keeps moving.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Pick one, or use your own picture. A GIF keeps moving."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegline uno o usa una tua immagine. Le GIF restano animate."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisis-en un, ou utilise ta propre image. Un GIF reste animé."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle einen Avatar oder verwende dein eigenes Bild. GIFs bleiben animiert."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige uno o usa tu propia imagen. Los GIF siguen animados."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha um ou use sua própria imagem. GIFs continuam animados."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "任选一个，或使用自己的图片。GIF 会保持动画。"}}
+      }
+    },
+    "Your own picture": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Your own picture"}},
+        "it": {"stringUnit": {"state": "translated", "value": "La tua immagine"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Ta propre image"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Dein eigenes Bild"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Tu propia imagen"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Sua própria imagem"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "使用自己的图片"}}
+      }
+    },
+    "Choose another image": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose another image"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli un’altra immagine"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisir une autre image"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Anderes Bild wählen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elegir otra imagen"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolher outra imagem"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "选择其他图片"}}
+      }
+    },
+    "Frame your picture": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Frame your picture"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Inquadra l’immagine"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Recadre ton image"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Rahme dein Bild ein"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Encuadra tu imagen"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enquadre sua imagem"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "调整图片裁剪"}}
+      }
+    },
+    "Horizontal position": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Horizontal position"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Posizione orizzontale"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Position horizontale"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Horizontale Position"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Posición horizontal"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Posição horizontal"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "水平位置"}}
+      }
+    },
+    "Vertical position": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Vertical position"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Posizione verticale"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Position verticale"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Vertikale Position"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Posición vertical"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Posição vertical"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "垂直位置"}}
+      }
+    },
+    "Zoom": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Zoom"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Zoom"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Zoom"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Zoom"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Zoom"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Zoom"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "缩放"}}
+      }
+    },
+    "Rebuild this game to use this profile’s Nextendo account.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Rebuild this game to use this profile’s Nextendo account."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ricompila questo gioco per usare il conto Nextendo di questo profilo."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Recompile ce jeu pour utiliser le compte Nextendo de ce profil."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Erstelle dieses Spiel neu, um das Nextendo-Konto dieses Profils zu verwenden."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Recompila este juego para usar la cuenta de Nextendo de este perfil."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Recompile este jogo para usar a conta Nextendo deste perfil."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "重新构建此游戏以使用此个人资料的 Nextendo 账号。"}}
+      }
     }
   },
   "version": "1.0"
