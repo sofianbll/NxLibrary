@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 22 novembre 2026. Copertura di **903 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 22 novembre 2026. Copertura di **904 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -110,7 +110,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 | [Sources/NXLibrary/ViewModels/AppViewModel+Launch.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Launch.swift) | Play: attesa dello scambio cloud, multigiocatore, controllo Nextendo, salvataggi, mod e dati del profilo che avvia il gioco. |
 | [Sources/NXLibrary/ViewModels/NextendoSettings.swift](../../Sources/NXLibrary/ViewModels/NextendoSettings.swift) | Scheda Nextendo in memoria, accesso e disconnessione, aggiornamento amici, ultimi dati noti per l'overlay e stato della pubblicazione. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+GameActions.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+GameActions.swift) | Azioni su un gioco: Game options, preferito, nascosto, salvataggi cloud, chiusura, rimozione e Mostra nel Finder. |
-| [Sources/NXLibrary/ViewModels/AppViewModel+GameFiles.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+GameFiles.swift) | File di un gioco: riepilogo e rimozione delle sorgenti, cancellazione del porting, cartella Ryujinx e log. |
+| [Sources/NXLibrary/ViewModels/AppViewModel+GameFiles.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+GameFiles.swift) | Rilegge voci e percorsi prima di spostare sorgenti e porting nel Cestino; cartella Ryujinx e log. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+Mods.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Mods.swift) | Crea lo `ModStore` di un gioco, il valore della riga Mods e le frasi per ogni errore. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+Controller.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Controller.swift) | Sceglie il gioco su cui agiscono i comandi Play, Details e Options del menu. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+Diagnostics.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Diagnostics.swift) | Raccoglie ambiente, toolchain e ultimo build per il rapporto diagnostico ripulito. |
@@ -432,7 +432,7 @@ Cartella `Sources/ArcanePorting/Library/`.
 | [Sources/ArcanePorting/Library/GameInbox.swift](../../Sources/ArcanePorting/Library/GameInbox.swift) | Propone nomi e destinazioni delle sorgenti; riconosce duplicati e collisioni, copia e verifica prima del Cestino. |
 | [Sources/ArcanePorting/Library/CloudArchiveInventory.swift](../../Sources/ArcanePorting/Library/CloudArchiveInventory.swift) | Controlla gerarchia, link, esclusioni, hash e metadati per Apple Archive e i file; trova la scrittura più recente della cache senza leggerne il contenuto. |
 | [Sources/ArcanePorting/Library/CloudArtifactFiles.swift](../../Sources/ArcanePorting/Library/CloudArtifactFiles.swift) | Valida percorsi, dimensioni e MD5 di un albero v2, confronta l'elenco rclone, ripristina i link e inventaria il contenuto al netto delle firme per l'adozione. |
-| [Sources/ArcanePorting/Library/CloudGameArchive.swift](../../Sources/ArcanePorting/Library/CloudGameArchive.swift) | Pubblica app e cache separatamente, legge i manifest per ripristino e adozione, verifica la compatibilità cache e può sospendere lo scambio atomico. |
+| [Sources/ArcanePorting/Library/CloudGameArchive.swift](../../Sources/ArcanePorting/Library/CloudGameArchive.swift) | Pubblica app e cache separatamente; distingue errori di inventario; ripristino atomico e recupero locale di Free up space. |
 | [Sources/ArcanePorting/Library/CloudGameArchive+Files.swift](../../Sources/ArcanePorting/Library/CloudGameArchive+Files.swift) | Calcola il diff, riprende il download v2 in staging, clona i file uguali, conserva la cache parziale verificata e ripara l'app prima della pubblicazione locale. |
 | [Sources/ArcanePorting/Library/CloudArchiveFingerprintCache.swift](../../Sources/ArcanePorting/Library/CloudArchiveFingerprintCache.swift) | Cache persistente e limitata delle impronte di app e cache, indicizzata da digest. |
 | [Sources/ArcanePorting/Library/CloudGameSources.swift](../../Sources/ArcanePorting/Library/CloudGameSources.swift) | Formati dei pacchetti e identità delle cartelle; registra una selezione portabile, confronta, invia e ripristina le sorgenti previa verifica dello spazio e senza sostituire file. |
@@ -594,7 +594,7 @@ Cartella `Sources/ArcanePorting/Saves/`.
 
 | File | Responsabilità |
 |---|---|
-| [Sources/ArcanePorting/Saves/SaveLocation.swift](../../Sources/ArcanePorting/Saves/SaveLocation.swift) | Percorsi e identità dei salvataggi; account/device, utenti locali aggiuntivi e file registro; cloud effettivo. |
+| [Sources/ArcanePorting/Saves/SaveLocation.swift](../../Sources/ArcanePorting/Saves/SaveLocation.swift) | Percorsi storici e separati per profilo, ambiente di avvio, account/device, utenti aggiuntivi, registro e cloud effettivo. |
 | [LinksAwakeningAchievements.swift](../../Sources/ArcanePorting/Saves/LinksAwakeningAchievements.swift) | Legge in sola lettura gli slot confermati, controlla versione e CRC ed estrae i progressi Zelda. |
 | [Sources/ArcanePorting/Saves/CloudSaves.swift](../../Sources/ArcanePorting/Saves/CloudSaves.swift) | Descrive scelta cloud, cartelle iCloud o personalizzate e passaggi fra le opzioni. |
 | [Sources/ArcanePorting/Saves/CloudSavesPreferences.swift](../../Sources/ArcanePorting/Saves/CloudSavesPreferences.swift) | Prepara la cartella e riapplica la scelta cloud ai domini dei giochi prima di ogni avvio, anche Off. |
@@ -604,7 +604,7 @@ Cartella `Sources/ArcanePorting/Saves/`.
 | [Sources/ArcanePorting/Saves/SaveFileIO.swift](../../Sources/ArcanePorting/Saves/SaveFileIO.swift) | Copie, hash e xattr portabili; inventario di directory e registro regolare limitato, controlli dei percorsi e scritture durevoli. |
 | [Sources/ArcanePorting/Saves/SaveSnapshotStore.swift](../../Sources/ArcanePorting/Saves/SaveSnapshotStore.swift) | Backup completi degli utenti locali e registro, formati storici compatibili, staging e import User/Device. |
 | [Sources/ArcanePorting/Saves/SaveRestorePreview.swift](../../Sources/ArcanePorting/Saves/SaveRestorePreview.swift) | Staging e validazione dei pezzi registrati nel backup, compreso il file utenti, con rilevamento dei cambiamenti concorrenti. |
-| [Sources/ArcanePorting/Saves/SaveTransaction.swift](../../Sources/ArcanePorting/Saves/SaveTransaction.swift) | Sostituzioni con ambito esplicito, backup completo e journal 1/2; verifica originali, recovery e pulizia parziale riprendibili con intento durevole. |
+| [Sources/ArcanePorting/Saves/SaveTransaction.swift](../../Sources/ArcanePorting/Saves/SaveTransaction.swift) | Sostituzioni e copia fra profili con backup e journal 1/2; staging di rollback ricreabile dopo una copia parziale. |
 | [Sources/ArcanePorting/Saves/SaveOperationGate.swift](../../Sources/ArcanePorting/Saves/SaveOperationGate.swift) | Assegna lease per titolo e un’esclusione globale per l’updater; coordina salvataggi, Play, installazioni e recuperi. |
 | [Sources/ArcanePorting/Saves/SaveFailure.swift](../../Sources/ArcanePorting/Saves/SaveFailure.swift) | Errori delle operazioni sui salvataggi, con i testi per il giocatore. |
 | [Sources/ArcanePorting/Saves/SaveFiles.swift](../../Sources/ArcanePorting/Saves/SaveFiles.swift) | Controlli dei percorsi dei salvataggi con lstat: nessun link sostituito e solo cartelle e file normali. |
@@ -1218,6 +1218,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [docs/history/reviews/2026-11-22-rebuild-cache.md](../history/reviews/2026-11-22-rebuild-cache.md) | Tempi prima e dopo della verifica Rebuild su cache sintetica e limiti della prova. |
 | [docs/history/reviews/2026-11-22-browser-app-adoption.md](../history/reviews/2026-11-22-browser-app-adoption.md) | Sonda locale: riparazione e firma di ripiego di una copia estratta dallo ZIP del browser. |
 | [docs/history/reviews/2026-11-22-cloud-per-file.md](../history/reviews/2026-11-22-cloud-per-file.md) | Sonda locale: byte e tempo per il cambio di un solo file, archivio rispetto a copia incrementale. |
+| [docs/history/reviews/2026-11-22-local-removal-inventory.md](../history/reviews/2026-11-22-local-removal-inventory.md) | Inventario delle cancellazioni locali e verifica del contratto `DM_SAVE`. |
 
 ## Aggiornare questo catalogo
 

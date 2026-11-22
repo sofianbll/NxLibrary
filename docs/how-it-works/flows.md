@@ -210,6 +210,10 @@ Conclusa l'importazione automatica e ripristinata la coda, Arcane verifica la pr
 
 ## 6. Importare o ripristinare un salvataggio
 
+Il primo profilo mantiene i file originali. Gli altri hanno salvataggi e backup distinti; nel
+pannello Saves, **Copy saves from another profile** copia il gioco corrente solo in uno spazio vuoto.
+Un rollback ripete una copia parziale a partire dal backup verificato prima di riabilitare Play.
+
 ```mermaid
 flowchart TD
     A["SavesPanel"] --> B["SavePanelModel"]

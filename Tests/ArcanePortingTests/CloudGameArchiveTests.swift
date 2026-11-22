@@ -1,11 +1,23 @@
 import Darwin
 import Foundation
+import OSLog
 import XCTest
 @testable import NXLibraryCore
 @testable import ArcanePorting
 
 final class CloudGameArchiveTests: XCTestCase {
     private let title = "0100E65002BB8000"
+
+    func testUnreadableCacheIsNotTreatedAsMissing() async throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        _ = try await f.service.upload(f.game)
+        try Data([1]).write(to: f.cache.appendingPathComponent("shader"))
+        do {
+            _ = try await f.service.checkRebuild(f.game, sourcesAvailable: true, withoutCache: false)
+            XCTFail("An invalid parent for the cache inventory must not offer Download")
+        } catch is CacheVerificationError {}
+    }
 
     func testFirstSendPublishesBrowsableAppFiles() async throws {
         let f = try fixture()
@@ -153,7 +165,7 @@ final class CloudGameArchiveTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: f.root) }
         let shaders = f.cache.appendingPathComponent("shader/cache")
         try FileManager.default.createDirectory(at: shaders, withIntermediateDirectories: true)
-        try Data().write(to: shaders.appendingPathComponent("b-1234567890ab.img"))
+        try Data([1]).write(to: shaders.appendingPathComponent("b-1234567890ab.img"))
         let game = CloudArchiveGame(titleID: title, locations: f.game.locations, engineCommit: "72d43ff6")
         let old = try await f.service.upload(game)
         let compatible = try await f.service.checkRebuild(game, sourcesAvailable: true, withoutCache: false)
@@ -1279,6 +1291,50 @@ final class CloudGameArchiveTests: XCTestCase {
         } catch { XCTAssertEqual(error as? CloudArchiveError, .unsafePath) }
         let latest = try await f.service.latest(titleID: title)
         XCTAssertEqual(latest?.artifacts.map(\.kind), [.app])
+    }
+
+    func testCacheRestoreInterruptedBeforeExchangeKeepsIgnoredFilesVisible() async throws {
+        let f = try fixture()
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let ignored = f.cache.appendingPathComponent("obsolete/local-only")
+        try FileManager.default.createDirectory(at: ignored.deletingLastPathComponent(), withIntermediateDirectories: false)
+        try Data([42]).write(to: ignored)
+        _ = try await f.service.upload(f.game)
+        try await f.service.free(.cache, for: f.game, confirmed: true)
+        let calls = OSAllocatedUnfairLock(initialState: 0)
+        do {
+            try await f.service.restore(.cache, for: f.game, onlyIfMissing: true, beforeMutation: {
+                if calls.withLock({ $0 += 1; return $0 }) == 2 { throw CancellationError() }
+            })
+            XCTFail("The final check must interrupt the exchange")
+        } catch is CancellationError {}
+        XCTAssertEqual(try Data(contentsOf: ignored), Data([42]))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: f.cache.appendingPathComponent("run.key").path))
+        try await f.service.restore(.cache, for: f.game, onlyIfMissing: true)
+        XCTAssertEqual(try Data(contentsOf: ignored), Data([42]))
+        XCTAssertEqual(try cacheContents(f.cache), "cache-data")
+    }
+
+    func testStartupRecoversAnInterruptedPartialFreeWithoutCloud() throws {
+        let f = try fixture()
+        let fm = FileManager.default
+        defer { try? fm.removeItem(at: f.root) }
+        let stage = f.cache.deletingLastPathComponent().appendingPathComponent(".arcane-cloud-\(UUID())")
+        let bucket = stage.appendingPathComponent(f.cache.lastPathComponent)
+        try fm.createDirectory(at: bucket, withIntermediateDirectories: true)
+        let file = f.cache.appendingPathComponent("run.key")
+        func identity(_ url: URL) throws -> [String: Int64] {
+            let node = try CloudArchiveInventory.node(at: url)
+            return ["device": Int64(node.st_dev), "inode": Int64(node.st_ino)]
+        }
+        let record: [String: Any] = ["target": try identity(f.cache), "name": f.cache.lastPathComponent,
+                                     "roots": ["run.key": try identity(file)]]
+        try JSONSerialization.data(withJSONObject: record).write(to: stage.appendingPathComponent("free-recovery.json"))
+        try fm.moveItem(at: file, to: bucket.appendingPathComponent("run.key"))
+        try CloudGameArchive.recoverInterruptedFree(at: f.cache)
+        try CloudGameArchive.recoverInterruptedFree(at: f.cache)
+        XCTAssertEqual(try cacheContents(f.cache), "cache-data")
+        XCTAssertFalse(fm.fileExists(atPath: stage.path))
     }
 
     private struct Fixture {

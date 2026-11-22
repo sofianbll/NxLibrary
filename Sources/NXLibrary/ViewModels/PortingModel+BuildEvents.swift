@@ -137,12 +137,31 @@ extension PortingModel {
         }
     }
 
-    func finishBuild(_ result: BuildResult, gameID: UUID,
+    @MainActor func finishBuild(_ result: BuildResult, gameID: UUID,
                      finalApp: URL, tempDir: URL, adoptingCache: (work: URL, cache: URL)? = nil,
+                     relocatedCache: Bool = false,
                      nextendoRequested: Bool, stagedCodeMods: [String]?) {
         stopStageElapsedTimer()
         if let adoptingCache, result.success || result.installationFailed {
-            do { try LocalBuildCache.adopt(adoptingCache.work, as: adoptingCache.cache) }
+            do {
+                try LocalBuildCache.adopt(adoptingCache.work, as: adoptingCache.cache)
+                if relocatedCache {
+                    let games = app.libraryGames
+                    let old = games.first(where: { $0.id == gameID }).flatMap {
+                        try? app.storageManager.cacheURL(for: $0, protecting: games)
+                    }
+                    app.applyCatalog(try app.catalogRepository.updateNXNative(id: gameID) {
+                        $0.workspacePath = adoptingCache.cache.deletingLastPathComponent().path
+                        $0.buildCachePath = adoptingCache.cache.path
+                    })
+                    if let old, FileManager.default.fileExists(atPath: old.path),
+                       !games.contains(where: { $0.id != gameID &&
+                           $0.buildCachePath.map { URL(fileURLWithPath: $0).resolvingSymlinksInPath().path == old.resolvingSymlinksInPath().path } == true
+                       }) {
+                        try FileManager.default.trashItem(at: old, resultingItemURL: nil)
+                    }
+                }
+            }
             catch { app.logs.append(LogEntry(level: .warning,
                 message: L10n.format("The new build cache could not be kept: %@", [error.localizedDescription]))) }
         }
@@ -271,6 +290,7 @@ extension PortingModel {
         activeBuildToolchain = nil
         finishActivityBuild(result.cancelled ? .cancelled : result.success && activityFailure == nil
             ? .succeeded : .failed(activityFailure ?? L10n.text("Porting failed")))
+        app.startNextCloudOperation()
         scheduleNextBuild()
     }
 

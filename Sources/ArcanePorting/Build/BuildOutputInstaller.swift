@@ -71,7 +71,7 @@ public enum BuildOutputInstaller {
             let sameAttempt = currentSource == nil || currentSource == saved.source || currentSource == saved.previous
             if sameAttempt {
                 if let prepared = saved.prepared, identity(destination, fileManager) == prepared {
-                    cleanup(saved, source: source, copy: copy, fileManager: fileManager)
+                    try cleanup(saved, source: source, destination: destination, copy: copy, fileManager: fileManager)
                     return
                 }
                 guard identity(destination, fileManager) == saved.previous else {
@@ -108,7 +108,11 @@ public enum BuildOutputInstaller {
             guard saved?.copied == true else {
                 throw BuildInstallError.replaceFailed("An unrecognized incoming app is already at the destination.")
             }
-            try fileManager.removeItem(at: copy)
+            if let previous = saved?.previous, identity(copy, fileManager) == previous {
+                try preservePrevious(copy, beside: destination, fileManager: fileManager)
+            } else {
+                try fileManager.removeItem(at: copy)
+            }
         }
         var receipt = Receipt(sourcePath: source.path, source: sourceID, previous: previous,
                               copied: copied, prepared: copied ? nil : sourceID)
@@ -140,17 +144,28 @@ public enum BuildOutputInstaller {
         }
         try io.publish(incoming, destination, receipt.previous != nil)
         try io.afterPublish()
-        cleanup(receipt, source: source, copy: copy, fileManager: fileManager)
+        try cleanup(receipt, source: source, destination: destination, copy: copy, fileManager: fileManager)
     }
 
-    private static func cleanup(_ receipt: Receipt, source: URL, copy: URL, fileManager: FileManager) {
+    private static func cleanup(_ receipt: Receipt, source: URL, destination: URL, copy: URL,
+                                fileManager: FileManager) throws {
         let old = receipt.copied ? copy : source
         if let previous = receipt.previous, identity(old, fileManager) == previous {
-            try? fileManager.removeItem(at: old)
+            try preservePrevious(old, beside: destination, fileManager: fileManager)
         }
         if receipt.copied, identity(source, fileManager) == receipt.source {
             try? fileManager.removeItem(at: source)
         }
+    }
+
+    private static func preservePrevious(_ old: URL, beside destination: URL, fileManager: FileManager) throws {
+        // Leave the previous app outside the build's disposable folder even if Trash refuses it.
+        let staging = destination.deletingLastPathComponent().appendingPathComponent(".arcane-previous-\(UUID())")
+        try fileManager.createDirectory(at: staging, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+        defer { _ = rmdir(staging.path) }
+        let archived = staging.appendingPathComponent(destination.lastPathComponent)
+        try fileManager.moveItem(at: old, to: archived)
+        try? fileManager.trashItem(at: archived, resultingItemURL: nil)
     }
 
     private static func identity(_ url: URL, _ fileManager: FileManager) -> Identity? {

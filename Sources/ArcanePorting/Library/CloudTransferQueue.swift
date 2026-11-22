@@ -73,6 +73,21 @@ public final class CloudTransferQueue: Sendable {
     }
 
     public func load() async -> [Entry] { await store.load() }
+
+    package static func waitsForConnection(after error: Error) -> Bool {
+        if let failure = error as? CloudLibraryFailure { return failure == .offline || failure == .unavailable }
+        if let storage = error as? StorageBackendError {
+            switch storage {
+            case .backendUnavailable, .processFailed: return true
+            default: return false
+            }
+        }
+        if let network = error as? URLError {
+            return [.notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotFindHost,
+                    .cannotConnectToHost, .dnsLookupFailed].contains(network.code)
+        }
+        return false
+    }
     public func save(_ entries: [Entry], onFailure: @escaping @Sendable (CloudLibraryFailure) -> Void = { _ in }) {
         store.save(entries) { onFailure(.queueNotSaved) }
     }

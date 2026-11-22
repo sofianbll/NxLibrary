@@ -76737,49 +76737,82 @@
         }
       }
     },
-    "This permanently deletes: %@. The installed app, saves and logs stay. Rebuilds will be disabled until you attach the sources again. This cannot be undone.": {
+    "The build queue could not be saved. Builds may not resume after quitting.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "The build queue could not be saved. Builds may not resume after quitting."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Impossibile salvare la coda di compilazione. Le compilazioni potrebbero non riprendere dopo l’uscita."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Impossible d’enregistrer la file de compilation. Les compilations risquent de ne pas reprendre après avoir quitté Arcane."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Die Build-Warteschlange konnte nicht gespeichert werden. Builds werden nach dem Beenden möglicherweise nicht fortgesetzt."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No se pudo guardar la cola de compilación. Es posible que las compilaciones no se reanuden después de salir."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não foi possível salvar a fila de compilação. As compilações podem não ser retomadas após sair."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "无法保存构建队列。退出后可能无法继续构建。"}}
+      }
+    },
+    "Copy saves from another profile": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Copy saves from another profile"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Copia i salvataggi da un altro profilo"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Copier les sauvegardes d’un autre profil"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Spielstände aus einem anderen Profil kopieren"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Copiar partidas guardadas de otro perfil"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Copiar saves de outro perfil"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "从其他玩家档案复制存档"}}
+      }
+    },
+    "Only an empty profile can receive a copy of this game's saves.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Only an empty profile can receive a copy of this game's saves."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Solo un profilo senza salvataggi di questo gioco può riceverne una copia."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "La copie n’est possible que si ce profil n’a aucune sauvegarde de ce jeu."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Eine Kopie ist nur möglich, wenn dieses Profil keine Spielstände für das Spiel hat."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Solo se puede copiar si este perfil no tiene partidas guardadas de este juego."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Só é possível copiar se este perfil não tiver saves deste jogo."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "只有尚无此游戏存档的玩家档案才能接收副本。"}}
+      }
+    },
+    "Move to Trash: %@. The installed app, saves and logs stay. Rebuilds will be disabled until you attach the sources again.": {
       "comment": "Source removal safety copy. User paths/names remain verbatim.",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This permanently deletes: %@. The installed app, saves and logs stay. Rebuilds will be disabled until you attach the sources again. This cannot be undone."
+            "value": "Move to Trash: %@. The installed app, saves and logs stay. Rebuilds will be disabled until you attach the sources again."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Elimina definitivamente: %@. L’app installata, i salvataggi e i log vengono conservati. Non potrai ricompilare finché non colleghi di nuovo le sorgenti. Questa operazione è irreversibile."
+            "value": "Sposta nel Cestino: %@. L’app installata, i salvataggi e i log vengono conservati. Non potrai ricompilare finché non colleghi di nuovo le sorgenti."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Supprime définitivement : %@. L’app installée, les sauvegardes et les journaux sont conservés. La recompilation sera désactivée jusqu’à ce que vous rattachiez les sources. Cette action est irréversible."
+            "value": "Déplacer à la Corbeille : %@. L’app installée, les sauvegardes et les journaux sont conservés. La recompilation sera désactivée jusqu’à ce que vous rattachiez les sources."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Folgendes wird endgültig gelöscht: %@. Die installierte App, Spielstände und Protokolle bleiben erhalten. Neue Builds sind erst wieder möglich, wenn du die Quelldateien erneut verknüpfst. Dies kann nicht rückgängig gemacht werden."
+            "value": "In den Papierkorb verschieben: %@. Die installierte App, Spielstände und Protokolle bleiben erhalten. Neue Builds sind erst wieder möglich, wenn du die Quelldateien erneut verknüpfst."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Elimina de forma permanente: %@. Se conservan la app instalada, las partidas guardadas y los registros. No podrás recompilar hasta que vuelvas a vincular los archivos de origen. Esta acción no se puede deshacer."
+            "value": "Mover a la papelera: %@. Se conservan la app instalada, las partidas guardadas y los registros. No podrás recompilar hasta que vuelvas a vincular los archivos de origen."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Exclui permanentemente: %@. O app instalado, os saves e os logs são mantidos. Novas compilações ficam desativadas até você vincular os arquivos de origem novamente. Esta ação não pode ser desfeita."
+            "value": "Mover para o Lixo: %@. O app instalado, os saves e os logs são mantidos. Novas compilações ficam desativadas até você vincular os arquivos de origem novamente."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "这会永久删除：%@。已安装的 App、存档和日志会保留。在你重新附加来源之前，无法重新构建。此操作无法撤销。"
+            "value": "移到废纸篓：%@。已安装的 App、存档和日志会保留。在你重新附加来源之前，无法重新构建。"
           }
         }
       }

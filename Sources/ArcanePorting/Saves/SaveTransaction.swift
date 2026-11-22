@@ -17,6 +17,8 @@ public final class SaveTransaction {
         var mutatedSlots: Set<SaveSlot>?
         /// Durable deletion intent: remaining staging entries must be a subset of these verified trees.
         var cleanupArtifacts: [String: [SaveInventoryEntry]]? = nil
+        /// Scratch contains only a disposable copy of the verified safety backup, never a live save.
+        var rollbackScratch: UUID? = nil
         var committed: Bool
 
         var observedSlots: [SaveSlot] { version == 1 ? SaveSlot.legacyCases : SaveSlot.allCases }
@@ -76,6 +78,21 @@ public final class SaveTransaction {
         return try replace(location: location, identity: identity, reason: .beforeRestore, slots: slots,
             desired: { preview.staging.appendingPathComponent($0.fileName) },
             revalidate: { try self.store.validateRestore(preview, location: location) })
+    }
+    /// A profile copy seeds an empty destination only, using the normal verified restore journal.
+    public func copyProfileSaves(from source: SaveLocation, to destination: SaveLocation, identity: SaveIdentity) throws {
+        try check(destination)
+        guard source.titleID == destination.titleID, source != destination,
+              !Self.needsRecovery(location: source), !SaveFiles.exists(source.cloudPullJournal),
+              !Self.needsRecovery(location: destination), try SaveFiles.inventory(destination).isEmpty else {
+            throw SaveFailure.changed
+        }
+        let snapshot = try store.create(location: source, identity: identity, reason: .manual)
+        guard snapshot.entries.contains(where: { !$0.isDirectory }) else { throw SaveFailure.emptyImport }
+        let preview = try store.stageRestore(snapshot, location: destination)
+        defer { try? store.discardRestore(preview, location: destination) }
+        guard try SaveFiles.inventory(destination).isEmpty else { throw SaveFailure.changed }
+        try restore(preview, location: destination, identity: identity)
     }
     private func replace(location: SaveLocation, identity: SaveIdentity, reason: SaveSnapshotReason, slots: [SaveSlot],
                          desired: (SaveSlot) -> URL, revalidate: () throws -> Void) throws -> SaveSnapshot {
@@ -177,12 +194,16 @@ public final class SaveTransaction {
         let file = journalURL(location)
         try SaveFiles.safePath(file)
         guard let data = try? SaveFiles.readRegular(file, limit: 96 * 1024 * 1024),
-              let journal = try? JSONDecoder().decode(Journal.self, from: data), journal.isValid,
+              var journal = try? JSONDecoder().decode(Journal.self, from: data), journal.isValid,
               journal.titleID == location.titleID else { throw SaveFailure.recoveryRequired }
         let original = try store.verify(snapshotID: journal.before, titleID: location.titleID)
         guard journal.version != 1 || original.schemaVersion == 1 else { throw SaveFailure.recoveryRequired }
         let expectedAfter = journal.after.map(\.portable)
         let before = original.entries.filter { journal.observedSlots.contains($0.slot) }
+        func scratchFolder(_ id: UUID) -> URL {
+            location.root.appendingPathComponent(".arcane-rollback-copy-\(id)")
+        }
+        if let id = journal.rollbackScratch { try SaveFiles.remove(scratchFolder(id)) }
         if journal.cleanupArtifacts != nil || journal.committed {
             try cleanup(journal, location, before: before, expected: journal.committed ? expectedAfter : before)
             return
@@ -207,11 +228,21 @@ public final class SaveTransaction {
                 try validateArtifacts(journal, location, before: before)
                 try SaveFiles.remove(rollback)
                 if original.presentSlots.contains(slot) {
-                    try io.copy(backup.appendingPathComponent(slot.fileName), rollback)
-                    guard try SaveFiles.inventory(rollback, slot: slot) == previous else { throw SaveFailure.invalidSnapshot }
-                    try SaveFiles.syncTree(rollback)
+                    let id = UUID()
+                    journal.rollbackScratch = id
+                    try SaveFiles.durableWrite(journal, to: file)
+                    let scratch = scratchFolder(id)
+                    try SaveFiles.makeDirectory(scratch)
+                    let candidate = scratch.appendingPathComponent(slot.fileName)
+                    try io.copy(backup.appendingPathComponent(slot.fileName), candidate)
+                    guard try SaveFiles.inventory(candidate, slot: slot) == previous else { throw SaveFailure.invalidSnapshot }
+                    try SaveFiles.syncTree(candidate)
+                    try FileManager.default.moveItem(at: candidate, to: rollback)
+                    try SaveFiles.syncDirectory(stage)
+                    try SaveFiles.remove(scratch)
                 }
                 try location.validate()
+                guard !isRunning() else { throw SaveFailure.running }
                 guard try SaveFiles.inventory(location.directory(slot), slot: slot) == after else { throw SaveFailure.recoveryRequired }
                 try swap(rollback, into: location.directory(slot))
                 try SaveFiles.syncDirectory(location.root)

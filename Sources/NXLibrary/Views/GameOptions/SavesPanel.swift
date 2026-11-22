@@ -13,18 +13,20 @@ struct SavesPanel: View {
     @State private var confirmFocus: SeleneConfirmButton = .cancel
     @State private var keyMonitor: Any?
     @State private var cloudPrompt = false
+    @State private var copyFrom: [LocalProfile] = []
+    @State private var copyFocus = 0
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneReduceMotion) private var reduceMotion
 
     private enum Row: CaseIterable, Hashable {
-        case open, backup, target, add, refresh, backups
+        case open, backup, target, add, refresh, backups, copy
 
         var icon: MaterialIcon {
             switch self {
             case .open: return .folder
             case .backup: return .save
             case .target: return .swap
-            case .add: return .add
+            case .add, .copy: return .add
             case .refresh: return .sync
             case .backups: return .history
             }
@@ -34,8 +36,8 @@ struct SavesPanel: View {
         self.viewModel = viewModel; self.game = game; self.onClose = onClose
         _model = StateObject(wrappedValue: SavePanelModel(viewModel: viewModel, game: game))
     }
-    private var confirming: Bool { model.preview != nil || model.restorePreview != nil || cloudPrompt || model.issue != nil }
-    private var rows: [Row] { Row.allCases }
+    private var confirming: Bool { model.preview != nil || model.restorePreview != nil || cloudPrompt || model.issue != nil || !copyFrom.isEmpty }
+    private var rows: [Row] { Row.allCases.filter { $0 != .copy || !model.saveCopySources.isEmpty } }
     var body: some View {
         ZStack {
             SeleneTheme.scrim65.ignoresSafeArea().contentShape(Rectangle()).onTapGesture { close() }
@@ -144,6 +146,7 @@ struct SavesPanel: View {
         case .add: return (L10n.text("Import save…"), importValue, model.importAction != .unavailable)
         case .refresh: return (model.recoveryRequired ? L10n.text("Retry recovery") : L10n.text("Refresh"), nil, !model.busy)
         case .backups: return (L10n.text("Backup folder"), model.latestBackupDate.map(SavePresentation.date) ?? L10n.text("No backups"), !model.busy)
+        case .copy: return (L10n.text("Copy saves from another profile"), nil, model.canMutate && model.currentBytes == 0)
         }
     }
     private func subtitle(_ row: Row) -> String {
@@ -154,6 +157,7 @@ struct SavesPanel: View {
         case .add: return L10n.text("Choose a save folder to import.")
         case .refresh: return L10n.text("Check saves and backups again.")
         case .backups: return L10n.text("Open this game's backups in Finder.")
+        case .copy: return L10n.text("Only an empty profile can receive a copy of this game's saves.")
         }
     }
     private func rowView(_ row: Row, focused: Bool) -> some View {
@@ -194,6 +198,11 @@ struct SavesPanel: View {
             SeleneConfirmDialog(title: L10n.text("Restore this backup?"), message: SavePresentation.restoreMessage(snapshot, installedVersion: game.versionString),
                 confirmTitle: L10n.text("Restore"), focus: $confirmFocus,
                 onCancel: { if !model.busy { model.cancelPreview() } }, onConfirm: { if !model.busy { model.confirmRestore() } }).disabled(model.busy)
+        } else if !copyFrom.isEmpty {
+            SeleneChoiceDialog(title: L10n.text("Copy saves from another profile"),
+                               message: L10n.text("Only an empty profile can receive a copy of this game's saves."),
+                               choices: [L10n.text("Cancel")] + copyFrom.map(\.name),
+                               focus: $copyFocus, onChoose: chooseCopySource)
         } else if cloudPrompt {
             SeleneConfirmDialog(title: L10n.text("Cloud saves on"), message: cloudHelp.message + "\n\n" + SavePresentation.cloudNotice, confirmTitle: cloudHelp.button,
                 focus: $confirmFocus, onCancel: { cloudPrompt = false }, onConfirm: resolveCloud)
@@ -232,7 +241,7 @@ struct SavesPanel: View {
             else { model.chooseImport(slot: target) }
         case .refresh: model.refresh()
         case .backups: model.showBackups()
-
+        case .copy: copyFocus = 0; copyFrom = model.saveCopySources
         }
     }
     private func close() {
@@ -240,11 +249,27 @@ struct SavesPanel: View {
         if model.issue != nil { model.dismissIssue(); return }
         if model.preview != nil || model.restorePreview != nil { model.cancelPreview(); return }
         if cloudPrompt { cloudPrompt = false; return }
+        if !copyFrom.isEmpty { copyFrom = []; return }
         onClose()
+    }
+    private func chooseCopySource(_ index: Int) {
+        let sources = copyFrom
+        copyFrom = []
+        if index > 0, sources.indices.contains(index - 1) { model.copySaves(from: sources[index - 1]) }
     }
     private func handle(_ action: GamepadAction) {
         if confirming {
             guard !model.busy else { return }
+            if !copyFrom.isEmpty {
+                switch action {
+                case .navigateLeft, .navigateUp: copyFocus = max(0, copyFocus - 1)
+                case .navigateRight, .navigateDown: copyFocus = min(copyFrom.count, copyFocus + 1)
+                case .cancel: close()
+                case .confirm: chooseCopySource(copyFocus)
+                default: break
+                }
+                return
+            }
             switch action {
             case .navigateLeft: confirmFocus = .cancel
             case .navigateRight: confirmFocus = .confirm

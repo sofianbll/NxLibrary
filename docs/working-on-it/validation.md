@@ -48,6 +48,15 @@ Come si aggiorna:
 | Esc e B su Ready to play dopo un porting (20 nov 2026) | validato il 20 nov 2026 («perfct») | Rebuild di un gioco già portato fino a Ready to play: Esc torna alla schermata da cui era partito (Spotlight o la pagina del gioco), senza chiedere di scartare; lo stesso con B del controller. Un porting nuovo da Add Game fino a Ready to play: Esc chiude Add Game. Un clic fuori dal pannello dopo il successo chiude senza chiedere. Durante un porting Esc chiude e la tile continua. Prima della fine: Esc su Options torna ai file; con file scelti, Esc sul primo passo chiede ancora se scartarli. |
 | Re-pin dell'engine a `99224562` (20 nov 2026) | validato il 20 nov 2026 («ho verificato tutto e funziona»); porting non richiesto dal maintainer; issue #20 di Arceus considerata risolta dal profilo aggiornato, senza prova perché manca il gioco | All'avvio Newest engine non risulta più in uso e l'override "Build anyway with an untested toolchain" torna spento, perché l'aveva acceso la scelta. Setup mostra la scheda nxnative engine con UPDATE READY (engine a `e59c910`); Update lo porta a `9922456` e il gate in Settings → Setup and engine diventa verde e certificato. Le app già costruite restano giocabili. Game options di un gioco senza render scale (per esempio Nostalgic Train): la nota Internal resolution dice "This build has no 3D render scale…", in italiano e cinese senza tagli. |
 
+## Fondazioni
+
+| Parte | Stato | Prove ancora da fare |
+|---|---|---|
+| Fondazioni: Cestino e cache di compilazione | in attesa | Su fixture: rifiuto del Cestino, sorgente condivisa, volume scollegato e disco pieno durante la sostituzione; la cache precedente rimane disponibile. |
+| Fondazioni: recupero di cache e salvataggi | in attesa | Interrompere Download, Free up space e recupero salvataggi in un profilo isolato; verificare i dati locali esclusivi e la ripresa del Play. |
+| Fondazioni: code e verifica cache | in attesa | Riprendere offline, riprovare dopo la riconnessione, simulare coda build non scrivibile e inventario cache illeggibile. |
+| Fondazioni: salvataggi per profilo | in attesa | Con due profili e copie sintetiche: primo profilo invariato, secondo vuoto, copia dal pannello Saves, due progressi indipendenti al riavvio. Provare Finder a parte: il lancio resta senza profilo Arcane. |
+
 ## Pubblicato fino alla 0.2.0
 
 | Parte | Stato | Prove ancora da fare |

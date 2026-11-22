@@ -139,7 +139,10 @@ public actor WikipediaDescriptionService {
 
     /// Forgets every saved introduction and "no article"; the next page asks Wikipedia again.
     public nonisolated func clearCache() {
-        try? FileManager.default.removeItem(at: directory)
+        clearCache { try FileManager.default.trashItem(at: $0, resultingItemURL: nil) }
+    }
+    internal nonisolated func clearCache(discard: (URL) throws -> Void) {
+        try? discard(directory)
     }
 
     static func key(_ query: CriticRatingQuery, _ language: AppLanguage) -> String {

@@ -3,6 +3,28 @@ import XCTest
 @testable import ArcanePorting
 
 final class SaveTransactionTests: XCTestCase {
+    func testProfileCopySeedsAnEmptyNamespaceWithoutMovingTheOriginal() throws {
+        let h = try SaveTestHome(); defer { h.remove() }
+        let original = try h.location()
+        let player = try SaveLocation.profileLocation(titleID: h.tid, profileID: UUID(), in: h.base)
+        let another = try SaveLocation.profileLocation(titleID: h.tid, profileID: UUID(), in: h.base)
+        let slot: SaveSlot = .device
+        let originalFile = original.directory(slot).appendingPathComponent("data")
+        try h.write("first profile", originalFile)
+        XCTAssertFalse(SaveFiles.exists(player.directory(slot)))
+        XCTAssertFalse(SaveFiles.exists(another.directory(slot)))
+        let environment = try player.profileLaunchEnvironment(shared: original)
+        XCTAssertEqual(environment["DM_SAVE"], player.directory(.account).path)
+        XCTAssertEqual(environment["DM_SAVE_SYNC"], "0")
+        let tx = SaveTransaction(store: SaveSnapshotStore(root: h.backups), isRunning: { false })
+        try tx.copyProfileSaves(from: original, to: player, identity: h.identity)
+        let copy = player.directory(slot).appendingPathComponent("data")
+        XCTAssertEqual(try String(contentsOf: copy, encoding: .utf8), "first profile")
+        try h.write("second profile", copy)
+        XCTAssertThrowsError(try tx.copyProfileSaves(from: original, to: player, identity: h.identity))
+        XCTAssertEqual(try String(contentsOf: originalFile, encoding: .utf8), "first profile")
+        XCTAssertEqual(try String(contentsOf: copy, encoding: .utf8), "second profile")
+    }
     func testImportReplacesOnlyChosenSlotAndKeepsSafetyBackup() throws {
         let h = try SaveTestHome(); defer { h.remove() }
         let location = try h.location(); let store = SaveSnapshotStore(root: h.backups)
@@ -87,6 +109,28 @@ final class SaveTransactionTests: XCTestCase {
         XCTAssertThrowsError(try SaveTransaction(store: store, isRunning: { false }).restore(preview, location: location, identity: h.identity))
         XCTAssertEqual(try String(contentsOf: location.directory(.account).appendingPathComponent("data"), encoding: .utf8), "changed while confirming")
         try store.discardRestore(preview, location: location)
+    }
+    func testPartialRollbackCopyDoesNotBlockNextRecovery() throws {
+        let h = try SaveTestHome(); defer { h.remove() }
+        let location = try h.location(); let store = SaveSnapshotStore(root: h.backups)
+        let file = location.directory(.account).appendingPathComponent("data")
+        try h.write("target", file)
+        let target = try store.create(location: location, identity: h.identity, reason: .manual)
+        try h.write("original", file)
+        var io = SaveFileIO()
+        io.afterMutation = { if $0 == "account" { throw SaveFailure.io("Interrupted") } }
+        XCTAssertThrowsError(try SaveTransaction(store: store, isRunning: { false }, io: io)
+            .restore(target, location: location, identity: h.identity))
+        io.copy = { _, destination in
+            try h.write("part", destination.appendingPathComponent("data"))
+            throw POSIXError(.ENOSPC)
+        }
+        XCTAssertThrowsError(try SaveTransaction(store: store, isRunning: { false }, io: io).recover(location: location))
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "target")
+        let restarted = SaveTransaction(store: store, isRunning: { false })
+        try restarted.recover(location: location)
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "original")
+        XCTAssertFalse(SaveTransaction.needsRecovery(location: location))
     }
     func testRecoveryKeepsUnexpectedExternalChangesAndItsJournal() throws {
         let h = try SaveTestHome(); defer { h.remove() }

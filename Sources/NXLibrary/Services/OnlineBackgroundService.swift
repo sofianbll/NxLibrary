@@ -126,7 +126,9 @@ actor OnlineBackgroundService {
         guard destination.deletingLastPathComponent().path == folder.standardizedFileURL.path else {
             throw CocoaError(.fileWriteInvalidFileName)
         }
-        if fileManager.fileExists(atPath: destination.path) { try fileManager.removeItem(at: destination) }
+        if fileManager.fileExists(atPath: destination.path) {
+            try fileManager.trashItem(at: destination, resultingItemURL: nil)
+        }
         try fileManager.moveItem(at: temporary, to: destination)
 
         let id = OnlineDownload.wallpaperID(for: item)

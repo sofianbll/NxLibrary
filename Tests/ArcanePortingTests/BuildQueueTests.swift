@@ -4,6 +4,17 @@ import XCTest
 @testable import ArcanePorting
 
 final class BuildQueueTests: XCTestCase {
+    func testQueueWriteFailureIsReported() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data([42]).write(to: root)
+        let store = ActivityQueueFile<BuildRequest>(file: root.appendingPathComponent("queue.json"))
+        let reported = expectation(description: "Queue snapshot could not be written")
+        store.save([BuildRequest(gameID: UUID(), name: "Fixture")]) { reported.fulfill() }
+        await fulfillment(of: [reported], timeout: 2)
+        await store.flush()
+        XCTAssertEqual(try Data(contentsOf: root), Data([42]))
+    }
     func testVersionedBuildSnapshotRestoresInterruptedFirstAndIgnoresInvalidEntries() async throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: file) }

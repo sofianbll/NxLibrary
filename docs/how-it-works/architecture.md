@@ -587,6 +587,9 @@ Il pannello mostra un `CloudLibraryBadge` con testo per app, cache di compilazio
 Il percorso completo è in [flows.md](flows.md#6-importare-o-ripristinare-un-salvataggio). Tutto il motore sta in `ArcanePorting/Saves/`. *Perché:* backup, ripristino e import hanno la forma dei salvataggi nxnative (componenti `account`, `device`, `user2`…`user8`, registro `save.users`, journal del pull cloud, Title ID); un motore comune si estrae quando un'altra fonte ha salvataggi.
 
 **Riconoscimento e anteprima.**
+- Il primo profilo mantiene il percorso nxnative e le preferenze cloud esistenti. Gli altri lanciano
+  con `DM_SAVE` sotto `ProfileSaves/<UUID>/<Title ID>/save` e `DM_SAVE_SYNC=0`; le cache pipeline
+  restano condivise tramite `DM_PSO_USER`. Il Finder non passa un profilo Arcane.
 - Il flusso usa il title ID e conserva i percorsi interni del salvataggio per ogni gioco. `SaveLocation` ammette l'ID esadecimale di 16 caratteri, risolve il percorso predefinito e legge la configurazione cloud effettiva. `AppViewModel+Saves` verifica anche l'identità nel bundle installato e le preferenze del gioco.
 - `RyujinxSaveFolder` riconosce `bis/user/save/<indice>`, risale dalle sottocartelle, confronta il title ID in `ExtraData0` e seleziona l'intero albero committed `0`. Le cartelle di esportazione ordinarie mantengono la propria struttura. Il tipo User/Device è una scelta separata dal nome della cartella sorgente.
 - `SaveSnapshotStore.stageImport` prepara una copia temporanea vicino alla destinazione. L'anteprima contiene inventario, hash SHA-256, attributi estesi e impronta del salvataggio attuale. `SaveRestorePreview.swift` prepara allo stesso modo un ripristino da backup. Alla conferma si ricontrollano sorgente, staging e salvataggio attuale.
@@ -619,6 +622,8 @@ Il percorso completo è in [flows.md](flows.md#6-importare-o-ripristinare-un-sal
   il journal 2 osserva il gruppo completo. `mutatedSlots` manca nei journal storici, che conservano
   l’ambito dei due slot originali. Un journal committed verifica il risultato prima della pulizia.
   La recovery può a sua volta interrompersi e riprendere. Il gioco deve restare chiuso anche per lanci esterni.
+- Una copia di rollback incompleta resta in una cartella di lavoro dichiarata dal journal, fuori
+  dagli slot di transazione. Il prossimo tentativo può eliminarla e ricrearla dal backup verificato.
 - Dati modificati da fuori o copie non verificabili tengono il recupero bloccato e conservano gli artefatti per l'intervento. Play aspetta la risoluzione.
 
 **Pannello e backup.**
@@ -627,6 +632,8 @@ Il percorso completo è in [flows.md](flows.md#6-importare-o-ripristinare-un-sal
 - I backup sono copie locali conservate finché l'utente non li gestisce. Sono automatici prima di importazione e ripristino, oppure manuali con Back up now.
 - Importazione e ripristino richiedono la sincronizzazione cloud davvero disattivata. I casi rifiutati e le verifiche sono descritti nelle sezioni Saves del README e dei test.
 - Storage → Save backups apre la cartella comune degli snapshot; le copie si creano dal pannello Saves.
+- Per i profili secondari gli snapshot sono separati per UUID. In Saves si può copiare un altro
+  profilo per il gioco corrente, solo se la destinazione è vuota e il gioco è chiuso.
 
 ## Spazio su disco
 
@@ -637,6 +644,7 @@ Il percorso completo è in [flows.md](flows.md#6-importare-o-ripristinare-un-sal
 - Lo spazio libero è quello della cartella Game apps corrente, senza ripiegare sul disco interno se questa manca.
 
 **Pulizia.**
+- Sorgenti, app portate, cache di compilazione e log passano dal Cestino, senza ripiego sulla cancellazione.
 - La conferma per gioco conserva identità e percorso scelti. Prima di cancellare, il coordinatore ricontrolla la voce corrente.
 - `StorageManager` richiede la cartella `<title ID>_build` immediatamente sotto il workspace registrato. Rifiuta file ordinari e cache che siano symlink, e protegge app, sorgenti e installazioni differite di tutte le voci.
 - Un collegamento dentro la cache si rimuove senza visitarne la destinazione. Le cache condivise sono indicate sia nella riga sia nella conferma.
@@ -648,6 +656,13 @@ Il percorso completo è in [flows.md](flows.md#6-importare-o-ripristinare-un-sal
 - Le righe dei giochi hanno identità UUID stabili per mouse, tastiera e controller.
 
 **Oggetti remoti (Core).**
+- Durante un ripristino le radici esclusivamente locali sono clonate o copiate prima dello scambio,
+  non spostate. Free up space registra le identità prima di svuotare parzialmente una cache: al
+  riavvio Arcane ripristina le radici rimaste nello staging senza collegarsi al cloud.
+- La coda cloud conserva la testa quando manca un lease o la connessione; per un errore di rete
+  Retry la riattiva. Un errore di salvataggio della coda delle compilazioni avvisa il giocatore.
+- Una lettura non riuscita non equivale a cache assente. Una cache completata viene preparata sul
+  volume di destinazione e pubblicata prima che il Cestino riceva la copia precedente.
 - `StorageBackend` espone chiavi relative a una radice, elenchi per prefisso, dimensioni, hash disponibili, errori e trasferimenti annullabili con avanzamento in byte. Non interviene sui salvataggi.
 - `RcloneStorageBackend` esegue rclone senza shell: usa prima l'eseguibile esplicito di Advanced, poi `Contents/Helpers/rclone`, poi i percorsi Homebrew e il `PATH` assoluto. Usa un remote e una radice espliciti; ignora le scorciatoie Drive perché possono puntare fuori dalla radice.
 - `RcloneRemoteControl` avvia `rclone rcd` alla prima lettura e lo riusa per elenchi, stat con hash nativi e piccoli download senza barra (fino a 64 KiB, inclusi i manifest). *Perché:* riusa la configurazione sbloccata e la risoluzione dei percorsi Drive ([misure](../history/reviews/2026-11-21-rclone-rc.md)).

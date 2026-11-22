@@ -3,6 +3,12 @@ import XCTest
 @testable import ArcanePorting
 
 final class CloudTransferQueueTests: XCTestCase {
+    func testNetworkFailureDefersButInvalidContentDoesNot() {
+        XCTAssertTrue(CloudTransferQueue.waitsForConnection(after: URLError(.notConnectedToInternet)))
+        XCTAssertTrue(CloudTransferQueue.waitsForConnection(after: StorageBackendError.backendUnavailable))
+        XCTAssertFalse(CloudTransferQueue.waitsForConnection(after: StorageBackendError.hashMismatch))
+        XCTAssertFalse(CloudTransferQueue.waitsForConnection(after: CancellationError()))
+    }
     func testQueueSaveFailureReportsOnceAndLaterSnapshotsStillWrite() async throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: folder) }

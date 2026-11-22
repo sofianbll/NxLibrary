@@ -226,7 +226,10 @@ public final class ArtworkStore: ObservableObject {
     }
 
     public func clear() {
-        try? fileManager.removeItem(at: cacheDirectory)
+        clear { try fileManager.trashItem(at: $0, resultingItemURL: nil) }
+    }
+    internal func clear(discard: (URL) throws -> Void) {
+        try? discard(cacheDirectory)
     }
 
     private func fileURL(titleID: String, kind: ArtworkKind) -> URL {

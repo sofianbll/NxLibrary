@@ -33,6 +33,7 @@ public final class StorageManager {
     private let applicationsRoot: URL
     private let logsRoot: URL
     private let fm: FileManager
+    private let trash: (URL) throws -> Void
 
     public init(
         supportRoot: URL = AppData.supportRoot,
@@ -40,12 +41,14 @@ public final class StorageManager {
             .appendingPathComponent("Applications"),
         logsRoot: URL = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Logs/nxnative"),
-        fileManager: FileManager = .default
+        fileManager: FileManager = .default,
+        trash: ((URL) throws -> Void)? = nil
     ) {
         self.supportRoot = supportRoot
         self.applicationsRoot = applicationsRoot
         self.logsRoot = logsRoot
         self.fm = fileManager
+        self.trash = trash ?? { try fileManager.trashItem(at: $0, resultingItemURL: nil) }
     }
 
     public func usage(games: [PortedGame]) -> StorageUsage {
@@ -105,7 +108,7 @@ public final class StorageManager {
         case .unavailable: throw StorageCleanupError.unavailable
         case .bytes: break
         }
-        try fm.removeItem(at: url)
+        try trash(url)
         return true
     }
 
@@ -142,7 +145,7 @@ public final class StorageManager {
     public func deleteLogs(for game: PortedGame) throws -> Bool {
         var removed = false
         for url in logURLs(for: game) where fm.fileExists(atPath: url.path) {
-            try fm.removeItem(at: url)
+            try trash(url)
             removed = true
         }
         return removed

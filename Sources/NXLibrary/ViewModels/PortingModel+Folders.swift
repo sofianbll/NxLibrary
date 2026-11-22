@@ -87,8 +87,9 @@ extension PortingModel {
             let date = (try? item.resourceValues(
                 forKeys: [.contentModificationDateKey]).contentModificationDate)
                 ?? Date.distantPast
-            if date < cutoff, !kept.contains(item.standardizedFileURL.path) {
-                try? FileManager.default.removeItem(at: item)
+            if UUID(uuidString: item.lastPathComponent) != nil,
+               date < cutoff, !kept.contains(item.standardizedFileURL.path) {
+                try? FileManager.default.trashItem(at: item, resultingItemURL: nil)
             }
         }
     }

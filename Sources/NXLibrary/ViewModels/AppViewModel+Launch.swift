@@ -19,6 +19,13 @@ extension AppViewModel {
         }
         // A running game is brought forward, never started a second time.
         if let running = RunningGameMonitor.runningApplication(for: game) {
+            let known = gameSaveLaunches[game.id].flatMap {
+                $0.pid == running.processIdentifier && $0.date == running.launchDate ? $0 : nil
+            }
+            guard known?.profile == secondarySaveProfile else {
+                alertMessage = L10n.text("Close the game before managing its saves. Keep it closed until this operation finishes.")
+                return
+            }
             if let runningGameMonitor { Task { @MainActor in runningGameMonitor.resume(game) } }
             else { RunningGameMonitor.activate(running) }
             return
@@ -80,6 +87,17 @@ extension AppViewModel {
             alertMessage = SaveFailure.busy.localizedDescription
             return
         }
+        let saveEnvironment: [String: String]
+        do {
+            if let profileID = secondarySaveProfile {
+                saveEnvironment = try profileSaveLocation(for: game, profileID: profileID)
+                    .profileLaunchEnvironment(shared: legacySaveLocation(for: game))
+            } else { saveEnvironment = [:] }
+        } catch {
+            saveGate.end(titleID: titleId, token: saveLaunchToken)
+            alertMessage = error.localizedDescription
+            return
+        }
         var overlayData = gameOverlayData()
         if let profile = overlayData.snapshot.profile,
            let pack = localAchievementPack(for: game, profile: profile.id),
@@ -89,7 +107,7 @@ extension AppViewModel {
         launchingGameId = game.id
         playSessionStore?.expectStart(gameID: game.id)
         let setting = gameSettings.flatMap { NextendoLaunch.networkSetting(in: $0.settings) }
-        let multiplayerEnvironment = multiplayer?.environment ?? [:]
+        let multiplayerEnvironment = (multiplayer?.environment ?? [:]).merging(saveEnvironment) { _, save in save }
         let mode = multiplayerEnvironment[NextendoLaunch.networkKey] ?? gameSettings?.effectiveLaunchValue(NextendoLaunch.networkKey)
         if NextendoLaunch.requiresSignIn(setting: setting, mode: mode) {
             let scoped = !usesSharedNextendo
@@ -176,7 +194,7 @@ extension AppViewModel {
             return
         }
 
-        if let choice = settingsStore?.settings.cloudSaves, let domain = game.effectiveBundleId {
+        if environment["DM_SAVE"] == nil, let choice = settingsStore?.settings.cloudSaves, let domain = game.effectiveBundleId {
             do {
                 try cloudSavesPreferences.applyBeforeLaunch(choice, domain: domain)
             } catch {
@@ -205,7 +223,8 @@ extension AppViewModel {
                 cover = ArtworkPicks.shared.url(titleID: key, slot: .cover)
                     ?? ArtworkStore().cachedURL(titleID: key, kind: .boxart)
             }
-            let overrides = (gameSettings == nil ? config.toEnvironmentDict() : environment)
+            let overrides = (gameSettings == nil ? config.toEnvironmentDict() : [:])
+                .merging(environment) { _, prepared in prepared }
                 .merging(homeMenu) { _, launcher in launcher }
                 .merging(codeMods) { _, mods in mods }
                 .merging(overlay.environment(palette: ThemeStore.shared.palette,
@@ -251,6 +270,11 @@ extension AppViewModel {
                 guard let self else { return }
                 self.saveGate.end(titleID: titleId, token: saveLaunchToken)
                 if success {
+                    if let running = RunningGameMonitor.runningApplication(for: game) {
+                        self.gameSaveLaunches[game.id] = (running.processIdentifier, running.launchDate, snapshot.profile.flatMap {
+                            $0.id == self.localProfiles?.originalID ? nil : $0.id
+                        })
+                    }
                     self.lastError = nil
                     self.playSessionStore?.start(for: game)
                     self.logs.append(LogEntry(level: .success, message: L10n.format("Launched game: %@", [String(describing: game.name)])))

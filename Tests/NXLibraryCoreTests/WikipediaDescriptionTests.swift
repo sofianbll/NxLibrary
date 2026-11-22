@@ -137,7 +137,7 @@ final class WikipediaDescriptionTests: XCTestCase {
         })
         _ = await service.load(CriticRatingQuery(name: "Stardew Valley", platform: .mac, steamAppID: 413150), language: .italian)
         XCTAssertGreaterThan(service.cacheSize(), 0)
-        service.clearCache()
+        service.clearCache { try FileManager.default.removeItem(at: $0) }
         XCTAssertEqual(service.cacheSize(), 0)
     }
 

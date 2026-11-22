@@ -20,6 +20,10 @@ public enum SaveSlot: String, Codable, CaseIterable, Hashable {
 public struct SaveContext {
     public let location: SaveLocation
     public let cloudReason: String?
+    public init(location: SaveLocation, cloudReason: String?) {
+        self.location = location
+        self.cloudReason = cloudReason
+    }
     public func requireWrites() throws {
         if let cloudReason { throw SaveFailure.cloudEnabled(cloudReason) }
     }
@@ -76,6 +80,18 @@ public struct SaveLocation: Equatable {
             .appendingPathComponent("Library/Application Support/nxnative/\(titleID.uppercased())"))
         try value.validate()
         return value
+    }
+    public static func profileLocation(titleID: String, profileID: UUID, in support: URL) throws -> SaveLocation {
+        guard validID(titleID) else { throw SaveFailure.invalidTitleID }
+        let id = titleID.uppercased()
+        let value = SaveLocation(titleID: id, root: support.appendingPathComponent("ProfileSaves/\(profileID)/\(id)"))
+        try value.validate()
+        return value
+    }
+    public func profileLaunchEnvironment(shared: SaveLocation) throws -> [String: String] {
+        try SaveFiles.makeDirectory(root)
+        return ["DM_SAVE": directory(.account).path, "DM_SAVE_SYNC": "0",
+                "DM_PSO_USER": shared.root.appendingPathComponent("pso_user.tsv").path]
     }
     public func validate() throws {
         guard Self.validID(titleID), root.lastPathComponent == titleID else { throw SaveFailure.unsafePath }
