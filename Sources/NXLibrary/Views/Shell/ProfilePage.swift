@@ -101,12 +101,14 @@ struct ProfilePage: View {
     var body: some View {
         let _ = accountRevision
         let data = pageData
+        let most = data.games(for: .mostPlayed).first
         ZStack(alignment: .bottom) {
             SeleneBackdrop(still: true)
                 .environment(\.seleneBackdropStyle, style)
-            page(data)
+            if let most { heroArt(most) }
+            page(data, most: most)
                 .seleneOverlayOwnership(!showFriends && achievementScreen == nil)
-            if showFriends { friendsDetail }
+            if showFriends { friendsDetail(data) }
             if let achievement, let screen = achievementScreen {
                 achievementDetail(achievement, screen)
                     .transition(.opacity)
@@ -128,7 +130,7 @@ struct ProfilePage: View {
         .onChange(of: nextendo?.status) { if nextendo?.status != .signedIn { showFriends = false } }
     }
 
-    private func page(_ data: PageData) -> some View {
+    private func page(_ data: PageData, most: CatalogGame?) -> some View {
         VStack(spacing: 0) {
             GeometryReader { geometry in
                 let inset = min(canvas.u(SeleneTokens.Space.stageGutter),
@@ -137,7 +139,7 @@ struct ProfilePage: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         VStack(alignment: .leading, spacing: gap) {
-                            hero(data, width: width)
+                            hero(data, most: most, width: width)
                             sections(data, width: width)
                         }
                         .padding(.horizontal, inset)
@@ -166,21 +168,39 @@ struct ProfilePage: View {
         }
     }
 
-    private func hero(_ data: PageData, width: CGFloat) -> some View {
-        let most = data.games(for: .mostPlayed).first
-        return VStack(alignment: .leading, spacing: gap) {
-            HStack(spacing: gap) {
-                ProfilePortrait(profile: profile, size: SeleneTokens.Space.stageGutter, ring: true)
+    private func heroArt(_ game: CatalogGame) -> some View {
+        GeometryReader { geometry in
+            let width = min(geometry.size.width, canvas.stageSize.width * 3 / 4)
+            gameArt(game, showsFallback: false)
+                .frame(width: width, height: width * SeleneCanvas.design.height / SeleneCanvas.design.width)
+                .opacity(SeleneTokens.Effect.deepVeil)
+                .mask {
+                    LinearGradient(colors: [.clear, .white, .white], startPoint: .leading, endPoint: .trailing)
+                        .mask { LinearGradient(colors: [.white, .white, .clear], startPoint: .top, endPoint: .bottom) }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+        }
+        .accessibilityHidden(true)
+        .allowsHitTesting(false)
+    }
+
+    private func hero(_ data: PageData, most: CatalogGame?, width: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: gap) {
+            HStack(spacing: canvas.u(SeleneTokens.Space.section)) {
+                ProfilePortrait(profile: profile, size: SeleneTokens.Space.stageGutter + SeleneTokens.Space.section, ring: true)
                 VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.compact)) {
-                    Text(L10n.text("My profile")).seleneFont(.metadata).foregroundStyle(SeleneTheme.ink75)
-                    Text(profile.name).seleneFont(.heroTitle, .semibold).accessibilityAddTraits(.isHeader)
+                    metadata(L10n.text("My profile"))
+                    Text(profile.name).seleneFont(.profileHeroTitle, .semibold)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
                     if let account, profile.sharesPresence, nextendo?.presenceShared == true {
                         SeleneStatusDot(text: L10n.text("Nextendo connected") + " · " + account.name,
-                                        color: SeleneTheme.statusOK)
+                                        color: SeleneTheme.statusOK, labelColor: SeleneTheme.ink90)
                     }
                 }
                 Spacer(minLength: 0)
             }
+            .padding(.bottom, canvas.u(SeleneTokens.Space.line))
             let statsWidth = layoutScale * SeleneTokens.Space.transferMeasure
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: gap, alignment: .leading),
                                      count: width >= statsWidth ? 4 : 2),
@@ -194,38 +214,35 @@ struct ProfilePage: View {
             }
             .frame(maxWidth: statsWidth, alignment: .leading)
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: canvas.u(SeleneTokens.Space.small)) { pills(data) }
-                VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.small)) { pills(data) }
-            }
-            if let most, let played = data.activity[most.id] {
-                VStack(alignment: .trailing, spacing: canvas.u(SeleneTokens.Space.hairline)) {
-                    Text(L10n.text("Most played")).seleneFont(.metadata).foregroundStyle(SeleneTheme.ink75)
-                    Text(most.name).seleneFont(.sectionTitle, .semibold)
-                    Text(LibraryPresentation.duration(played.duration)).seleneFont(.caption)
+                HStack(alignment: .bottom, spacing: gap) {
+                    HStack(spacing: canvas.u(SeleneTokens.Space.medium)) { pills(data) }
+                        .fixedSize()
+                    Spacer(minLength: 0)
+                    mostPlayedLabel(most, data: data).fixedSize(horizontal: true, vertical: false)
                 }
-                .frame(maxWidth: .infinity, alignment: .trailing)
+                VStack(alignment: .leading, spacing: gap) {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: canvas.u(SeleneTokens.Space.small)) { pills(data) }
+                        VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.small)) { pills(data) }
+                    }
+                    mostPlayedLabel(most, data: data)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                }
             }
         }
-        .padding(gap)
-        .background {
-            ZStack {
-                SeleneTheme.glassLight
-                if let most {
-                    ProfileGameArt(game: most, artwork: artwork, metadata: viewModel.store.storeMetadata[most.id])
-                        .overlay(alignment: .bottom) {
-                            LinearGradient(colors: [SeleneTheme.scrim45, SeleneTheme.scrim], startPoint: .top, endPoint: .bottom)
-                        }
-                        .mask(alignment: .trailing) {
-                            HStack(spacing: 0) {
-                                Color.clear
-                                LinearGradient(colors: [.clear, .white], startPoint: .leading, endPoint: .trailing)
-                                Color.white
-                            }
-                        }
-                }
+        .padding(.top, canvas.u(SeleneTokens.Space.section))
+        .padding(.bottom, canvas.u(SeleneTokens.Space.section))
+    }
+
+    @ViewBuilder private func mostPlayedLabel(_ game: CatalogGame?, data: PageData) -> some View {
+        if let game, let played = data.activity[game.id] {
+            VStack(alignment: .trailing, spacing: canvas.u(SeleneTokens.Space.hairline)) {
+                metadata(L10n.text("Most played"))
+                Text(game.name).seleneFont(.title, .semibold)
+                Text(LibraryPresentation.duration(played.duration)).seleneFont(.rowTitle)
             }
-            .clipShape(RoundedRectangle(cornerRadius: radius))
-            .accessibilityHidden(true)
+            .multilineTextAlignment(.trailing)
+            .shadow(color: SeleneTheme.scrim, radius: canvas.u(SeleneTokens.Space.compact))
         }
     }
 
@@ -237,21 +254,26 @@ struct ProfilePage: View {
     }
 
     private func pill(_ title: String, icon: String, id: Focus, data: PageData) -> some View {
-        button(id, data: data, radius: canvas.u(SeleneTokens.Radius.field)) {
+        button(id, data: data, radius: canvas.u(SeleneTokens.Space.actionPillHeight / 2)) {
             Label(L10n.text(title), systemImage: icon)
-                .seleneFont(.caption, .medium)
-                .padding(.horizontal, canvas.u(SeleneTokens.Space.control))
-                .padding(.vertical, canvas.u(SeleneTokens.Space.small))
+                .seleneFont(.rowTitle, .medium)
+                .padding(.horizontal, canvas.u(SeleneTokens.Space.feature))
+                .frame(minHeight: canvas.u(SeleneTokens.Space.actionPillHeight))
                 .background(SeleneTheme.ink15, in: Capsule())
+                .overlay { Capsule().strokeBorder(SeleneTheme.ink25) }
         }
     }
 
     private func stat(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.hairline)) {
-            Text(L10n.text(title)).seleneFont(.metadata, .medium).foregroundStyle(SeleneTheme.ink75)
-            Text(value).seleneFont(.selectionTitle, .semibold).monospacedDigit()
+            metadata(L10n.text(title))
+            Text(value).seleneFont(.title, .semibold).monospacedDigit()
         }
         .accessibilityElement(children: .combine)
+    }
+
+    private func metadata(_ text: String) -> some View {
+        Text(text).textCase(.uppercase).seleneFont(.metadata, .medium).foregroundStyle(SeleneTheme.ink75)
     }
 
     @ViewBuilder private func sections(_ data: PageData, width: CGFloat) -> some View {
@@ -274,7 +296,11 @@ struct ProfilePage: View {
     }
 
     private func section(_ card: ProfilePageCard, data: PageData, width: CGFloat) -> some View {
-        let count = ProfilePageCards.columns(width: width / layoutScale)
+        let units = width / layoutScale
+        let gameColumns = ProfilePageCards.columns(width: units)
+        // Progress and both unlocks fit side by side before three landscape covers do.
+        let count = card == .achievements && units >= SeleneTokens.Space.transferMeasure + SeleneTokens.Space.stageGutter * 2
+            ? max(3, gameColumns) : gameColumns
         let tileWidth = max(0, (width - gap * CGFloat(count - 1)) / CGFloat(count))
         let items = data.games(for: card)
         return VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.small)) {
@@ -290,7 +316,7 @@ struct ProfilePage: View {
             switch card {
             case .friends:
                 button(.card(card), data: data, radius: radius, tracked: false) {
-                    friendsList(limit: 4)
+                    friendsList(data: data, limit: 4)
                 }
             case .achievements:
                 achievements(data, columns: count, tileWidth: tileWidth)
@@ -302,7 +328,7 @@ struct ProfilePage: View {
                 } else {
                     HStack(alignment: .top, spacing: gap) {
                         ForEach(items.prefix(count)) { game in
-                            tile(game, card: card, data: data).frame(width: tileWidth)
+                            tile(game, card: card, data: data, width: tileWidth)
                         }
                     }
                 }
@@ -310,18 +336,21 @@ struct ProfilePage: View {
         }
     }
 
-    private func tile(_ game: CatalogGame, card: ProfilePageCard, data: PageData) -> some View {
-        button(.game(card, game.id), data: data, radius: radius) {
+    private func tile(_ game: CatalogGame, card: ProfilePageCard, data: PageData, width: CGFloat) -> some View {
+        let selected = focus == .game(card, game.id)
+        let height = width * SeleneCanvas.design.height / SeleneCanvas.design.width
+            + (card == .recent ? canvas.u(SeleneTokens.Space.small) : 0)
+        return button(.game(card, game.id), data: data, radius: radius, showsRowRing: false) {
             Rectangle().fill(SeleneTheme.glass)
-                .aspectRatio(SeleneCanvas.design.width / SeleneCanvas.design.height, contentMode: .fit)
+                .frame(width: width, height: height)
                 .overlay {
-                    ProfileGameArt(game: game, artwork: artwork, metadata: viewModel.store.storeMetadata[game.id])
+                    gameArt(game)
                     LinearGradient(colors: [.clear, SeleneTheme.scrim], startPoint: .top, endPoint: .bottom)
                 }
                 .overlay(alignment: .topLeading) {
                     if let activity = data.activity[game.id] {
                         Label(LibraryPresentation.duration(activity.duration), systemImage: "clock")
-                            .seleneFont(.metadata, .semibold)
+                            .seleneFont(.panelBody, .semibold)
                             .padding(canvas.u(SeleneTokens.Space.compact))
                             .background(SeleneTheme.glassSolid, in: Capsule())
                             .padding(canvas.u(SeleneTokens.Space.small))
@@ -330,15 +359,18 @@ struct ProfilePage: View {
                 .overlay(alignment: .bottomLeading) {
                     VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.seam)) {
                         if let date = data.activity[game.id]?.lastPlayed {
-                            Text(date.formatted(.dateTime.day().month(.abbreviated).locale(locale.formatLocale)))
-                                .seleneFont(.metadata).foregroundStyle(SeleneTheme.ink75)
+                            metadata(date.formatted(.dateTime.day().month(.abbreviated).locale(locale.formatLocale)))
                         }
-                        Text(game.name).seleneFont(.body, .semibold).lineLimit(2)
+                        Text(game.name).seleneFont(.rowTitle, .semibold).lineLimit(2)
                     }
-                    .padding(canvas.u(SeleneTokens.Space.small))
+                    .padding(canvas.u(SeleneTokens.Space.medium))
                 }
                 .clipShape(RoundedRectangle(cornerRadius: radius))
+                .overlay { RoundedRectangle(cornerRadius: radius).strokeBorder(SeleneTheme.ink15) }
         }
+        .modifier(TileFocus(focused: selected, radius: SeleneTokens.Radius.card,
+                            scale: (SeleneTokens.Space.stageGutter + SeleneTokens.Space.compact) / SeleneTokens.Space.stageGutter))
+        .zIndex(selected ? 1 : 0)
         .accessibilityLabel(game.name)
         .accessibilityValue(data.activity[game.id].map { LibraryPresentation.duration($0.duration) } ?? "")
     }
@@ -378,35 +410,77 @@ struct ProfilePage: View {
         } else {
             let recent = data.achievements.flatMap { entry in entry.summary.rows(.unlocked).map { (entry.game, $0) } }
                 .sorted { ($0.1.unlockedAt ?? .distantPast) > ($1.1.unlockedAt ?? .distantPast) }
-            HStack(alignment: .top, spacing: gap) {
-                button(.card(.achievements), data: data, radius: radius, tracked: false) {
-                    surface {
-                        stat("Overall progress", "\(unlocked) / \(total)")
-                        AchievementProgressBar(fraction: Double(unlocked) / Double(total), height: SeleneTokens.Space.hairline,
-                                               track: SeleneTheme.ink25)
-                    }
+                .prefix(2)
+            let progress = achievementProgress(unlocked: unlocked, total: total, data: data)
+            let unlocks = ForEach(Array(recent.enumerated()), id: \.offset) { _, item in
+                achievementTile(item.1, game: item.0, data: data).frame(width: tileWidth)
+            }
+            if count >= 3 {
+                HStack(alignment: .top, spacing: gap) {
+                    progress.frame(width: tileWidth)
+                    unlocks
                 }
-                .frame(width: tileWidth)
-                ForEach(Array(recent.prefix(count - 1).enumerated()), id: \.offset) { _, item in
-                    achievementTile(item.1, game: item.0, data: data).frame(width: tileWidth)
+            } else {
+                progress
+                if count == 2 {
+                    HStack(alignment: .top, spacing: gap) { unlocks }
+                } else {
+                    unlocks
                 }
             }
-            if count == 1, let (game, row) = recent.first { achievementTile(row, game: game, data: data) }
+        }
+    }
+
+    private func achievementProgress(unlocked: Int, total: Int, data: PageData) -> some View {
+        button(.card(.achievements), data: data, radius: radius, tracked: false) {
+            achievementSurface {
+                metadata(L10n.text("Overall progress"))
+                HStack(alignment: .firstTextBaseline, spacing: canvas.u(SeleneTokens.Space.compact)) {
+                    Text(unlocked, format: .number).seleneFont(.profileScreenTitle, .semibold)
+                    Text("/ \(total.formatted(.number.locale(locale.formatLocale)))").seleneFont(.sectionTitle)
+                        .foregroundStyle(SeleneTheme.ink60)
+                }
+                .monospacedDigit()
+                .accessibilityElement(children: .combine)
+                AchievementProgressBar(fraction: Double(unlocked) / Double(total), height: SeleneTokens.Space.compact,
+                                       track: SeleneTheme.ink25, fill: SeleneTheme.statusCloud)
+            }
         }
     }
 
     private func achievementTile(_ row: AchievementRow, game: CatalogGame, data: PageData) -> some View {
         button(.achievement(game.id, row.id), data: data, radius: radius) {
-            surface {
-                Label(row.name, systemImage: row.icon ?? "trophy")
-                    .seleneFont(.body, .semibold)
-                Text(row.description).seleneFont(.metadata).foregroundStyle(SeleneTheme.ink75)
+            achievementSurface {
+                HStack(spacing: canvas.u(SeleneTokens.Space.control)) {
+                    Image(systemName: row.icon ?? "trophy")
+                        .seleneFont(.panelTitle)
+                        .frame(width: canvas.u(SeleneTokens.Space.chromeGutter),
+                               height: canvas.u(SeleneTokens.Space.chromeGutter))
+                        .background(SeleneTheme.statusCloud.opacity(SeleneTokens.Effect.panelVeil),
+                                    in: RoundedRectangle(cornerRadius: radius))
+                        .overlay { RoundedRectangle(cornerRadius: radius).strokeBorder(SeleneTheme.ink25) }
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.hairline)) {
+                        Text(row.name).seleneFont(.rowTitle, .semibold)
+                        Text(row.description).seleneFont(.caption).foregroundStyle(SeleneTheme.ink75)
+                    }
+                }
                 if let date = row.unlockedAt {
-                    Text(date.formatted(.dateTime.day().month(.abbreviated).locale(locale.formatLocale)))
-                        .seleneFont(.metadata).foregroundStyle(SeleneTheme.ink75)
+                    metadata(L10n.format("Unlocked on %@", [
+                        date.formatted(.dateTime.day().month(.abbreviated).locale(locale.formatLocale))
+                    ]))
                 }
             }
         }
+    }
+
+    private func achievementSurface<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.small), content: content)
+            .padding(gap)
+            .frame(maxWidth: .infinity, minHeight: canvas.u(SeleneTokens.Space.stageGutter + SeleneTokens.Space.section),
+                   alignment: .topLeading)
+            .background(SeleneTheme.glass, in: RoundedRectangle(cornerRadius: radius))
+            .overlay { RoundedRectangle(cornerRadius: radius).strokeBorder(SeleneTheme.ink15) }
     }
 
     private func friendText(_ friend: NextendoAccountSnapshot.Friend) -> String {
@@ -417,14 +491,16 @@ struct ProfilePage: View {
         }
     }
 
-    @ViewBuilder private func friendsList(limit: Int? = nil) -> some View {
+    @ViewBuilder private func friendsList(data: PageData, limit: Int? = nil) -> some View {
         if let friends = account?.friends {
             if friends.isEmpty {
                 empty("No friends yet.")
             } else {
                 surface {
-                    ForEach(Array(friends.prefix(limit ?? friends.count).enumerated()), id: \.element.id) { index, friend in
-                        friendRow(friend)
+                    let displayed = friends.prefix(limit ?? friends.count)
+                    ForEach(Array(displayed.enumerated()), id: \.element.id) { index, friend in
+                        if index > 0 { Divider().overlay(SeleneTheme.ink15).accessibilityHidden(true) }
+                        friendRow(friend, games: data.games)
                             .seleneRowFocus(limit == nil && friendIndex == index, radius: radius)
                             .id(index)
                     }
@@ -435,31 +511,44 @@ struct ProfilePage: View {
         }
     }
 
-    private func friendRow(_ friend: NextendoAccountSnapshot.Friend) -> some View {
-        HStack(spacing: canvas.u(SeleneTokens.Space.small)) {
+    private func friendRow(_ friend: NextendoAccountSnapshot.Friend, games: [CatalogGame]) -> some View {
+        let diameter = canvas.u(SeleneTokens.Space.group)
+        let color: Color = switch friend.presence {
+        case .offline: SeleneTheme.ink60
+        case .online: SeleneTheme.statusOK
+        case .playing: SeleneTheme.statusCloud
+        }
+        return HStack(spacing: canvas.u(SeleneTokens.Space.medium)) {
             ZStack {
-                Circle().strokeBorder(SeleneTheme.ink25).background(SeleneTheme.glassSolid, in: Circle())
-                Text(String(friend.name.prefix(1))).seleneFont(.caption, .semibold)
+                Circle().strokeBorder(color).background(SeleneTheme.ink15, in: Circle())
+                Text(String(friend.name.prefix(1))).seleneFont(.rowTitle, .semibold)
             }
-            .frame(width: canvas.u(SeleneTokens.Space.section), height: canvas.u(SeleneTokens.Space.section))
+            .frame(width: diameter, height: diameter)
             .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: canvas.u(SeleneTokens.Space.seam)) {
-                Text(friend.name).seleneFont(.body, .semibold)
-                SeleneStatusDot(text: friendText(friend),
-                                color: friend.presence == .offline ? SeleneTheme.ink60 : SeleneTheme.statusOK)
+                Text(friend.name).seleneFont(.rowTitle, .semibold)
+                SeleneStatusDot(text: friendText(friend), color: color)
             }
             Spacer(minLength: 0)
+            if friend.presence == .playing, let id = friend.gameID,
+               let game = games.first(where: { $0.nxnativeGame?.titleId?.caseInsensitiveCompare(id) == .orderedSame }) {
+                gameArt(game)
+                    .frame(width: canvas.u(SeleneTokens.Space.chromeGutter + SeleneTokens.Space.small),
+                           height: canvas.u(SeleneTokens.Space.group))
+                    .clipShape(RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.cover)))
+            }
         }
+        .padding(.vertical, canvas.u(SeleneTokens.Space.tight))
         .accessibilityElement(children: .combine)
     }
 
-    private var friendsDetail: some View {
+    private func friendsDetail(_ data: PageData) -> some View {
         VStack(spacing: gap) {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: gap) {
                         Text(L10n.text("Friends")).seleneFont(.screenTitle, .semibold).accessibilityAddTraits(.isHeader)
-                        friendsList()
+                        friendsList(data: data)
                     }
                     .frame(maxWidth: canvas.u(SeleneTokens.Space.transferMeasure))
                     .padding(gap)
@@ -474,6 +563,11 @@ struct ProfilePage: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(SeleneTheme.scrim)
         .transition(.opacity)
+    }
+
+    private func gameArt(_ game: CatalogGame, showsFallback: Bool = true) -> some View {
+        ProfileGameArt(game: game, artwork: artwork, metadata: viewModel.store.storeMetadata[game.id],
+                       showsFallback: showsFallback)
     }
 
     private func achievementDetail(_ entry: AchievementEntry, _ screen: AchievementsScreenModel) -> some View {
@@ -497,7 +591,7 @@ struct ProfilePage: View {
             .background(SeleneTheme.glass, in: RoundedRectangle(cornerRadius: radius))
     }
 
-    private func button<Content: View>(_ id: Focus, data: PageData, radius: CGFloat, tracked: Bool = true,
+    private func button<Content: View>(_ id: Focus, data: PageData, radius: CGFloat, tracked: Bool = true, showsRowRing: Bool = true,
                                        @ViewBuilder content: () -> Content) -> some View {
         Button {
             focus = id
@@ -506,7 +600,7 @@ struct ProfilePage: View {
             content().contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .seleneRowFocus(tracked && focus == id, radius: radius)
+        .seleneRowFocus(showsRowRing && tracked && focus == id, radius: radius)
         .background {
             if tracked {
                 GeometryReader { geometry in
@@ -603,6 +697,7 @@ private struct ProfileGameArt: View {
     let game: CatalogGame
     let artwork: ArtworkStore
     let metadata: NintendoStoreMetadata?
+    var showsFallback = true
     @Environment(\.catalogPersonalizations) private var personalizations
     @Environment(\.seleneReduceMotion) private var reduceMotion
     @State private var image: NSImage?
@@ -613,9 +708,9 @@ private struct ProfileGameArt: View {
         Color.clear.overlay {
             if let art = image ?? GameArtLoader.shared.cachedHero(for: played) {
                 Image(nsImage: art).resizable().scaledToFill()
-            } else if let game = game.nxnativeGame {
+            } else if showsFallback, let game = game.nxnativeGame {
                 Image(nsImage: GameIconProvider.icon(for: game)).resizable().scaledToFit()
-            } else {
+            } else if showsFallback {
                 Image(systemName: "gamecontroller").seleneFont(.heroTitle).foregroundStyle(SeleneTheme.ink25)
             }
         }

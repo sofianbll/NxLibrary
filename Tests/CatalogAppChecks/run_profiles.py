@@ -130,9 +130,9 @@ import ArcanePorting
         _ = vm.localAchievementStore.record([.seashells: 10], in: profilePack, profile: alex.id, at: .now)
         var date = Date.now.addingTimeInterval(-3 * 3600)
         let pageHistory = PlaySessionStore(fileURL: data.appendingPathComponent("profile-page-sessions.json"), now: { date })
-        for (index, item) in profileGames.prefix(5).enumerated() {
+        for (index, item) in profileGames.prefix(5).reversed().enumerated() {
             precondition(pageHistory.start(gameID: item.id, sourceID: item.personalizationKey, announces: false))
-            date.addTimeInterval(index == 0 ? 5_400 : 900)
+            date.addTimeInterval(index == 4 ? 5_400 : 900)
             _ = pageHistory.end(gameID: item.id)
         }
         for item in profileGames {
@@ -160,7 +160,7 @@ import ArcanePorting
             ("small", CGSize(width: 680, height: 470), linked)
         ] {
             let page = ProfilePage(profile: pageProfile, viewModel: vm, history: pageHistory, artwork: art,
-                                   nextendo: account, router: pageRouter, focus: .constant(.game(.recent, profileGames[3].id)),
+                                   nextendo: account, router: pageRouter, focus: .constant(.game(.recent, profileGames[1].id)),
                                    onEdit: {}, onSwitch: {}, onAccount: {})
             try render("profile-page-\(name)", page.environment(\.nxAppLocale, french), in: out, refs,
                        "profile-page.png", size: size)
@@ -816,8 +816,10 @@ extension NextendoAccountSnapshot {
     package static func screenFixture(second: Bool) -> Self {
         .init(name: second ? "Solar Pilot" : "Lunar Pilot", username: second ? "fixture2" : "fixture", countryCode: nil, friendCode: nil, avatar: nil,
               avatarPID: nil, friends: [
+                  .init(id: 2, name: "Nova", favorite: false, presence: .playing, game: "Observatory 1", gameID: "0100000000000001"),
                   .init(id: 1, name: "Sol", favorite: false, presence: .online, game: nil, gameID: nil),
-                  .init(id: 2, name: "Nova", favorite: false, presence: .playing, game: "Pokémon Legends: Z-A", gameID: nil)
+                  .init(id: 3, name: "Vega", favorite: false, presence: .playing, game: "Observatory 3", gameID: "0100000000000003"),
+                  .init(id: 4, name: "Lyra", favorite: false, presence: .online, game: nil, gameID: nil)
               ],
               requests: [], sent: [], recentPlayers: [], failure: nil)
     }
