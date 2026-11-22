@@ -580,14 +580,7 @@ extension PortingModel {
             let detected = try detectedGame(from: target)
             workspace = try WorkspaceManager(root: scratch.workspaces).makeWorkspace(
                 for: detected, mode: .staged, createCache: verifiedCache == nil && !withoutCache)
-            // A workspace Arcane left on another drive is only a cache now: that drive gets its room back.
-            // A game not built yet still points at its workspace, which then stays.
-            if verifiedCache == nil, !withoutCache, let old = existingDirectory, managed,
-               old.resolvingSymlinksInPath() != workspace.directory.resolvingSymlinksInPath(),
-               !target.url.standardizedFileURL.path.hasPrefix(old.standardizedFileURL.path) {
-                DispatchQueue.global(qos: .utility).async { try? FileManager.default.removeItem(at: old) }
-            }
-            if verifiedCache == nil, !withoutCache || target.buildCachePath == nil {
+            if target.buildCachePath == nil {
                 target.workspacePath = workspace.directory.path
                 target.buildCachePath = workspace.buildCache.path
             }
@@ -644,11 +637,15 @@ extension PortingModel {
             throw NXLibraryError.environmentBlocked(AppViewModel.modMessage(error))
         }
         let stagedCodeMods = try codeMods.map { try FileManager.default.contentsOfDirectory(atPath: $0.path).sorted() }
-        let workDir = withoutCache ? tempRoot.appendingPathComponent("\(titleId)_build") : verifiedCache
+        let movingCache = verifiedCache == nil && !withoutCache && target.buildCachePath.map {
+            URL(fileURLWithPath: $0).standardizedFileURL.path != workspace.buildCache.standardizedFileURL.path
+        } == true
+        let workDir = withoutCache || movingCache ? tempRoot.appendingPathComponent("\(titleId)_build") : verifiedCache
         // A successful build without the old cache leaves its work folder as the game's cache.
-        let cacheDestination = withoutCache ? target.buildCachePath.map(URL.init(fileURLWithPath:)) ?? workspace.buildCache : nil
+        let cacheDestination = movingCache ? workspace.buildCache
+            : withoutCache ? target.buildCachePath.map(URL.init(fileURLWithPath:)) ?? workspace.buildCache : nil
         // With --work-dir alone nxnative can still copy a profile from the old cache.
-        let freshProfile = withoutCache ? workDir.map { ["--profile-out", $0.appendingPathComponent("profile").path] } ?? [] : []
+        let freshProfile = withoutCache || movingCache ? workDir.map { ["--profile-out", $0.appendingPathComponent("profile").path] } ?? [] : []
         let command = BuildCommandBuilder.make(
             repo: repo,
             toolchain: toolchain,
@@ -737,6 +734,7 @@ extension PortingModel {
                     self?.finishBuild(result, gameID: target.id,
                                       finalApp: finalApp, tempDir: tempRoot,
                                       adoptingCache: workDir.flatMap { work in cacheDestination.map { (work, $0) } },
+                                      relocatedCache: movingCache,
                                       nextendoRequested: nextendoRequested, stagedCodeMods: stagedCodeMods)
                 }
             }

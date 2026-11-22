@@ -30,8 +30,13 @@ final class LocalBuildCacheTests: XCTestCase {
         let old = try cache(in: root, name: "Game/T_build", chain: "aaaaaaaaaaaa", ready: nil)
         let work = try cache(in: root, name: "Temp/T_build", chain: "bbbbbbbbbbbb", ready: "7 of 7 shaders ready")
         var retired: [URL] = []
-        try LocalBuildCache.adopt(work, as: old) { retired.append($0) ; try FileManager.default.moveItem(at: $0, to: root.appendingPathComponent("retired")) }
-        XCTAssertEqual(retired, [old])
+        try LocalBuildCache.adopt(work, as: old) {
+            XCTAssertEqual(LocalBuildCache.shaderCount(ofCache: old), 7)
+            retired.append($0)
+            try FileManager.default.moveItem(at: $0, to: root.appendingPathComponent("retired"))
+        }
+        XCTAssertEqual(retired.count, 1)
+        XCTAssertNotEqual(retired.first?.path, old.path)
         XCTAssertEqual(LocalBuildCache.shaderCount(ofCache: old), 7)
         XCTAssertFalse(FileManager.default.fileExists(atPath: work.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("retired/shader/cache/b-aaaaaaaaaaaa.img").path))
@@ -39,6 +44,19 @@ final class LocalBuildCacheTests: XCTestCase {
         let again = try cache(in: root, name: "Temp2/T_build", chain: "cccccccccccc", ready: nil)
         try LocalBuildCache.adopt(again, as: fresh) { _ in XCTFail("Nothing to retire") }
         XCTAssertEqual(LocalBuildCache.chain(ofCache: fresh), "cccccccccccc")
+    }
+
+    func testFailedPreparationDoesNotTouchOldCache() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("LocalBuildCache-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let old = try cache(in: root, name: "Game/T_build", chain: "aaaaaaaaaaaa", ready: nil)
+        let work = try cache(in: root, name: "Temp/T_build", chain: "bbbbbbbbbbbb", ready: nil)
+        XCTAssertThrowsError(try LocalBuildCache.adopt(work, as: old, prepare: { _, candidate in
+            try FileManager.default.createDirectory(at: candidate, withIntermediateDirectories: false)
+            throw POSIXError(.ENOSPC)
+        }, retire: { _ in XCTFail("Old cache must not be retired") }))
+        XCTAssertEqual(LocalBuildCache.chain(ofCache: old), "aaaaaaaaaaaa")
+        XCTAssertEqual(LocalBuildCache.chain(ofCache: work), "bbbbbbbbbbbb")
     }
 
     func testOnlyAFinishedShaderImageMakesALocalCacheUsable() throws {

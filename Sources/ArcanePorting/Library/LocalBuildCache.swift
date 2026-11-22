@@ -67,10 +67,62 @@ public enum LocalBuildCache {
     /// A finished build's work folder becomes the game's cache; the cache it replaces goes to the Trash.
     public static func adopt(_ work: URL, as cache: URL,
                              retire: (URL) throws -> Void = { try FileManager.default.trashItem(at: $0, resultingItemURL: nil) }) throws {
+        try adopt(work, as: cache, prepare: { source, candidate in
+            if renamex_np(source.path, candidate.path, UInt32(RENAME_EXCL)) == 0 { return }
+            guard errno == EXDEV else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
+            let original = try CloudArchiveInventory.scan(source, kind: .cache)
+            try FileManager.default.copyItem(at: source, to: candidate)
+            guard try CloudArchiveInventory.scan(candidate, kind: .cache).withoutRootMtime == original.withoutRootMtime else {
+                throw CloudArchiveError.localChanged
+            }
+        }, retire: retire)
+    }
+
+    static func adopt(_ work: URL, as cache: URL, prepare: (URL, URL) throws -> Void,
+                      retire: (URL) throws -> Void) throws {
         let fm = FileManager.default
-        guard work.standardizedFileURL != cache.standardizedFileURL, fm.fileExists(atPath: work.path) else { return }
-        if fm.fileExists(atPath: cache.path) { try retire(cache) }
-        try fm.createDirectory(at: cache.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try fm.moveItem(at: work, to: cache)
+        guard work.standardizedFileURL.path != cache.standardizedFileURL.path else { return }
+        guard let chain = try readChain(ofCache: work) else { throw CloudArchiveError.localChanged }
+        let parent = cache.deletingLastPathComponent()
+        let parts = parent.standardizedFileURL.pathComponents
+        if parts.count > 2, parts[1] == "Volumes" {
+            _ = try CloudArchiveInventory.node(at: URL(fileURLWithPath: "/Volumes/\(parts[2])"))
+        }
+        try fm.createDirectory(at: parent, withIntermediateDirectories: true)
+        let volume = try CloudArchiveInventory.node(at: parent)
+        func previousNode() throws -> stat? {
+            do { return try CloudArchiveInventory.node(at: cache) }
+            catch CloudArchiveError.localMissing { return nil }
+        }
+        let previous = try previousNode()
+        guard previous.map({ $0.st_mode & S_IFMT == S_IFDIR }) ?? true else { throw CloudArchiveError.unsafePath }
+        let stage = parent.appendingPathComponent(".arcane-build-cache-\(UUID())")
+        try fm.createDirectory(at: stage, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+        let candidate = stage.appendingPathComponent(cache.lastPathComponent)
+        // Never recursively remove this directory: after the swap it holds the old cache.
+        defer { _ = rmdir(stage.path) }
+        do {
+            try prepare(work, candidate)
+            guard Self.chain(ofCache: candidate) == chain else { throw CloudArchiveError.localChanged }
+            let image = candidate.appendingPathComponent("shader/cache/b-\(chain).img")
+            let node = try CloudArchiveInventory.node(at: image)
+            guard node.st_mode & S_IFMT == S_IFREG, node.st_size > 0 else { throw CloudArchiveError.localChanged }
+            let current = try previousNode()
+            let parentNow = try CloudArchiveInventory.node(at: parent)
+            guard volume.st_dev == parentNow.st_dev, volume.st_ino == parentNow.st_ino,
+                  previous?.st_dev == current?.st_dev, previous?.st_ino == current?.st_ino else {
+                throw CloudArchiveError.localChanged
+            }
+            let exists = previous != nil
+            guard renamex_np(candidate.path, cache.path, UInt32(exists ? RENAME_SWAP : RENAME_EXCL)) == 0 else {
+                throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+            }
+            if !exists { return }
+        } catch {
+            // Before publication the only possible resident is the new, disposable candidate.
+            try? fm.removeItem(at: candidate)
+            throw error
+        }
+        try retire(candidate)
     }
 }
