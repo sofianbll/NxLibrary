@@ -682,10 +682,15 @@ extension AppViewModel {
                     let reference = withoutCache ? nil : try await referenceManifest(titleID: title)
                     let own = reference == nil ? nil : try await archive.latest(titleID: title)
                     let useReference = reference.map { referenceWins($0, over: own, kind: .cache) } == true
+                    let appManifest = reference.flatMap { reference in
+                        let referenceApp = referenceWins(reference, over: own, kind: .app)
+                        return referenceApp == useReference ? nil : (referenceApp ? reference : own)
+                    }
                     check = try await (useReference ? cloudLibrary.referenceArchive ?? archive : archive)
                         .checkRebuild(locations, sourcesAvailable: true, withoutCache: withoutCache,
                                                            lastSuccessfulBuild: lastBuild,
-                                                           preferLocalCache: request?.preferLocalCache == true)
+                                                           preferLocalCache: request?.preferLocalCache == true,
+                                                           appManifest: appManifest)
                     try Task.checkCancellation()
                 } catch is CancellationError {
                     throw CancellationError()

@@ -1574,15 +1574,15 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "睡眠"}}
       }
     },
-    "Sent · published when the upload ends": {
+    "App published · sending build cache…": {
       "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "Sent · published when the upload ends"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Inviata · pubblicata a fine invio"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Envoyée · publiée à la fin de l'envoi"}},
-        "de": {"stringUnit": {"state": "translated", "value": "Gesendet · wird am Ende veröffentlicht"}},
-        "es": {"stringUnit": {"state": "translated", "value": "Enviada · se publica al terminar el envío"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Enviado · publicado ao fim do envio"}},
-        "zh-Hans": {"stringUnit": {"state": "translated", "value": "已发送 · 上传结束后发布"}}
+        "en": {"stringUnit": {"state": "translated", "value": "App published · sending build cache…"}},
+        "it": {"stringUnit": {"state": "translated", "value": "App pubblicata · invio della cache…"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "App publiée · envoi du cache…"}},
+        "de": {"stringUnit": {"state": "translated", "value": "App veröffentlicht · Cache wird gesendet…"}},
+        "es": {"stringUnit": {"state": "translated", "value": "App publicada · enviando la caché…"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "App publicado · enviando o cache…"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "应用已发布 · 正在上传构建缓存…"}}
       }
     },
     "A cloud transfer is in progress": {

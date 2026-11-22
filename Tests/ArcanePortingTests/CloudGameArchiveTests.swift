@@ -17,7 +17,7 @@ final class CloudGameArchiveTests: XCTestCase {
             && $0.hasSuffix("/Fixture.app/Contents/Info.plist") })
         XCTAssertEqual(paths.filter { $0.contains("/manifests/") }.map {
             String($0.prefix { $0 != "/" })
-        }, ["Fixture [\(title)]"])
+        }, Array(repeating: "Fixture [\(title)]", count: 2))
         XCTAssertFalse(paths.contains { $0.hasSuffix(".aar") })
         let tree = try XCTUnwrap(manifest.artifacts.first?.files)
         let downloaded = f.root.appendingPathComponent("Browser.app")
@@ -138,6 +138,69 @@ final class CloudGameArchiveTests: XCTestCase {
         XCTAssertEqual(files.filter { $0.hasPrefix("upload:") }.map { $0.split(separator: "/").last! }, ["run.key"])
         XCTAssertEqual(files.filter { $0.hasPrefix("server:") }.count, 2)
         try await XCTUnwrap(first.artifacts.last?.files).verify(on: f.backend)
+    }
+
+    func testAppIsPublishedToReferenceWhileCacheIsStillTransferring() async throws {
+        try await assertAppPublishedDuringCache(cancel: false)
+    }
+
+    func testCancellingCacheKeepsThePublishedApp() async throws {
+        try await assertAppPublishedDuringCache(cancel: true)
+    }
+
+    func testRebuildDoesNotReuseCacheFromAnOlderIncompatibleApp() async throws {
+        let f = try fixture(useSyntheticBackend: true)
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let shaders = f.cache.appendingPathComponent("shader/cache")
+        try FileManager.default.createDirectory(at: shaders, withIntermediateDirectories: true)
+        try Data().write(to: shaders.appendingPathComponent("b-1234567890ab.img"))
+        let game = CloudArchiveGame(titleID: title, locations: f.game.locations, engineCommit: "72d43ff6")
+        let old = try await f.service.upload(game)
+        let compatible = try await f.service.checkRebuild(game, sourcesAvailable: true, withoutCache: false)
+        XCTAssertEqual(compatible.verifiedCache, f.cache)
+        let msl = f.app.appendingPathComponent("Contents/Resources/msl")
+        try FileManager.default.moveItem(at: msl.appendingPathComponent("b-1234567890ab.img"),
+                                        to: msl.appendingPathComponent("b-1234567890ac.img"))
+        try command("/usr/bin/codesign", ["--force", "--sign", "-", f.app.path])
+        let new = try await f.service.upload(game, kinds: [.app])
+        XCTAssertNotEqual(new.artifacts.first, old.artifacts.first)
+        XCTAssertEqual(new.artifacts.last, old.artifacts.last)
+        let incompatible = try await f.service.checkRebuild(game, sourcesAvailable: true, withoutCache: false,
+                                                             preferLocalCache: true)
+        XCTAssertEqual(incompatible.decision, .fullRebuild)
+        XCTAssertNil(incompatible.verifiedCache)
+    }
+
+    private func assertAppPublishedDuringCache(cancel: Bool) async throws {
+        let f = try fixture(useSyntheticBackend: true)
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let flag = f.root.appendingPathComponent("pause-cache")
+        let started = f.root.appendingPathComponent("cache-started")
+        try Data().write(to: flag)
+        let service = f.service
+        let task = Task { try await service.upload(f.game) }
+        defer { task.cancel(); try? FileManager.default.removeItem(at: flag) }
+        for _ in 0..<500 {
+            if FileManager.default.fileExists(atPath: started.path) { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: started.path))
+        let backend = RcloneStorageBackend(remote: "fixture", root: "Games",
+            executable: f.root.appendingPathComponent("fake-rclone"), config: f.root.appendingPathComponent("rclone.conf"))
+        let reader = CloudGameArchive(backend: try XCTUnwrap(backend.reference(folderID: "1Reference")))
+        let visible = try await reader.latestManifests()
+        XCTAssertEqual(visible.first?.artifacts.map(\.kind), [.app])
+        if cancel { task.cancel() }
+        else { try FileManager.default.removeItem(at: flag) }
+        let outcome = await task.result
+        if cancel {
+            XCTAssertThrowsError(try outcome.get()) { XCTAssertTrue($0 is CancellationError) }
+        } else {
+            XCTAssertEqual(try outcome.get().artifacts.map(\.kind), [.app, .cache])
+        }
+        let final = try await reader.latest(titleID: title)
+        XCTAssertEqual(final?.artifacts.map(\.kind), cancel ? [.app] : [.app, .cache])
+        XCTAssertEqual(final?.artifacts.first, visible.first?.artifacts.first)
     }
 
     func testNewestReferenceDiffAndLegacyRestore() async throws {
@@ -764,8 +827,7 @@ final class CloudGameArchiveTests: XCTestCase {
         let service = f.service
         do {
             _ = try await service.upload(f.game) { progress in
-                // The app was already scanned when the cache scan starts.
-                if progress.phase == .preparing, progress.kind == .cache {
+                if progress.phase == .uploading, progress.kind == .app {
                     do { try changed.write(to: file) }
                     catch { XCTFail("Could not mutate the fixture: \(error)") }
                 }
@@ -790,7 +852,7 @@ final class CloudGameArchiveTests: XCTestCase {
         let file = f.cache.appendingPathComponent("run.key")
         do {
             _ = try await service.upload(f.game) { progress in
-                if progress.phase == .verifying, progress.kind == .app {
+                if progress.phase == .uploading, progress.kind == .cache {
                     XCTAssertEqual(chmod(file.path, 0o600), 0)
                 }
             }
@@ -805,7 +867,7 @@ final class CloudGameArchiveTests: XCTestCase {
         try assertNoStagedArchive(f)
     }
 
-    func testSameSizeMutationBeforeCacheTransferDoesNotPublishManifest() async throws {
+    func testSameSizeMutationBeforeCacheTransferPublishesOnlyApp() async throws {
         let f = try fixture()
         defer { try? FileManager.default.removeItem(at: f.root) }
         try addLargeCacheFile(to: f)
@@ -822,8 +884,8 @@ final class CloudGameArchiveTests: XCTestCase {
             XCTFail("A same-size edit during an upload must not be published")
         } catch { XCTAssertEqual(error as? CloudArchiveError, .localChanged) }
         XCTAssertFalse(mutated.snapshot().isEmpty)
-        let objects = try await f.backend.list()
-        XCTAssertFalse(objects.contains { $0.key.value.hasSuffix(".json") })
+        let published = try await f.service.latest(titleID: title)
+        XCTAssertEqual(published?.artifacts.map(\.kind), [.app])
         try assertNoStagedArchive(f)
     }
 
@@ -1132,7 +1194,7 @@ final class CloudGameArchiveTests: XCTestCase {
         XCTAssertEqual(restored[.cache]?.state, .synchronized)
     }
 
-    func testExternalSymlinksStopPublication() async throws {
+    func testExternalCacheSymlinksPreventCachePublication() async throws {
         let f = try fixture()
         defer { try? FileManager.default.removeItem(at: f.root) }
         try FileManager.default.createSymbolicLink(atPath: f.cache.appendingPathComponent("escape").path,
@@ -1142,7 +1204,7 @@ final class CloudGameArchiveTests: XCTestCase {
             XCTFail("An external link cannot be archived")
         } catch { XCTAssertEqual(error as? CloudArchiveError, .unsafePath) }
         let latest = try await f.service.latest(titleID: title)
-        XCTAssertNil(latest)
+        XCTAssertEqual(latest?.artifacts.map(\.kind), [.app])
     }
 
     private struct Fixture {
@@ -1214,7 +1276,7 @@ final class CloudGameArchiveTests: XCTestCase {
         let url = root.appendingPathComponent("fake-rclone")
         try """
         #!/usr/bin/python3
-        import hashlib, json, os, shutil, sys
+        import hashlib, json, os, shutil, sys, time
         from pathlib import Path
         cmd, *args = sys.argv[1:]
         if cmd == "rcd":
@@ -1258,6 +1320,11 @@ final class CloudGameArchiveTests: XCTestCase {
             listed = Path(args[args.index("--files-from-raw") + 1]).read_text().splitlines()
             previous = path(args[args.index("--copy-dest") + 1]) if "--copy-dest" in args else None
             sending = args[0].startswith(":local,links=true:")
+            pause = root / "pause-cache"
+            if sending and "cache" in dest.relative_to(root / "remote").parts and pause.exists():
+                (root / "cache-started").touch()
+                while pause.exists():
+                    time.sleep(0.02)
             for name in sorted(listed, key=lambda name: name.endswith(".rclonelink")):
                 if sending and name.endswith(".rclonelink"):
                     data = os.readlink(src / name.removesuffix(".rclonelink")).encode()

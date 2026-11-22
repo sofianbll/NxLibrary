@@ -110,7 +110,7 @@ struct CloudLibraryPanel: View {
         let copy = item.artifact.flatMap { state.copies[$0] }
         let indicator = CloudLibraryIndicator(state: state, item: item)
         let live = state.activeItem == item && !state.queued
-        let reference = !live && !state.queued ? referenceLine(item) : nil
+        let reference = !live && !state.queued && !indicator.appPublished ? referenceLine(item) : nil
         let size = state.bytes(item).map(formattedBytes)
         let published = copy?.uploadedAt.map {
             L10n.format("Published %@", [$0.formatted(.relative(presentation: .named, unitsStyle: .abbreviated)
@@ -118,7 +118,8 @@ struct CloudLibraryPanel: View {
                         context: localization)
         }
         let control = artifactControl(item)
-        let personalCopyIsOlder = !live && !state.queued && item.artifact.map(state.personalCopyIsOlder) == true
+        let personalCopyIsOlder = !live && !state.queued && !indicator.appPublished
+            && item.artifact.map(state.personalCopyIsOlder) == true
         let downloadFill = CloudLibraryProgressView.downloadFill(state, item: item)
         let downloading = CloudLibraryProgressView.isDownloading(state, item: item)
         let ready = downloading && state.progress?.phase == .readyToInstall
@@ -552,9 +553,9 @@ struct CloudLibraryIndicator {
         guard let active = state.activeItem else { return false }
         return item.map { $0 == active } ?? (active != .sources)
     }
-    var progress: Bool { (showsAction || sentAwaitingPublish) && !state.queued }
-    /// A full upload sends the app, then the cache; the app becomes the cloud copy only when the manifest is published at the end.
-    private var sentAwaitingPublish: Bool {
+    var progress: Bool { showsAction && !state.queued }
+    /// Cache preparation starts only after the app is published.
+    var appPublished: Bool {
         item == .app && state.action == .upload(nil) && state.activeItem == .cache
     }
     var queued: Bool { showsAction && state.queued }
@@ -589,6 +590,7 @@ struct CloudLibraryIndicator {
 
     var status: CloudLibraryStatus {
         if queued || (progress && state.progress?.phase == .readyToInstall) { return .queued }
+        if appPublished { return .synchronized }
         if progress { return .pending }
         if failed { return .failed }
         if let item, item.artifact.flatMap({ state.referenceCopies[$0] }) != nil ||
@@ -626,8 +628,8 @@ struct CloudLibraryIndicator {
 
     func label(context: AppLocale, showingFailure: Bool = true) -> String {
         if queued { return L10n.text("Queued", context: context) }
+        if appPublished { return L10n.text("App published · sending build cache…", context: context) }
         if progress {
-            if sentAwaitingPublish { return L10n.text("Sent · published when the upload ends", context: context) }
             if let fraction = CloudLibraryProgressView.fraction(state.progress) {
                 let key: String
                 switch state.action {

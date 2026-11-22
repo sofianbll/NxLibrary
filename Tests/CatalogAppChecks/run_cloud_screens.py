@@ -632,8 +632,8 @@ extension CloudDriveFolders.Listing {
         uploading.action = .upload(nil)
         uploading.progress = .init(.uploading, kind: .cache)
         let pendingApp = CloudLibraryIndicator(state: uploading, item: .app)
-        precondition(pendingApp.label(context: en) == "Sent · published when the upload ends")
-        precondition(pendingApp.label(context: fr) == "Envoyée · publiée à la fin de l'envoi")
+        precondition(pendingApp.label(context: en) == "''' + ("Sent · published when the upload ends" if before else "App published · sending build cache…") + '''")
+        precondition(pendingApp.label(context: fr) == "''' + ("Envoyée · publiée à la fin de l'envoi" if before else "App publiée · envoi du cache…") + '''")
         precondition(CloudLibraryIndicator(state: model.states[game.id]!).label(context: en) == "Cloud only")''')
         if browser:
             host = host.replace("// TYPED_PATH_CHECK", '''
@@ -659,11 +659,18 @@ extension CloudSetupAssistant {
     }
 }
 ''')
-            host = host.replace("// ASSISTANT_CHECK", '''
+            host = host.replace("// ASSISTANT_CHECK", r'''
         precondition(assistant.focusedTarget == .primary)
         precondition(CloudLibraryIndicator(state: model.states[game.id]!).status == .pending)
         precondition(CloudLibraryIndicator(state: model.states[game.id]!, item: .cache).status == .synchronized)
-        precondition(pendingApp.status == .pending && !pendingApp.isTransferring)
+        precondition(pendingApp.status == .synchronized && !pendingApp.isTransferring)
+        model.update(game.id) { $0 = uploading }
+        try render("panel-app-published", output,
+            CloudLibraryPanel(viewModel: vm, model: model, game: game).environment(\.nxAppLocale, fr))
+        model.update(game.id) {
+            $0.action = nil; $0.progress = nil
+            $0.copies = [.app: .screenFixture(.cloudOnly), .cache: .screenFixture(.synchronized)]
+        }
         let transferring = CloudLibraryIndicator(state: uploading, item: .cache)
         precondition(transferring.status == .pending && transferring.isTransferring)
         uploading.queued = true
