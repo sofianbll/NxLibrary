@@ -128,9 +128,9 @@ struct SettingsAPISection: View {
 
     private var remotePlayRows: some View {
         let status: (String, Color)
-        if remotePlayAdapters.isAmbiguous {
-            status = ("Multiple active VPNs", SeleneTheme.untested)
-        } else if remotePlayAdapters.zeroTier == 1 {
+        if remotePlayAdapters.zeroTier.count > 1 {
+            status = ("Multiple active ZeroTier adapters", SeleneTheme.untested)
+        } else if remotePlayAdapters.zeroTier.count == 1 {
             status = ("ZeroTier connected", SeleneTheme.statusOK)
         } else if zeroTierURL != nil {
             status = ("ZeroTier installed, not connected", SeleneTheme.untested)

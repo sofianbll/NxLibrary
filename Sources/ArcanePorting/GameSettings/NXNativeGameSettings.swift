@@ -41,6 +41,7 @@ public enum GameSettingsError: LocalizedError, Equatable {
 /// from before saved choices has no adapter and keeps `env.txt` (`GameRuntimeConfig.save`).
 public struct NXNativeGameSettings {
     public static let remotePlayKey = "DM_NET_VPN"
+    private static let interfaceKey = "DM_NETWORK_INTERFACE"
     /// The keys NX Library wrote into every game's env.txt up to 0.1.2.
     public static let managedKeys: Set<String> = [
         "DM_FPS_TARGET", "DM_METAL_HUD", "DM_OPMODE", "DM_RENDER_SCALE", "DM_PRESENT_UPSCALE",
@@ -109,22 +110,24 @@ public struct NXNativeGameSettings {
     /// The value Play's child process sees. Does not migrate or change a saved choice.
     public func effectiveLaunchValue(_ env: String, environment: [String: String] = ProcessInfo.processInfo.environment) -> String? {
         guard let setting = setting(env) else { return nil }
-        return explicitLaunchValue(setting, environment: environment) ?? setting.defaultValue
+        return explicitLaunchValue(env, environment: environment) ?? setting.defaultValue
     }
 
     public func remotePlayLaunchValue(mode: RemotePlayMode, adapters: RemotePlayAdapters,
-                                      environment: [String: String]) -> String? {
-        guard mode == .automatic, adapters.zeroTier == 1, !adapters.isAmbiguous,
-              let setting = setting(Self.remotePlayKey), setting.accepts("1"),
-              explicitLaunchValue(setting, environment: environment, includeDisabledChoices: true) == nil,
-              (environment[NextendoLaunch.networkKey] ?? effectiveLaunchValue(NextendoLaunch.networkKey, environment: environment)) != "nextendo"
+                                      environment: [String: String]) -> [String: String]? {
+        let networkKey = NextendoLaunch.networkKey
+        guard mode == .automatic, adapters.zeroTier.count == 1, let name = adapters.zeroTier.first,
+              setting(Self.remotePlayKey)?.accepts("1") == true,
+              let network = explicitLaunchValue(networkKey, environment: environment) ?? setting(networkKey)?.defaultValue,
+              network == "ldn" || network == "lan",
+              explicitLaunchValue(Self.remotePlayKey, environment: environment, includeDisabledChoices: true) == nil,
+              explicitLaunchValue(Self.interfaceKey, environment: environment, includeDisabledChoices: true) == nil
         else { return nil }
-        return "1"
+        return [Self.remotePlayKey: "1", Self.interfaceKey: name]
     }
 
-    private func explicitLaunchValue(_ setting: LauncherSetting, environment: [String: String],
+    private func explicitLaunchValue(_ env: String, environment: [String: String],
                                      includeDisabledChoices: Bool = false) -> String? {
-        let env = setting.env
         if let inherited = environment[env] { return inherited }
         var ignoreSaved = environment["DM_SAVED_CHOICES"]
         for url in [envURL, bundleEnvURL] {
@@ -140,7 +143,7 @@ public struct NXNativeGameSettings {
             }
         }
         if includeDisabledChoices || ignoreSaved != "0",
-           let saved = store.value(env, domain: domain), setting.accepts(saved) {
+           let saved = store.value(env, domain: domain), setting(env)?.accepts(saved) ?? includeDisabledChoices {
             return saved
         }
         return nil

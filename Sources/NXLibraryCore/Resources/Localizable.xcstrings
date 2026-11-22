@@ -1145,15 +1145,15 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "未安装 ZeroTier"}}
       }
     },
-    "Multiple active VPNs": {
+    "Multiple active ZeroTier adapters": {
       "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "Multiple active VPNs"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Più VPN attive"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Plusieurs VPN actifs"}},
-        "de": {"stringUnit": {"state": "translated", "value": "Mehrere VPNs aktiv"}},
-        "es": {"stringUnit": {"state": "translated", "value": "Varias VPN activas"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Várias VPNs ativas"}},
-        "zh-Hans": {"stringUnit": {"state": "translated", "value": "有多个 VPN 正在运行"}}
+        "en": {"stringUnit": {"state": "translated", "value": "Multiple active ZeroTier adapters"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Più interfacce ZeroTier attive"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Plusieurs interfaces ZeroTier actives"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Mehrere ZeroTier-Adapter aktiv"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Varios adaptadores de ZeroTier activos"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Vários adaptadores ZeroTier ativos"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "有多个 ZeroTier 网络接口处于活动状态"}}
       }
     },
     "Download ZeroTier": {

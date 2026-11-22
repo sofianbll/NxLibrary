@@ -101,7 +101,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 | [Sources/NXLibrary/ViewModels/AppViewModel+CloudLibrary.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+CloudLibrary.swift) | Coordina archivio, coda, esiti e recupero cloud; conserva l'ultimo controllo effettivo e gestisce Download, lease e verifica della cache prima di Rebuild. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+CloudLibraryMove.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+CloudLibraryMove.swift) | Esegue il piano confermato di spostamento cloud; pubblica progressi ed esito e attiva la cartella solo al successo. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+Activity.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Activity.swift) | Ripristina, registra e cancella gli esiti; invia Retry al proprietario del lavoro originale. |
-| [Sources/NXLibrary/ViewModels/AppViewModel+Launch.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Launch.swift) | Play: controllo Nextendo per il gioco online, salvataggi cloud e mod prima dell’avvio, sorveglianza dell’avvio e overlay. |
+| [Sources/NXLibrary/ViewModels/AppViewModel+Launch.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Launch.swift) | Play: controllo Nextendo, salvataggi cloud, mod e ambiente ZeroTier prima dell’avvio, sorveglianza e overlay. |
 | [Sources/NXLibrary/ViewModels/NextendoSettings.swift](../../Sources/NXLibrary/ViewModels/NextendoSettings.swift) | Pubblica la scheda Nextendo in memoria e coordina verifica annullabile, accesso e disconnessione locale. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+GameActions.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+GameActions.swift) | Azioni su un gioco: Game options, preferito, nascosto, salvataggi cloud, chiusura, rimozione e Mostra nel Finder. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+GameFiles.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+GameFiles.swift) | File di un gioco: riepilogo e rimozione delle sorgenti, cancellazione del porting, cartella Ryujinx e log. |
@@ -350,7 +350,7 @@ Cartella `Sources/NXLibraryCore/Settings/`. Il catalogo dei testi sta in `Resour
 | [Sources/NXLibraryCore/Settings/SettingsReset.swift](../../Sources/NXLibraryCore/Settings/SettingsReset.swift) | Reset group per sezione: quali sezioni si azzerano e quali valori della base tornano ai default (`resetShared`). |
 | [Sources/NXLibraryCore/Settings/AppLocale.swift](../../Sources/NXLibraryCore/Settings/AppLocale.swift) | Sette lingue, risoluzione delle preferenze e regione indipendente; nomi e ricerca delle regioni. |
 | [Sources/NXLibraryCore/Settings/AppLocalization.swift](../../Sources/NXLibraryCore/Settings/AppLocalization.swift) | Contesto osservabile, lookup portabile delle risorse e interpolazioni/plurali. |
-| [Sources/NXLibraryCore/Resources/Localizable.xcstrings](../../Sources/NXLibraryCore/Resources/Localizable.xcstrings) | Testi condivisi in sette lingue, inclusi gli stati delle copie cloud e i motivi che bloccano l'adozione di un'app. |
+| [Sources/NXLibraryCore/Resources/Localizable.xcstrings](../../Sources/NXLibraryCore/Resources/Localizable.xcstrings) | Testi condivisi in sette lingue, inclusi gli stati ZeroTier e delle copie cloud e i motivi che bloccano l'adozione di un'app. |
 
 ## Core · Steam
 
@@ -423,7 +423,7 @@ Cartella `Sources/ArcanePorting/Library/`.
 | [Sources/ArcanePorting/Library/CloudGameSources.swift](../../Sources/ArcanePorting/Library/CloudGameSources.swift) | Formati dei pacchetti e identità delle cartelle; registra una selezione portabile, confronta, invia e ripristina le sorgenti previa verifica dello spazio e senza sostituire file. |
 | [Sources/ArcanePorting/Library/CloudTransferQueue.swift](../../Sources/ArcanePorting/Library/CloudTransferQueue.swift) | Salva azioni e identità delle richieste cloud nel profilo, rimette il lavoro interrotto in testa e segnala una sola volta il mancato salvataggio. |
 | [Sources/ArcanePorting/Library/CloudDriveFolders.swift](../../Sources/ArcanePorting/Library/CloudDriveFolders.swift) | Elenca cartelle con errori tipizzati, cerca librerie e file del gioco in posizioni limitate, conta gli archivi Porting e verifica piani serializzabili di spostamento. |
-| [Sources/ArcanePorting/GameSettings/RemotePlayAdapters.swift](../../Sources/ArcanePorting/GameSettings/RemotePlayAdapters.swift) | Rileva interfacce ZeroTier e altre VPN per il gioco locale a distanza. |
+| [Sources/ArcanePorting/GameSettings/RemotePlayAdapters.swift](../../Sources/ArcanePorting/GameSettings/RemotePlayAdapters.swift) | Rileva i nomi delle interfacce ZeroTier attive con IPv4 non link-local per il gioco locale a distanza. |
 | [Sources/ArcanePorting/Library/BuildQueue.swift](../../Sources/ArcanePorting/Library/BuildQueue.swift) | FIFO delle compilazioni, richiesta serializzabile, deduplica e controllo delle sorgenti al ripristino. |
 | [Sources/ArcanePorting/Library/ActivityQueueFile.swift](../../Sources/ArcanePorting/Library/ActivityQueueFile.swift) | Lettura tollerante delle voci e scrittura atomica delle code e degli esiti versionati. |
 | [Sources/ArcanePorting/Library/ActivityHistory.swift](../../Sources/ArcanePorting/Library/ActivityHistory.swift) | Ultimo esito per richiesta, payload del retry e cancellazione manuale degli esiti. |
@@ -536,7 +536,7 @@ Cartella `Sources/ArcanePorting/GameSettings/`.
 
 | File | Responsabilità |
 |---|---|
-| [Sources/ArcanePorting/GameSettings/NXNativeGameSettings.swift](../../Sources/ArcanePorting/GameSettings/NXNativeGameSettings.swift) | Legge le impostazioni della build, le chiavi fissate da env.txt e il valore effettivo al lancio. |
+| [Sources/ArcanePorting/GameSettings/NXNativeGameSettings.swift](../../Sources/ArcanePorting/GameSettings/NXNativeGameSettings.swift) | Legge le impostazioni della build, le chiavi fissate da env.txt e i valori di lancio; propone l'ambiente ZeroTier per LDN/LAN. |
 | [Sources/ArcanePorting/GameSettings/GameSettingValues.swift](../../Sources/ArcanePorting/GameSettings/GameSettingValues.swift) | Le impostazioni della build per More settings (`extraSettings`) ed etichette e passi di un valore (`GameSettingValues`). |
 | [Sources/ArcanePorting/GameSettings/SavedChoicesStore.swift](../../Sources/ArcanePorting/GameSettings/SavedChoicesStore.swift) | Legge e scrive le scelte salvate launcher.<env> nel dominio preferenze dell’app gioco. |
 | [Sources/ArcanePorting/GameSettings/GameRuntimeConfig.swift](../../Sources/ArcanePorting/GameSettings/GameRuntimeConfig.swift) | Persiste opzioni per titolo, prepara Review e lingua del rebuild, mappa DM_* e unisce env.txt. |
@@ -665,7 +665,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Sources/NXLibrary/Views/Detail/CriticRatingValue.swift](../../Sources/NXLibrary/Views/Detail/CriticRatingValue.swift) | Valore della riga Critic score: cinque stelle, numero /100 e fonte, senza finestre aggiuntive; caricamento e assenza espliciti. |
 | [Sources/NXLibrary/ViewModels/IGDBSettings.swift](../../Sources/NXLibrary/ViewModels/IGDBSettings.swift) | Configurazione IGDB facoltativa: verifica prima del salvataggio, rimozione e invalidazione delle richieste/voti precedenti. |
 | [Sources/NXLibrary/Views/Components/IGDBCredentialsDialog.swift](../../Sources/NXLibrary/Views/Components/IGDBCredentialsDialog.swift) | Guida sintetica in cinque passi, Client ID, Client Secret nascosto, verifica/salvataggio e annullamento; input Settings sospeso. |
-| [Sources/NXLibrary/Views/Settings/SettingsAPISection.swift](../../Sources/NXLibrary/Views/Settings/SettingsAPISection.swift) | Servizi facoltativi: IGDB, SteamGridDB e scheda Nextendo con profilo, stato e amici. |
+| [Sources/NXLibrary/Views/Settings/SettingsAPISection.swift](../../Sources/NXLibrary/Views/Settings/SettingsAPISection.swift) | Servizi facoltativi: IGDB, SteamGridDB, stato e modalità ZeroTier e scheda Nextendo con profilo, stato e amici. |
 | [Sources/NXLibrary/Views/Settings/SettingsCloudLibrarySection.swift](../../Sources/NXLibrary/Views/Settings/SettingsCloudLibrarySection.swift) | Porting → Cloud library: verifica datata con colore semantico e recupero, cartelle affiancate, importazione, aspetto e strumenti avanzati. |
 | [Sources/NXLibrary/Views/Settings/CloudSetupAssistant.swift](../../Sources/NXLibrary/Views/Settings/CloudSetupAssistant.swift) | Accesso Google, selettore Drive e percorso manuale per i file del gioco; propone la ripresa e mostra verifica e progresso di spostamento. |
 | [Sources/NXLibrary/Views/Settings/CloudSetupAssistant+Input.swift](../../Sources/NXLibrary/Views/Settings/CloudSetupAssistant+Input.swift) | Traduce tastiera e controller in azioni sul bersaglio corrente, lasciando precedenza al menu e alla conferma di uscita. |
@@ -933,7 +933,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/NXLibraryCoreTests/ReleaseNotesLayoutTests.swift](../../Tests/NXLibraryCoreTests/ReleaseNotesLayoutTests.swift) | Titoli, voci e righe vuote delle note di release, una voce per riga. |
 | [Tests/ArcanePortingTests/NewestEngineTests.swift](../../Tests/ArcanePortingTests/NewestEngineTests.swift) | Lock e Metal di main, validità della scelta, comandi git del cambio, gate Newest engine, scheda Setup e frase. |
 | [Tests/ArcanePortingTests/NUPSourceCatalogTests.swift](../../Tests/ArcanePortingTests/NUPSourceCatalogTests.swift) | NUP storici, multiprogramma e soli update; identità DLC, JSON, capacità checkout, programma zero nei vecchi record e argv coerenti. |
-| [Tests/ArcanePortingTests/NXNativeGameSettingsTests.swift](../../Tests/ArcanePortingTests/NXNativeGameSettingsTests.swift) | Build senza adattatore, migrazione, chiavi fissate, precedenza al lancio e scrittura dei soli valori diversi dal default. |
+| [Tests/ArcanePortingTests/NXNativeGameSettingsTests.swift](../../Tests/ArcanePortingTests/NXNativeGameSettingsTests.swift) | Build senza adattatore, migrazione, chiavi fissate, precedenza al lancio, scelta ZeroTier e scrittura dei valori diversi dal default. |
 | [Tests/ArcanePortingTests/NextendoLaunchTests.swift](../../Tests/ArcanePortingTests/NextendoLaunchTests.swift) | Capacità dichiarate, scelta Network, visibilità in Settings, blocco senza sessione e ambiente in Play. |
 | [Tests/ArcanePortingTests/NextendoAccountServiceTests.swift](../../Tests/ArcanePortingTests/NextendoAccountServiceTests.swift) | Risposte sintetiche account e amici, presenza, ordine, errori, annullamento e richieste pubbliche. |
 | [Tests/ArcanePortingTests/NextendoOAuthTests.swift](../../Tests/ArcanePortingTests/NextendoOAuthTests.swift) | PKCE RFC 7636, callback, scambio e rotazione sintetici, scadenza ed errore temporaneo. |

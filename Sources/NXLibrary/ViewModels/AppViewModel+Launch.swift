@@ -155,8 +155,8 @@ extension AppViewModel {
             if let gameSettings {
                 let inherited = ProcessInfo.processInfo.environment.merging(overrides) { _, override in override }
                 let adapters: RemotePlayAdapters = remotePlayMode == .automatic ? .current() : .init()
-                if let value = gameSettings.remotePlayLaunchValue(mode: remotePlayMode, adapters: adapters, environment: inherited) {
-                    overrides[NXNativeGameSettings.remotePlayKey] = value
+                if let remotePlay = gameSettings.remotePlayLaunchValue(mode: remotePlayMode, adapters: adapters, environment: inherited) {
+                    overrides.merge(remotePlay) { existing, _ in existing }
                 }
             }
             openGame(game, titleId: titleId, token: saveLaunchToken, environment: overrides)
