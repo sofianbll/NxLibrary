@@ -27,6 +27,14 @@ public enum ButtonPrompts {
         style == .automatic && connected == .none
     }
 
+    /// A left hint on a screen's bar: the ⌘F keycap shows only on the keyboard (a controller reaches search
+    /// by holding View), and a controller-only hint never shows there. "Active" is `!usesKeyboard`: a
+    /// connected controller or a chosen button style, so the bar and the badges agree.
+    public static func showsHint(_ button: PromptButton?, controllerOnly: Bool, style: ButtonNameStyle,
+                                 connected: ConnectedPad) -> Bool {
+        usesKeyboard(style: style, connected: connected) ? !controllerOnly : button != .search
+    }
+
     /// The key the screens' key monitors take for each prompt: Return confirms,
     /// Esc goes back, X and Y, Q/E for filters, Home/End for the triggers,
     /// F3 for sort, V for View and ⌘K for Menu.

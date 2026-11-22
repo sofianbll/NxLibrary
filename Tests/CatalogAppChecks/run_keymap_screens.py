@@ -50,21 +50,24 @@ final class ThemeStore {
             let right = [HintItem(.a, "Play"), HintItem(.x, "Details"), HintItem(.y, "Game options"),
                          HintItem(.rs, "Sort", hold: "Recent")]
             let bar = SeleneHintsBar(left: left, right: right)
-            precondition(bar.visibleLeft(connected: brand != nil).map(\.button)
+            let active = ConnectedPad(connected: brand != nil, brand: brand ?? .generic)
+            precondition(bar.visibleLeft(style: .automatic, connected: active).map(\.button)
                          == (brand == nil ? [.view, .menu, .search, .home] : [.view, .menu, .home]))
-            let buttons = (bar.visibleLeft(connected: brand != nil) + right).compactMap(\.button)
+            // A chosen button style is a controller too, even with none connected: no ⌘F keycap beside View.
+            precondition(bar.visibleLeft(style: .xbox, connected: .none).map(\.button) == [.view, .menu, .home])
+            let buttons = (bar.visibleLeft(style: .automatic, connected: active) + right).compactMap(\.button)
             precondition(Set(buttons).count == buttons.count)
             precondition(ButtonPrompts.keyboardKey(.rs) == .text("F3"))
             precondition(left.first?.hold == "Hold: Search")
             let withoutSwitch = HintItem.homeGlobals(other: "Spotlight", onOther: nil, onMenu: {}, onSearch: {}, onProfiles: {})
             let alternateBar = SeleneHintsBar(left: withoutSwitch)
-            precondition(alternateBar.visibleLeft(connected: brand != nil).map(\.button)
+            precondition(alternateBar.visibleLeft(style: .automatic, connected: active).map(\.button)
                          == (brand == nil ? [.menu, .search, .home] : [.view, .menu, .home]))
             for style: ButtonNameStyle in [.xbox, .nintendo, .playstation] {
                 precondition(ButtonPrompts.symbol(.home, style: style, connected: .none)
                     .flatMap(SelenePromptBadge.filled) != nil, "Missing Home glyph for \(style)")
             }
-            let pad = ConnectedPad(connected: brand != nil, brand: brand ?? .generic)
+            let pad = active
             // Every controller token must render a glyph or a labeled keycap.
             for style in ButtonNameStyle.allCases {
                 for button in PromptButton.allCases {

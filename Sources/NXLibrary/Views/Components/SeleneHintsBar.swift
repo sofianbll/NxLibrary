@@ -39,6 +39,7 @@ extension ConnectedPad {
 struct SeleneHintsBar: View {
     @Environment(\.nxAppLocale) private var localization
     @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.seleneButtonNames) private var style
     @Environment(\.seleneShowButtonHints) private var showHints
     @Environment(\.seleneHintsCovered) private var covered
     @ObservedObject private var controller = GameControllerService.shared
@@ -58,7 +59,7 @@ struct SeleneHintsBar: View {
         if showHints {
             HStack(alignment: .bottom, spacing: canvas.u(22)) {
                 HStack(spacing: canvas.u(22)) {
-                    ForEach(visibleLeft(connected: controller.isGamepadConnected)) { item($0) }
+                    ForEach(visibleLeft(style: style, connected: pad)) { item($0) }
                 }
                     .padding(.leading, canvas.u(leftInset))
                 Spacer(minLength: canvas.u(22))
@@ -81,8 +82,12 @@ struct SeleneHintsBar: View {
         }
     }
 
-    func visibleLeft(connected: Bool) -> [HintItem] {
-        left.filter { connected ? $0.button != .search : !$0.controllerOnly }
+    private var pad: ConnectedPad {
+        ConnectedPad(connected: controller.isGamepadConnected, brand: controller.activeBrand)
+    }
+
+    func visibleLeft(style: ButtonNameStyle, connected: ConnectedPad) -> [HintItem] {
+        left.filter { ButtonPrompts.showsHint($0.button, controllerOnly: $0.controllerOnly, style: style, connected: connected) }
     }
 
     private var rightSlots: [HintItem?] {
@@ -121,7 +126,7 @@ struct SeleneHintsBar: View {
                         .seleneFont(19)
                         .foregroundColor(SeleneTheme.ink90)
                 }
-                if let hold = item.hold, controller.isGamepadConnected || item.button == .rs {
+                if let hold = item.hold, !ButtonPrompts.usesKeyboard(style: style, connected: pad) || item.button == .rs {
                     Text(item.button == .rs ? hold : L10n.text(hold, context: localization))
                         .seleneFont(13).foregroundColor(SeleneTheme.ink60)
                 }
