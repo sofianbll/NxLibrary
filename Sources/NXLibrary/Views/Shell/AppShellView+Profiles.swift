@@ -106,7 +106,7 @@ extension AppShellView {
                 .animation(Motion.overlay(reduceMotion), value: flow.change?.step)
             case .account:
                 LocalProfilePage(profile: active, nextendo: viewModel.profileNextendo, viewModel: viewModel,
-                                 settings: settings, history: playSessions, onClose: closeProfile,
+                                 settings: settings, onClose: closeProfile,
                                  onUpdate: profiles.update, onSwitch: {
                     profileFlow?.page = .picker
                     profileFlow?.returnsToPortrait = true

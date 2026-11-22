@@ -35,4 +35,16 @@ public struct BuildRecord: Codable, Equatable {
         self.builtCodeMods = builtCodeMods
         self.cancelled = cancelled
     }
+
+    package static func recentGames(in games: [PortedGame]) -> [(game: PortedGame, date: Date)] {
+        games.compactMap { game -> (game: PortedGame, date: Date)? in
+            guard !game.isHidden else { return nil }
+            let date = [game.lastBuild, game.pendingInstall?.record].compactMap { record -> Date? in
+                guard let record, record.exitCode == 0, !record.cancelled,
+                      let end = record.endedAt, end >= record.startedAt else { return nil }
+                return end
+            }.max()
+            return date.map { (game, $0) }
+        }.sorted { $0.date > $1.date }
+    }
 }

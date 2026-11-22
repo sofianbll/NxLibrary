@@ -19,7 +19,7 @@ Menu apre il centro di controllo al rilascio; a 500 ms apre invece Settings, con
 
 | Schermata | Comandi specifici |
 |---|---|
-| Spotlight | B risale alla fila; View passa a Collection. X scende ai dettagli. Y apre le opzioni del gioco o della card. |
+| Spotlight | B risale alla fila; View passa a Collection. X scende ai dettagli del gioco o mostra/nasconde le compilazioni recenti sulla carta Attività. Y apre le opzioni del gioco o della card. |
 | Collection | View passa a Spotlight. B torna indietro quando c'è un livello da chiudere; non cambia la vista iniziale. X apre Details su un gioco giocabile o scaricabile, Y le opzioni. |
 | Details | B torna da dove arriva; Y apre le opzioni, X e View non fanno nulla. |
 | Settings / Add Game / Console | B chiude o torna al livello precedente. Menu apre il centro se nessun dialogo blocca l'input. |

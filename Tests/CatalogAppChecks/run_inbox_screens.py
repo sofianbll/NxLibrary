@@ -67,7 +67,7 @@ import SwiftUI
         let profile = LocalProfileStore(directory: support, settings: settings.settings, name: "Alex")
         try render("08-profile-no-account", page: LocalProfilePage(profile: profile.active!,
             nextendo: NextendoSettings(store: NextendoTokenStore(directory: support.appendingPathComponent("nextendo"))),
-            viewModel: app, settings: settings, history: PlaySessionStore(fileURL: support.appendingPathComponent("sessions.json")),
+            viewModel: app, settings: settings,
             onClose: {}, onUpdate: { _ in true }, onSwitch: {}), to: output, locale: locale, showsHints: false)
         let inputs = GameInbox.inputs(files)
         let metadata: [URL: PackageReading] = [

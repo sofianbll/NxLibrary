@@ -203,6 +203,7 @@ public struct AppSettings: Codable, Equatable {
     /// not know it still reads this list.
     public var spotlightCards: [SpotlightCard]
     public var showsModsCard: Bool
+    public var showsRecentBuilds = true
 
     /// The cards in Spotlight's row, in their canonical order.
     public var visibleSpotlightCards: [SpotlightCard] {
@@ -338,7 +339,7 @@ public struct AppSettings: Codable, Equatable {
         case gameInboxEnabled
         case startInFullscreen
         case colorThemeID, buttonNames
-        case spotlightCards, showsModsCard, spotlightOrder, startingTab, surprisePool
+        case spotlightCards, showsModsCard, showsRecentBuilds, spotlightOrder, startingTab, surprisePool
         case librarySort
         case showsCloudPlayIcon, showsCloudDetailsLink, cloudTileBadges
         case startOn, lastHome
@@ -378,6 +379,7 @@ public struct AppSettings: Codable, Equatable {
             .compactMap(SpotlightCard.init(rawValue:)) ?? [.surprise, .activity, .addGame]
         self.spotlightCards = cards.filter { $0 != .mods }
         self.showsModsCard = try container.decodeIfPresent(Bool.self, forKey: .showsModsCard) ?? true
+        self.showsRecentBuilds = try container.decodeIfPresent(Bool.self, forKey: .showsRecentBuilds) ?? true
         self.spotlightOrder = try container.decodeIfPresent([String].self, forKey: .spotlightOrder) ?? []
         self.startingTab = try container.decodeIfPresent(String.self, forKey: .startingTab) ?? "All games"
         self.librarySort = try container.decodeIfPresent(String.self, forKey: .librarySort)
@@ -437,6 +439,7 @@ public struct AppSettings: Codable, Equatable {
         try c.encode(buttonNames, forKey: .buttonNames)
         try c.encode(spotlightCards, forKey: .spotlightCards)
         try c.encode(showsModsCard, forKey: .showsModsCard)
+        try c.encode(showsRecentBuilds, forKey: .showsRecentBuilds)
         try c.encode(spotlightOrder, forKey: .spotlightOrder)
         try c.encode(startingTab, forKey: .startingTab)
         try c.encode(librarySort, forKey: .librarySort)

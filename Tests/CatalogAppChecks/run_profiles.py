@@ -102,30 +102,29 @@ import ArcanePorting
         }.environment(\.nxAppLocale, french), in: out, refs, "none")
         L10n.setContext(.init(language: .english, region: "US"))
         let current = LibrarySort.recent
-        let history = [ProfileRecentGame(id: game.id, name: game.name,
-                       last: Date(timeIntervalSince1970: 1_791_014_400), duration: 9450)]
         for (name, presence) in [("connected", ProfilePresence.connected), ("offline", .offline), ("no-account", .notLinked),
                                  ("loading", .loading), ("unknown", .unknown), ("error", .failed), ("expired", .expired)] {
             let nextendo = fakeAccount(data.appendingPathComponent("fixture-account"))
             nextendo.setScreenFixture(presence)
-            try render("08-profile-\(name)", ProfilePageLayout(profile: alex, presence: presence, games: history, onClose: {}) {
+            try render("08-profile-\(name)", ProfilePageLayout(profile: alex, presence: presence, onClose: {}) {
                 SettingsAPISection(viewModel: vm, settings: settings, showsMultiplayer: true, supportsNextendo: true,
                                    accountOnly: true, accountOffline: presence == .offline,
                                    advanced: .constant(false), onActions: { _ in }, nextendo: nextendo)
             }, in: out, refs, "screenshots/activity.png")
         }
-        let localHistory = PlaySessionStore(fileURL: data.appendingPathComponent("profile-page-history.json"))
         vm.localProfiles = nil
         precondition(vm.profileNextendo == nil)
         try render("08-profile-without-nextendo-real", LocalProfilePage(profile: alex, nextendo: nil, viewModel: vm,
-                   settings: settings, history: localHistory, onClose: {}, onUpdate: { _ in true }, onSwitch: {}),
+                   settings: settings, onClose: {}, onUpdate: { _ in true }, onSwitch: {}),
                    in: out, refs, "none")
         vm.localProfiles = profiles
         let linked = fakeAccount(data.appendingPathComponent("profile-page-account"))
         linked.setScreenFixture(.connected)
+        L10n.setContext(french)
         try render("08-profile-linked-real", LocalProfilePage(profile: alex, nextendo: linked, viewModel: vm,
-                   settings: settings, history: localHistory, onClose: {}, onUpdate: { _ in true }, onSwitch: {}),
-                   in: out, refs, "none")
+                   settings: settings, onClose: {}, onUpdate: { _ in true }, onSwitch: {})
+                   .environment(\.nxAppLocale, french), in: out, refs, "none")
+        L10n.setContext(.init(language: .english, region: "US"))
         var profileGames = avatarGames
         var achievementGame = profileGames[1].nxnativeGame!
         let profilePack = LocalAchievementPack.linksAwakening!
@@ -136,6 +135,12 @@ import ArcanePorting
         let newArt = art.cacheDirectory.appendingPathComponent(profileGames[1].personalizationKey).appendingPathComponent("hero.png")
         try FileManager.default.createDirectory(at: newArt.deletingLastPathComponent(), withIntermediateDirectories: true)
         try FileManager.default.copyItem(at: oldArt, to: newArt)
+        for (index, item) in profileGames.prefix(3).enumerated() {
+            var native = item.nxnativeGame!
+            let end = Date(timeIntervalSince1970: 1_791_014_400 + TimeInterval(index * 86_400))
+            native.lastBuild = .init(startedAt: end.addingTimeInterval(-120), endedAt: end, exitCode: 0)
+            profileGames[index] = .init(nxnative: native)
+        }
         vm.applyCatalog(.init(sources: [.init(integration: .nxnative, isEnabled: true)], games: profileGames))
         precondition(vm.visibleCatalogGames.count == profileGames.count)
         _ = vm.localAchievementStore.record([.seashells: 10], in: profilePack, profile: alex.id, at: .now)
@@ -156,8 +161,22 @@ import ArcanePorting
         linked.setPresenceFixture()
         precondition(linked.account?.friends?.isEmpty == false)
         let pageRouter = AppRouter()
+        vm.homeSeen = true
+        vm.spotlight.selectedKey = SpotlightItem.card(.activity).key
         let activityCard = SpotlightView(viewModel: vm, router: pageRouter, settings: settings, playSessions: pageHistory,
                                          runningGames: RunningGameMonitor(), artwork: art, storeHost: ModStoreHost())
+        L10n.setContext(french)
+        precondition(activityCard.selectedItem == .card(.activity))
+        precondition(activityCard.recentBuilds?.map(\.game.id) == profileGames.prefix(3).reversed().map(\.id))
+        try render("spotlight-activity-builds-shown", activityCard.environment(\.nxAppLocale, french), in: out, refs, "none")
+        activityCard.handle(.secondaryAction)
+        precondition(activityCard.recentBuilds == nil)
+        precondition(!AppSettingsStore(fileURL: settings.fileURL).settings.showsRecentBuilds)
+        try render("spotlight-activity-builds-hidden", activityCard.environment(\.nxAppLocale, french), in: out, refs, "none")
+        activityCard.handle(.secondaryAction)
+        precondition(activityCard.recentBuilds?.count == 3)
+        precondition(AppSettingsStore(fileURL: settings.fileURL).settings.showsRecentBuilds)
+        L10n.setContext(.init(language: .english, region: "US"))
         activityCard.activate(.card(.activity))
         precondition(pageRouter.route == .profile)
         pageRouter.back()
@@ -190,10 +209,20 @@ import ArcanePorting
             ("small", CGSize(width: 680, height: 470), linked)
         ] {
             let page = ProfilePage(profile: pageProfile, viewModel: vm, history: pageHistory, artwork: art,
-                                   nextendo: account, router: pageRouter, focus: .constant(.game(.recent, profileGames[1].id)),
+                                   nextendo: account, router: pageRouter, focus: .constant(.card(.recent)),
                                    onEdit: {}, onSwitch: {}, onAccount: {})
-            try render("profile-page-\(name)", page.environment(\.nxAppLocale, french), in: out, refs,
-                       "profile-page.png", size: size)
+            if name == "16-9-linked" {
+                var checkedFocus = false
+                try render("profile-page-\(name)", page.checkSectionFocus { checkedFocus = true }
+                    .environment(\.nxAppLocale, french), in: out, refs, "profile-page.png", size: size)
+                precondition(checkedFocus)
+                page.confirmFocusedSection()
+                precondition(pageRouter.route == .profileCollection(.recent))
+                pageRouter.back()
+            } else {
+                try render("profile-page-\(name)", page.environment(\.nxAppLocale, french), in: out, refs,
+                           "profile-page.png", size: size)
+            }
         }
         try render("profile-page-cards-settings", SettingsView(initialSection: .profiles, viewModel: vm, settings: settings,
                    router: pageRouter, artwork: art).environment(\.nxAppLocale, french),
@@ -535,7 +564,7 @@ import ArcanePorting
         samAccount.setScreenFixture(.connected, second: true)
         L10n.setContext(french)
         try render("18-second-profile-nextendo", ProfilePageLayout(profile: sam, presence: .connected,
-            games: [.init(id: secondGame, name: game.name, last: .now, duration: 123)], onClose: {}, onSwitch: {}) {
+            onClose: {}, onSwitch: {}) {
             SettingsAPISection(viewModel: vm, settings: settings, showsMultiplayer: true, supportsNextendo: true,
                                accountOnly: true, advanced: .constant(false),
                                onActions: { _ in }, nextendo: samAccount)
@@ -978,6 +1007,32 @@ def main():
                 lambda m: "                Color.clear.overlay(alignment: .top) {" + m[1] +
                 "                        .fixedSize(horizontal: false, vertical: true)\n"
                 "                    }.clipped()\n            }\n            if ownsPage")
+        with (app / "Views/Shell/ProfilePage.swift").open("a") as swift:
+            swift.write(r'''
+extension ProfilePage {
+    func checkSectionFocus(_ checked: @escaping () -> Void) -> some View {
+        overlayPreferenceValue(Frames.self) { frames in
+            let targets = frames.filter { id, _ in
+                if case .card = id { return true }
+                return false
+            }
+            if !targets.isEmpty {
+                let _ = {
+                    precondition(Set(targets.keys) == Set(ProfilePageCard.allCases.map(Focus.card)))
+                    for rect in targets.values {
+                        // At 1440 × 810 the pill is 36 px high, not the width of either section column.
+                        precondition(rect.width > 0 && rect.width < 180 && rect.height == 36 && rect.minX > 0)
+                    }
+                    checked()
+                }()
+            }
+            Color.clear
+        }
+    }
+
+    func confirmFocusedSection() { handle(.confirm, data: pageData) }
+}
+''')
         # ImageRenderer paints any AppKit-backed view as a full-screen yellow "no entry" placeholder: the game-art
         # layer is one. Arcane itself shows the Selene backdrop there when a game has no art.
         replace(app / "Views/Spotlight/SeleneArtBackground.swift",

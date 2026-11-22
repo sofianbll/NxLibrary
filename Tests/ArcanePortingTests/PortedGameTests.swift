@@ -3,6 +3,30 @@ import XCTest
 @testable import ArcanePorting
 
 final class PortedGameTests: XCTestCase {
+    func testRecentBuildsUseLatestSuccessfulCompletionPerVisibleGame() {
+        let start = Date(timeIntervalSince1970: 1_000)
+        let end = start.addingTimeInterval(20)
+        let later = end.addingTimeInterval(40)
+        let app = URL(fileURLWithPath: "/tmp/Game.app")
+        let original = PortedGame(name: "G", url: app, platform: .macApp, sizeBytes: 1, modificationDate: later)
+        var installed = original
+        installed.lastBuild = .init(startedAt: start, endedAt: end, exitCode: 0)
+        var ready = installed
+        ready.id = UUID()
+        ready.pendingInstall = .init(tempApp: app, finalApp: app,
+                                     record: .init(startedAt: end, endedAt: later, exitCode: 0),
+                                     toolchain: .init(verified: false))
+        var failed = original
+        failed.lastBuild = .init(startedAt: start, endedAt: later, exitCode: 1)
+        var cancelled = original
+        cancelled.lastBuild = .init(startedAt: start, endedAt: later, exitCode: 0, cancelled: true)
+        var hidden = installed
+        hidden.isHidden = true
+        let builds = BuildRecord.recentGames(in: [installed, original, hidden, failed, ready, cancelled])
+        XCTAssertEqual(builds.map(\.game.id), [ready.id, installed.id])
+        XCTAssertEqual(builds.map(\.date), [later, end])
+    }
+
     func testPlayableRequiresBuiltAppBundle() {
         var game = PortedGame(name: "G", url: URL(fileURLWithPath: "/tmp/Game.app"),
                               platform: .macApp, sizeBytes: 1, modificationDate: Date())

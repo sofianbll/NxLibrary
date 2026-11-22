@@ -39,6 +39,7 @@ public enum SettingsReset {
             next.inGameHomeButton = defaults.inGameHomeButton
         case .spotlight:
             next.visibleSpotlightCards = defaults.visibleSpotlightCards
+            next.showsRecentBuilds = defaults.showsRecentBuilds
             next.startingTab = defaults.startingTab
             next.spotlightOrder = defaults.spotlightOrder
         case .soundMusic:

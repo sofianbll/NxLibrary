@@ -274,10 +274,17 @@ extension SpotlightView {
                 onTopGame: { index in
                     guard !state.isLifted, index < top.count else { return }
                     selectGame(top[index].id)
-                }
+                },
+                recentBuilds: card == .activity ? recentBuilds : nil
             )
             .padding(.top, canvas.u(10))
         }
+    }
+
+    var recentBuilds: [(game: PortedGame, date: Date)]? {
+        guard settings.settings.showsRecentBuilds else { return nil }
+        let games = viewModel.visibleCatalogGames.compactMap(\.nxnativeGame)
+        return Array(BuildRecord.recentGames(in: games).prefix(5))
     }
 
     static func poolLabel(_ pool: SurprisePool) -> String {

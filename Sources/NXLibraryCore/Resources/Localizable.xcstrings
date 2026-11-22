@@ -92117,15 +92117,59 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "从 Nextendo 好友列表中移除此人？"}}
       }
     },
-    "No games played yet.": {
+    "See all": {
       "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "No games played yet."}},
-        "it": {"stringUnit": {"state": "translated", "value": "Non hai ancora giocato."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Aucun jeu lancé pour le moment."}},
-        "de": {"stringUnit": {"state": "translated", "value": "Noch keine Spiele gespielt."}},
-        "es": {"stringUnit": {"state": "translated", "value": "Aún no has jugado a ningún juego."}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Você ainda não jogou nenhum jogo."}},
-        "zh-Hans": {"stringUnit": {"state": "translated", "value": "尚未游玩任何游戏。"}}
+        "en": {"stringUnit": {"state": "translated", "value": "See all"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Vedi tutto"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Voir tout"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Alle ansehen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ver todo"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Ver tudo"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "查看全部"}}
+      }
+    },
+    "Recently built": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Recently built"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Compilati di recente"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Compilés récemment"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Kürzlich kompiliert"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Compilados recientemente"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Compilados recentemente"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "最近编译"}}
+      }
+    },
+    "No completed builds yet.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "No completed builds yet."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nessuna compilazione completata."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Aucune compilation terminée."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Noch keine Kompilierung abgeschlossen."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No hay compilaciones completadas."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Nenhuma compilação concluída."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "尚无完成的编译。"}}
+      }
+    },
+    "Show builds": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Show builds"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Mostra compilazioni"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Afficher les compilations"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Builds anzeigen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Mostrar compilaciones"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Mostrar compilações"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "显示编译记录"}}
+      }
+    },
+    "Hide builds": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Hide builds"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Nascondi compilazioni"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Masquer les compilations"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Builds ausblenden"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Ocultar compilaciones"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Ocultar compilações"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "隐藏编译记录"}}
       }
     },
     "Linked Nextendo account": {
