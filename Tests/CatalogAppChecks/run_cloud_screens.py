@@ -73,7 +73,7 @@ import ArcanePorting
         precondition(!adoptionRow().enabled && adoptionRow().about == L10n.text("Available after the active build finishes or is cancelled."))
         vm.isBuilding = false
         let activity = ActivityCenterView(viewModel: vm, porting: vm.porting, cloudLibrary: model, focus: .init(),
-            onFocus: { _ in }, onOpen: { _ in }, onCancel: { _ in }, onClose: {})
+            onFocus: { _ in }, onOpen: { _ in }, onCancel: { _ in }, /* ACTIVITY_DISMISS */)
         precondition(ActivityCenterView.rows(vm).isEmpty)
         try render("activity-empty", output, activity)
         model.queue = [queuedRequest]
@@ -736,6 +736,9 @@ extension CloudDriveFolders.Listing {
         change(activity, r'                    }\n                    \.padding\(EdgeInsets.*?\.onChange\(of: focused\)[^\n]*\n                }\n', "")
         change(activity, r'        LazyVStack\(', '        VStack(')
         host = HOST.replace("/* NOTICE_LAYOUT */", "vertical: notice.vertical," if before else "cancelIndex: notice.cancelIndex,")
+        host = host.replace("/* ACTIVITY_DISMISS */",
+                            "onBack: {}, onOutside: {}" if "let onBack:" in view
+                            else "onClose: {}")
         unified = (package / "Sources/ArcanePorting/Library/CloudTransferPresentation.swift").exists()
         host = host.replace("CACHE_DOWNLOAD_CHOICE", "Download cache and rebuild" if unified else "Download the cloud cache")
         if not before:
