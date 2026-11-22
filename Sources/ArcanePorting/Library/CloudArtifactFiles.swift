@@ -54,9 +54,12 @@ enum CloudArtifactFiles {
         }
     }
 
-    static func entries(at root: URL, snapshot: CloudArchiveInventory.Snapshot) throws -> [Entry] {
+    static func entries(at root: URL, snapshot: CloudArchiveInventory.Snapshot,
+                        excludingSignatures: Bool = false) throws -> [Entry] {
         try snapshot.entries.compactMap { entry in
+            try Task.checkCancellation()
             guard entry.type != "D" else { return nil }
+            if excludingSignatures && isSignaturePath(entry.path) { return nil }
             guard !entry.path.lowercased().hasSuffix(linkSuffix) else { throw CloudArchiveError.unsafePath }
             if let link = entry.link {
                 let data = Data(link.utf8)
@@ -67,6 +70,10 @@ enum CloudArtifactFiles {
             try SaveFiles.safePath(file)
             return Entry(path: entry.path, size: entry.size!, md5: try CloudArchiveInventory.hashes(at: file, includeSHA256: false)["md5"]!)
         }.sorted { $0.path.utf8.lexicographicallyPrecedes($1.path.utf8) }
+    }
+
+    static func isSignaturePath(_ path: String) -> Bool {
+        path.split(separator: "/").contains { $0.lowercased() == "_codesignature" }
     }
 
     static func digest(_ entries: [Entry]) throws -> String {

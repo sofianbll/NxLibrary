@@ -97,7 +97,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 |---|---|
 | [Sources/NXLibrary/ViewModels/AppViewModel.swift](../../Sources/NXLibrary/ViewModels/AppViewModel.swift) | Coordina libreria e catalogo, sorgenti, lancio, primo avvio, Game Options, spazio su disco e icona del Dock. Tiene il pin e crea i modelli Switch. Conserva la scelta Steam del Setup. Il modello degli avvisi decide ordine e focus, non l'impaginazione. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+Storage.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Storage.swift) | Spazio su disco: misura, cancella cache e log. |
-| [Sources/NXLibrary/ViewModels/AppViewModel+Library.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Library.swift) | Scansione e cartella Game apps, adozione locale con conferma e motivo del blocco, trascinamento e collegamento di sorgenti per title ID. |
+| [Sources/NXLibrary/ViewModels/AppViewModel+Library.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Library.swift) | Scansione e cartella Game apps, adozione con conferma e nota in Console per contenuto non verificato, trascinamento e collegamento di sorgenti per title ID. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+CloudLibrary.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+CloudLibrary.swift) | Coordina archivio, coda, esiti e recupero cloud, incluso l'invio per migrare archivi sincronizzati; gestisce lease, verifica annullabile e scelta della cache prima di Rebuild. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+CloudLibraryMove.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+CloudLibraryMove.swift) | Esegue il piano confermato di spostamento cloud; pubblica progressi ed esito e attiva la cartella solo al successo. |
 | [Sources/NXLibrary/ViewModels/AppViewModel+Activity.swift](../../Sources/NXLibrary/ViewModels/AppViewModel+Activity.swift) | Ripristina, registra e cancella gli esiti; invia Retry al proprietario del lavoro originale. |
@@ -350,7 +350,7 @@ Cartella `Sources/NXLibraryCore/Settings/`. Il catalogo dei testi sta in `Resour
 | [Sources/NXLibraryCore/Settings/SettingsReset.swift](../../Sources/NXLibraryCore/Settings/SettingsReset.swift) | Reset group per sezione, comprese le scelte Play together ma non l'ID Nextendo. |
 | [Sources/NXLibraryCore/Settings/AppLocale.swift](../../Sources/NXLibraryCore/Settings/AppLocale.swift) | Sette lingue, risoluzione delle preferenze e regione indipendente; nomi e ricerca delle regioni. |
 | [Sources/NXLibraryCore/Settings/AppLocalization.swift](../../Sources/NXLibraryCore/Settings/AppLocalization.swift) | Contesto osservabile, lookup portabile delle risorse e interpolazioni/plurali. |
-| [Sources/NXLibraryCore/Resources/Localizable.xcstrings](../../Sources/NXLibraryCore/Resources/Localizable.xcstrings) | Testi condivisi in sette lingue, inclusi Play together, stati VPN, copie cloud e adozione. |
+| [Sources/NXLibraryCore/Resources/Localizable.xcstrings](../../Sources/NXLibraryCore/Resources/Localizable.xcstrings) | Testi condivisi in sette lingue, inclusi Play together, stati VPN, copie cloud, scelta della cache e contenuto non verificato. |
 
 ## Core · Steam
 
@@ -417,9 +417,9 @@ Cartella `Sources/ArcanePorting/Library/`.
 | [Sources/ArcanePorting/Library/RunningGames.swift](../../Sources/ArcanePorting/Library/RunningGames.swift) | Quali giochi portati sono in esecuzione: confronta il bundle ID effettivo con quelli delle app aperte. |
 | [Sources/ArcanePorting/Library/StorageManager.swift](../../Sources/ArcanePorting/Library/StorageManager.swift) | Misura app, cache e log per gioco e totali senza duplicare percorsi condivisi; verifica cartelle e sorgenti prima della pulizia selettiva. I backup appartengono al flusso Saves. |
 | [Sources/ArcanePorting/Library/CloudArchiveInventory.swift](../../Sources/ArcanePorting/Library/CloudArchiveInventory.swift) | Controlla gerarchia, link, esclusioni, hash e metadati per Apple Archive e i file; trova la scrittura più recente della cache senza leggerne il contenuto. |
-| [Sources/ArcanePorting/Library/CloudArtifactFiles.swift](../../Sources/ArcanePorting/Library/CloudArtifactFiles.swift) | Valida percorsi, dimensioni e MD5 di un albero v2, confronta l'elenco rclone e ripristina link da sidecar verificati. |
-| [Sources/ArcanePorting/Library/CloudGameArchive.swift](../../Sources/ArcanePorting/Library/CloudGameArchive.swift) | Pubblica nella cartella nominata, legge il manifest più recente nei due percorsi per entrambe le biblioteche; confronta le copie, ripristina i `.aar` e verifica il riuso della cache in Rebuild. |
-| [Sources/ArcanePorting/Library/CloudGameArchive+Files.swift](../../Sources/ArcanePorting/Library/CloudGameArchive+Files.swift) | Calcola il diff, riprende il download v2 in staging, clona i file uguali e ripara l'app prima della pubblicazione locale. |
+| [Sources/ArcanePorting/Library/CloudArtifactFiles.swift](../../Sources/ArcanePorting/Library/CloudArtifactFiles.swift) | Valida percorsi, dimensioni e MD5 di un albero v2, confronta l'elenco rclone, ripristina i link e inventaria il contenuto al netto delle firme per l'adozione. |
+| [Sources/ArcanePorting/Library/CloudGameArchive.swift](../../Sources/ArcanePorting/Library/CloudGameArchive.swift) | Pubblica nella cartella nominata; legge entrambi i percorsi e biblioteche per il ripristino, i manifest v2 per l'adozione. Verifica copie e riuso della cache in Rebuild. |
+| [Sources/ArcanePorting/Library/CloudGameArchive+Files.swift](../../Sources/ArcanePorting/Library/CloudGameArchive+Files.swift) | Calcola il diff, riprende il download v2 in staging, clona i file uguali, conserva la cache parziale verificata e ripara l'app prima della pubblicazione locale. |
 | [Sources/ArcanePorting/Library/CloudArchiveFingerprintCache.swift](../../Sources/ArcanePorting/Library/CloudArchiveFingerprintCache.swift) | Cache persistente e limitata delle impronte di app e cache, indicizzata da digest. |
 | [Sources/ArcanePorting/Library/CloudGameSources.swift](../../Sources/ArcanePorting/Library/CloudGameSources.swift) | Formati dei pacchetti e identità delle cartelle; registra una selezione portabile, confronta, invia e ripristina le sorgenti previa verifica dello spazio e senza sostituire file. |
 | [Sources/ArcanePorting/Library/CloudTransferQueue.swift](../../Sources/ArcanePorting/Library/CloudTransferQueue.swift) | Salva azioni e identità delle richieste cloud nel profilo, rimette il lavoro interrotto in testa e segnala una sola volta il mancato salvataggio. |
@@ -509,7 +509,7 @@ Cartella `Sources/ArcanePorting/Build/`.
 | [Sources/ArcanePorting/Build/BuildEvent.swift](../../Sources/ArcanePorting/Build/BuildEvent.swift) | Definisce gli eventi di fase, step, avanzamento e log ricevuti dal motore. |
 | [Sources/ArcanePorting/Build/BuildEventParser.swift](../../Sources/ArcanePorting/Build/BuildEventParser.swift) | Decodifica eventi JSON e tratta le altre righe come log. |
 | [Sources/ArcanePorting/Build/BuildService.swift](../../Sources/ArcanePorting/Build/BuildService.swift) | Avvia il porting, gestisce processi, cancellazione, log ed eventi; conserva il bundle valido quando fallisce solo l’installazione. |
-| [Sources/ArcanePorting/Build/BuildOutputInstaller.swift](../../Sources/ArcanePorting/Build/BuildOutputInstaller.swift) | Pubblica il bundle con rinomina o scambio atomico, prepara copie fra volumi e riconosce i tentativi già completati tramite ricevuta. |
+| [Sources/ArcanePorting/Build/BuildOutputInstaller.swift](../../Sources/ArcanePorting/Build/BuildOutputInstaller.swift) | Firma ad hoc e verifica per packaging e adozione; pubblica il bundle con rinomina o scambio atomico e riprende i tentativi tramite ricevuta. |
 | [Sources/ArcanePorting/Build/GameAppDestination.swift](../../Sources/ArcanePorting/Build/GameAppDestination.swift) | Risolve la destinazione per build, rebuild e adozione; evita conflitti di nome e riusa l'identità nxnative letta da `ImportService`. |
 
 ## Porting · avvio e icona del gioco
@@ -518,7 +518,7 @@ Cartella `Sources/ArcanePorting/Launch/`.
 
 | File | Responsabilità |
 |---|---|
-| [Sources/ArcanePorting/Launch/ImportService.swift](../../Sources/ArcanePorting/Launch/ImportService.swift) | Identità e scansione dei bundle nxnative; adozione con spazio, firma e pubblicazione recuperabile. La riparazione in staging legge anche sidecar rclone. |
+| [Sources/ArcanePorting/Launch/ImportService.swift](../../Sources/ArcanePorting/Launch/ImportService.swift) | Identità e scansione dei bundle nxnative; ripara sidecar, sigilli e quarantena in staging. Firma ad hoc solo se la firma originale non verifica e la politica dei manifest lo consente. |
 | [Sources/ArcanePorting/Launch/AppIconProgress.swift](../../Sources/ArcanePorting/Launch/AppIconProgress.swift) | Stati e testi della preparazione icona, con esito informativo aggiunto al log della build conclusa. |
 | [Sources/ArcanePorting/Launch/IconLaunchWait.swift](../../Sources/ArcanePorting/Launch/IconLaunchWait.swift) | Conserva una richiesta Play durante la firma dell'icona e la revoca su annullamento, errore o chiusura del dialogo. |
 | [Sources/ArcanePorting/Launch/LaunchService.swift](../../Sources/ArcanePorting/Launch/LaunchService.swift) | Scrive l’ambiente runtime e avvia il bundle del gioco tramite NSWorkspace. |
@@ -876,7 +876,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/NXLibraryCoreTests/RcloneStorageBackendTests.swift](../../Tests/NXLibraryCoreTests/RcloneStorageBackendTests.swift) | Precedenza del binario, oggetti, impronte, avanzamento e annullamento con rclone locale; prefissi assenti o vuoti via demone, comando singolo e runner finto. |
 | [Tests/NXLibraryCoreTests/RcloneConfigurationTests.swift](../../Tests/NXLibraryCoreTests/RcloneConfigurationTests.swift) | Preferenze, comandi OAuth, cifratura e recuperi tipizzati con runner finto; prova stdin su una configurazione rclone temporanea; senza configurazione o portachiavi reali. |
 | [Tests/NXLibraryCoreTests/CloudSetupAssistantTests.swift](../../Tests/NXLibraryCoreTests/CloudSetupAssistantTests.swift) | Bozza, verifica, formato dell'ID client, priorità dell'azione principale e conferme su Cancel. |
-| [Tests/ArcanePortingTests/CloudGameArchiveTests.swift](../../Tests/ArcanePortingTests/CloudGameArchiveTests.swift) | App firmata sintetica e cache con rclone finto o locale: pubblicazione per ID anche dopo cambio di nome, precedenza tra manifest, adozione, invio incrementale, ripresa, spazio, spostamento misto v1/v2 e migrazione `.aar`; verifica della cache per Rebuild e misura facoltativa. |
+| [Tests/ArcanePortingTests/CloudGameArchiveTests.swift](../../Tests/ArcanePortingTests/CloudGameArchiveTests.swift) | App firmata sintetica e cache con rclone finto o locale: precedenza tra manifest, adozione con confronto storico, invio incrementale, ripresa, spazio, spostamento misto v1/v2 e migrazione `.aar`; verifica della cache per Rebuild e misura facoltativa. |
 | [Tests/ArcanePortingTests/GameAppDestinationTests.swift](../../Tests/ArcanePortingTests/GameAppDestinationTests.swift) | Installazione e scoperta nella cartella scelta, rebuild dopo il cambio cartella, conflitti di nome, sorgenti protette e cartelle non disponibili o di sola lettura. |
 | [Tests/NXLibraryCoreTests/ButtonPromptsTests.swift](../../Tests/NXLibraryCoreTests/ButtonPromptsTests.swift) | Etichette e simboli per tastiera, controller e scelte esplicite dell’utente. |
 | [Tests/NXLibraryCoreTests/ControllerInputTests.swift](../../Tests/NXLibraryCoreTests/ControllerInputTests.swift) | Report Nintendo sintetici e cambio di formato, calibrazione, transizioni, annullamento degli hold e precedenza di GameController. |
@@ -913,7 +913,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/ArcanePortingTests/GameRuntimeConfigTests.swift](../../Tests/ArcanePortingTests/GameRuntimeConfigTests.swift) | Review di giochi nuovi ed esistenti, persistenza, lingua del rebuild e conversione DM_* con merge di env.txt. |
 | [Tests/ArcanePortingTests/GameTDBTests.swift](../../Tests/ArcanePortingTests/GameTDBTests.swift) | Database, normalizzazione dei nomi, regioni e matching delle copertine. |
 | [Tests/NXLibraryCoreTests/HoldDetectorTests.swift](../../Tests/NXLibraryCoreTests/HoldDetectorTests.swift) | Soglia temporale e distinzione fra pressione breve e prolungata. |
-| [Tests/ArcanePortingTests/ImportServiceTests.swift](../../Tests/ArcanePortingTests/ImportServiceTests.swift) | Identità, firma, spazio, riparazione della copia, rifiuto di contenuti alterati, conflitto, rollback e persistenza di bundle sintetici. |
+| [Tests/ArcanePortingTests/ImportServiceTests.swift](../../Tests/ArcanePortingTests/ImportServiceTests.swift) | Identità, firma originale o di ripiego senza cloud, spazio, riparazione, rifiuto di sidecar non sicuri, conflitto e rollback. |
 | [Tests/NXLibraryCoreTests/CursorIdleTests.swift](../../Tests/NXLibraryCoreTests/CursorIdleTests.swift) | Ritardo del cursore, ripristino e ripartenza dopo interruzione o attività del mouse. |
 | [Tests/ArcanePortingTests/InstallProgressTests.swift](../../Tests/ArcanePortingTests/InstallProgressTests.swift) | Fasi Git, percentuali, byte e ricomposizione delle righe parziali. |
 | [Tests/ArcanePortingTests/KeyCheckTests.swift](../../Tests/ArcanePortingTests/KeyCheckTests.swift) | Cifratura e lettura delle intestazioni sintetiche e chiavi richieste dalle sorgenti. |
@@ -1081,7 +1081,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 |---|---|
 | [scripts/build_app.sh](../../scripts/build_app.sh) | Compila in staging; prepara plist (ID Nextendo e pin motore facoltativi), runtime, risorse e, in release, rclone verificato; firma e pubblica il bundle con sostituzione atomica. |
 | [scripts/inject_google_client.py](../../scripts/inject_google_client.py) | Scrive la coppia OAuth Google nel plist della build privata solo se completa, senza argomenti con credenziali. |
-| [scripts/install_built_app.swift](../../scripts/install_built_app.swift) | Piccolo ingresso CLI che riusa BuildOutputInstaller per installare Arcane dopo il packaging. |
+| [scripts/install_built_app.swift](../../scripts/install_built_app.swift) | Ingresso CLI che riusa BuildOutputInstaller per firmare, verificare e installare Arcane dopo il packaging. |
 | [scripts/check_publication.py](../../scripts/check_publication.py) | Rifiuta contenuti personali o di gioco versionati e formati di segreto riconoscibili; verifica il runtime rispetto al lock prima del packaging. |
 | [scripts/build_dmg.sh](../../scripts/build_dmg.sh) | Confeziona un bundle già costruito in un’immagine DMG di sviluppo. |
 | [scripts/bundle_runtime.sh](../../scripts/bundle_runtime.sh) | Prepara Python e strumenti dalle versioni bloccate, verifica gli hash e firma il runtime incluso. |
@@ -1182,6 +1182,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [docs/history/reviews/2026-11-18-spotlight-glide.md](../history/reviews/2026-11-18-spotlight-glide.md) | Campioni dei primi cambi gioco e costo di mod e salvataggio selezione. |
 | [docs/history/reviews/2026-11-18-steam-launch-spaces.md](../history/reviews/2026-11-18-steam-launch-spaces.md) | Riscontro video e log dei cambi rapidi di Space durante Play Steam, causa e regressione. |
 | [docs/history/reviews/2026-11-22-rebuild-cache.md](../history/reviews/2026-11-22-rebuild-cache.md) | Tempi prima e dopo della verifica Rebuild su cache sintetica e limiti della prova. |
+| [docs/history/reviews/2026-11-22-browser-app-adoption.md](../history/reviews/2026-11-22-browser-app-adoption.md) | Sonda locale: riparazione e firma di ripiego di una copia estratta dallo ZIP del browser. |
 | [docs/history/reviews/2026-11-22-cloud-per-file.md](../history/reviews/2026-11-22-cloud-per-file.md) | Sonda locale: byte e tempo per il cambio di un solo file, archivio rispetto a copia incrementale. |
 
 ## Aggiornare questo catalogo

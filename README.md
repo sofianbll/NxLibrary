@@ -151,6 +151,8 @@ Choose **Cloud** beside **Options** on a ported game's Details page to manage th
 
 To follow a library from another Google account you own, share its Drive folder with your second account as **Viewer** in Google Drive. On the other Mac, paste the folder link or ID under **Cloud library → Reference library**. Arcane uses the account already connected, never changes sharing permissions and sends only to your own library. The Cloud panel identifies reference copies and shows how much a newer copy needs to download. File-based copies reuse matching local files; a legacy archive downloads in full. **Unfollow** leaves all files in place.
 
+If you download a ported `.app` folder through Google Drive in your browser, unzip it and choose **Add Game → Add ported app**. Arcane repairs its own copy and keeps the original signature if it verifies. Otherwise, it checks the files against available cloud manifests for the title and refuses versions that match none. With no per-file manifest or cloud connection, it can sign the copy ad hoc and logs **Content not verified**. Only import ports from a source you trust.
+
 ### Your library
 
 **Spotlight** places your games in a row of square tiles, with Play, Options and Favourite beside the selected title. **Collection** offers a cover-based view. Both use the same library and support a controller, keyboard or mouse.

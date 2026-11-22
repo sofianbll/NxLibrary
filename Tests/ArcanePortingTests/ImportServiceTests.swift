@@ -3,7 +3,7 @@ import XCTest
 @testable import ArcanePorting
 
 final class ImportServiceTests: XCTestCase {
-    func testAdoptionValidatesLocalIdentityAndSignature() throws {
+    func testAdoptionValidatesIdentityAndResignsWithoutAManifest() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let folder = root.appendingPathComponent("Game apps")
@@ -19,14 +19,19 @@ final class ImportServiceTests: XCTestCase {
         XCTAssertThrowsError(try service.prepareAdoption(from: unrelated, into: folder, existing: [])) {
             XCTAssertEqual($0 as? CloudArchiveError, .invalidApp)
         }
-        try Data("tampered".utf8).write(to: source.appendingPathComponent("Contents/MacOS/Fixture"))
-        let tampered = try service.prepareAdoption(from: source, into: folder, existing: [])
-        XCTAssertThrowsError(try service.stageAdoption(tampered, replacing: false)) {
-            XCTAssertEqual($0 as? CloudArchiveError, .invalidApp)
-        }
+        let seal = source.appendingPathComponent("Contents/_CodeSignature/CodeResources")
+        try FileManager.default.removeItem(at: seal)
+        XCTAssertNotEqual(try verify(source).status, 0)
+        let plan = try service.prepareAdoption(from: source, into: folder, existing: [])
+        let staged = try await service.stageAdoption(plan, replacing: false)
+        defer { service.cleanupAdoption(staged, published: true) }
+        XCTAssertTrue(staged.contentUnverified)
+        try service.publishAdoption(staged) { _ in }
+        XCTAssertEqual(try verify(plan.destination).status, 0)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: seal.path))
     }
 
-    func testAdoptionRepairsTransferDamageOnlyInStaging() throws {
+    func testAdoptionRepairsTransferDamageOnlyInStaging() async throws {
         let fm = FileManager.default
         let root = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? fm.removeItem(at: root) }
@@ -55,6 +60,7 @@ final class ImportServiceTests: XCTestCase {
             try fm.createSymbolicLink(atPath: link.path, withDestinationPath: relative)
         }
         try signedApp(at: source, bundleID: "org.nxnative.01007ef00011e000")
+        XCTAssertEqual(try verify(source).status, 0)
         for (bundleName, _) in specs {
             try fm.removeItem(at: contents.appendingPathComponent("PlugIns/\(bundleName).bundle/Contents/_CodeSignature/CodeSignature"))
         }
@@ -65,20 +71,50 @@ final class ImportServiceTests: XCTestCase {
         try payload.write(to: flattened)
         try fm.removeItem(at: contents.appendingPathComponent("Resources/msl"))
         try fm.removeItem(at: contents.appendingPathComponent("Resources/p2/romfs.img"))
+        let pso = contents.appendingPathComponent("Resources/pso")
+        let sidecar = pso.appendingPathExtension("rclonelink")
+        try Data(fm.destinationOfSymbolicLink(atPath: pso.path).utf8).write(to: sidecar)
+        try fm.removeItem(at: pso)
+        let seals = ["_CodeSignature/CodeResources",
+                     "PlugIns/PipelineArchive.bundle/Contents/_CodeSignature/CodeResources"]
+        for path in seals {
+            let seal = contents.appendingPathComponent(path)
+            try fm.moveItem(at: seal, to: seal.appendingPathExtension("xml"))
+        }
         let quarantine = "0081;00000000;Fixture;"
-        XCTAssertEqual(setxattr(source.path, "com.apple.quarantine", quarantine, quarantine.utf8.count, 0, 0), 0)
+        let quarantined = ["Contents/Resources", "Contents/MacOS/Fixture"]
+            + seals.map { "Contents/\($0).xml" }
+        for url in [source] + quarantined.map({ source.appendingPathComponent($0) }) {
+            XCTAssertEqual(setxattr(url.path, "com.apple.quarantine", quarantine, quarantine.utf8.count, 0, 0), 0)
+        }
+        XCTAssertNotEqual(try verify(source).status, 0)
 
         let service = ImportService()
         let plan = try service.prepareAdoption(from: source, into: folder, existing: [])
-        let staged = try service.stageAdoption(plan, replacing: false)
+        let staged = try await service.stageAdoption(plan, replacing: false)
+        XCTAssertFalse(staged.contentUnverified)
         try service.publishAdoption(staged) { _ in }
         service.cleanupAdoption(staged, published: true)
+        XCTAssertEqual(try verify(plan.destination).status, 0)
         let repaired = plan.destination.appendingPathComponent("Contents")
         XCTAssertTrue(fm.isExecutableFile(atPath: repaired.appendingPathComponent("MacOS/Fixture").path))
         XCTAssertFalse(fm.isExecutableFile(atPath: executable.path))
         XCTAssertEqual(try Data(contentsOf: flattened), payload)
         XCTAssertEqual(getxattr(source.path, "com.apple.quarantine", nil, 0, 0, 0), quarantine.utf8.count)
         XCTAssertEqual(getxattr(plan.destination.path, "com.apple.quarantine", nil, 0, 0, 0), -1)
+        for path in quarantined {
+            let original = source.appendingPathComponent(path)
+            let installed = plan.destination.appendingPathComponent(path)
+            let repairedFile = path.hasSuffix(".xml") ? installed.deletingPathExtension() : installed
+            XCTAssertEqual(getxattr(original.path, "com.apple.quarantine", nil, 0, 0, 0), quarantine.utf8.count)
+            XCTAssertTrue(fm.fileExists(atPath: repairedFile.path))
+            XCTAssertEqual(getxattr(repairedFile.path, "com.apple.quarantine", nil, 0, 0, 0), -1)
+            if path.hasSuffix(".xml") { XCTAssertFalse(fm.fileExists(atPath: installed.path)) }
+        }
+        XCTAssertTrue(fm.fileExists(atPath: sidecar.path))
+        XCTAssertFalse(fm.fileExists(atPath: repaired.appendingPathComponent("Resources/pso.rclonelink").path))
+        XCTAssertEqual(try fm.destinationOfSymbolicLink(atPath: repaired.appendingPathComponent("Resources/pso").path),
+                       "../PlugIns/PipelineArchive.bundle/Contents/Resources/pso")
         for (bundleName, resource) in specs {
             let sig = "PlugIns/\(bundleName).bundle/Contents/_CodeSignature/CodeSignature"
             XCTAssertEqual(try Data(contentsOf: repaired.appendingPathComponent(sig)), Data())
@@ -87,16 +123,28 @@ final class ImportServiceTests: XCTestCase {
         }
         XCTAssertEqual(try fm.destinationOfSymbolicLink(atPath: repaired.appendingPathComponent("Resources/msl").path),
                        "../PlugIns/ShaderLibraries.bundle/Contents/Resources/msl")
-        let tampered = contents.appendingPathComponent("PlugIns/GameData.bundle/Contents/Resources/romfs.img")
-        try Data("modified".utf8).write(to: tampered)
-        let conflict = try service.prepareAdoption(from: source, into: folder, existing: [])
-        XCTAssertThrowsError(try service.stageAdoption(conflict, replacing: true)) {
-            XCTAssertEqual($0 as? CloudArchiveError, .invalidApp)
-        }
         XCTAssertEqual(try fm.contentsOfDirectory(atPath: folder.path), [plan.destination.lastPathComponent])
     }
 
-    func testAdoptionCopiesRegistersAndReplacesOnlyAfterConfirmationAndSpaceCheck() throws {
+    func testAdoptionRejectsUnsafeSidecarTargets() async throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? fm.removeItem(at: root) }
+        let folder = root.appendingPathComponent("Game apps")
+        try fm.createDirectory(at: folder, withIntermediateDirectories: true)
+        let source = root.appendingPathComponent("Source.app")
+        try signedApp(at: source, bundleID: "org.nxnative.01007ef00011e000")
+        let service = ImportService()
+        let plan = try service.prepareAdoption(from: source, into: folder, existing: [])
+        let sidecar = source.appendingPathComponent("Contents/escape.rclonelink")
+        for target in ["../../outside", "/tmp"] {
+            try Data(target.utf8).write(to: sidecar)
+            await expectAdoptionError(.unsafePath) { try await service.stageAdoption(plan, replacing: false) }
+            XCTAssertTrue(try fm.contentsOfDirectory(atPath: folder.path).isEmpty)
+        }
+    }
+
+    func testAdoptionCopiesRegistersAndReplacesOnlyAfterConfirmationAndSpaceCheck() async throws {
         let fm = FileManager.default
         let root = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? fm.removeItem(at: root) }
@@ -108,11 +156,11 @@ final class ImportServiceTests: XCTestCase {
         let repository = CatalogRepository(store: CatalogStore(directory: root.appendingPathComponent("Catalog")))
         let plan = try service.prepareAdoption(from: source, into: folder, existing: [])
         XCTAssertFalse(plan.conflicts)
-        XCTAssertThrowsError(try service.stageAdoption(plan, replacing: false, capacity: { _ in 0 })) {
-            XCTAssertEqual($0 as? CloudArchiveError, .insufficientSpace)
+        await expectAdoptionError(.insufficientSpace) {
+            try await service.stageAdoption(plan, replacing: false, capacity: { _ in 0 })
         }
         XCTAssertTrue(try fm.contentsOfDirectory(atPath: folder.path).isEmpty)
-        let staged = try service.stageAdoption(plan, replacing: false)
+        let staged = try await service.stageAdoption(plan, replacing: false)
         try service.publishAdoption(staged) {
             _ = try repository.recordLocalAppAdoption(service.makeGame(from: $0), replacing: nil)
         }
@@ -129,15 +177,15 @@ final class ImportServiceTests: XCTestCase {
         let conflict = try service.prepareAdoption(from: replacement, into: folder, existing: existing)
         XCTAssertTrue(conflict.conflicts)
         XCTAssertEqual(conflict.destination, old.url)
-        XCTAssertThrowsError(try service.stageAdoption(conflict, replacing: false)) {
-            XCTAssertEqual($0 as? CloudArchiveError, .confirmationRequired)
+        await expectAdoptionError(.confirmationRequired) {
+            try await service.stageAdoption(conflict, replacing: false)
         }
-        let incoming = try service.stageAdoption(conflict, replacing: true)
+        let incoming = try await service.stageAdoption(conflict, replacing: true)
         XCTAssertThrowsError(try service.publishAdoption(incoming) { _ in throw CocoaError(.fileWriteOutOfSpace) })
         XCTAssertEqual(BuildOutputInstaller.version(of: old.url), "1")
         service.cleanupAdoption(incoming, published: false)
         let retry = try service.prepareAdoption(from: replacement, into: folder, existing: existing)
-        let confirmed = try service.stageAdoption(retry, replacing: true)
+        let confirmed = try await service.stageAdoption(retry, replacing: true)
         try service.publishAdoption(confirmed) {
             _ = try repository.recordLocalAppAdoption(service.makeGame(from: $0), replacing: retry.existing)
         }
@@ -146,6 +194,16 @@ final class ImportServiceTests: XCTestCase {
         XCTAssertEqual(updated.versionString, "2")
         XCTAssertTrue(updated.isFavorite)
         XCTAssertTrue(fm.fileExists(atPath: replacement.path))
+    }
+
+    private func expectAdoptionError(_ expected: CloudArchiveError, line: UInt = #line,
+                                     _ stage: () async throws -> ImportService.StagedAdoption) async {
+        do {
+            _ = try await stage()
+            XCTFail("Expected \(expected)", line: line)
+        } catch {
+            XCTAssertEqual(error as? CloudArchiveError, expected, line: line)
+        }
     }
 
     private func signedApp(at url: URL, bundleID: String, dmTitle: String? = nil, version: String = "1") throws {
@@ -167,6 +225,11 @@ final class ImportServiceTests: XCTestCase {
         let signature = try SystemCommandRunner().run(URL(fileURLWithPath: "/usr/bin/codesign"),
             ["--force", "--sign", "-", url.path], environment: nil, currentDirectory: nil)
         XCTAssertEqual(signature.status, 0, signature.stderr)
+    }
+
+    private func verify(_ url: URL) throws -> CommandResult {
+        try SystemCommandRunner().run(URL(fileURLWithPath: "/usr/bin/codesign"),
+            ["--verify", "--deep", "--strict", url.path], environment: nil, currentDirectory: nil)
     }
 
     func testDuplicateTitleKeepsTheInstalledPathAndItsOwnMetadata() throws {

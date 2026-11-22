@@ -24,9 +24,74 @@ final class CloudGameArchiveTests: XCTestCase {
         try FileManager.default.copyItem(at: f.remote.appendingPathComponent(tree.folder), to: downloaded)
         let importer = ImportService()
         let plan = try importer.prepareAdoption(from: downloaded, into: f.root, existing: [])
-        let staged = try importer.stageAdoption(plan, replacing: true)
+        let staged = try await importer.stageAdoption(plan, replacing: true, archive: f.service)
         defer { importer.cleanupAdoption(staged, published: false) }
         XCTAssertEqual(staged.app.titleId, title)
+        XCTAssertFalse(staged.contentUnverified)
+    }
+
+    func testAdoptionFallbackChecksOlderManifestsAndRejectsChangedContent() async throws {
+        let f = try fixture(useSyntheticBackend: true)
+        let fm = FileManager.default
+        defer { try? fm.removeItem(at: f.root) }
+        let archive = f.service
+        let original = try await archive.upload(f.game)
+        let tree = try XCTUnwrap(original.artifacts.first?.files)
+        let source = f.root.appendingPathComponent("Browser.app")
+        try fm.copyItem(at: f.remote.appendingPathComponent(tree.folder), to: source)
+        let seal = source.appendingPathComponent("Contents/_CodeSignature/CodeResources")
+        try fm.removeItem(at: seal)
+        XCTAssertNotEqual(try BuildOutputInstaller.checkSignature(source).status, 0)
+        let resource = "Contents/Resources/msl/b-1234567890ab.img"
+        try Data([4, 5, 6]).write(to: f.app.appendingPathComponent(resource))
+        try BuildOutputInstaller.signAdHoc(f.app)
+        let updated = try await archive.upload(f.game)
+        XCTAssertNotEqual(updated.artifacts.first?.files, tree)
+        let manifests = try await archive.adoptionManifests(titleID: title)
+        XCTAssertEqual(Set(manifests.compactMap { $0.artifacts.first?.inventorySHA256 }).count, 2)
+
+        let folder = f.root.appendingPathComponent("Game apps")
+        try fm.createDirectory(at: folder, withIntermediateDirectories: false)
+        let importer = ImportService()
+        let plan = try importer.prepareAdoption(from: source, into: folder, existing: [])
+        for (path, bytes) in [(resource, Data([7, 8, 9])),
+                              ("Contents/Resources/link.rclonelink", Data("msl".utf8))] {
+            let file = source.appendingPathComponent(path)
+            let originalBytes = try Data(contentsOf: file)
+            try bytes.write(to: file)
+            do {
+                let staged = try await importer.stageAdoption(plan, replacing: false, archive: archive)
+                importer.cleanupAdoption(staged, published: false)
+                XCTFail("Changed content must not be adopted")
+            } catch {
+                XCTAssertEqual(error as? CloudArchiveError, .unknownAppContents)
+            }
+            XCTAssertTrue(try fm.contentsOfDirectory(atPath: folder.path).isEmpty)
+            try originalBytes.write(to: file)
+        }
+        let staged = try await importer.stageAdoption(plan, replacing: false, archive: archive)
+        XCTAssertFalse(staged.contentUnverified)
+        try importer.publishAdoption(staged) { _ in }
+        importer.cleanupAdoption(staged, published: true)
+        XCTAssertEqual(try BuildOutputInstaller.checkSignature(plan.destination).status, 0)
+        XCTAssertFalse(fm.fileExists(atPath: seal.path))
+    }
+
+    func testConnectedAdoptionWithoutVersionTwoManifestMarksContentUnverified() async throws {
+        let f = try fixture(useSyntheticBackend: true)
+        let fm = FileManager.default
+        defer { try? fm.removeItem(at: f.root) }
+        _ = try await publishLegacy(f)
+        try fm.removeItem(at: f.app.appendingPathComponent("Contents/_CodeSignature/CodeResources"))
+        let folder = f.root.appendingPathComponent("Game apps")
+        try fm.createDirectory(at: folder, withIntermediateDirectories: false)
+        let importer = ImportService()
+        let plan = try importer.prepareAdoption(from: f.app, into: folder, existing: [])
+        let staged = try await importer.stageAdoption(plan, replacing: false, archive: f.service)
+        defer { importer.cleanupAdoption(staged, published: true) }
+        XCTAssertTrue(staged.contentUnverified)
+        try importer.publishAdoption(staged) { _ in }
+        XCTAssertEqual(try BuildOutputInstaller.checkSignature(plan.destination).status, 0)
     }
 
     func testNewestManifestWinsAcrossBothFolders() async throws {

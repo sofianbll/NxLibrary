@@ -7,8 +7,10 @@ guard CommandLine.arguments.count == 3 else {
     exit(2)
 }
 do {
+    let app = URL(fileURLWithPath: CommandLine.arguments[1])
+    try BuildOutputInstaller.signAdHoc(app)
     try BuildOutputInstaller.install(
-        tempApp: URL(fileURLWithPath: CommandLine.arguments[1]),
+        tempApp: app,
         finalApp: URL(fileURLWithPath: CommandLine.arguments[2]))
 } catch {
     FileHandle.standardError.write(Data((error.localizedDescription + "\n").utf8))

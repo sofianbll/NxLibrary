@@ -27,6 +27,22 @@ public enum BuildOutputInstaller {
         return info["CFBundleShortVersionString"] as? String
     }
 
+    private static let codesign = URL(fileURLWithPath: "/usr/bin/codesign")
+
+    static func signatureArguments(for app: URL) -> [String] { ["--verify", "--deep", "--strict", app.path] }
+
+    static func checkSignature(_ app: URL) throws -> CommandResult {
+        try SystemCommandRunner().run(codesign, signatureArguments(for: app), environment: nil, currentDirectory: nil)
+    }
+
+    public static func signAdHoc(_ app: URL) throws {
+        let signing = try SystemCommandRunner().run(codesign, ["--force", "--deep", "--sign", "-", app.path],
+                                                    environment: nil, currentDirectory: nil)
+        guard signing.status == 0 else { throw BuildInstallError.invalidApp(signing.stderr) }
+        let verification = try checkSignature(app)
+        guard verification.status == 0 else { throw BuildInstallError.invalidApp(verification.stderr) }
+    }
+
     public static func install(tempApp: URL, finalApp: URL,
                                fileManager: FileManager = .default, requiresExistingParent: Bool = false) throws {
         try install(tempApp: tempApp, finalApp: finalApp, fileManager: fileManager,
