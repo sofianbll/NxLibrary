@@ -28,8 +28,8 @@ extension GameOptionsView {
                         }
                     }
                     // The clip would shave the first row's focus border.
-                    .padding(.top, canvas.u(6))
-                    .padding(.bottom, canvas.u(24))
+                    .padding(.top, canvas.u(SeleneTokens.Space.tight))
+                    .padding(.bottom, canvas.u(SeleneTokens.Space.large))
                     // Rows are measured in the list's own space, which scrolling never changes.
                     .coordinateSpace(name: OptionsScrollBox.space)
                     .onPreferenceChange(OptionRowFrames.self) { scrollBox.frames = $0 }
@@ -50,7 +50,7 @@ extension GameOptionsView {
         .frame(width: canvas.u(1040), alignment: .leading)
         .frame(maxHeight: .infinity, alignment: .top)
         .padding(.top, canvas.u(90))
-        .padding(.bottom, canvas.u(110))
+        .padding(.bottom, canvas.u(SeleneTokens.Space.stageHeader))
         // Clicks inside the column are not clicks on the scrim; only the dimmed area outside closes.
         .contentShape(Rectangle())
     }
@@ -63,27 +63,27 @@ extension GameOptionsView {
             rowView(row, p, focused: focused)
         case .heading(let text):
             Text(text)
-                .seleneFont(17, .semibold)
+                .seleneFont(.body, .semibold)
                 .foregroundColor(isSelene ? SeleneTheme.ink75 : SeleneTheme.glyph)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading, canvas.u(26))
-                .padding(.top, canvas.u(16))
+                .padding(.top, canvas.u(SeleneTokens.Space.medium))
         case .note(let title, let text):
             VStack(alignment: .leading, spacing: canvas.u(3)) {
                 Text(title)
-                    .seleneFont(21, .medium)
+                    .seleneFont(.rowTitle, .medium)
                     .foregroundColor(SeleneTheme.ink60)
                 Text(text)
-                    .seleneFont(15)
+                    .seleneFont(.compactCaption)
                     .foregroundColor(SeleneTheme.ink60)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, canvas.u(26))
-            .padding(.top, canvas.u(18))
-            .padding(.trailing, canvas.u(24))
-            .padding(.bottom, canvas.u(18))
-            .background(RoundedRectangle(cornerRadius: canvas.u(16), style: .continuous)
+            .padding(.top, canvas.u(SeleneTokens.Space.control))
+            .padding(.trailing, canvas.u(SeleneTokens.Space.large))
+            .padding(.bottom, canvas.u(SeleneTokens.Space.control))
+            .background(RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.card), style: .continuous)
                 .fill(SeleneTheme.glass))
         case .gap:
             // Stack spacing is 8u on each side, so 8u here makes the 24u gap before a danger zone.
@@ -119,7 +119,7 @@ extension GameOptionsView {
             HStack(spacing: canvas.u(12)) {
                 if checking {
                     SeleneProgressBar(progress: nil).frame(width: canvas.u(96))
-                    Text(L10n.text("Cancel")).seleneFont(17).foregroundColor(SeleneTheme.ink75)
+                    Text(L10n.text("Cancel")).seleneFont(.body).foregroundColor(SeleneTheme.ink75)
                 } else if let info = p.info(row) {
                     SeleneInfoTip(info, isShowing: Binding(
                         get: { infoRow == row },
@@ -138,6 +138,11 @@ extension GameOptionsView {
         })
         .contentShape(Rectangle())
         .onTapGesture { activate(row) }
+        .onHover {
+            guard rows.contains(row), row != focusedRow, hover.moved($0) else { return }
+            scrollBox.holdScroll = true
+            setFocus(row)
+        }
         .id(row.rawValue)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)

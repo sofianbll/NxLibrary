@@ -22,6 +22,7 @@ struct SteamOptionsView: View {
     @State private var artworkOpen = false
     @State private var metadataOpen = false
     @State private var keyMonitor: Any?
+    @State private var hover = SeleneHoverFocus()
 
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.seleneReduceMotion) private var reduceMotion
@@ -50,12 +51,7 @@ struct SteamOptionsView: View {
 
     var body: some View {
         let p = presentation
-        return ZStack {
-            SeleneTheme.scrim45
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .onTapGesture { back() }
-
+        return SeleneOverlay(style: .options, onOutside: back) {
             VStack(spacing: 0) {
                 column(p)
                 SeleneHintsBar(left: [HintItem(.b, L10n.text("Back"))], right: [HintItem(.a, L10n.text("Select"))],
@@ -63,7 +59,7 @@ struct SteamOptionsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .opacity(panelOpen ? 0 : 1)
-            .allowsHitTesting(!panelOpen)
+            .seleneOverlayOwnership(!panelOpen)
 
             if artworkOpen {
                 ChangeArtworkView(viewModel: viewModel, subject: PersonalizationSubject(steam: current)) { artworkOpen = false }
@@ -76,7 +72,7 @@ struct SteamOptionsView: View {
                     .zIndex(2)
             }
         }
-        .animation(reduceMotion ? nil : SeleneTheme.quick, value: panelOpen)
+        .animation(Motion.overlay(reduceMotion), value: panelOpen)
         .onAppear(perform: installKeyMonitor)
         .onDisappear(perform: removeKeyMonitor)
         .onReceive(NotificationCenter.default.publisher(for: .nxGameOptionsGamepadAction)) { note in
@@ -93,27 +89,27 @@ struct SteamOptionsView: View {
         let focused = focusedRow
         return VStack(alignment: .leading, spacing: 0) {
             Text(L10n.text("GAME OPTIONS"))
-                .seleneFont(15, .semibold)
+                .seleneFont(.compactCaption, .semibold)
                 .foregroundColor(SeleneTheme.ink60)
-                .padding(.leading, canvas.u(8))
+                .padding(.leading, canvas.u(SeleneTokens.Space.compact))
             Text(current.name)
-                .seleneFont(40)
+                .seleneFont(.screenTitle)
                 .foregroundColor(SeleneTheme.ink)
                 .lineLimit(1)
-                .padding(.leading, canvas.u(6))
-                .padding(.bottom, canvas.u(14))
+                .padding(.leading, canvas.u(SeleneTokens.Space.tight))
+                .padding(.bottom, canvas.u(SeleneTokens.Space.line))
             VStack(spacing: canvas.u(8)) {
                 ForEach(Array(p.entries(level: level, origin: origin).enumerated()), id: \.offset) { _, entry in
                     entryView(entry, p, focused: focused)
                 }
             }
-            .padding(.top, canvas.u(6))
+            .padding(.top, canvas.u(SeleneTokens.Space.tight))
             .id(level)
         }
         .frame(width: canvas.u(1040), alignment: .leading)
         .frame(maxHeight: .infinity, alignment: .top)
         .padding(.top, canvas.u(90))
-        .padding(.bottom, canvas.u(110))
+        .padding(.bottom, canvas.u(SeleneTokens.Space.stageHeader))
         .contentShape(Rectangle())
     }
 
@@ -127,6 +123,7 @@ struct SteamOptionsView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { activate(row) }
+            .onHover { if rows.contains(row), hover.moved($0) { pickedRow = row } }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(row.title)
             .accessibilityHint(p.about(row) ?? "")
@@ -135,11 +132,11 @@ struct SteamOptionsView: View {
             .accessibilityAction { activate(row) }
         case .heading(let text):
             Text(L10n.text(text))
-                .seleneFont(17, .semibold)
+                .seleneFont(.body, .semibold)
                 .foregroundColor(SeleneTheme.ink75)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading, canvas.u(26))
-                .padding(.top, canvas.u(16))
+                .padding(.top, canvas.u(SeleneTokens.Space.medium))
         case .note, .gap:
             EmptyView()
         }

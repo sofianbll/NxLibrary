@@ -30,9 +30,6 @@ struct CollectionCoverRow: View {
     /// The first cover lines up with Spotlight's 80 margin (Selene's list had 14).
     private static let startInset: CGFloat = 80
 
-    /// A critically damped spring of about the old 0.18 s: quick presses retarget it without a surge.
-    private static let glide = Animation.spring(response: 0.18, dampingFraction: 1)
-
     var body: some View {
         let selected = selectedID.flatMap { id in games.firstIndex { $0.id == id } }
         let offset = selected.map(CollectionRow.scrollOffset(selectedIndex:)) ?? 0
@@ -49,11 +46,13 @@ struct CollectionCoverRow: View {
         // Covers made, and art arriving, during the slide ride it with the rest (`GlideGroup`).
         .modifier(GlideGroup())
         // The camera: the one slide of the whole row.
-        .offset(x: canvas.u(-CGFloat(offset) * CollectionRow.pitch))
+        .modifier(RailCamera(position: CGFloat(offset),
+                             maximum: CGFloat(CollectionRow.scrollOffset(selectedIndex: games.count - 1)),
+                             pitch: canvas.u(CollectionRow.pitch)))
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .frame(height: canvas.u(CollectionRow.bandHeight), alignment: .topLeading)
-        .animation(reduceMotion ? nil : Self.glide, value: selectedID)
-        .animation(reduceMotion ? nil : Self.glide, value: games.map(\.id))
+        .animation(Motion.rail(reduceMotion, .collection), value: selectedID)
+        .animation(Motion.rail(reduceMotion, .collection), value: games.map(\.id))
     }
 
     /// Covers from a few left of the screen to a few past its right edge (the same spare as Spotlight's row).
@@ -66,14 +65,14 @@ struct CollectionCoverRow: View {
 
     private func cover(_ game: CatalogGame, selected: Bool) -> some View {
         let w = canvas.u(CollectionRow.coverWidth), h = canvas.u(CollectionRow.coverHeight)
-        let face = RoundedRectangle(cornerRadius: canvas.u(12), style: .continuous)
+        let face = RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.content), style: .continuous)
         let cloudState = showsCloudBadges ? game.nxnativeGame.flatMap { cloud.states[$0.id] } : nil
         return ZStack {
             Group {
                 if let native = game.nxnativeGame {
             SwitchBoxArtCover(game: native, width: w, height: h, officialName: officialName(native),
                               boxArt: boxArt, artwork: artwork, indexVersion: boxArtIndexVersion)
-                .portingLook(tileLook(native), cornerRadius: canvas.u(12))
+                .portingLook(tileLook(native), cornerRadius: canvas.u(SeleneTokens.Radius.content))
                 .frame(width: w, height: h)
                 .clipShape(face)
                 // One picture that grows and slides whole: a drawn cover's title, a lock or build progress would
@@ -90,9 +89,9 @@ struct CollectionCoverRow: View {
             if game.nxnativeGame == nil {
                 PortingDownloadMark(look: PortingTileLook.make(catalog: game), width: w, height: h)
             }
-            SeleneShine(cornerRadius: canvas.u(12), active: selected)
+            SeleneShine(cornerRadius: canvas.u(SeleneTokens.Radius.content), active: selected)
                 .frame(width: w, height: h)
-            SeleneTileRing(cornerRadius: canvas.u(18), active: selected)
+            SeleneTileRing(cornerRadius: canvas.u(SeleneTokens.Radius.collectionFocus), active: selected)
                 .frame(width: w + canvas.u(12), height: h + canvas.u(12))
         }
         .frame(width: w, height: h)
@@ -106,7 +105,7 @@ struct CollectionCoverRow: View {
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
         .modifier(CloudLibraryTileBadge(state: cloudState))
         .overlay(alignment: .bottomTrailing) {
-            NextendoOnlineBadge(titleID: game.nxnativeGame?.titleId, compact: true).padding(canvas.u(6))
+            NextendoOnlineBadge(titleID: game.nxnativeGame?.titleId, compact: true).padding(canvas.u(SeleneTokens.Space.tight))
         }
         .task(id: game.id) { if let native = game.nxnativeGame { needsMetadata(native) } }
     }

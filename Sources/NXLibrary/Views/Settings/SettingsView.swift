@@ -82,8 +82,8 @@ struct SettingsView: View {
                     .frame(width: canvas.u(400))
                 content
             }
-            .padding(.horizontal, canvas.u(120))
-            .padding(.top, canvas.u(110))
+            .padding(.horizontal, canvas.u(SeleneTokens.Space.stageGutter))
+            .padding(.top, canvas.u(SeleneTokens.Space.stageHeader))
             .frame(maxHeight: .infinity, alignment: .top)
             SeleneHintsBar(right: commandHints)
         }
@@ -91,7 +91,7 @@ struct SettingsView: View {
         .overlay(alignment: .bottom) {
             if let resetNotice {
                 SeleneSuccessNotice(title: L10n.text("Group reset"), message: resetNotice)
-                    .padding(.bottom, canvas.u(100))
+                    .padding(.bottom, canvas.u(SeleneTokens.Space.settingsHintsClearance))
                     .allowsHitTesting(false)
             }
         }
@@ -224,9 +224,9 @@ struct SettingsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: canvas.u(8)) {
                     Text(section.place)
-                        .seleneFont(15, .semibold)
+                        .seleneFont(.compactCaption, .semibold)
                         .foregroundColor(SeleneTheme.ink.opacity(0.55))
-                        .padding(.bottom, canvas.u(6))
+                        .padding(.bottom, canvas.u(SeleneTokens.Space.tight))
                     SettingsSectionContent(
                         section: section,
                         viewModel: viewModel,
@@ -252,7 +252,7 @@ struct SettingsView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .environment(\.seleneFocusedRowID, focusArea == .rows ? focusedRow?.rowID : nil)
                 .environment(\.seleneFocusedButton, rowButton)
-                .padding(.bottom, canvas.u(60))
+                .padding(.bottom, canvas.u(SeleneTokens.Space.settingsInfoClearance))
             }
             .scrollIndicators(.hidden)
             .onChange(of: rowFocus.index) {

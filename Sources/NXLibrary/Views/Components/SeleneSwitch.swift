@@ -3,6 +3,8 @@ import NXLibraryCore
 
 struct SeleneSwitch: View {
     @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.seleneReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @Binding var isOn: Bool
 
     var body: some View {
@@ -17,11 +19,11 @@ struct SeleneSwitch: View {
                     Circle()
                         .fill(isOn ? SeleneTheme.onFocus : SeleneTheme.ink)
                         .frame(width: canvas.u(22), height: canvas.u(22))
-                        .padding(canvas.u(4))
+                        .padding(canvas.u(SeleneTokens.Space.hairline))
                 }
         }
         .buttonStyle(.plain)
-        .animation(SeleneTheme.quick, value: isOn)
+        .animation(Motion.focus(reduceMotion || systemReduceMotion), value: isOn)
         .accessibilityValue(isOn ? L10n.text("On") : L10n.text("Off"))
         .accessibilityAddTraits(.isButton)
     }

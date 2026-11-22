@@ -173,22 +173,22 @@ struct CollectionView: View {
             EmptyView()
         } else if hasAnyGame {
             Text(L10n.format("No games in %@", [L10n.text(filter.rawValue)]))
-                .seleneFont(34)
+                .seleneFont(.dialogTitle)
                 .foregroundColor(SeleneTheme.ink)
                 .shadow(color: .black.opacity(0.45), radius: canvas.u(6))
                 .allowsHitTesting(false)
         } else {
             VStack(spacing: canvas.u(14)) {
-                Text(L10n.text("Add your first game")).seleneFont(34).foregroundColor(SeleneTheme.ink)
+                Text(L10n.text("Add your first game")).seleneFont(.dialogTitle).foregroundColor(SeleneTheme.ink)
                 Text(L10n.text("Choose game files or find your existing apps."))
-                    .seleneFont(19).foregroundColor(SeleneTheme.ink60)
+                    .seleneFont(.panelBody).foregroundColor(SeleneTheme.ink60)
                 HStack(spacing: canvas.u(14)) {
                     SelenePillButton(title: L10n.text("Add game"), focused: true) { router.openAddGame() }
                     SelenePillButton(title: L10n.text("Import existing builds"), minWidth: 0, focused: false) {
                         viewModel.importExistingBuilds()
                     }
                 }
-                .padding(.top, canvas.u(18))
+                .padding(.top, canvas.u(SeleneTokens.Space.control))
             }
             .shadow(color: .black.opacity(0.45), radius: canvas.u(6))
         }
@@ -304,24 +304,24 @@ struct CollectionInfoView: View {
             logoArea
             if let reason = GameResourceState.unavailableReason(for: game) {
                 Text(reason.title)
-                    .seleneFont(19, .semibold)
+                    .seleneFont(.panelBody, .semibold)
                     .foregroundColor(SeleneTheme.ink75)
-                    .padding(.top, canvas.u(20))
+                    .padding(.top, canvas.u(SeleneTokens.Space.panel))
                 Text(reason.detail)
-                    .seleneFont(15)
+                    .seleneFont(.compactCaption)
                     .foregroundColor(SeleneTheme.ink60)
-                    .padding(.top, canvas.u(6))
+                    .padding(.top, canvas.u(SeleneTokens.Space.tight))
             } else if !game.isPlayableLocally, game.status != .building, game.portingFailure == nil {
                 Text(L10n.text("Not built yet"))
-                    .seleneFont(17)
+                    .seleneFont(.body)
                     .foregroundColor(SeleneTheme.ink75)
-                    .padding(.top, canvas.u(20))
+                    .padding(.top, canvas.u(SeleneTokens.Space.panel))
             }
             SeleneStatsRow(presentation: presentation)
-                .padding(.top, canvas.u(28))
+                .padding(.top, canvas.u(SeleneTokens.Space.feature))
             if !presentation.genres.isEmpty {
                 SpotlightGenreChips(genres: presentation.genres)
-                    .padding(.top, canvas.u(20))
+                    .padding(.top, canvas.u(SeleneTokens.Space.panel))
             }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)

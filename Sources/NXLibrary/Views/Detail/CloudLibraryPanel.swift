@@ -44,16 +44,13 @@ struct CloudLibraryPanel: View {
     }
 
     var body: some View {
-        ZStack {
-            SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle())
-                .onTapGesture(perform: close)
+        SeleneOverlay(style: .dialog, onOutside: close) {
             VStack(spacing: 0) {
                 card.frame(maxWidth: .infinity, maxHeight: .infinity)
                 SeleneHintsBar(left: [HintItem(.b, "Close", action: close)],
                                right: controls.isEmpty ? [] : [HintItem(.a, "Select")])
             }
-            .allowsHitTesting(freeSelection == nil)
-            .accessibilityHidden(freeSelection != nil)
+            .seleneOverlayOwnership(freeSelection == nil)
             if let freeSelection { freeDialog(freeSelection) }
         }
         .task(id: ReadRequest(game: game, revision: refreshRevision)) { await viewModel.refreshCloudLibrary(game) }
@@ -69,16 +66,16 @@ struct CloudLibraryPanel: View {
     private var card: some View {
         VStack(alignment: .leading, spacing: canvas.u(14)) {
             VStack(alignment: .leading, spacing: canvas.u(3)) {
-                Text(text("Cloud library")).seleneFont(30, .semibold)
+                Text(text("Cloud library")).seleneFont(.panelTitle, .semibold)
                     .foregroundColor(SeleneTheme.ink).accessibilityAddTraits(.isHeader)
-                Text(game.name).seleneFont(17).foregroundColor(SeleneTheme.ink75)
+                Text(game.name).seleneFont(.body).foregroundColor(SeleneTheme.ink75)
                     .lineLimit(1)
                 if !state.referenceKinds.isEmpty || state.referenceSources != nil {
-                    Text(text("Source: reference library")).seleneFont(14).foregroundColor(SeleneTheme.ink75)
+                    Text(text("Source: reference library")).seleneFont(.metadata).foregroundColor(SeleneTheme.ink75)
                 }
             }
             if let unavailable {
-                Text(text(unavailable)).seleneFont(17).foregroundColor(SeleneTheme.ink75)
+                Text(text(unavailable)).seleneFont(.body).foregroundColor(SeleneTheme.ink75)
             } else {
                 ForEach(CloudLibraryItem.allCases, id: \.self) { item in
                     artifactRow(item)
@@ -364,9 +361,7 @@ struct CloudLibraryPanel: View {
     }
 
     private func freeDialog(_ selection: CloudFreeSelection) -> some View {
-        ZStack {
-            SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle())
-                .onTapGesture { freeSelection = nil }
+        SeleneOverlay(style: .dialog, onOutside: { freeSelection = nil }) {
             SeleneConfirmDialog(title: "Free up space",
                 message: text("Moves to the Trash. Empty it to reclaim space. Everything stays available to download."),
                 confirmTitle: "Free up space", confirmEnabled: !selection.selected.isEmpty,

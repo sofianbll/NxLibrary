@@ -14,8 +14,8 @@ enum SeleneTheme {
     static var ink25: Color { ink.opacity(0.25) }
     static var ink15: Color { ink.opacity(0.15) }
     static var scrim: Color { Color(hex: palette.scrim) }
-    static var scrim65: Color { scrim.opacity(0.65) }
-    static var scrim45: Color { scrim.opacity(0.45) }
+    static var scrim65: Color { scrim.opacity(SeleneTokens.Effect.deepVeil) }
+    static var scrim45: Color { scrim.opacity(SeleneTokens.Effect.panelVeil) }
     static var glass: Color { Color(hex: palette.glass, opacity: 0.75) }
     static var glassSolid: Color { Color(hex: palette.glass, opacity: 0.88) }
     static var glassLight: Color { Color(hex: palette.glass, opacity: 0.45) }
@@ -27,11 +27,11 @@ enum SeleneTheme {
     /// on the glass), elsewhere the palette's glyph.
     static var rowIcon: Color { palette.id == SelenePaletteCatalog.defaultID ? ink82 : glyph }
     static var success: Color { Color(hex: palette.success) }
-    static let danger = Color(hex: 0xFF6B6B)
+    static let danger = Color(hex: SeleneTokens.Color.danger)
     /// Monochrome themes still use semantic colors for status dots.
-    static let statusOK = Color(hex: 0x3DDC84)
-    static let statusCloud = Color(hex: 0x9CCBFF)
-    static let untested = Color(hex: 0xE8B65C)
+    static let statusOK = Color(hex: SeleneTokens.Color.statusOK)
+    static let statusCloud = Color(hex: SeleneTokens.Color.statusCloud)
+    static let untested = Color(hex: SeleneTokens.Color.untested)
     static var focusGlow: Color { focus.opacity(0.35) }
     static var focusGlowStrong: Color { focus.opacity(0.55) }
 
@@ -53,17 +53,17 @@ enum SeleneTheme {
         }
     }
 
-    static let rowRadius: CGFloat = 10
-    static let contentRadius: CGFloat = 12
-    static let cardRadius: CGFloat = 16
-    static let modalRadius: CGFloat = 20
-    static let coverRadius: CGFloat = 6
-    static let quick = Animation.timingCurve(0.22, 1, 0.36, 1, duration: 0.18)
+    static let rowRadius = SeleneTokens.Radius.row
+    static let contentRadius = SeleneTokens.Radius.content
+    static let cardRadius = SeleneTokens.Radius.card
+    static let modalRadius = SeleneTokens.Radius.modal
+    static let coverRadius = SeleneTokens.Radius.cover
     static let standard = Animation.timingCurve(0.32, 0.72, 0, 1, duration: 0.24)
-    static let focusIn = Animation.timingCurve(0.22, 1, 0.36, 1, duration: 0.18)
-    static let focusOut = Animation.timingCurve(0.22, 1, 0.36, 1, duration: 0.20)
-    static let screenDuration = 0.32
-    static let screen = Animation.timingCurve(0.32, 0.72, 0, 1, duration: screenDuration)
+    static let quick = Motion.focusIn
+    static let focusIn = quick
+    static let focusOut = Motion.focusOut
+    static let screenDuration = Motion.screenDuration
+    static let screen = Motion.screen
     static func cubicOut(_ duration: Double) -> Animation {
         .timingCurve(0.215, 0.61, 0.355, 1, duration: duration)
     }
@@ -112,6 +112,7 @@ enum SeleneTheme {
 
 private struct SeleneRowFocusModifier: ViewModifier {
     @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.seleneReduceMotion) private var reduceMotion
     let focused: Bool
     let radius: CGFloat
 
@@ -122,7 +123,7 @@ private struct SeleneRowFocusModifier: ViewModifier {
                     .strokeBorder(SeleneTheme.focus, lineWidth: canvas.u(2))
                     .opacity(focused ? 1 : 0)
             }
-            .animation(SeleneTheme.focusIn, value: focused)
+            .animation(Motion.focus(reduceMotion), value: focused)
     }
 }
 

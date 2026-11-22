@@ -63,39 +63,26 @@ struct ProfilePickerView: View {
     @State var removing: LocalProfile?
     @State var removalFocus: SeleneConfirmButton = .cancel
     @State private var appeared = false
+    @State private var hover = SeleneHoverFocus()
     @AccessibilityFocusState(for: .voiceOver) private var accessibilityFocus: Tile?
     private enum Tile: Hashable { case profile(UUID), add }
     private var selection: UUID? { appeared ? selected : initialSelection }
     private var layers: ProfileLayers { .init(editing: draft != nil, removing: removing != nil) }
 
     var body: some View {
-        ZStack {
+        Group {
             if isOverlay {
-                SeleneTheme.scrim65.ignoresSafeArea()
+                SeleneOverlay(style: .deep, onOutside: canClose && layers.isTop(.selector) ? onClose : nil) {
+                    profileLayers
+                }
             } else {
-                SeleneBackdrop().still(true).environment(\.seleneSharesBackdrop, false)
-            }
-            // The wizard replaces the selector: it fades out, with its hints, and comes back when the wizard closes.
-            selector.opacity(layers.showsSelector ? 1 : 0)
-                .accessibilityHidden(!layers.isTop(.selector))
-                .allowsHitTesting(layers.isTop(.selector))
-            if let draft {
-                ProfileEditorView(profile: draft, games: games,
-                                  avatarGames: avatarGames, artwork: artwork,
-                                  isNew: !profiles.profiles.contains { $0.id == draft.id },
-                                  onCancel: editorClosed, onSave: save)
-                    .transition(.opacity)
-            }
-            if let removing {
-                SeleneTheme.scrim.opacity(0.72).ignoresSafeArea()
-                SeleneConfirmDialog(title: L10n.format("Remove %@?", [removing.name]),
-                                    message: L10n.text("This profile will lose its favorites and play time."),
-                                    confirmTitle: L10n.text("Remove"), cancelTitle: L10n.text("Keep"),
-                                    warningIcon: true, focus: $removalFocus,
-                                    onCancel: { self.removing = nil }, onConfirm: remove)
+                ZStack {
+                    SeleneBackdrop().still(true).environment(\.seleneSharesBackdrop, false)
+                    profileLayers
+                }
             }
         }
-        .animation(reduceMotion ? .easeOut(duration: 0.15) : SeleneTheme.quick, value: draft != nil)
+        .animation(Motion.overlay(reduceMotion), value: draft != nil)
         .onAppear {
             guard !appeared else { return }
             appeared = true
@@ -110,10 +97,35 @@ struct ProfilePickerView: View {
         .accessibilityAddTraits(.isModal)
     }
 
+    private var profileLayers: some View {
+        ZStack {
+            // Keep the selector mounted so closing the wizard restores its selection and scroll.
+            selector.opacity(layers.showsSelector ? 1 : 0)
+                .seleneOverlayOwnership(layers.isTop(.selector))
+            if let draft {
+                ProfileEditorView(profile: draft, games: games,
+                                  avatarGames: avatarGames, artwork: artwork,
+                                  isNew: !profiles.profiles.contains { $0.id == draft.id },
+                                  onCancel: editorClosed, onSave: save)
+                    .seleneOverlayOwnership(layers.isTop(.editor))
+                    .transition(.opacity)
+            }
+            if let removing {
+                SeleneOverlay(style: .profileRemoval, onOutside: { self.removing = nil }) {
+                    SeleneConfirmDialog(title: L10n.format("Remove %@?", [removing.name]),
+                                        message: L10n.text("This profile will lose its favorites and play time."),
+                                        confirmTitle: L10n.text("Remove"), cancelTitle: L10n.text("Keep"),
+                                        warningIcon: true, focus: $removalFocus,
+                                        onCancel: { self.removing = nil }, onConfirm: remove)
+                }
+            }
+        }
+    }
+
     private var selector: some View {
         GeometryReader { geometry in
             VStack(spacing: canvas.u(60)) {
-                Text(L10n.text("Who's playing?")).seleneFont(44).accessibilityAddTraits(.isHeader)
+                Text(L10n.text("Who's playing?")).seleneFont(.profileScreenTitle).accessibilityAddTraits(.isHeader)
                 ScrollViewReader { scroll in
                     ScrollView(.horizontal) {
                         HStack(spacing: canvas.u(56)) {
@@ -122,7 +134,7 @@ struct ProfilePickerView: View {
                             }
                             tile(nil).id("add")
                         }
-                        .padding(canvas.u(18))
+                        .padding(canvas.u(SeleneTokens.Space.control))
                         .frame(minWidth: geometry.size.width, alignment: .center)
                     }
                     .scrollIndicators(.hidden)
@@ -132,7 +144,7 @@ struct ProfilePickerView: View {
                         else { scroll.scrollTo("add", anchor: .center) }
                     }
                 }
-                if profiles.failed { Text(L10n.text("Profiles could not be saved.")).seleneFont(19) }
+                if profiles.failed { Text(L10n.text("Profiles could not be saved.")).seleneFont(.panelBody) }
             }
             .foregroundStyle(SeleneTheme.ink)
             .padding(.top, geometry.size.height * 0.28)
@@ -178,16 +190,17 @@ struct ProfilePickerView: View {
                     }
                 }
                 .scaleEffect(isFocused && !reduceMotion ? 1.1 : 1)
-                Text(title).seleneFont(24).lineLimit(1)
+                Text(title).seleneFont(.profileTitle).lineLimit(1)
                     .foregroundStyle(isFocused ? SeleneTheme.ink : SeleneTheme.ink60)
                     .frame(width: canvas.u(170))
             }
         }
         .buttonStyle(.plain)
+        .onHover { if hover.moved($0) { selected = profile?.id } }
         .accessibilityLabel(title)
         .accessibilityAddTraits(isFocused ? .isSelected : [])
         .accessibilityFocused($accessibilityFocus, equals: profile.map { .profile($0.id) } ?? .add)
-        .animation(reduceMotion ? nil : SeleneTheme.focusIn, value: isFocused)
+        .animation(Motion.focus(reduceMotion), value: isFocused)
     }
 
     private func handle(_ action: GamepadAction) {

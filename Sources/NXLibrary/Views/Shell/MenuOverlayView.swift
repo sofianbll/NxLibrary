@@ -44,19 +44,14 @@ struct MenuOverlayView: View {
     private let iconSize: CGFloat = 34
     private let labelBand: CGFloat = 26
     /// Between the name and the top of the ring (Selene: the pill sits Ring + 12 above the cell's bottom).
-    private let labelGap: CGFloat = 12
+    private let labelGap = SeleneTokens.Space.small
     private let rowBottom: CGFloat = 70
     private let focusedScale: CGFloat = 1.1
     /// Above the Power pills' bottom edge, the gap to the name.
     private let pillsGap: CGFloat = 14
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            SeleneTheme.scrim.opacity(submenuOpen ? 0.65 : 0.55)
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .onTapGesture { router.closeMenu() }
-
+        SeleneOverlay(style: submenuOpen ? .deep : .menu, alignment: .bottom, onOutside: router.closeMenu) {
             row
                 .padding(.bottom, canvas.u(rowBottom))
 
@@ -72,7 +67,7 @@ struct MenuOverlayView: View {
             SeleneHintsBar(left: [HintItem(.b, L10n.text("Close"))], right: [HintItem(.a, L10n.text("Select"))],
                            bottom: SeleneBottomScrim.hintsBottom, leftInset: 18)
         }
-        .animation(SeleneTheme.quick, value: submenuOpen)
+        .animation(Motion.anchoredCard(reduceMotion), value: submenuOpen)
         .onAppear { presented = true }
     }
 
@@ -95,28 +90,28 @@ struct MenuOverlayView: View {
         } label: {
             VStack(spacing: 0) {
                 Text(action == .profile ? activeProfile?.name ?? action.title : action.title)
-                    .seleneFont(18, .semibold)
+                    .seleneFont(.menuCaption, .semibold)
                     .foregroundColor(SeleneTheme.ink)
                     .lineLimit(1)
                     .fixedSize()
                     .frame(height: canvas.u(labelBand), alignment: .bottom)
                     .opacity(isFocused ? 1 : 0)
                     .offset(y: isFocused || reduceMotion ? 0 : canvas.u(6))
-                    .animation(SeleneTheme.focusIn, value: isFocused)
+                    .animation(Motion.focus(reduceMotion), value: isFocused)
                 if action == .profile, activeProfile != nil, isFocused {
-                    Text(action.title).seleneFont(14).foregroundColor(SeleneTheme.ink60).lineLimit(1).fixedSize()
+                    Text(action.title).seleneFont(.metadata).foregroundColor(SeleneTheme.ink60).lineLimit(1).fixedSize()
                 }
 
                 ZStack {
                     Circle()
                         .fill(SeleneTheme.ink.opacity(isFocused ? 0.12 : 0))
                         .frame(width: canvas.u(dotSize), height: canvas.u(dotSize))
-                        .animation(SeleneTheme.focusIn, value: isFocused)
+                        .animation(Motion.focus(reduceMotion), value: isFocused)
                     Circle()
                         .strokeBorder(SeleneTheme.ink, lineWidth: canvas.u(ringWidth))
                         .frame(width: canvas.u(dotSize), height: canvas.u(dotSize))
                         .opacity(isFocused ? 1 : 0)
-                        .animation(SeleneTheme.focusIn, value: isFocused)
+                        .animation(Motion.focus(reduceMotion), value: isFocused)
                     Group {
                         if action == .profile, let activeProfile {
                             ProfilePortrait(profile: activeProfile, size: 52)
@@ -136,7 +131,7 @@ struct MenuOverlayView: View {
                 .padding(.top, canvas.u(labelGap))
                 .frame(width: canvas.u(dotSize), height: canvas.u(dotSize))
                 .scaleEffect(isFocused && !reduceMotion ? focusedScale : 1)
-                .animation(reduceMotion ? nil : SeleneTheme.quick, value: isFocused)
+                .animation(Motion.focus(reduceMotion), value: isFocused)
             }
             .frame(width: canvas.u(cellWidth))
             .contentShape(Rectangle())
@@ -150,13 +145,7 @@ struct MenuOverlayView: View {
         .accessibilityAddTraits(isFocused ? [.isSelected] : [])
         .opacity(presented ? 1 : 0)
         .offset(y: presented || reduceMotion ? 0 : canvas.u(24))
-        .animation(entrance(index), value: presented)
-    }
-
-    private func entrance(_ index: Int) -> Animation {
-        let curve = SeleneTheme.cubicOut(0.26)
-        // Selene's icons rise one after another, 25 ms apart.
-        return reduceMotion ? .easeOut(duration: 0.12) : curve.delay(Double(index) * 0.025)
+        .animation(Motion.menuIcon(reduceMotion, index: index), value: presented)
     }
 
     // MARK: - Cards
@@ -205,7 +194,7 @@ struct MenuCard: View {
     @Environment(\.seleneCanvas) private var canvas
 
     var body: some View {
-        VStack(spacing: canvas.u(12)) {
+        VStack(spacing: canvas.u(SeleneTokens.Space.small)) {
             ForEach(lines) { line in
                 SelenePillButton(title: line.title,
                                  icon: line.icon,

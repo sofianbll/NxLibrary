@@ -36,7 +36,18 @@ final class ShellOverlayHintsTests: XCTestCase {
 
     func testEveryFullPageLayerUnderAnOverlayIsMarkedCovered() throws {
         let layers = try source("Shell/AppShellView+Layers.swift")
-        XCTAssertEqual(layers.components(separatedBy: ".environment(\\.seleneHintsCovered, hintsCovered)").count - 1, 3)
+        for (start, end) in [("\n            content\n", "if router.route == .addGame"),
+                             ("AddGameView(", "if router.route == .console"),
+                             ("ConsoleView(", "if router.isSearchPresented")] {
+            let first = try XCTUnwrap(layers.range(of: start))
+            let last = try XCTUnwrap(layers.range(of: end, range: first.upperBound..<layers.endIndex))
+            let layer = layers[first.upperBound..<last.lowerBound]
+            XCTAssertTrue(layer.contains(".seleneOverlayOwnership("), start)
+            XCTAssertTrue(layer.contains("!router.isMenuPresented"), start)
+            XCTAssertTrue(layer.contains("profileFlow == nil"), start)
+        }
+        let overlay = try source("Components/SeleneOverlay.swift")
+        XCTAssertTrue(overlay.contains(".transformEnvironment(\\.seleneHintsCovered) { $0 = $0 || !ownsInput }"))
         XCTAssertTrue(try source("Components/SeleneHintsBar.swift").contains(".seleneOverlaidHints(covered)"))
     }
 

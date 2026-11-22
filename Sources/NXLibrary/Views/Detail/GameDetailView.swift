@@ -181,7 +181,7 @@ struct GameDetailView: View {
         }
         .overlay(viewerOverlay)
         .overlay(ModsBandOverlay(host: modsHost, find: modsHost.find, game: game))
-        .animation(.easeOut(duration: 0.2), value: viewer != nil)
+        .animation(Motion.viewer(reduceMotion), value: viewer != nil)
         .frame(width: canvas.size.width, height: canvas.size.height, alignment: .topLeading)
         .clipped()
         .onAppear(perform: appear)
@@ -236,7 +236,7 @@ struct GameDetailView: View {
             .modifier(GlideGroup())
             .offset(y: canvas.u(pageShift))
             // The glide is movement: reduce motion makes it instant.
-            .animation(reduceMotion ? nil : SeleneTheme.cubicOut(0.32), value: pageShift)
+            .animation(Motion.detailBand(reduceMotion), value: pageShift)
     }
 
     private var pageMask: some View {
@@ -384,9 +384,9 @@ struct GameDetailView: View {
         let shown = max(focus.zone, DetailsFocus.screenshotsZone)
         let below = zone > shown
         return content()
-            .blur(radius: below ? canvas.u(12) : 0)
-            .opacity(below ? 0.55 : 1)
-            .animation(SeleneTheme.cubicOut(0.32), value: shown)
+            .blur(radius: below ? canvas.u(SeleneTokens.Effect.bandBlur) : 0)
+            .opacity(below ? SeleneTokens.Effect.bandOpacity : 1)
+            .animation(Motion.detailBand(reduceMotion), value: shown)
     }
 
     // MARK: - Viewer

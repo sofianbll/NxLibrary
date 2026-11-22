@@ -38,16 +38,16 @@ struct SeleneConfirmDialog<Detail: View>: View {
                     .accessibilityHidden(true)
             }
             Text(L10n.text(title))
-                .seleneFont(34, .semibold)
+                .seleneFont(.dialogTitle, .semibold)
                 .foregroundColor(SeleneTheme.ink)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             Text(message)
-                .seleneFont(19)
+                .seleneFont(.panelBody)
                 .foregroundColor(SeleneTheme.ink75)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, canvas.u(14))
+                .padding(.top, canvas.u(SeleneTokens.Space.line))
             detailContent()
             HStack(spacing: canvas.u(22)) {
                 if let cancelTitle {
@@ -191,15 +191,16 @@ struct SeleneDialogCard: ViewModifier {
             .padding(.bottom, canvas.u(36))
             .frame(width: width.map(canvas.u))
             .background(
-                RoundedRectangle(cornerRadius: canvas.u(28), style: .continuous)
+                RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.dialog), style: .continuous)
                     .fill(SeleneTheme.glassCard)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: canvas.u(28), style: .continuous)
+                RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.dialog), style: .continuous)
                     .strokeBorder(SeleneTheme.ink.opacity(0.16), lineWidth: max(1, canvas.u(1)))
             )
-            .clipShape(RoundedRectangle(cornerRadius: canvas.u(28), style: .continuous))
-            .shadow(color: .black.opacity(0.55), radius: canvas.u(30))
+            .clipShape(RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.dialog), style: .continuous))
+            .shadow(color: .black.opacity(SeleneTokens.Effect.dialogShadowOpacity),
+                    radius: canvas.u(SeleneTokens.Effect.dialogShadowRadius))
             .environment(\.seleneMinimumFont, 12)
     }
 }
@@ -220,12 +221,12 @@ struct SeleneChoiceDialog: View {
     var body: some View {
         VStack(spacing: 0) {
             Text(L10n.text(title))
-                .seleneFont(34, .semibold)
+                .seleneFont(.dialogTitle, .semibold)
                 .foregroundColor(SeleneTheme.ink)
                 .frame(maxWidth: canvas.u(560))
                 .fixedSize(horizontal: false, vertical: true)
             Text(message)
-                .seleneFont(19)
+                .seleneFont(.panelBody)
                 .foregroundColor(SeleneTheme.ink75)
                 .frame(maxWidth: canvas.u(560))
                 .fixedSize(horizontal: false, vertical: true)

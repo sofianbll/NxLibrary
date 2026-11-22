@@ -42,10 +42,6 @@ struct SpotlightRowView: View {
     static let host = SpotlightRowGeometry.host
     static let grow = SpotlightRowGeometry.grow
 
-    /// The row's glide: a critically damped spring of about the old 0.32 s. A quick run of presses retargets it
-    /// and it carries its speed on (a timing curve restarted at full speed on every press, so the row surged).
-    static let glide = Animation.spring(response: 0.32, dampingFraction: 1)
-
     var body: some View {
         // A key that is not in the row (yet) means no selection, not the first item.
         let selected = selectedKey.flatMap { key in items.firstIndex { $0.key == key } }
@@ -77,7 +73,7 @@ struct SpotlightRowView: View {
             if let selected {
                 let item = items[selected]
                 Text(title(of: item))
-                    .seleneFont(22)
+                    .seleneFont(.selectionTitle)
                     .foregroundColor(SeleneTheme.ink)
                     .lineLimit(1)
                     .frame(width: canvas.u(420), alignment: .leading)
@@ -99,15 +95,15 @@ struct SpotlightRowView: View {
             }
         }
         // The camera: the one slide of the whole row, on the tiles' own glide.
-        .modifier(CameraGlide(position: position, unit: canvas.u(1)))
+        .modifier(RailCamera(position: position - CGFloat(SpotlightState.anchorSlot),
+                             maximum: CGFloat(SpotlightState.scrollOffset(selectedIndex: items.count - 1)),
+                             pitch: canvas.u(SpotlightRowGeometry.pitch)))
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .frame(height: canvas.u(260), alignment: .topLeading)
-        // A glide, not a jump: the row and the growing tile glide together
-        // (under reduce motion the ring and size still fade, without the slide).
-        .animation(reduceMotion ? .easeOut(duration: 0.2) : Self.glide, value: selectedKey)
-        .animation(reduceMotion ? nil : Self.glide, value: items.map(\.key))
-        .animation(reduceMotion ? nil : Self.glide, value: liftedKey)
-        .animation(.easeOut(duration: 0.3), value: isEmptyFilter)
+        .animation(Motion.rail(reduceMotion, .spotlight), value: selectedKey)
+        .animation(Motion.rail(reduceMotion, .spotlight), value: items.map(\.key))
+        .animation(Motion.rail(reduceMotion, .spotlight), value: liftedKey)
+        .animation(Motion.rowMessage(reduceMotion), value: isEmptyFilter)
         .onAppear { scheduleTitle(delay: 0) }
         .onChange(of: selectedKey) { _, key in
             if key != lastLifted { lastLifted = nil }
@@ -171,8 +167,8 @@ struct SpotlightRowView: View {
         return ZStack(alignment: .topLeading) {
             face(item, selected: selected)
                 .opacity(CloudLibraryTileBadge.artworkOpacity(cloudState))
-                .padding(canvas.u(7))
-            SeleneTileRing(cornerRadius: canvas.u(19), active: selected)
+                .padding(canvas.u(SeleneTokens.Space.badge))
+            SeleneTileRing(cornerRadius: canvas.u(SeleneTokens.Radius.spotlightFocus), active: selected)
                 .frame(width: canvas.u(Self.host), height: canvas.u(Self.host))
         }
         .frame(width: canvas.u(Self.host), height: canvas.u(Self.host), alignment: .topLeading)
@@ -185,23 +181,23 @@ struct SpotlightRowView: View {
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
         .modifier(CloudLibraryTileBadge(state: cloudState))
         .overlay(alignment: .bottomTrailing) {
-            NextendoOnlineBadge(titleID: native?.titleId, compact: true).padding(canvas.u(12))
+            NextendoOnlineBadge(titleID: native?.titleId, compact: true).padding(canvas.u(SeleneTokens.Space.small))
         }
     }
 
     @ViewBuilder
     private func face(_ item: SpotlightItem, selected: Bool) -> some View {
         let side = canvas.u(160)
-        let face = RoundedRectangle(cornerRadius: canvas.u(12), style: .continuous)
+        let face = RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.content), style: .continuous)
         ZStack {
             ZStack {
-                RoundedRectangle(cornerRadius: canvas.u(14), style: .continuous).fill(SeleneTheme.ink15)
+                RoundedRectangle(cornerRadius: canvas.u(SeleneTokens.Radius.badge), style: .continuous).fill(SeleneTheme.ink15)
                 switch item {
                 case .game(let id):
                     if let game = gamesByID[id] {
                         SpotlightTileArtwork(game: game, side: side,
                                              artwork: artwork, ownIconFirst: true)
-                            .portingLook(tileLook(game), cornerRadius: canvas.u(12))
+                            .portingLook(tileLook(game), cornerRadius: canvas.u(SeleneTokens.Radius.content))
                             .frame(width: side, height: side)
                             .clipShape(face)
                     } else if let game = catalogGamesByID[id] {
@@ -229,7 +225,7 @@ struct SpotlightRowView: View {
             if case .game(let id) = item, gamesByID[id] == nil, let game = catalogGamesByID[id] {
                 PortingDownloadMark(look: PortingTileLook.make(catalog: game), width: side, height: side)
             }
-            SeleneShine(cornerRadius: canvas.u(12), active: selected)
+            SeleneShine(cornerRadius: canvas.u(SeleneTokens.Radius.content), active: selected)
         }
         .frame(width: side, height: side)
         .shadow(color: .black.opacity(0.55), radius: canvas.u(9))
@@ -266,8 +262,8 @@ struct SpotlightRowView: View {
             }
         }()
         return VStack(alignment: .leading, spacing: canvas.u(6)) {
-            Text(title).seleneFont(22, .medium).foregroundColor(SeleneTheme.ink90)
-            Text(hint).seleneFont(16).foregroundColor(SeleneTheme.ink60)
+            Text(title).seleneFont(.selectionTitle, .medium).foregroundColor(SeleneTheme.ink90)
+            Text(hint).seleneFont(.caption).foregroundColor(SeleneTheme.ink60)
                 .frame(maxWidth: canvas.u(380), alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -301,21 +297,6 @@ private struct TileGlide: GeometryEffect {
         // The 1u is the item's start margin.
         let x = (SpotlightRowGeometry.place(of: index, at: position) + 1) * unit
         return ProjectionTransform(CGAffineTransform(a: scale, b: 0, c: 0, d: scale, tx: x, ty: rise * unit))
-    }
-}
-
-/// The row's camera on the tiles' own glide.
-private struct CameraGlide: GeometryEffect {
-    var position: CGFloat
-    let unit: CGFloat
-
-    var animatableData: CGFloat {
-        get { position }
-        set { position = newValue }
-    }
-
-    func effectValue(size: CGSize) -> ProjectionTransform {
-        ProjectionTransform(CGAffineTransform(translationX: SpotlightRowGeometry.camera(at: position) * unit, y: 0))
     }
 }
 

@@ -146,6 +146,7 @@ extension SpotlightView {
             holdScroll = false
         } else if reduceMotion {
             scroll = target
+            glideEnds = .distantPast
         } else if abs(scroll - target) > 0.5 {
             glideEnds = Date().addingTimeInterval(glide == Self.glide ? 1.05 : 0.6)
             withAnimation(glide) { scroll = target }
@@ -158,6 +159,15 @@ extension SpotlightView {
     /// Leaving the row, the icons and the bar fade out first and the sections
     /// below fade in behind; coming back, the sections go first.
     func setPageFades(onRow: Bool, deep: Bool) {
+        if reduceMotion {
+            withAnimation(Motion.overlay(true)) {
+                stripFull = !onRow
+                rowShown = onRow
+                belowShown = !onRow
+                dimmed = deep
+            }
+            return
+        }
         if onRow == stripFull {
             withAnimation(.easeInOut(duration: onRow ? 0.7 : 0.9)) { stripFull = !onRow }
         }

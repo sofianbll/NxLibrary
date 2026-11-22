@@ -8,8 +8,7 @@ import ArcanePorting
 extension AppShellView {
     func cloudQuitOverlay() -> some View {
         let movingLibrary = viewModel.cloudLibrary.libraryMove != nil
-        return ZStack {
-            SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle())
+        return SeleneOverlay(style: .dialog) {
             SeleneConfirmDialog(title: movingLibrary ? "Moving the cloud library" : "A cloud transfer is in progress",
                                 message: movingLibrary
                                     ? L10n.text("Quitting stops the move between files. Files already moved stay in the new folder.")
@@ -33,9 +32,7 @@ extension AppShellView {
     // MARK: - Retry a ready build
 
     func settingsNoticeOverlay(_ notice: SettingsNotice) -> some View {
-        ZStack {
-            SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle())
-                .onTapGesture { finishSettingsNotice() }
+        SeleneOverlay(style: .dialog, onOutside: { finishSettingsNotice() }) {
             SeleneChoiceDialog(title: notice.title, message: notice.message,
                                choices: notice.choices,
                                focus: $viewModel.settingsNoticeFocus,
@@ -146,9 +143,7 @@ extension AppShellView {
     func installFailureOverlay(_ game: PortedGame) -> some View {
         let app = game.pendingInstall?.finalApp ?? game.url
         let currentExists = FileManager.default.fileExists(atPath: app.appendingPathComponent("Contents/Info.plist").path)
-        return ZStack {
-            SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle())
-                .onTapGesture { viewModel.gameWithInstallFailure = nil }
+        return SeleneOverlay(style: .dialog, onOutside: { viewModel.gameWithInstallFailure = nil }) {
             SeleneConfirmDialog(title: L10n.text("Installation failed"),
                                 message: L10n.format("The new build of %@ has been kept.", [String(describing: game.name)])
                                     + (currentExists ? L10n.text("\nYour current app is still available.") : L10n.text("\nYou can retry installation.")),
@@ -181,11 +176,7 @@ extension AppShellView {
     // MARK: - Close Game confirmation
 
     func closeGameOverlay(_ game: PortedGame) -> some View {
-        ZStack {
-            SeleneTheme.scrim45
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .onTapGesture { viewModel.dismissCloseGame() }
+        SeleneOverlay(style: .dialog, onOutside: { viewModel.dismissCloseGame() }) {
             SeleneConfirmDialog(title: L10n.format("Close %@?", [String(describing: game.name)]),
                                 message: L10n.text("Unsaved progress in the game will be lost."),
                                 confirmTitle: "Close",
@@ -220,11 +211,7 @@ extension AppShellView {
     // MARK: - Delete after a failed porting
 
     func removeGameOverlay(_ game: PortedGame) -> some View {
-        ZStack {
-            SeleneTheme.scrim45
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .onTapGesture { viewModel.dismissRemoveGame() }
+        SeleneOverlay(style: .dialog, onOutside: { viewModel.dismissRemoveGame() }) {
             SeleneConfirmDialog(title: L10n.format("Delete %@?", [String(describing: game.name)]),
                                 message: L10n.text("It leaves the library. Your game files and the build cache stay on disk."),
                                 confirmTitle: "Delete",
@@ -237,11 +224,7 @@ extension AppShellView {
     // MARK: - A newer release at launch
 
     func updateOfferOverlay() -> some View {
-        ZStack {
-            SeleneTheme.scrim45
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .onTapGesture { updater.later() }
+        SeleneOverlay(style: .dialog, onOutside: { updater.later() }) {
             AppUpdateDialog(updater: updater, requirementNotes: updater.dialogRelease.map {
                 AppUpdate.requirementNotes($0.requirements,
                     installedXcode: setup.environmentStatus?.xcodeVersion,

@@ -17,6 +17,7 @@ struct DetailsBackground: View {
     var shade: BackgroundShade = .balanced
 
     @Environment(\.seleneCanvas) private var canvas
+    @Environment(\.seleneReduceMotion) private var reduceMotion
 
     /// The hero's share of the window width, on the right.
     private static let artWidth: CGFloat = 0.72
@@ -59,8 +60,7 @@ struct DetailsBackground: View {
             }
             .frame(width: size.width * Self.artWidth, height: size.height)
             .clipped()
-            // A crossfade is not movement: it stays under reduce motion (spec §8).
-            .animation(.easeInOut(duration: 0.4), value: imageKey)
+            .animation(Motion.detailArt(reduceMotion), value: imageKey)
         }
     }
 

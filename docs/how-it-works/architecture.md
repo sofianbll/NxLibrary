@@ -193,12 +193,27 @@ La variante asincrona attende su una coda utility e invia SIGTERM al sottoproces
 
 ## Navigazione e focus
 
+`check_selene_tokens.py` impedisce alla CI di accettare nuovi argomenti numerici
+per font, padding e raggi. In una pull request ogni voce della baseline può solo
+diminuire. Rimuovere le occorrenze sostituite con token.
+
+`SeleneTokens` conserva le misure di riferimento del canvas e gli effetti condivisi;
+`SeleneTheme` applica la palette corrente. `Motion` definisce le curve per ruolo.
+Il rail di Spotlight e Collection ripunta la molla critica alla nuova selezione;
+con Riduci movimento la posizione e gli interruttori cambiano direttamente.
+
+`SeleneOverlay` fornisce il velo e il clic esterno per menu, ricerca, opzioni,
+profili, conferme e Cloud. La shell applica il blur associato allo stile e
+nasconde input del puntatore, VoiceOver e suggerimenti dei livelli coperti.
+Router e pannelli continuano a gestire gli stessi comandi e identità di focus;
+`ProfileLayers` decide quale strato dei profili resta attivo.
+
 - `AppRouter` gestisce schermata corrente, cronologia di ritorno e richieste di selezione. `SpotlightState`, `LibrarySelectionState`, `DetailsFocus`, `MenuSelectionModel` e `FocusIndex` descrivono il focus indipendentemente dal disegno SwiftUI. `LibraryQuery` applica ricerca, filtri e ordinamento a qualunque gioco che dia `LibraryQueryRecord` (id, nome, preferito, nascosto, installato, termini di ricerca); le entrate per `PortedGame` di filtro, selezione e Surprise me sono estensioni in `ArcanePorting/Library/`.
 - Le viste principali sono Spotlight, Collection e Details. Ricerca, Add Game, Console, Game Options e Settings si raggiungono dalla shell e dalle azioni del router. Le estensioni `…+Input.swift` traducono tastiera, mouse e controller in modifiche ai modelli di focus.
 - **Righe di tessere.**
   - `SpotlightTileArtwork` e `SteamArtwork` leggono l'immagine già decodificata dalla cache anche nel primo body, prima della `.task`. `TileArtMemo` distingue fonte, richiesta e revisione della scelta personale, con limiti di 200 immagini e 160 MB. `GameIconProvider` ricorda anche i giochi senza icona quadrata, per percorso dell'app e del workspace: la build sposta il gioco sulla sua app, e `forget` legge di nuovo dopo un cambio d'icona. Steam include il build ID dell'installazione e rivalida i file nel task senza svuotare l'immagine durante la lettura. *Perché:* tornando da Settings le viste sono nuove, ma l'arte già caricata non deve passare dal ripiego mentre il task riparte.
   - Le righe di Spotlight e Collection mettono ogni tessera al suo posto e scorrono con un'unica camera (`SpotlightRowGeometry`): la riga si muove come un pezzo solo, e una tessera creata al bordo mentre la riga scorre non arriva prima delle vicine.
-  - Lo scorrimento è una molla smorzata: a pressioni rapide riprende la velocità che ha invece di ripartire ogni volta. Le tessere si creano quattro oltre ogni bordo dello schermo.
+  - Lo scorrimento è una molla smorzata: a pressioni rapide riprende la velocità che ha invece di ripartire ogni volta. `RailCamera` limita anche la posizione interpolata alla lunghezza corrente. Le tessere si creano quattro oltre ogni bordo dello schermo.
   - In Spotlight posto e dimensione di ogni tessera e la camera si ricavano da un solo valore animato, la posizione della selezione (un indice, con frazioni a metà strada). *Perché:* animati separatamente, la crescita di una tessera partiva un paio di fotogrammi dopo il suo spostamento e la tessera si staccava dalla vicina.
   - Una selezione che salta più tessere scorre attraverso quelle in mezzo; mentre una tessera è sollevata per spostarla cresce solo lei.
   - In Spotlight sinistra e destra sulla riga lavorano sulla lista filtrata. La parte sotto gli screenshot si monta quando la pagina sale, così navigare tra tessere evita il calcolo di descrizioni, classifica e link fuori schermo.

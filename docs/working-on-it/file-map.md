@@ -1,6 +1,6 @@
 # Arcane — catalogo dei file
 
-Aggiornato il 22 novembre 2026. Copertura di **883 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
+Aggiornato il 22 novembre 2026. Copertura di **892 file** versionati, compresi sorgenti, test, controlli di pubblicazione, risorse e guide. Le cartelle personali, gli output generati e gli appunti non versionati sono esclusi.
 
 La [guida tecnica](../how-it-works/architecture.md) spiega come collaborano i componenti. Qui ogni riga identifica un file e la sua responsabilità. Le sezioni Core seguono le cartelle del Core, una per area; le sezioni Porting seguono le cartelle del target `ArcanePorting`, con lo Switch; quelle UI seguono schermate e componenti. Le viste usano i modelli e i servizi del Core attraverso il coordinamento applicativo.
 
@@ -77,6 +77,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 | [Sources/NXLibrary/AppDelegate.swift](../../Sources/NXLibrary/AppDelegate.swift) | Gestisce il ciclo della finestra, completa la scrittura della selezione, delle code e degli esiti alla chiusura e dà a una copia release il nome `Arcane.app`. |
 | [Sources/NXLibrary/Views/MainView.swift](../../Sources/NXLibrary/Views/MainView.swift) | Presenta AppShellView come contenuto della finestra principale. |
 | [Sources/NXLibrary/Views/Shell/AppShellView.swift](../../Sources/NXLibrary/Views/Shell/AppShellView.swift) | Possiede il backdrop persistente e lo stato condiviso, passa a Spotlight il modello Mods, compone schermate e overlay e instrada input e avvisi (compresi i guasti cloud e l'annullamento da tastiera). `nativeDialogOwnsInput` sospende controller e tastiera sotto dialoghi nativi. Il file tiene stato, init e `body`; il resto sta nelle estensioni qui sotto. |
+| [Sources/NXLibrary/Views/Components/SeleneOverlay.swift](../../Sources/NXLibrary/Views/Components/SeleneOverlay.swift) | Velo, stile del blur, clic all'esterno, isolamento di puntatore e VoiceOver, suggerimenti e filtro per il focus al passaggio del puntatore. |
 | [Sources/NXLibrary/Views/Shell/AppShellView+Layers.swift](../../Sources/NXLibrary/Views/Shell/AppShellView+Layers.swift) | Strati e overlay della shell; ripristina il centro attività e sveglia la coda dopo la scansione. |
 | [Sources/NXLibrary/Views/Shell/AppShellView+Startup.swift](../../Sources/NXLibrary/Views/Shell/AppShellView+Startup.swift) | Avvia la shell, ripristina la home e risveglia le installazioni e la coda di porting alla chiusura del gioco. |
 | [Sources/NXLibrary/Views/Shell/AppShellView+Profiles.swift](../../Sources/NXLibrary/Views/Shell/AppShellView+Profiles.swift) | Schermate dei profili, Home nel launcher in primo piano, scelta del profilo attivo e presenza fuori dai giochi. |
@@ -253,6 +254,9 @@ Cartella `Sources/NXLibraryCore/Selene/`.
 |---|---|
 | [Sources/NXLibraryCore/Selene/BackdropArt.swift](../../Sources/NXLibraryCore/Selene/BackdropArt.swift) | Regola che tiene l’arte del gioco precedente sullo sfondo Spotlight (`BackdropArtRule`) dissolvenza di un layer calcolata sull’orologio (`OpacityFade`) e livelli ormai coperti da togliere (`ArtStack`). |
 | [Sources/NXLibraryCore/Selene/TileMotion.swift](../../Sources/NXLibraryCore/Selene/TileMotion.swift) | Curve e campioni dei loop di ring, bagliore e riflesso della tile selezionata, sull'orologio condiviso. |
+| [Sources/NXLibraryCore/Selene/Motion.swift](../../Sources/NXLibraryCore/Selene/Motion.swift) | Curve di focus, rail, schermate, overlay, carte ancorate e toast con varianti di movimento ridotto. |
+| [Sources/NXLibraryCore/Selene/SeleneTokens.swift](../../Sources/NXLibraryCore/Selene/SeleneTokens.swift) | Ruoli tipografici, spazi, raggi, colori semantici ed effetti Selene. |
+| [Tests/NXLibraryCoreTests/Selene/MotionTests.swift](../../Tests/NXLibraryCoreTests/Selene/MotionTests.swift) | Verifica che in movimento ridotto restino solo i fonduti previsti. |
 | [Sources/NXLibraryCore/Selene/TextScroll.swift](../../Sources/NXLibraryCore/Selene/TextScroll.swift) | Scorrimento della colonna del pannello della mod: altezza della descrizione dopo Read more, limiti, riga a fuoco mostrata intera e passo Su/Giù che legge prima della riga seguente. |
 | [Sources/NXLibraryCore/Selene/CursorIdleState.swift](../../Sources/NXLibraryCore/Selene/CursorIdleState.swift) | Politica del ritardo di visibilità del puntatore e reset su mouse o perdita di eleggibilità. |
 | [Sources/NXLibraryCore/Selene/OnlineBackgrounds.swift](../../Sources/NXLibraryCore/Selene/OnlineBackgrounds.swift) | Modella sorgenti e risultati e interpreta le risposte dei provider di sfondi fissi e video. |
@@ -775,7 +779,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Sources/NXLibrary/Views/Components/SeleneProgressBar.swift](../../Sources/NXLibrary/Views/Components/SeleneProgressBar.swift) | Barra cloud Selene con colore semantico; segno fermo se il totale è ignoto. |
 | [Sources/NXLibrary/Views/Components/SeleneStepper.swift](../../Sources/NXLibrary/Views/Components/SeleneStepper.swift) | Indicatore di passo e superficie dei campi per l'assistente Selene. |
 | [Sources/NXLibrary/Views/Components/SelenePromptBadge.swift](../../Sources/NXLibrary/Views/Components/SelenePromptBadge.swift) | Rende simbolo o etichetta del pulsante del controller o della tastiera. |
-| [Sources/NXLibrary/Views/Components/GlideGroup.swift](../../Sources/NXLibrary/Views/Components/GlideGroup.swift) | Fa muovere un blocco come un pezzo unico durante una scivolata (pagina Spotlight, lista Achievements, pannello Mod, pagina gioco, riga Collection): una dissolvenza, un'immagine che arriva o un'altra animazione non fanno più correre i singoli elementi a velocità diversa. Usa `geometryGroup`. |
+| [Sources/NXLibrary/Views/Components/GlideGroup.swift](../../Sources/NXLibrary/Views/Components/GlideGroup.swift) | Usa `geometryGroup` per spostare un blocco come un pezzo unico. `RailCamera` limita la posizione interpolata dei rail Spotlight e Collection alla lunghezza corrente. |
 | [Sources/NXLibrary/Views/Components/SeleneReveal.swift](../../Sources/NXLibrary/Views/Components/SeleneReveal.swift) | Applica l’animazione di comparsa Selene rispettando la preferenza Riduci movimento. |
 | [Sources/NXLibrary/Views/Components/SeleneSettingsRow.swift](../../Sources/NXLibrary/Views/Components/SeleneSettingsRow.swift) | Righe delle impostazioni e ciclo di valore condiviso da Settings e Game Options. |
 | [Sources/NXLibrary/Views/Components/SeleneStatsRow.swift](../../Sources/NXLibrary/Views/Components/SeleneStatsRow.swift) | Disegna le statistiche compatte del gioco nella libreria. |
@@ -1063,7 +1067,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [run_review.py](../../Tests/CatalogAppChecks/run_review.py) | Verifica senza finestre achievement, loghi, focus, keymap, badge mod in Online, priorità dei dialoghi e Steam durante Play. |
 | [run_keymap_screens.py](../../Tests/CatalogAppChecks/run_keymap_screens.py) | Verifica tutti i glifi e rende la barra Selene per Xbox, Switch, DualSense e tastiera senza aprire finestre. |
 | [run_cloud_screens.py](../../Tests/CatalogAppChecks/run_cloud_screens.py) | Rende Cloud, Download, aggiornamento pronto, riferimento e Play together in PNG; verifica dialoghi e trasferimento durante Play con fixture locali. |
-| [run_profiles.py](../../Tests/CatalogAppChecks/run_profiles.py) | Verifica la riga di avvio e rende selettore su Spotlight, profili, assistente, account, menu (anche i sottomenu sopra Details, in due lingue, con la larghezza uguale delle pillole misurata in tutte le lingue), badge e ordinamento senza finestre né dati reali. |
+| [run_profiles.py](../../Tests/CatalogAppChecks/run_profiles.py) | Verifica la riga di avvio e rende Spotlight, Collection, Details, Search, Options, Settings, profili e menu (anche i sottomenu sopra Details con la larghezza delle pillole misurata in tutte le lingue), senza finestre né dati reali. |
 | [run_startup_recovery.py](../../Tests/CatalogAppChecks/run_startup_recovery.py) | Coordinatore di avvio reale su profili sintetici: conflitto, scelta esplicita, offerta obsoleta, Retry e fallimento della preparazione; nessuna finestra. |
 | [run_source_access.py](../../Tests/CatalogAppChecks/run_source_access.py) | Esegue il ripristino di avvio, l'observer e i selettori reali: nessuna scansione automatica dei sorgenti, cartella ricordata, annullamento e lettura dei soli file scelti; nessuna finestra o dato personale. |
 | [run_onboarding.py](../../Tests/CatalogAppChecks/run_onboarding.py) | Esegue observer e ripristino del Setup, uscita durante lettura pendente con annullamento, input sotto modali, scelte acceso/spento/nil, radice della fonte, focus dopo Retry e richiesta notifiche su dati sintetici; nessuna finestra. |
@@ -1106,6 +1110,9 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [scripts/make_icons.swift](../../scripts/make_icons.swift) | Genera le risorse dell’icona dell’app nelle varianti usate dal bundle. |
 | [scripts/import_selene_palettes.py](../../scripts/import_selene_palettes.py) | Converte le palette Selene nel catalogo JSON usato dall’app. |
 | [scripts/check_localizations.py](../../scripts/check_localizations.py) | Verifica copertura, placeholder, plurali e risorse nel bundle installato. |
+| [scripts/check_selene_tokens.py](../../scripts/check_selene_tokens.py) | Blocca nuovi valori letterali di testo, padding e raggi fuori dai token. |
+| [scripts/selene-token-debt.json](../../scripts/selene-token-debt.json) | Occorrenze letterali preesistenti per file e firma; le voci obsolete fanno fallire il controllo. |
+| [Tests/PublicationChecks/test_selene_tokens.py](../../Tests/PublicationChecks/test_selene_tokens.py) | Prova argomenti multilinea, valori scalati ed esclusioni. |
 | [scripts/check_metadata_text_layout.swift](../../scripts/check_metadata_text_layout.swift) | Verifica fuori schermo il layout delle descrizioni e la destinazione dello scroll dopo cambi di focus, anche rapidi e con Riduci movimento. |
 | [check_app_profile.swift](../../scripts/check_app_profile.swift) | Prova senza UI di identità, accesso reale alle preferenze e percorsi nel pacchetto prodotto dalla build; non importa né scrive dati. |
 
