@@ -20,7 +20,7 @@ import NXLibraryCore
 import ArcanePorting
 
 @main struct ProfileScreenProbe {
-    @MainActor static func main() throws {
+    @MainActor static func main() async throws {
         let out = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
         let font = URL(fileURLWithPath: CommandLine.arguments[2])
         let refs = URL(fileURLWithPath: CommandLine.arguments[3], isDirectory: true)
@@ -247,6 +247,7 @@ import ArcanePorting
             }.environment(\.nxAppLocale, french), in: out, refs, "screenshots/game-options.png")
         }
         L10n.setContext(.init(language: .english, region: "US"))
+        try render("11-original-protected", picker(selected: alex.id), in: out, refs, "none")
         try render("11-remove", picker(selected: sam.id, removing: sam), in: out, refs, "web/182-15.png")
         // Y on a profile: the wizard replaces the selector, with one bar of hints; closing it brings the selector back.
         try render("21-picker-y-wizard", picker(selected: sam.id, editing: sam, overlay: true), in: out, refs,
@@ -361,6 +362,7 @@ import ArcanePorting
         let capturedSave = try vm.saveContext(for: zelda, launchProfileID: sam.id).location
         precondition(capturedSave == scopedSave, "Changing profiles must not reroute the launched game's achievements")
         precondition(profiles.choose(sam.id))
+        try await checkQueuedBackup(vm, profiles: profiles, game: zelda, owner: sam)
         L10n.setContext(.init(language: .english, region: "US"))
         vm.librarySelection.query.filter = .all
         vm.applyCatalog(.init(games: [originalGame]))
@@ -398,6 +400,41 @@ import ArcanePorting
             panel(NSImage(contentsOf: beforeImage)!, "Arcane · avant")
             panel(NSImage(contentsOf: afterImage)!, "Arcane · après")
         }), to: out.appendingPathComponent("15-sort-avant-apres.png"))
+    }
+
+    @MainActor static func checkQueuedBackup(_ vm: AppViewModel, profiles: LocalProfileStore,
+                                             game: PortedGame, owner: LocalProfile) async throws {
+        var game = game
+        game.bundleId = "example.arcane.backup-fixture"
+        let other = LocalProfile(name: "Backup fixture", look: owner.look)
+        precondition(profiles.update(other))
+        let titleID = game.titleId!
+        let store = SaveSnapshotStore(root: vm.saveBackupRoot)
+        for (profile, marker) in [(owner, "MARKER-A"), (other, "MARKER-B")] {
+            let location = try vm.profileSaveLocation(for: game, profileID: profile.id)
+            let slot = location.directory(.account)
+            try FileManager.default.createDirectory(at: slot, withIntermediateDirectories: true)
+            try Data(marker.utf8).write(to: slot.appendingPathComponent("progress"))
+        }
+        let panel = SavePanelModel(viewModel: vm, game: game)
+        let resume = DispatchSemaphore(value: 0)
+        vm.saveQueue.async { resume.wait() }
+        panel.backUp()
+        precondition(profiles.choose(other.id))
+        let otherStore = SaveSnapshotStore(root: vm.saveBackupRoot)
+        resume.signal()
+
+        let deadline = ContinuousClock.now + .seconds(5)
+        while panel.busy && ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(10)) }
+        precondition(!panel.busy && panel.issue == nil, "The queued backup must complete")
+        let snapshots = try store.list(titleID: titleID)
+        precondition(snapshots.count == 1, "A's backup folder must contain exactly one snapshot")
+        let directory = try store.directory(snapshotID: snapshots[0].id, titleID: titleID)
+        let saved = try String(contentsOf: directory.appendingPathComponent("save/progress"), encoding: .utf8)
+        precondition(saved == "MARKER-A", "A's queued backup must not publish B's save")
+        let otherSnapshots = try otherStore.list(titleID: titleID)
+        precondition(otherSnapshots.isEmpty, "A's queued backup must not publish into B's backups")
+        precondition(profiles.choose(owner.id))
     }
 
     @MainActor static func storeScreens(vm: AppViewModel, games: [PortedGame], art: ArtworkStore,

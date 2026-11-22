@@ -175,7 +175,7 @@ public final class LocalProfileStore: ObservableObject {
     }
 
     @discardableResult public func remove(_ id: UUID) -> Bool {
-        guard var next = document, next.profiles.count > 1,
+        guard var next = document, id != next.originalID, next.profiles.count > 1,
               let index = next.profiles.firstIndex(where: { $0.id == id }) else { return false }
         next.profiles.remove(at: index)
         if next.activeID == id { next.activeID = next.profiles[min(index, next.profiles.count - 1)].id }

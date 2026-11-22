@@ -32,6 +32,7 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
     }
     private let fileManager: FileManager
     private let now: () -> Date
+    private var historyReadFailed = false
     private var launchOwners: [UUID: UUID?] = [:]
 
     public init(fileURL: URL = PlaySessionStore.defaultURL(),
@@ -41,6 +42,7 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
         self.fileManager = fileManager
         self.now = now
         load()
+        historyReadFailed = loadError != nil
     }
 
     public static func defaultURL() -> URL {
@@ -197,6 +199,7 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
     /// Writes the sessions, then (when they changed) the carried totals. A crash in
     /// between can lose the just-folded sessions' time, never count it twice.
     private func save(totals: Bool = false) {
+        guard !historyReadFailed else { return }
         do {
             try fileManager.createDirectory(
                 at: fileURL.deletingLastPathComponent(),
@@ -226,24 +229,21 @@ public final class PlaySessionStore: ObservableObject, PlayHistory {
     }
 
     private func load() {
-        if fileManager.fileExists(atPath: fileURL.path) {
-            do {
-                history = try JSONDecoder().decode([PlaySession].self, from: Data(contentsOf: fileURL))
-                loadError = nil
-            } catch {
-                history = []
-                loadError = error.localizedDescription
-            }
+        do {
+            history = try JSONDecoder().decode([PlaySession].self, from: Data(contentsOf: fileURL))
+        } catch CocoaError.fileReadNoSuchFile {
+            // New store.
+        } catch {
+            loadError = error.localizedDescription
         }
-        // No totals file: nothing was trimmed since carried totals began.
-        guard fileManager.fileExists(atPath: totalsURL.path) else { return }
         do {
             let entries = try JSONDecoder().decode([CarriedEntry].self, from: Data(contentsOf: totalsURL))
             for entry in entries where archive[entry.profileID]?[entry.gameID] == nil {
                 archive[entry.profileID, default: [:]][entry.gameID] = entry.playtime
             }
+        } catch CocoaError.fileReadNoSuchFile {
+            // Nothing was trimmed since carried totals began.
         } catch {
-            archive = [:]
             loadError = error.localizedDescription
         }
     }

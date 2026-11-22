@@ -106,6 +106,8 @@ flowchart TD
 
 Play applica la scelta per gioco o il default globale. In Local usa l'adattatore VPN scelto o, se l'utente conferma l'avviso, la rete locale; il lancio non modifica le scelte salvate. I parametri espliciti di `env.txt` mantengono la precedenza.
 
+Per Switch e Steam, un errore di lettura dello storico o dei suoi totali non impedisce di giocare. Le sessioni nuove restano in memoria, senza sostituire i file su disco.
+
 ## 4. Play di un gioco Steam
 
 ```mermaid
@@ -214,6 +216,7 @@ Conclusa l'importazione automatica e ripristinata la coda, Arcane verifica la pr
 
 Il primo profilo mantiene i file originali. Gli altri hanno salvataggi e backup distinti; nel
 pannello Saves, **Copy saves from another profile** copia il gioco corrente solo in uno spazio vuoto.
+**Back up now** usa il salvataggio e la cartella di backup del profilo attivo al momento del comando, anche se il profilo cambia mentre il lavoro attende in coda.
 Un rollback ripete una copia parziale a partire dal backup verificato prima di riabilitare Play.
 
 ```mermaid
@@ -272,6 +275,8 @@ Nel menu rapido, Theme apre prima i colori con anteprima viva; A applica la pale
 
 Settings → Profiles → At startup passa da «Chi gioca?» a «Ultimo profilo» e poi ai nomi dei singoli profili. Il vecchio interruttore acceso equivale a «Chi gioca?», spento a «Ultimo profilo». Un profilo fisso rimosso riporta a «Chi gioca?». Un profilo bloccato apre il selettore con il suo ritratto a fuoco, anziché entrare automaticamente. Nel selettore `+` aggiunge, Y modifica, X apre una conferma con Keep a fuoco, quando l’azione è disponibile. Il selettore di avvio non è annullabile. Si salva solo dopo nome, avatar, tema e sfondo; l’anteprima non cambia l’aspetto già salvato. Una nuova immagine di sfondo si copia alla conferma.
 
+La rimozione non è disponibile per il profilo originale: conserva l'accesso a preferiti e attività storici.
+
 Il carosello degli avatar usa artwork già nella cache, con ritaglio sul volto rilevato o al centro, e simboli neutri del sistema. L’ultima tessera apre la scelta di una foto, con assi e zoom per inquadrarla; B o Esc annulla. Per le GIF si conservano i fotogrammi e i tempi; con Riduci movimento si vede solo il primo.
 
 Home e Cambia profilo aprono il selettore. Il ritratto a destra e Profilo → Il mio profilo aprono l’attività locale, anche senza conto, e offrono il codice del profilo. Un profilo bloccato chiede il PIN o Touch ID, se disponibile; Touch ID riconosce l’utente macOS, non distingue i profili Arcane. Senza codice né Touch ID si può scegliere un altro profilo; non c’è un ripristino dal servizio online.
@@ -285,6 +290,8 @@ La barra laterale segue `SettingsSidebarGroup`: General, Library, Porting e Syst
 In General → Play together, un checkout con supporto Nextendo mostra la scheda account, Amici e l'ID client pubblico avanzato. La scheda legge l'account all'apertura, al completamento di Sign in e con Check status, senza polling. In Amici si può mandare una richiesta con un codice o da Giocatori recenti, accettare o rifiutare una richiesta ricevuta e rimuovere un amico dopo conferma. Le richieste inviate restano in attesa e non hanno azioni. Il risultato compare nel pannello e una scrittura confermata ricarica le liste; se la rilettura fallisce o l'esito è incerto, Check status rilegge senza reinviare. Il codice personale si può copiare e il profilo si può ancora aprire nel browser. Le letture in corso si annullano quando si lascia la pagina; una rotazione già avviata termina per conservare il token condiviso.
 
 Sign in apre il browser predefinito e la riga offre Cancel finché attende la callback loopback. Una callback valida porta allo scambio PKCE e allo store condiviso del motore; Sign out rimuove solo il token locale. Nelle Opzioni, Play ha il focus iniziale; Play together viene subito dopo, per le build che dichiarano le modalità di rete.
+
+La shell controlla la presenza del token del profilo attivo all’apertura, al cambio di profilo e ogni 180 s: solo con un token legge i contatori pubblici. Per l’ospite non avvia la lettura.
 
 Nel profilo, Mostrati online pubblica la presenza senza titolo; Mostra il gioco in corso è un consenso separato, efficace al prossimo lancio e solo se la presenza è attiva. Un rifiuto del servizio mostra una nota discreta senza cambiare lo stato dell’account. La pagina profilo e il pannello Amici aperto aggiornano le liste ogni 60 s; Aggiorna anticipa la lettura e la riga mostra il tempo dall’ultimo aggiornamento riuscito. Gli amici in gioco mostrano il titolo quando disponibile.
 

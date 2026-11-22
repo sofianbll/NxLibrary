@@ -141,13 +141,16 @@ final class SavePanelModel: ObservableObject {
     }
     func backUp() {
         guard acquire(activity: .backup) else { return }
+        let location = Result { try viewModel.saveContext(for: game).location }
         viewModel.saveQueue.async {
             do {
                 guard RunningGameMonitor.runningApplication(for: self.game) == nil else { throw SaveFailure.running }
-                let context = try self.viewModel.saveContext(for: self.game)
-                let snapshot = try self.store.create(location: context.location, identity: self.viewModel.saveIdentity(for: self.game), reason: .manual)
+                let snapshot = try self.store.create(location: location.get(), identity: self.viewModel.saveIdentity(for: self.game), reason: .manual)
                 DispatchQueue.main.async { self.latestBackupDate = snapshot.created; self.message = "Backup saved"; self.release() }
-            } catch { self.finishFailure(error) }
+            } catch {
+                // Backup does not modify live saves; do not recover a journal with another profile active.
+                DispatchQueue.main.async { self.report(error, during: .backup); self.release() }
+            }
         }
     }
     func chooseImport(slot: SaveSlot) {
