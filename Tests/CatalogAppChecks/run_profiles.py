@@ -215,15 +215,27 @@ import ArcanePorting
         guard let ref = NSImage(contentsOf: refs.appendingPathComponent(reference)) else { return }
         let comparison = HStack(spacing: 12) {
             panel(NSImage(cgImage: image, size: size), "Arcane")
-            panel(ref, "Selene · \(reference)")
+            if reference == "web/182-12.png" {
+                // The crop's adjacent portrait centres are 157px apart for Selene's 118-unit cells.
+                panel(ref, "Selene · \(reference) · same scale", cropScale: 800 / 1920 * 118 / 157)
+            } else {
+                panel(ref, "Selene · \(reference)")
+            }
         }
         try save(bitmap(comparison), to: out.appendingPathComponent(name + "-comparison.png"))
     }
 
-    static func panel(_ image: NSImage, _ label: String) -> some View {
+    static func panel(_ image: NSImage, _ label: String, cropScale: CGFloat? = nil) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(label).font(.system(size: 16, weight: .semibold))
-            Image(nsImage: image).resizable().scaledToFit().frame(width: 800, height: 450)
+            if let cropScale, let pixels = image.representations.first {
+                Image(nsImage: image).resizable()
+                    .frame(width: CGFloat(pixels.pixelsWide) * cropScale, height: CGFloat(pixels.pixelsHigh) * cropScale)
+                    .padding(.top, 38)
+                    .frame(width: 800, height: 450, alignment: .top)
+            } else {
+                Image(nsImage: image).resizable().scaledToFit().frame(width: 800, height: 450)
+            }
         }
         .padding(10).foregroundStyle(.white).background(.black)
     }

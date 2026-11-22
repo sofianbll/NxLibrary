@@ -36,14 +36,16 @@ struct ProfileEditorView: View {
     private var customBackgroundSelected: Bool { step == .background && index == wallpapers.count }
     private var index: Int { indexes[step.rawValue] }
     private var columns: Int { [10, 10, 5, 3][step.rawValue] }
-    private var ownAvatar: Int { cachedPortraits.count + ProfilePortrait.symbols.count }
+    private var presetCount: Int { cachedPortraits.count + ProfilePortrait.symbols.count }
+    private var ownAvatar: Int { presetCount + (profile.portrait == nil ? 0 : 1) }
     private var itemCount: Int { [keys.count, ownAvatar + 1, palettes.count, wallpapers.count + 1][step.rawValue] }
 
     var body: some View {
         ZStack(alignment: .top) {
             SeleneTheme.scrim.opacity(0.45).ignoresSafeArea()
             VStack(spacing: canvas.u(10)) {
-                Text(L10n.text(title)).seleneFont(44).accessibilityAddTraits(.isHeader)
+                Text(L10n.text(title)).seleneFont(44, step == .avatar ? .medium : .regular)
+                    .accessibilityAddTraits(.isHeader)
                 Text(L10n.text(subtitle)).seleneFont(21).foregroundStyle(SeleneTheme.ink75)
             }
             .multilineTextAlignment(.center)
@@ -55,7 +57,7 @@ struct ProfileEditorView: View {
                 case .theme, .background: lookStep
                 }
             }
-            .padding(.top, canvas.u(step == .name ? 300 : step == .avatar ? 352 : 285))
+            .padding(.top, canvas.u(step == .name ? 300 : step == .avatar ? 290 : 285))
             .accessibilityHidden(cropDraft != nil)
             .allowsHitTesting(cropDraft == nil)
             if let error {
@@ -72,9 +74,10 @@ struct ProfileEditorView: View {
             .accessibilityHidden(true)
             .frame(maxHeight: .infinity, alignment: .bottom)
             .padding(.bottom, canvas.u(124))
-            SeleneHintsBar(left: [HintItem(.b, "Back", action: back), HintItem(nil, "Cancel", glyph: .close, action: onCancel)]
-                           + (step == .avatar ? [HintItem(.x, "Your own picture", action: importAvatar)] : []),
-                           right: [HintItem(.a, customBackgroundSelected && customBackground == nil ? "Add a picture"
+            SeleneHintsBar(left: step == .avatar ? [HintItem(.b, "Cancel", action: onCancel)]
+                           : [HintItem(.b, "Back", action: back), HintItem(nil, "Cancel", glyph: .close, action: onCancel)],
+                           right: [HintItem(.a, step == .avatar && index == ownAvatar ? "Your own picture"
+                            : customBackgroundSelected && customBackground == nil ? "Add a picture"
                             : step == .background ? (isNew ? "Create profile" : "Save") : "Next", action: advance)])
                 .frame(maxHeight: .infinity, alignment: .bottom)
                 .accessibilityHidden(cropDraft != nil)
@@ -83,7 +86,7 @@ struct ProfileEditorView: View {
         }
         .foregroundStyle(SeleneTheme.ink)
         .onAppear {
-            indexes[Step.avatar.rawValue] = profile.portrait == nil ? profile.avatar : ownAvatar
+            indexes[Step.avatar.rawValue] = profile.portrait == nil ? profile.avatar : presetCount
             indexes[Step.theme.rawValue] = palettes.firstIndex { $0.id == profile.look.theme } ?? 0
             indexes[Step.background.rawValue] = wallpapers.firstIndex(of: profile.look.wallpaper) ?? 0
         }
@@ -176,13 +179,13 @@ struct ProfileEditorView: View {
                 ForEach(-3...3, id: \.self) { offset in
                     let item = (index + offset + count) % count
                     let selected = item == index
-                    let data = item < cachedPortraits.count ? cachedPortraits[item].image : item == ownAvatar ? profile.portrait : nil
+                    let data = item < cachedPortraits.count ? cachedPortraits[item].image : item == presetCount && item < ownAvatar ? profile.portrait : nil
                     let face = LocalProfile(name: "", avatar: item - cachedPortraits.count, portrait: data, look: profile.look)
                     button(item, label: avatarLabel(item), action: {
                         if selected { accept() }
                     }) {
                         Group {
-                            if item == ownAvatar && data == nil {
+                            if item == ownAvatar {
                                 Circle().fill(SeleneTheme.glass).overlay(MaterialIconView(.image, size: 52))
                                     .frame(width: canvas.u(176), height: canvas.u(176))
                             } else {
@@ -331,11 +334,10 @@ struct ProfileEditorView: View {
             nameFocused = false
             indexes[step.rawValue] = next
         case .confirm: accept()
-        case .cancel: back()
+        case .cancel: if step == .avatar { onCancel() } else { back() }
         case .menu: advance()
         case .menuHold: onCancel()
         case .secondaryAction where step == .name: selectKey(keys.count - 2)
-        case .secondaryAction where step == .avatar: importAvatar()
         case .contextAction where step == .name: selectKey(keys.count - 3)
         default: break
         }
@@ -363,10 +365,10 @@ struct ProfileEditorView: View {
         case .avatar:
             if index < cachedPortraits.count {
                 profile.portrait = cachedPortraits[index].image
-            } else if index < ownAvatar {
+            } else if index < presetCount {
                 profile.avatar = index - cachedPortraits.count
                 profile.portrait = nil
-            } else if profile.portrait == nil { importAvatar(); return }
+            } else if index == ownAvatar { importAvatar(); return }
         case .theme:
             profile.look.theme = palettes[index].id
         case .background:
@@ -496,7 +498,7 @@ struct ProfileEditorView: View {
             cropDraft = nil
             guard let data else { error = "Couldn't add the picture"; return }
             profile.portrait = data
-            indexes[Step.avatar.rawValue] = ownAvatar
+            indexes[Step.avatar.rawValue] = presetCount
         }
     }
 }
