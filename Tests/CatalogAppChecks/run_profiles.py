@@ -265,6 +265,53 @@ import ArcanePorting
             GameOptionsView(viewModel: vm, game: game, origin: .details,
                             onClose: {}, onShowBuild: {}, onMove: {})
         }, in: out, refs, "screenshots/game-options.png")
+        let pack = LocalAchievementPack.linksAwakening!
+        var progress = LocalAchievementProgress()
+        _ = progress.record([.seashells: 12, .heartPieces: 4], in: pack, at: Date(timeIntervalSince1970: 1_790_000_000))
+        let achievements = pack.summary(progress, language: .french)
+        var zelda = game
+        zelda.name = "Link’s Awakening"
+        zelda.url = data.appendingPathComponent("AchievementFixture.app")
+        zelda.titleId = pack.titleID
+        zelda.versionString = pack.gameVersion
+        let achievementModel = AchievementsScreenModel(ids: achievements.rows(.all).map(\.id))
+        func achievementScreen() -> some View {
+            AchievementsScreen(model: achievementModel, game: .init(nxnative: zelda), summary: achievements,
+                               art: nil, onFilter: { _ in }, onShiftFilter: { _ in }, onCycleOrder: {},
+                               onFocus: { _ in }, onOpen: {}, onCloseDetail: {}, onClose: {})
+        }
+        L10n.setContext(fr)
+        try render("27-local-achievements", achievementScreen(), in: out, refs, "none")
+        _ = achievementModel.handle(.confirm, summary: achievements)
+        try render("28-local-achievement-detail", achievementScreen(), in: out, refs, "none")
+        try render("29-local-achievement-toast", ZStack(alignment: .topTrailing) {
+            SeleneBackdrop().still(true)
+            AchievementUnlockToast(names: achievements.rows(.unlocked).map(\.name)).padding(24)
+        }, in: out, refs, "none")
+        try render("29-local-achievement-card", ZStack {
+            SeleneBackdrop().still(true)
+            DetailsAchievementsCard(summary: achievements, appID: 0, focused: false, onOpen: {})
+        }, in: out, refs, "none")
+        let plist = zelda.url.appendingPathComponent("Contents/Info.plist")
+        try FileManager.default.createDirectory(at: plist.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try PropertyListSerialization.data(fromPropertyList: ["DMTitleID": pack.titleID], format: .xml, options: 0)
+            .write(to: plist)
+        let scopedSave = try vm.profileSaveLocation(for: zelda, profileID: sam.id)
+        let selectedSave = try vm.saveContext(for: zelda, launchProfileID: sam.id).location
+        precondition(scopedSave == selectedSave)
+        try render("30-profile-saves", ZStack {
+            SeleneBackdrop().still(true)
+            SavesPanel(viewModel: vm, game: zelda, onClose: {})
+        }, in: out, refs, "none")
+        try render("31-profile-saves-copy", ZStack {
+            SeleneBackdrop().still(true)
+            SavesPanel(viewModel: vm, game: zelda, onClose: {}, copyingFrom: [alex])
+        }, in: out, refs, "none")
+        precondition(profiles.choose(alex.id))
+        let capturedSave = try vm.saveContext(for: zelda, launchProfileID: sam.id).location
+        precondition(capturedSave == scopedSave, "Changing profiles must not reroute the launched game's achievements")
+        precondition(profiles.choose(sam.id))
+        L10n.setContext(.init(language: .english, region: "US"))
         vm.librarySelection.query.filter = .all
         vm.applyCatalog(.init(games: [originalGame]))
         precondition(vm.catalogGames.first?.isFavorite == false)
@@ -520,6 +567,16 @@ def main():
         replace(options, r'            ScrollViewReader \{ proxy in\n                ScrollView \{\n', '')
         replace(options, r'                }\n                \.scrollIndicators\(\.hidden\).*?\n            }\n            \.id\(level\)\n', '')
         replace(options, r'let entries = p\.entries\(level: level, origin: origin\)', r'let entries = p.entries(level: level, origin: origin).prefix(8)')
+        saves = app / "Views/GameOptions/SavesPanel.swift"
+        replace(saves, r"onClose: @escaping \(\) -> Void\) \{",
+                "onClose: @escaping () -> Void, copyingFrom: [LocalProfile] = []) {\n"
+                "        _copyFrom = State(initialValue: copyingFrom)")
+        # The two snapshots share a game fixture; neither needs the live save lease or key monitor.
+        replace(saves, r"\n        \.onAppear \{ model.refresh\(\); installKeyMonitor\(\) \}", "")
+        replace(saves, r"ProgressView\(\)\.controlSize\(\.small\)\.tint\(SeleneTheme.ink60\)", "Color.clear")
+        replace(saves,
+                r"        ScrollViewReader \{ proxy in\n            ScrollView \{(.*?)\n            }\.scrollIndicators\(\.hidden\).*?\n        }\n    }\n    private var statusLine",
+                lambda m: "        Group {" + m[1] + "\n        }\n    }\n    private var statusLine")
         replace(app / "Views/Theme/SeleneBackdrop.swift",
                 r"tint: modsTint \? 1 : 0, moving: moving,\n",
                 "tint: modsTint ? 1 : 0, moving: false, asImage: true,\n")

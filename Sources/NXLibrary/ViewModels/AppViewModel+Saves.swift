@@ -27,11 +27,16 @@ extension AppViewModel {
     func legacySaveLocation(for game: PortedGame) throws -> SaveLocation {
         try SaveLocation.defaultLocation(titleID: game.titleId ?? "", home: FileManager.default.homeDirectoryForCurrentUser)
     }
-    func saveContext(for game: PortedGame) throws -> SaveContext {
+    func saveContext(for game: PortedGame, launchProfileID: UUID? = nil) throws -> SaveContext {
         guard let id = game.titleId else { throw SaveFailure.invalidTitleID }
+        func settings() -> (UUID?, String?) {
+            let scoped: UUID? = if let launchProfileID {
+                launchProfileID == localProfiles?.originalID ? nil : launchProfileID
+            } else { secondarySaveProfile }
+            return (scoped, settingsStore?.settings.cloudSaves.folderURL()?.path)
+        }
         let (scoped, libraryFolder) = Thread.isMainThread
-            ? (secondarySaveProfile, settingsStore?.settings.cloudSaves.folderURL()?.path)
-            : DispatchQueue.main.sync { (self.secondarySaveProfile, self.settingsStore?.settings.cloudSaves.folderURL()?.path) }
+            ? settings() : DispatchQueue.main.sync { settings() }
         var gameCloud: String?
         if let domain = game.effectiveBundleId {
             CFPreferencesAppSynchronize(domain as CFString)

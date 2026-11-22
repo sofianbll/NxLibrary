@@ -16,10 +16,11 @@ Non si distribuiscono salvataggi Nintendo. [TrophyNX](https://github.com/Imp3r1u
   slot; si conserva il massimo per metrica. File illeggibili, corrotti o sconosciuti non valgono zero.
 - Lo stato è per UUID del profilo, Title ID, versione del gioco e schema. Le date indicano la
   **prima conferma in Arcane**, anche per un traguardo già ottenuto; non sono date storiche.
-  La lettura non modifica il salvataggio. Il pilota si limita al profilo originale quando è l’unico
-  profilo Arcane e non ci sono utenti nxnative aggiuntivi: non esiste un’associazione fra
-  i due sistemi di profili. Arcane Dev non
-  legge salvataggi reali. Percorsi personalizzati e recuperi pendenti non si leggono.
+  La lettura non modifica il salvataggio. Il profilo fissato al lancio determina il percorso:
+  quello originale usa la cartella storica, gli altri il proprio `DM_SAVE`, verificato contro
+  il percorso preparato da Arcane. Cambiare profilo prima dell'uscita non cambia l'attribuzione.
+  Arcane Dev non legge salvataggi reali. Percorsi personalizzati, recuperi pendenti e cartelle
+  con più utenti nxnative non si leggono.
 - La scheda Spotlight e la schermata Obiettivi usano il riepilogo condiviso con Steam,
   senza una rarità fittizia. Il toast compare quando Arcane torna davanti. Al Play seguente
   l’overlay compatibile riceve l’ultimo snapshot, solo con totale, sbloccati e titoli recenti.

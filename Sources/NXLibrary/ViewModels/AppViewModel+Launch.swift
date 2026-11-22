@@ -304,18 +304,20 @@ extension AppViewModel {
     private func localAchievementPack(for game: PortedGame, profile: UUID) -> LocalAchievementPack? {
         guard let pack = LocalAchievementPack.linksAwakening,
               pack.matches(titleID: game.titleId, gameVersion: game.versionString),
-              localProfiles?.failed == false, localProfiles?.originalID == profile,
-              localProfiles?.profiles.count == 1 else { return nil }
+              localProfiles?.failed == false,
+              localProfiles?.profiles.contains(where: { $0.id == profile }) == true else { return nil }
         return pack
     }
 
     private func localAchievementExit(for game: PortedGame, profile: UUID,
                                       environment: [String: String]) -> (() -> Void)? {
-        // shortcut: Arcane does not map its additional profiles to nxnative accounts. Never guess a mapping.
         guard !AppData.profile.isDevelopment, let pack = localAchievementPack(for: game, profile: profile),
               pack.matches(titleID: game.titleId, gameVersion: BuildOutputInstaller.version(of: game.url)),
-              environment["DM_SAVE"] == nil, environment["HOME"] == nil,
-              let location = try? saveContext(for: game).location else { return nil }
+              environment["HOME"] == nil,
+              let location = try? saveContext(for: game, launchProfileID: profile).location else { return nil }
+        let usesLegacySave = profile == localProfiles?.originalID
+        let launchedAccount = environment["DM_SAVE"]
+        guard usesLegacySave ? launchedAccount == nil : location.matchesLaunchAccount(launchedAccount) else { return nil }
         return { [weak self] in
             // LaunchService can observe an instant exit before its successful open callback releases the lease.
             DispatchQueue.main.async { [weak self] in

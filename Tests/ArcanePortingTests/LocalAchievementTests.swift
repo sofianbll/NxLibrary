@@ -89,6 +89,26 @@ final class LocalAchievementTests: XCTestCase {
         XCTAssertNil(LinksAwakeningAchievements.readPrimary(from: location))
     }
 
+    func testLaunchAccountReadsOnlyTheSelectedProfileSave() throws {
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: home) }
+        let pack = try XCTUnwrap(LocalAchievementPack.linksAwakening)
+        let legacy = try SaveLocation.defaultLocation(titleID: pack.titleID, home: home)
+        let active = try SaveLocation.profileLocation(titleID: pack.titleID, profileID: UUID(), in: home)
+        let env = try active.profileLaunchEnvironment(shared: legacy)
+        for (location, shells) in [(legacy, 30), (active, 1)] {
+            let account = location.directory(.account)
+            try FileManager.default.createDirectory(at: account, withIntermediateDirectories: true)
+            try fixture(shells: shells, hearts: 4).write(to: account.appendingPathComponent("savedata0.bin"))
+        }
+        XCTAssertTrue(active.matchesLaunchAccount(env["DM_SAVE"]))
+        XCTAssertFalse(legacy.matchesLaunchAccount(env["DM_SAVE"]))
+        XCTAssertFalse(active.matchesLaunchAccount(legacy.directory(.account).path))
+        XCTAssertFalse(active.matchesLaunchAccount(nil))
+        XCTAssertEqual(LinksAwakeningAchievements.readPrimary(from: active), [.seashells: 1, .heartPieces: 4])
+        XCTAssertEqual(LinksAwakeningAchievements.readPrimary(from: legacy), [.seashells: 30, .heartPieces: 4])
+    }
+
     /// Synthetic; header and body CRCs use a table as a reference for the bitwise production reader.
     private func fixture(shells: Int, hearts: Int, version: UInt32 = 14) -> Data {
         var data = Data(repeating: 0, count: 0x5EE0)

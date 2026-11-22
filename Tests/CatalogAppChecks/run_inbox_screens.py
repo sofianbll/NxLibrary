@@ -117,7 +117,7 @@ def main():
         package = Path(temp).resolve()
         home = package / "Player"
         home.mkdir()
-        output = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else package / "screens"
+        output = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT / "work/screens-inbox"
         output.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ROOT / "Package.swift", package / "Package.swift")
         shutil.copytree(ROOT / "Sources", package / "Sources")

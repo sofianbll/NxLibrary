@@ -93,6 +93,10 @@ public struct SaveLocation: Equatable {
         return ["DM_SAVE": directory(.account).path, "DM_SAVE_SYNC": "0",
                 "DM_PSO_USER": shared.root.appendingPathComponent("pso_user.tsv").path]
     }
+    /// Only the account path generated for this profile, never an arbitrary launch override.
+    public func matchesLaunchAccount(_ path: String?) -> Bool {
+        path == directory(.account).path
+    }
     public func validate() throws {
         guard Self.validID(titleID), root.lastPathComponent == titleID else { throw SaveFailure.unsafePath }
         try SaveFiles.safePath(root)
