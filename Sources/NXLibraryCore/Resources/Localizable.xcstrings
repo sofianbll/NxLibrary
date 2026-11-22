@@ -1,6 +1,90 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Nextendo — optional online play": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"Nextendo — optional online play"}}, "it": {"stringUnit":{"state":"translated","value":"Nextendo — gioco online facoltativo"}}, "fr": {"stringUnit":{"state":"translated","value":"Nextendo — jeu en ligne facultatif"}}, "de": {"stringUnit":{"state":"translated","value":"Nextendo — optionales Online-Spiel"}}, "es": {"stringUnit":{"state":"translated","value":"Nextendo — juego en línea opcional"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Nextendo — jogo online opcional"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"Nextendo — 可选在线游玩"}}
+    }},
+    "NOT INSTALLED": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"NOT INSTALLED"}}, "it": {"stringUnit":{"state":"translated","value":"NON INSTALLATO"}}, "fr": {"stringUnit":{"state":"translated","value":"NON INSTALLÉ"}}, "de": {"stringUnit":{"state":"translated","value":"NICHT INSTALLIERT"}}, "es": {"stringUnit":{"state":"translated","value":"SIN INSTALAR"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"NÃO INSTALADO"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"未安装"}}
+    }},
+    "OPEN XCODE ONCE": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"OPEN XCODE ONCE"}}, "it": {"stringUnit":{"state":"translated","value":"APRI XCODE UNA VOLTA"}}, "fr": {"stringUnit":{"state":"translated","value":"OUVRIR XCODE"}}, "de": {"stringUnit":{"state":"translated","value":"XCODE EINMAL ÖFFNEN"}}, "es": {"stringUnit":{"state":"translated","value":"ABRIR XCODE UNA VEZ"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"ABRIR XCODE UMA VEZ"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"打开 XCODE 一次"}}
+    }},
+    "UPDATE XCODE": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"UPDATE XCODE"}}, "it": {"stringUnit":{"state":"translated","value":"AGGIORNA XCODE"}}, "fr": {"stringUnit":{"state":"translated","value":"METTRE XCODE À JOUR"}}, "de": {"stringUnit":{"state":"translated","value":"XCODE AKTUALISIEREN"}}, "es": {"stringUnit":{"state":"translated","value":"ACTUALIZAR XCODE"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"ATUALIZAR XCODE"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"更新 XCODE"}}
+    }},
+    "NOT CERTIFIED": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"NOT CERTIFIED"}}, "it": {"stringUnit":{"state":"translated","value":"NON CERTIFICATO"}}, "fr": {"stringUnit":{"state":"translated","value":"NON CERTIFIÉ"}}, "de": {"stringUnit":{"state":"translated","value":"NICHT ZERTIFIZIERT"}}, "es": {"stringUnit":{"state":"translated","value":"SIN CERTIFICAR"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"NÃO CERTIFICADO"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"未认证"}}
+    }},
+    "WAITING FOR ENGINE": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"WAITING FOR ENGINE"}}, "it": {"stringUnit":{"state":"translated","value":"IN ATTESA DEL MOTORE"}}, "fr": {"stringUnit":{"state":"translated","value":"MOTEUR EN ATTENTE"}}, "de": {"stringUnit":{"state":"translated","value":"ENGINE AUSSTEHEND"}}, "es": {"stringUnit":{"state":"translated","value":"MOTOR PENDIENTE"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"AGUARDANDO MOTOR"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"等待引擎更新"}}
+    }},
+    "NOT A CHECKOUT": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"NOT A CHECKOUT"}}, "it": {"stringUnit":{"state":"translated","value":"NON È UN CHECKOUT"}}, "fr": {"stringUnit":{"state":"translated","value":"DÉPÔT GIT INTROUVABLE"}}, "de": {"stringUnit":{"state":"translated","value":"KEIN CHECKOUT"}}, "es": {"stringUnit":{"state":"translated","value":"SIN REPOSITORIO GIT"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"NÃO É UM CHECKOUT"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"非 GIT 工作副本"}}
+    }},
+    "LOCAL CHANGES": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"LOCAL CHANGES"}}, "it": {"stringUnit":{"state":"translated","value":"MODIFICHE LOCALI"}}, "fr": {"stringUnit":{"state":"translated","value":"MODIFICATIONS LOCALES"}}, "de": {"stringUnit":{"state":"translated","value":"LOKALE ÄNDERUNGEN"}}, "es": {"stringUnit":{"state":"translated","value":"CAMBIOS LOCALES"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"ALTERAÇÕES LOCAIS"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"有本地改动"}}
+    }},
+    "NEWEST ENGINE": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"NEWEST ENGINE"}}, "it": {"stringUnit":{"state":"translated","value":"MOTORE PIÙ RECENTE"}}, "fr": {"stringUnit":{"state":"translated","value":"MOTEUR LE PLUS RÉCENT"}}, "de": {"stringUnit":{"state":"translated","value":"NEUESTE ENGINE"}}, "es": {"stringUnit":{"state":"translated","value":"MOTOR MÁS RECIENTE"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"MOTOR MAIS RECENTE"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"最新引擎"}}
+    }},
+    "OTHER VERSION": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"OTHER VERSION"}}, "it": {"stringUnit":{"state":"translated","value":"ALTRA VERSIONE"}}, "fr": {"stringUnit":{"state":"translated","value":"AUTRE VERSION"}}, "de": {"stringUnit":{"state":"translated","value":"ANDERE VERSION"}}, "es": {"stringUnit":{"state":"translated","value":"OTRA VERSIÓN"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"OUTRA VERSÃO"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"其他版本"}}
+    }},
+    "UPDATE READY": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"UPDATE READY"}}, "it": {"stringUnit":{"state":"translated","value":"AGGIORNAMENTO PRONTO"}}, "fr": {"stringUnit":{"state":"translated","value":"MISE À JOUR PRÊTE"}}, "de": {"stringUnit":{"state":"translated","value":"UPDATE BEREIT"}}, "es": {"stringUnit":{"state":"translated","value":"ACTUALIZACIÓN LISTA"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"ATUALIZAÇÃO PRONTA"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"更新已就绪"}}
+    }},
+    "REINSTALL APP": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"REINSTALL APP"}}, "it": {"stringUnit":{"state":"translated","value":"REINSTALLA L’APP"}}, "fr": {"stringUnit":{"state":"translated","value":"RÉINSTALLER L’APP"}}, "de": {"stringUnit":{"state":"translated","value":"APP NEU INSTALLIEREN"}}, "es": {"stringUnit":{"state":"translated","value":"REINSTALAR LA APP"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"REINSTALAR O APP"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"重新安装应用"}}
+    }},
+    "✓ INCLUDED": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"✓ INCLUDED"}}, "it": {"stringUnit":{"state":"translated","value":"✓ INCLUSO"}}, "fr": {"stringUnit":{"state":"translated","value":"✓ INCLUS"}}, "de": {"stringUnit":{"state":"translated","value":"✓ ENTHALTEN"}}, "es": {"stringUnit":{"state":"translated","value":"✓ INCLUIDO"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"✓ INCLUÍDO"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"✓ 已包含"}}
+    }},
+    "✓ IMPORTED": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"✓ IMPORTED"}}, "it": {"stringUnit":{"state":"translated","value":"✓ IMPORTATE"}}, "fr": {"stringUnit":{"state":"translated","value":"✓ IMPORTÉES"}}, "de": {"stringUnit":{"state":"translated","value":"✓ IMPORTIERT"}}, "es": {"stringUnit":{"state":"translated","value":"✓ IMPORTADAS"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"✓ IMPORTADAS"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"✓ 已导入"}}
+    }},
+    "OPTIONAL": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"OPTIONAL"}}, "it": {"stringUnit":{"state":"translated","value":"FACOLTATIVO"}}, "fr": {"stringUnit":{"state":"translated","value":"FACULTATIF"}}, "de": {"stringUnit":{"state":"translated","value":"OPTIONAL"}}, "es": {"stringUnit":{"state":"translated","value":"OPCIONAL"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"OPCIONAL"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"可选"}}
+    }},
+    "NOT IMPORTED": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"NOT IMPORTED"}}, "it": {"stringUnit":{"state":"translated","value":"NON IMPORTATE"}}, "fr": {"stringUnit":{"state":"translated","value":"NON IMPORTÉES"}}, "de": {"stringUnit":{"state":"translated","value":"NICHT IMPORTIERT"}}, "es": {"stringUnit":{"state":"translated","value":"SIN IMPORTAR"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"NÃO IMPORTADAS"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"未导入"}}
+    }},
+    "CHOOSE FOLDER": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"CHOOSE FOLDER"}}, "it": {"stringUnit":{"state":"translated","value":"SCEGLI CARTELLA"}}, "fr": {"stringUnit":{"state":"translated","value":"CHOISIR UN DOSSIER"}}, "de": {"stringUnit":{"state":"translated","value":"ORDNER AUSWÄHLEN"}}, "es": {"stringUnit":{"state":"translated","value":"ELEGIR CARPETA"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"ESCOLHER PASTA"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"选择文件夹"}}
+    }},
+    "NOT CHOSEN": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"NOT CHOSEN"}}, "it": {"stringUnit":{"state":"translated","value":"NON SCELTA"}}, "fr": {"stringUnit":{"state":"translated","value":"NON CHOISI"}}, "de": {"stringUnit":{"state":"translated","value":"NICHT AUSGEWÄHLT"}}, "es": {"stringUnit":{"state":"translated","value":"SIN ELEGIR"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"NÃO SELECIONADA"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"未选择"}}
+    }},
+    "NOT READABLE": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"NOT READABLE"}}, "it": {"stringUnit":{"state":"translated","value":"NON LEGGIBILE"}}, "fr": {"stringUnit":{"state":"translated","value":"ILLISIBLE"}}, "de": {"stringUnit":{"state":"translated","value":"NICHT LESBAR"}}, "es": {"stringUnit":{"state":"translated","value":"ILEGIBLE"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"ILEGÍVEL"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"不可读取"}}
+    }},
+    "READ ONLY": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"READ ONLY"}}, "it": {"stringUnit":{"state":"translated","value":"SOLA LETTURA"}}, "fr": {"stringUnit":{"state":"translated","value":"LECTURE SEULE"}}, "de": {"stringUnit":{"state":"translated","value":"SCHREIBGESCHÜTZT"}}, "es": {"stringUnit":{"state":"translated","value":"SOLO LECTURA"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"SOMENTE LEITURA"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"只读"}}
+    }},
+    "✓ READY": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"✓ READY"}}, "it": {"stringUnit":{"state":"translated","value":"✓ PRONTO"}}, "fr": {"stringUnit":{"state":"translated","value":"✓ PRÊT"}}, "de": {"stringUnit":{"state":"translated","value":"✓ BEREIT"}}, "es": {"stringUnit":{"state":"translated","value":"✓ LISTO"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"✓ PRONTO"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"✓ 就绪"}}
+    }},
+    "FOLDER UNAVAILABLE": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"FOLDER UNAVAILABLE"}}, "it": {"stringUnit":{"state":"translated","value":"CARTELLA NON DISPONIBILE"}}, "fr": {"stringUnit":{"state":"translated","value":"DOSSIER INDISPONIBLE"}}, "de": {"stringUnit":{"state":"translated","value":"ORDNER NICHT VERFÜGBAR"}}, "es": {"stringUnit":{"state":"translated","value":"CARPETA NO DISPONIBLE"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"PASTA INDISPONÍVEL"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"文件夹不可用"}}
+    }},
+    "✓ CHOSEN": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"✓ CHOSEN"}}, "it": {"stringUnit":{"state":"translated","value":"✓ SCELTA"}}, "fr": {"stringUnit":{"state":"translated","value":"✓ CHOISI"}}, "de": {"stringUnit":{"state":"translated","value":"✓ AUSGEWÄHLT"}}, "es": {"stringUnit":{"state":"translated","value":"✓ ELEGIDA"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"✓ SELECIONADA"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"✓ 已选择"}}
+    }},
+    "COULDN'T INSTALL": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"COULDN'T INSTALL"}}, "it": {"stringUnit":{"state":"translated","value":"INSTALLAZIONE FALLITA"}}, "fr": {"stringUnit":{"state":"translated","value":"ÉCHEC DE L’INSTALLATION"}}, "de": {"stringUnit":{"state":"translated","value":"INSTALLATION GESCHEITERT"}}, "es": {"stringUnit":{"state":"translated","value":"ERROR DE INSTALACIÓN"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"FALHA NA INSTALAÇÃO"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"安装失败"}}
+    }},
+    "DOWNLOADING…": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"DOWNLOADING…"}}, "it": {"stringUnit":{"state":"translated","value":"DOWNLOAD…"}}, "fr": {"stringUnit":{"state":"translated","value":"TÉLÉCHARGEMENT…"}}, "de": {"stringUnit":{"state":"translated","value":"DOWNLOAD LÄUFT…"}}, "es": {"stringUnit":{"state":"translated","value":"DESCARGANDO…"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"BAIXANDO…"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"正在下载…"}}
+    }},
+    "CLONING…": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"CLONING…"}}, "it": {"stringUnit":{"state":"translated","value":"CLONAZIONE…"}}, "fr": {"stringUnit":{"state":"translated","value":"CLONAGE…"}}, "de": {"stringUnit":{"state":"translated","value":"KLONEN LÄUFT…"}}, "es": {"stringUnit":{"state":"translated","value":"CLONANDO…"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"CLONANDO…"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"正在克隆…"}}
+    }},
+    "UPDATING…": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"UPDATING…"}}, "it": {"stringUnit":{"state":"translated","value":"AGGIORNAMENTO…"}}, "fr": {"stringUnit":{"state":"translated","value":"MISE À JOUR…"}}, "de": {"stringUnit":{"state":"translated","value":"UPDATE LÄUFT…"}}, "es": {"stringUnit":{"state":"translated","value":"ACTUALIZANDO…"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"ATUALIZANDO…"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"正在更新…"}}
+    }},
+    "SWITCHING…": {"localizations": {
+      "en": {"stringUnit":{"state":"translated","value":"SWITCHING…"}}, "it": {"stringUnit":{"state":"translated","value":"CAMBIO IN CORSO…"}}, "fr": {"stringUnit":{"state":"translated","value":"CHANGEMENT…"}}, "de": {"stringUnit":{"state":"translated","value":"WECHSEL LÄUFT…"}}, "es": {"stringUnit":{"state":"translated","value":"CAMBIANDO…"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"ALTERANDO…"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"正在切换…"}}
+    }},
     "My profile": {"localizations": {
       "en": {"stringUnit":{"state":"translated","value":"My profile"}}, "it": {"stringUnit":{"state":"translated","value":"Il mio profilo"}}, "fr": {"stringUnit":{"state":"translated","value":"Mon profil"}}, "de": {"stringUnit":{"state":"translated","value":"Mein Profil"}}, "es": {"stringUnit":{"state":"translated","value":"Mi perfil"}}, "pt-BR": {"stringUnit":{"state":"translated","value":"Meu perfil"}}, "zh-Hans": {"stringUnit":{"state":"translated","value":"我的个人资料"}}
     }},
@@ -431,15 +515,15 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "将 %@ 用作游戏文件夹。不会移动任何文件。"}}
       }
     },
-    "Import your keys in Porting to identify these packages.": {
+    "Keys missing: import them to identify this file": {
       "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "Import your keys in Porting to identify these packages."}},
-        "it": {"stringUnit": {"state": "translated", "value": "Importa le chiavi in Porting per identificare questi pacchetti."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Importez vos clés dans Portage pour identifier ces paquets."}},
-        "de": {"stringUnit": {"state": "translated", "value": "Importiere deine Schlüssel unter Porting, um diese Pakete zu identifizieren."}},
-        "es": {"stringUnit": {"state": "translated", "value": "Importa tus claves en Portar para identificar estos paquetes."}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Importe suas chaves em Portabilidade para identificar estes pacotes."}},
-        "zh-Hans": {"stringUnit": {"state": "translated", "value": "在移植设置中导入密钥以识别这些包。"}}
+        "en": {"stringUnit": {"state": "translated", "value": "Keys missing: import them to identify this file"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Chiavi mancanti: importale per identificare questo file"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Clés manquantes : importez-les pour identifier ce fichier"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Schlüssel fehlen: Importiere sie, um diese Datei zu identifizieren"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Faltan las claves: impórtalas para identificar este archivo"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Chaves ausentes: importe-as para identificar este arquivo"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "缺少密钥：请导入密钥以识别此文件"}}
       }
     },
     "Sort %@ selected files?": {

@@ -40,6 +40,23 @@ final class GameInboxTests: XCTestCase {
         }
     }
 
+    func testMissingKeysBlockIdentificationOnlyForSupportedInputs() throws {
+        try fixture { folder, root in
+            let urls = try ["received.nsp", "notes.txt"].map {
+                let url = folder.appendingPathComponent($0)
+                try Data([1]).write(to: url)
+                return url
+            }
+            let inputs = GameInbox.inputs(urls)
+            let blocked = GameInbox.plan(inputs: inputs, readings: nil, root: root) { _ in nil }
+            XCTAssertEqual(blocked.map(\.needsKeys), [true, false])
+            XCTAssertEqual(blocked.map(\.issue), ["Keys missing: import them to identify this file", "Not a supported incoming file."])
+            XCTAssertEqual(blocked.compactMap(\.destination), [])
+            let read = GameInbox.plan(inputs: inputs, readings: [:], root: root) { _ in nil }
+            XCTAssertEqual(read.first?.issue, "No single verified title, kind and version.")
+        }
+    }
+
     func testVerifiedCopyDuplicateAndCollision() throws {
         try fixture { folder, root in
             let source = folder.appendingPathComponent("received.nsp")

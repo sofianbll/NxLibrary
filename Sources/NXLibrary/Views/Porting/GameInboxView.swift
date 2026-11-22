@@ -127,11 +127,11 @@ struct GameInboxView: View {
         let details = [metadata, preview, entry.issue].compactMap { $0 }.joined(separator: "\n")
         return SeleneOptionRow(icon: .folder, title: entry.source.lastPathComponent, about: details,
                                focused: focused == target) {
-            if entry.issue != nil {
-                Text(L10n.text("Ambiguous")).seleneFont(.body, .semibold).foregroundStyle(SeleneTheme.ink82)
-            } else {
+            if entry.issue == nil {
                 pill(entry.duplicate ? L10n.text("Review duplicate") : L10n.text("Sort file"), action: target,
                      enabled: !model.needsGameFilesCorrection)
+            } else if !entry.needsKeys {
+                Text(L10n.text("Ambiguous")).seleneFont(.body, .semibold).foregroundStyle(SeleneTheme.ink82)
             }
         }
     }

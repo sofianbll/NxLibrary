@@ -64,10 +64,15 @@ final class SetupCheckModel: ObservableObject {
         }
     }
 
+    private func baseItems(from probed: SetupFacts) -> [SetupItem] {
+        var facts = probed
+        facts.keysError = viewModel.setup.keyImportError ?? facts.keysError
+        return SetupCheck.items(from: facts)
+    }
+
     private func apply(_ probed: SetupFacts) {
-        let facts = probed
-        self.facts = facts
-        let base = SetupCheck.items(from: facts)
+        facts = probed
+        let base = baseItems(from: probed)
         // A card that is ready now ends what was waiting on it ("Finish in Installer",
         // an old failure); a running action keeps its chip until it reports back.
         for item in base where item.state == .ready && item.actionTitle == nil {
@@ -142,7 +147,7 @@ final class SetupCheckModel: ObservableObject {
         if case .failed? = overrides[id] { overrides[id] = nil }
         switch id {
         case .xcode:
-            if item.state == .missing || item.chip == "UPDATE XCODE" {
+            if item.state == .missing || (item.state == .needsYou && facts?.xcodeStatus != 69) {
                 NSWorkspace.shared.open(URL(string: "macappstore://apps.apple.com/app/id497799835")!)
             } else if item.state == .needsYou {
                 let app = viewModel.setup.resolvedDeveloperDir().deletingLastPathComponent().deletingLastPathComponent()
@@ -162,6 +167,7 @@ final class SetupCheckModel: ObservableObject {
             panel.message = "Choose your prod.keys file. It stays on this Mac."
             if panel.runModal() == .OK, let url = panel.url {
                 viewModel.setup.importKeys(from: url)
+                if let facts { apply(facts) }
             }
             refresh()
         case .library:
@@ -194,7 +200,7 @@ final class SetupCheckModel: ObservableObject {
 
     private func setOverride(_ id: SetupItemID, _ override: SetupOverride?) {
         overrides[id] = override
-        if let facts { items = SetupCheck.applying(overrides, to: SetupCheck.items(from: facts)) }
+        if let facts { items = SetupCheck.applying(overrides, to: baseItems(from: facts)) }
     }
 
     /// From any thread: moves a working card's bar, skipping changes too small to see.
@@ -249,7 +255,7 @@ final class SetupCheckModel: ObservableObject {
         let hadMetal = facts.metalVersion != nil
         let allowUntested = facts.allowUntested
         let pinned = Self.requirements.metalDownload(for: certified)
-        let chip = "DOWNLOADING…"
+        let chip = L10n.text("DOWNLOADING…")
         setOverride(.metal, .working(chip, detail: L10n.format("Asking Apple for Metal %@…", [String(describing: certified)])))
         let env = environment
         queue.async { [weak self] in
@@ -291,7 +297,7 @@ final class SetupCheckModel: ObservableObject {
         let commands = SetupActions.gitCommands(for: action, folder: facts.engineFolder, pinned: facts.pinnedCommit,
                                                remote: facts.engineRemote)
         guard !commands.isEmpty else { completion(false); return }
-        let chip = action == .clone ? "CLONING…" : "UPDATING…"
+        let chip = action == .clone ? L10n.text("CLONING…") : L10n.text("UPDATING…")
         setOverride(.engine, .working(chip, progress: 0, detail: L10n.text("Connecting to GitHub…")))
         let env = environment
         queue.async { [weak self] in
@@ -312,7 +318,7 @@ final class SetupCheckModel: ObservableObject {
 
     /// The newest engine's card: A returns to the tested engine, the same action as Settings → Setup and engine.
     private func backToTestedEngine(_ completion: @escaping (Bool) -> Void) {
-        setOverride(.engine, .working("SWITCHING…", detail: L10n.text("Returning to the tested engine…")))
+        setOverride(.engine, .working(L10n.text("SWITCHING…"), detail: L10n.text("Returning to the tested engine…")))
         viewModel.setup.useTestedEngine()
         waitForEngineSwitch(completion)
     }

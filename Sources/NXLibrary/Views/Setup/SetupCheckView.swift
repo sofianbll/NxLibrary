@@ -101,6 +101,16 @@ struct SetupCheckView: View {
                 .padding(.top, canvas.u(8))
             StatusChip(item: item, popping: popping.contains(item.id))
                 .padding(.top, canvas.u(10))
+            if let error = item.inlineError {
+                Text(verbatim: error)
+                    .seleneFont(.compactCaption)
+                    .foregroundStyle(SeleneTheme.danger)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, canvas.u(SeleneTokens.Space.tight))
+                    .help(error)
+            }
             if item.state == .working {
                 SetupProgressBar(progress: item.progress)
                     .frame(width: canvas.u(176), height: canvas.u(5))
@@ -109,7 +119,7 @@ struct SetupCheckView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.top, canvas.u(20))
+        .padding(.top, canvas.u(item.inlineError == nil ? 20 : SeleneTokens.Space.tight))
         .padding(.horizontal, canvas.u(16))
         .frame(width: canvas.u(Self.cardSize.width), height: canvas.u(Self.cardSize.height))
         .background(RoundedRectangle(cornerRadius: canvas.u(SeleneTheme.cardRadius), style: .continuous)

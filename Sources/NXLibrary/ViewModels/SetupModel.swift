@@ -50,6 +50,7 @@ final class SetupModel: ObservableObject {
     @Published var prodKeysSource: String = ""
     @Published var isProdKeysValid: Bool = false
     @Published var keySummary: KeySummary? = nil
+    private(set) var keyImportError: String?
     lazy var keyStore = KeyStore(directory: app.core.appendingPathComponent("keys"))
 
     // MARK: - Environment and the Metal gate
@@ -179,11 +180,17 @@ final class SetupModel: ObservableObject {
 
     func importKeys(from url: URL) {
         guard !app.isBuilding, !app.isUpdatingApp else {
-            app.showSettingsNotice(title: L10n.text("Porting in progress"), message: L10n.text("Change keys after the porting finishes."))
+            let message = L10n.text("Change keys after the porting finishes.")
+            if app.showSetupCheck {
+                keyImportError = message
+            } else {
+                app.showSettingsNotice(title: L10n.text("Porting in progress"), message: message)
+            }
             return
         }
         do {
             let summary = try keyStore.importKey(from: url)
+            keyImportError = nil
             keySummary = summary
             isProdKeysValid = summary.hasHeaderKey
             prodKeysPath = keyStore.keyURL.path
@@ -199,10 +206,13 @@ final class SetupModel: ObservableObject {
             keySummary = try? keyStore.validate(at: keyStore.keyURL)
             isProdKeysValid = keySummary?.hasHeaderKey == true
             prodKeysPath = isProdKeysValid ? keyStore.keyURL.path : ""
-            app.lastError = error.localizedDescription
-            app.showSettingsNotice(title: L10n.text("Keys not changed"), message: isProdKeysValid
-                ? L10n.text("The key file could not be imported. Your previous copy is kept.")
-                : L10n.text("The key file could not be imported. Choose a valid prod.keys file."))
+            keyImportError = error.localizedDescription
+            app.lastError = keyImportError
+            if !app.showSetupCheck {
+                app.showSettingsNotice(title: L10n.text("Keys not changed"), message: isProdKeysValid
+                    ? L10n.text("The key file could not be imported. Your previous copy is kept.")
+                    : L10n.text("The key file could not be imported. Choose a valid prod.keys file."))
+            }
             app.logs.append(LogEntry(level: .error,
                                  message: L10n.format("Could not import prod.keys: %@", [String(describing: error.localizedDescription)])))
         }

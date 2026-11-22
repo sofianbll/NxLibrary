@@ -13,6 +13,21 @@ final class SetupCheckTests: XCTestCase {
         input.keysOptional = false
         XCTAssertEqual(SetupCheck.items(from: input).first { $0.id == .keys }?.state, .missing)
     }
+
+    func testKeysCardKeepsAnImportErrorVisibleWhenKeysAreOptionalOrAlreadyPresent() {
+        var input = facts()
+        input.keysOptional = true
+        input.keysError = "The key file has no header_key."
+        let existing = SetupCheck.items(from: input).first { $0.id == .keys }
+        XCTAssertEqual(existing?.inlineError, "The key file has no header_key.")
+        XCTAssertEqual(existing?.actionTitle, "Replace")
+        input.keys = nil
+        let optional = SetupCheck.items(from: input).first { $0.id == .keys }
+        XCTAssertEqual(optional?.inlineError, "The key file has no header_key.")
+        XCTAssertEqual(optional?.actionTitle, "Choose file")
+        XCTAssertEqual(optional?.state, .ready)
+    }
+
     private let pin = "af616f54652fa7f50a2e223ceed1d08a9bc83848"
     private let folder = URL(fileURLWithPath: "/Users/a b/nxnative")
 
