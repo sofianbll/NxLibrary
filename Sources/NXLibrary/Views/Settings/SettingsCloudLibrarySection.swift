@@ -138,9 +138,11 @@ struct SettingsCloudLibrarySection: View {
                     SeleneStatusDot(text: text("Read only"), color: model.referenceCheck?.failure != nil
                         ? CloudLibraryStatus.failed.color : model.referenceCheck == nil
                         ? CloudLibraryStatus.pending.color : CloudLibraryStatus.synchronized.color)
-                    SelenePillButton(title: "Unfollow", minWidth: 96, height: 34, horizontalPadding: 14,
-                                     focused: focusedRowID == "cloudReferenceStatus",
-                                     enabled: editable, action: unfollow)
+                    Button(text("Unfollow"), action: unfollow)
+                        .buttonStyle(.plain)
+                        .seleneFont(15, .semibold)
+                        .foregroundColor(SeleneTheme.glyph)
+                        .disabled(!editable)
                         .help(text("Files on this Mac and in Drive stay in place."))
                 }
             }
