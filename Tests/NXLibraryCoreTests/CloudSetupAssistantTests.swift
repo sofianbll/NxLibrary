@@ -51,16 +51,16 @@ final class CloudSetupAssistantTests: XCTestCase {
 
     func testPrimaryTakesDefaultFocusWhenReadyButExplicitCancelIsPreserved() {
         var focus = CloudSetupAssistantFocus()
-        let rows: [[CloudSetupAssistantFocus.Target]] = [[.folder("A")], [.cancel, .primary]]
+        let rows: [[CloudSetupAssistantFocus.Target]] = [[.folder("A")], [.primary, .cancel]]
         XCTAssertEqual(focus.current(in: [[.cancel]]), .cancel)
         XCTAssertEqual(focus.current(in: rows), .primary)
-        focus.move(.left, in: rows)
+        focus.move(.right, in: rows)
         XCTAssertEqual(focus.current(in: rows), .cancel)
         focus.move(.up, in: rows)
         XCTAssertEqual(focus.current(in: rows), .folder("A"))
         focus.reset()
         XCTAssertEqual(focus.current(in: rows), .primary)
-        XCTAssertEqual(focus.current(in: [[.cancel, .create]]), .cancel)
-        XCTAssertEqual(focus.current(in: [[.cancel, .confirmMove]]), .cancel)
+        XCTAssertEqual(focus.current(in: [[.create, .cancel]]), .cancel)
+        XCTAssertEqual(focus.current(in: [[.confirmMove, .cancel]]), .cancel)
     }
 }

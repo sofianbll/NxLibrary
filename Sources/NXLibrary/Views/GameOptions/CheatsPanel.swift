@@ -165,6 +165,7 @@ struct CheatsPanel: View {
                                bottom: SeleneBottomScrim.hintsBottom, leftInset: 18)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .seleneOverlayOwnership(confirm == nil)
             .overlay(
                 RoundedRectangle(cornerRadius: canvas.u(16), style: .continuous)
                     .stroke(SeleneTheme.focus, lineWidth: canvas.u(3))
@@ -530,8 +531,8 @@ struct CheatsPanel: View {
     private func handleGamepad(_ action: GamepadAction) {
         if confirm != nil {
             switch action {
-            case .navigateLeft: moveConfirmFocus(.cancel)
-            case .navigateRight: moveConfirmFocus(.confirm)
+            case .navigateLeft: moveConfirmFocus(.left)
+            case .navigateRight: moveConfirmFocus(.right)
             case .confirm: confirmFocus == .confirm ? runConfirm() : dismissConfirm()
             case .cancel: dismissConfirm()
             default: break

@@ -60,7 +60,7 @@ extension AppShellView {
     func cloudQuitInput(_ action: GamepadAction) {
         switch action {
         case .navigateLeft, .navigateRight:
-            let next: SeleneConfirmButton = action == .navigateLeft ? .cancel : .confirm
+            let next: SeleneConfirmButton = action == .navigateLeft ? .left : .right
             if cloudQuitFocus != next {
                 cloudQuitFocus = next
                 SoundEffectService.shared.play(.focus)

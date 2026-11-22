@@ -70,6 +70,7 @@ struct ThemePickerView: View {
 
             SeleneHintsBar(left: [HintItem(.b, transfer.itemID != nil ? L10n.text("Cancel") : L10n.text("Back"), action: back)], right: rightHints,
                            bottom: SeleneBottomScrim.hintsBottom, leftInset: 18)
+                .seleneOverlaidHints(removal != nil || placing != nil)
                 .frame(maxHeight: .infinity, alignment: .bottom)
 
             if let removal {

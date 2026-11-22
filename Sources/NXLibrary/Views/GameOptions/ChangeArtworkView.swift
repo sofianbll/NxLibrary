@@ -164,6 +164,7 @@ struct ChangeArtworkView: View {
                 SeleneHintsBar(left: [HintItem(.b, L10n.text("Back"), action: back)], right: rightHints,
                                bottom: SeleneBottomScrim.hintsBottom, leftInset: 18,
                                rightReserve: [["Open page"], ["Previous"], ["Next"], ["Choose", "Search"]])
+                    .seleneOverlaidHints(askAppIcon || viewModel.isEditingSteamGridDBKey)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

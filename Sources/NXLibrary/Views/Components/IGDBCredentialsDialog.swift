@@ -71,8 +71,8 @@ struct IGDBCredentialsDialog: View {
             switch action {
             case .navigateUp: field = .client
             case .navigateDown: field = .secret
-            case .navigateLeft: focus = .cancel
-            case .navigateRight: focus = .confirm
+            case .navigateLeft: focus = .left
+            case .navigateRight: focus = .right
             case .confirm: focus == .cancel ? close() : save()
             case .cancel: close()
             default: break

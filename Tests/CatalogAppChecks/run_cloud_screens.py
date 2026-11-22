@@ -53,7 +53,9 @@ import ArcanePorting
         // ADVANCED_SETTINGS
         let assistant = CloudSetupAssistant(viewModel: vm, model: model /* ENTRY */) {}
         // ASSISTANT_CHECK
-        try render("assistant", output, assistant)
+        try render("assistant", output, assistant
+            .environment(\.nxAppLocale, .init(language: .french, region: "FR"))
+            .environment(\.seleneButtonNames, .xbox))
         precondition(CloudLibraryTileBadge.artworkOpacity(model.states[game.id]) == 0.55)
         try render("tile", output,
             CollectionCoverRow(games: [.init(nxnative: game)], selectedID: game.id,
@@ -857,6 +859,19 @@ extension CloudSetupAssistant {
         precondition(view.focusRows.flatMap { $0 }.contains(.sourcesPath))
         precondition(view.primaryEnabled == (expected != nil))
         let previous = model.preference
+        if expected != nil {
+            precondition(view.focusRows.last == [.primary, .cancel])
+            var focus = CloudSetupAssistantFocus()
+            precondition(focus.current(in: view.focusRows) == .primary)
+            focus.move(.right, in: view.focusRows)
+            precondition(focus.current(in: view.focusRows) == .cancel)
+            focus.move(.left, in: view.focusRows)
+            precondition(focus.current(in: view.focusRows) == .primary)
+            view._creation = State(initialValue: "Fixture")
+            precondition(view.focusRows == [[.create, .cancel]])
+            precondition(CloudSetupAssistantFocus().current(in: view.focusRows) == .cancel)
+            view._creation = State(initialValue: nil)
+        }
         view.perform(.primary)
         precondition(model.preference.sourcesRootOverride == (expected ?? previous.sourcesRootOverride))
         precondition(model.preference.remote == previous.remote && model.preference.root == previous.root)

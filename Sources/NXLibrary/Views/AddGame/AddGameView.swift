@@ -62,7 +62,7 @@ struct AddGameView: View {
                 if showsHints {
                     SeleneHintsBar(left: [HintItem(.b, backLabel)], right: [HintItem(.a, aLabel(focused))],
                                    bottom: SeleneBottomScrim.hintsBottom, leftInset: 18)
-                        .opacity(confirmDiscard ? 0 : 1)
+                        .seleneOverlaidHints(confirmDiscard)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -384,7 +384,7 @@ struct AddGameView: View {
         if confirmDiscard {
             switch action {
             case .navigateLeft, .navigateRight:
-                let next: SeleneConfirmButton = action == .navigateLeft ? .cancel : .confirm
+                let next: SeleneConfirmButton = action == .navigateLeft ? .left : .right
                 if confirmFocus != next {
                     confirmFocus = next
                     SoundEffectService.shared.play(.focus)

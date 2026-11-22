@@ -17,19 +17,17 @@ struct SettingsNotice: Identifiable {
     var alternatives: [(title: String, run: () -> Void)] = []
     var primaryFirst = false
     var choiceDetails: [String: String] = [:]
-    private var cancelLast: Bool { primaryFirst || !alternatives.isEmpty }
     var initialFocus: Int { primaryFirst && retry != nil ? 0 : cancelIndex }
-    var cancelIndex: Int { cancelLast ? choices.count - 1 : 0 }
+    var cancelIndex: Int { choices.count - 1 }
     var choices: [String] {
         let actions = (retry == nil ? [] : [actionTitle]) + alternatives.map(\.title)
-        return cancelLast ? actions + [cancelTitle] : [cancelTitle] + actions
+        return actions + [cancelTitle]
     }
 
     func runChoice(_ index: Int?) {
         guard let index, index != cancelIndex else { return }
         let actions = (retry.map { [$0] } ?? []) + alternatives.map(\.run)
-        let action = cancelLast ? index : index - 1
-        if actions.indices.contains(action) { actions[action]() }
+        if actions.indices.contains(index) { actions[index]() }
     }
 }
 

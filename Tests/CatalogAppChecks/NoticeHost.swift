@@ -51,6 +51,13 @@ host.dismiss()
 try require(model.alertMessage == nil, "Deferred legacy alert was not presented after dismissal")
 try require(model.settingsNotice?.retry == nil, "Expected the deferred generic notice after dismissal")
 var selected: [String] = []
+let retry = SettingsNotice(title: "Retry?", message: "", retry: { selected.append("retry") })
+try require(retry.choices == ["Retry", "Back"] && retry.initialFocus == 1, "Back stays focused on the right")
+retry.runChoice(retry.initialFocus)
+try require(selected.isEmpty, "The default choice must not retry")
+retry.runChoice(0)
+try require(selected == ["retry"], "The left choice should retry")
+selected.removeAll()
 model.settingsNotice = SettingsNotice(title: "Rebuild", message: "Different cache",
     retry: { selected.append("download") }, actionTitle: "Download", cancelTitle: "Cancel",
     alternatives: [("Local", { selected.append("local") }), ("Without", { selected.append("without") })])

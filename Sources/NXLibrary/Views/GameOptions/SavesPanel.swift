@@ -57,8 +57,7 @@ struct SavesPanel: View {
                 SeleneHintsBar(left: [HintItem(.b, L10n.text("Back"), action: close)], right: [HintItem(.a, L10n.text("Select"))],
                                bottom: SeleneBottomScrim.hintsBottom, leftInset: 18)
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
-            .allowsHitTesting(!confirming)
-            .accessibilityHidden(confirming)
+            .seleneOverlayOwnership(!confirming)
             if confirming {
                 ZStack {
                     SeleneTheme.scrim45.ignoresSafeArea().contentShape(Rectangle()).onTapGesture { close() }
@@ -184,7 +183,7 @@ struct SavesPanel: View {
     @ViewBuilder private var confirmation: some View {
         if let issue = model.issue {
             SeleneChoiceDialog(title: issue.title, message: issue.message, choices: [L10n.text("Back")],
-                               focus: .constant(0), onChoose: { _ in model.dismissIssue() })
+                               focus: .constant(0), onCancel: close, onChoose: { _ in close() })
         } else if let preview = model.preview, let context = model.context {
             SeleneConfirmDialog(title: L10n.text("Import this save?"),
                                 message: SavePresentation.importSummary(preview, version: game.versionString),
@@ -201,8 +200,8 @@ struct SavesPanel: View {
         } else if !copyFrom.isEmpty {
             SeleneChoiceDialog(title: L10n.text("Copy saves from another profile"),
                                message: L10n.text("Only an empty profile can receive a copy of this game's saves."),
-                               choices: [L10n.text("Cancel")] + copyFrom.map(\.name),
-                               focus: $copyFocus, onChoose: chooseCopySource)
+                               choices: copyFrom.map(\.name) + [L10n.text("Cancel")],
+                               focus: $copyFocus, cancelIndex: copyFrom.count, onCancel: close, onChoose: chooseCopySource)
         } else if cloudPrompt {
             SeleneConfirmDialog(title: L10n.text("Cloud saves on"), message: cloudHelp.message + "\n\n" + SavePresentation.cloudNotice, confirmTitle: cloudHelp.button,
                 focus: $confirmFocus, onCancel: { cloudPrompt = false }, onConfirm: resolveCloud)
@@ -241,7 +240,7 @@ struct SavesPanel: View {
             else { model.chooseImport(slot: target) }
         case .refresh: model.refresh()
         case .backups: model.showBackups()
-        case .copy: copyFocus = 0; copyFrom = model.saveCopySources
+        case .copy: copyFrom = model.saveCopySources; copyFocus = copyFrom.count
         }
     }
     private func close() {
@@ -255,7 +254,7 @@ struct SavesPanel: View {
     private func chooseCopySource(_ index: Int) {
         let sources = copyFrom
         copyFrom = []
-        if index > 0, sources.indices.contains(index - 1) { model.copySaves(from: sources[index - 1]) }
+        if sources.indices.contains(index) { model.copySaves(from: sources[index]) }
     }
     private func handle(_ action: GamepadAction) {
         if confirming {
@@ -271,8 +270,8 @@ struct SavesPanel: View {
                 return
             }
             switch action {
-            case .navigateLeft: confirmFocus = .cancel
-            case .navigateRight: confirmFocus = .confirm
+            case .navigateLeft: confirmFocus = .left
+            case .navigateRight: confirmFocus = .right
             case .cancel: close()
             case .confirm:
                 if model.issue != nil { model.dismissIssue() }

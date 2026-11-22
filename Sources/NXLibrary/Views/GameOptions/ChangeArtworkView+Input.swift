@@ -69,7 +69,7 @@ extension ChangeArtworkView {
         if askAppIcon {
             switch action {
             case .navigateLeft, .navigateRight:
-                let next: SeleneConfirmButton = action == .navigateLeft ? .cancel : .confirm
+                let next: SeleneConfirmButton = action == .navigateLeft ? .left : .right
                 if appIconFocus != next {
                     appIconFocus = next
                     SoundEffectService.shared.play(.focus)
