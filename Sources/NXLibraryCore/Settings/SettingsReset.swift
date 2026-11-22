@@ -6,7 +6,7 @@ import Foundation
 public enum SettingsReset {
     public static func canReset(_ section: SettingsSection) -> Bool {
         switch section {
-        case .startUp, .navigation, .spotlight, .soundMusic, .look, .controllers, .libraryGames, .library, .games, .cloudLibrary,
+        case .startUp, .profiles, .navigation, .spotlight, .soundMusic, .look, .controllers, .libraryGames, .library, .games, .cloudLibrary,
              .multiplayer:
             return true
         case .search, .changed, .sources, .storage, .engine, .keys, .cloudSaves, .portingStorage,
@@ -29,7 +29,8 @@ public enum SettingsReset {
             next.startInFullscreen = defaults.startInFullscreen
             next.checkAppUpdatesAtLaunch = defaults.checkAppUpdatesAtLaunch
             next.introAnimation = defaults.introAnimation
-            next.showProfilePicker = defaults.showProfilePicker
+        case .profiles:
+            next.profileStartup = defaults.profileStartup
         case .navigation:
             next.showButtonHints = defaults.showButtonHints
             next.buttonNames = defaults.buttonNames

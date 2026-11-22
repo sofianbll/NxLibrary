@@ -70,7 +70,8 @@ struct CollectionView: View {
             leftHints: HintItem.homeGlobals(other: "Spotlight",
                                              onOther: settings.settings.viewButtonSwitches ? { handle(.view) } : nil,
                                              onMenu: { router.isMenuPresented = true },
-                                             onSearch: { handle(.search) }),
+                                             onSearch: { handle(.search) },
+                                             onProfiles: { ProfileFlow.requestPicker() }),
             rightHints: contextHints(game) + [LibrarySortMenu.hint(settings.settings.librarySort, action: openSort)],
             hintsHidden: router.overlayHasHints(viewModel),
             backdrop: {

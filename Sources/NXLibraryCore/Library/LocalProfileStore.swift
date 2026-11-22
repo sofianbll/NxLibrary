@@ -1,6 +1,15 @@
 import Combine
 import Foundation
 
+public enum ProfileStartup: Codable, Equatable {
+    case ask, last, profile(UUID)
+
+    public func available(in profiles: [LocalProfile]) -> Self {
+        if case .profile(let id) = self, !profiles.contains(where: { $0.id == id }) { return .ask }
+        return self
+    }
+}
+
 public struct LocalProfile: Codable, Equatable, Identifiable {
     public let id: UUID
     public var name: String
@@ -61,6 +70,16 @@ public final class LocalProfileStore: ObservableObject {
     public var profiles: [LocalProfile] { document?.profiles ?? [] }
     public var active: LocalProfile? { profiles.first { $0.id == document?.activeID } }
     public var originalID: UUID? { document?.originalID }
+
+    /// Resolve before applying the active profile's appearance and play history.
+    public func needsStartupPicker(_ preference: ProfileStartup) -> Bool {
+        guard active != nil else { return false }
+        switch preference.available(in: profiles) {
+        case .ask: return true
+        case .last: return false
+        case .profile(let id): return !choose(id)
+        }
+    }
 
     public init(directory: URL = AppData.supportRoot, settings: AppSettings, name: String) {
         url = directory.appendingPathComponent("profiles.json")

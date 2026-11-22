@@ -45,12 +45,13 @@ struct SeleneHomeChrome<Backdrop: View, Stage: View>: View {
 extension HintItem {
     /// Both home screens share View's hold label and the keyboard-only search keycap.
     static func homeGlobals(other: String, onOther: (() -> Void)?, onMenu: @escaping () -> Void,
-                            onSearch: @escaping () -> Void) -> [HintItem] {
+                            onSearch: @escaping () -> Void, onProfiles: @escaping () -> Void) -> [HintItem] {
         var view = HintItem(.view, onOther == nil ? "Hold: Search" : other,
                             hold: onOther == nil ? nil : "Hold: Search", action: onOther ?? onSearch)
         view.controllerOnly = onOther == nil
         return [view, HintItem(.menu, "Menu", hold: "Hold: Settings", action: onMenu),
-                HintItem(.search, "Search", action: onSearch)]
+                HintItem(.search, "Search", action: onSearch),
+                HintItem(.home, "Profiles", action: onProfiles)]
     }
 }
 
@@ -80,7 +81,7 @@ private struct OverlaidHints: ViewModifier {
         content
             .opacity(hidden ? 0 : 1)
             .offset(y: hidden && !reduceMotion ? canvas.u(12) : 0)
-            .animation(SeleneTheme.cubicOut(0.3), value: hidden)
+            .animation(reduceMotion ? nil : SeleneTheme.cubicOut(0.3), value: hidden)
             .allowsHitTesting(!hidden)
     }
 }

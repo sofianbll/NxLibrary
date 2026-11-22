@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import GameController
 import NXLibraryCore
 
@@ -77,6 +77,23 @@ final class GCControllerSource: ControllerSource {
         ]
         let gestures = [pad.buttonMenu] + (view.map { [$0] } ?? [])
         if let view { buttons.append((view, .view)) }
+        var unbindHome: (() -> Void)?
+        if let home = pad.buttonHome, !buttons.contains(where: { $0.0 === home }) {
+            buttons.append((home, .home))
+            // Arcane takes the system gesture only while it owns the foreground.
+            let previous = home.preferredSystemGestureState
+            home.preferredSystemGestureState = NSApp.isActive ? .disabled : previous
+            let homeObservers = [
+                NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification,
+                                                       object: nil, queue: .main) { _ in home.preferredSystemGestureState = .disabled },
+                NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification,
+                                                       object: nil, queue: .main) { _ in home.preferredSystemGestureState = previous },
+            ]
+            unbindHome = {
+                homeObservers.forEach(NotificationCenter.default.removeObserver)
+                home.preferredSystemGestureState = previous
+            }
+        }
         if let click = pad.rightThumbstickButton { buttons.append((click, .r3)) }
         if let click = pad.leftThumbstickButton { buttons.append((click, .l3)) }
 
@@ -87,6 +104,7 @@ final class GCControllerSource: ControllerSource {
         }
         pad.leftThumbstick.valueChangedHandler = { _, x, y in emit(.leftStick(SIMD2(x, y))) }
         unbind = {
+            unbindHome?()
             for (button, _) in buttons { button.pressedChangedHandler = nil }
             for (button, state) in systemGestures { button.preferredSystemGestureState = state }
             pad.leftThumbstick.valueChangedHandler = nil
@@ -138,7 +156,7 @@ final class GCControllerSource: ControllerSource {
             .a: face.confirm, .b: face.cancel, .x: face.secondary, .y: face.context,
             .lb: pad.leftShoulder, .rb: pad.rightShoulder,
             .lt: pad.leftTrigger, .rt: pad.rightTrigger,
-            .rs: pad.rightThumbstickButton, .view: view, .menu: pad.buttonMenu,
+            .rs: pad.rightThumbstickButton, .view: view, .menu: pad.buttonMenu, .home: pad.buttonHome,
         ]
         return elements.compactMapValues { element in
             guard let name = element?.sfSymbolsName, !name.isEmpty,

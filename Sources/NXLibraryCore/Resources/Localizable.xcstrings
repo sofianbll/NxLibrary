@@ -90957,15 +90957,48 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "谁在玩？"}}
       }
     },
-    "Choose a profile at startup instead of using the last one.": {
+    "Profiles": {
       "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "Choose a profile at startup instead of using the last one."}},
-        "it": {"stringUnit": {"state": "translated", "value": "Scegli un profilo all’avvio invece di usare l’ultimo."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez un profil au démarrage au lieu de reprendre le dernier."}},
-        "de": {"stringUnit": {"state": "translated", "value": "Beim Start ein Profil auswählen, statt das letzte zu verwenden."}},
-        "es": {"stringUnit": {"state": "translated", "value": "Elige un perfil al iniciar en lugar de usar el último."}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha um perfil ao iniciar em vez de usar o último."}},
-        "zh-Hans": {"stringUnit": {"state": "translated", "value": "启动时选择个人资料，而不是沿用上次的资料。"}}
+        "en": {"stringUnit": {"state": "translated", "value": "Profiles"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Profili"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Profils"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Profile"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Perfiles"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Perfis"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "个人资料"}}
+      }
+    },
+    "At startup": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "At startup"}},
+        "it": {"stringUnit": {"state": "translated", "value": "All’avvio"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Au démarrage"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Beim Start"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Al iniciar"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Ao iniciar"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "启动时"}}
+      }
+    },
+    "Last profile": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Last profile"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Ultimo profilo"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Dernier profil"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Letztes Profil"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Último perfil"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Último perfil"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "上次使用的资料"}}
+      }
+    },
+    "Choose who plays when Arcane opens.": {
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Choose who plays when Arcane opens."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Scegli chi gioca quando si apre Arcane."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Choisissez qui joue à l’ouverture d’Arcane."}},
+        "de": {"stringUnit": {"state": "translated", "value": "Wähle, wer beim Öffnen von Arcane spielt."}},
+        "es": {"stringUnit": {"state": "translated", "value": "Elige quién juega al abrir Arcane."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Escolha quem joga ao abrir o Arcane."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "选择打开 Arcane 时由谁游玩。"}}
       }
     },
     "What should we call you?": {

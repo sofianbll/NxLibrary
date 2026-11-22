@@ -28,8 +28,8 @@ extension AppShellView {
                             showsHints: settings.settings.showButtonHints,
                             reviewSelectionID: setupSourceEntryID)
                     .opacity(opacityBelowCover(0.8))
-                    .allowsHitTesting(!currentBackdropCover.covers(0.8) && router.activityCenterFocus == nil)
-                    .accessibilityHidden(router.activityCenterFocus != nil)
+                    .allowsHitTesting(!currentBackdropCover.covers(0.8) && router.activityCenterFocus == nil && profileFlow == nil)
+                    .accessibilityHidden(router.activityCenterFocus != nil || profileFlow != nil)
                     .transition(overlayTransition)
                     .zIndex(0.8)
             }
@@ -37,8 +37,8 @@ extension AppShellView {
                 ConsoleView(viewModel: viewModel, router: router,
                             showsHints: settings.settings.showButtonHints)
                     .opacity(opacityBelowCover(0.8))
-                    .allowsHitTesting(!currentBackdropCover.covers(0.8) && router.activityCenterFocus == nil)
-                    .accessibilityHidden(router.activityCenterFocus != nil)
+                    .allowsHitTesting(!currentBackdropCover.covers(0.8) && router.activityCenterFocus == nil && profileFlow == nil)
+                    .accessibilityHidden(router.activityCenterFocus != nil || profileFlow != nil)
                     .transition(overlayTransition)
                     .zIndex(0.8)
             }
@@ -46,8 +46,8 @@ extension AppShellView {
                 FindGameView(router: router, viewModel: viewModel, playSessions: playSessions,
                              artwork: artwork)
                     .opacity(opacityBelowCover(0.5))
-                    .allowsHitTesting(!currentBackdropCover.covers(0.5) && router.activityCenterFocus == nil)
-                    .accessibilityHidden(router.activityCenterFocus != nil)
+                    .allowsHitTesting(!currentBackdropCover.covers(0.5) && router.activityCenterFocus == nil && profileFlow == nil)
+                    .accessibilityHidden(router.activityCenterFocus != nil || profileFlow != nil)
                     .transition(.opacity)
                     .zIndex(0.5)
             }
@@ -151,7 +151,7 @@ extension AppShellView {
                 .zIndex(ShellBackdropCover.themePicker.priority)
             }
             if profileFlow != nil, !showsWelcome, !viewModel.showSetupCheck {
-                profileLayer.transition(.opacity).zIndex(2.5)
+                profileLayer.transition(reduceMotion ? .identity : .opacity).zIndex(2.5)
             }
             if let game = viewModel.gameForSettingsSheet {
                 GameOptionsView(
@@ -170,7 +170,8 @@ extension AppShellView {
                     opensMods: viewModel.gameOptionsOpensMods
                 )
                 .opacity(opacityBelowCover(2))
-                .allowsHitTesting(!currentBackdropCover.covers(2))
+                .allowsHitTesting(!currentBackdropCover.covers(2) && profileFlow == nil)
+                .accessibilityHidden(profileFlow != nil)
                 .transition(overlayTransition)
                 .zIndex(2)
             }
@@ -186,7 +187,8 @@ extension AppShellView {
                     }
                 )
                 .opacity(opacityBelowCover(2))
-                .allowsHitTesting(!currentBackdropCover.covers(2))
+                .allowsHitTesting(!currentBackdropCover.covers(2) && profileFlow == nil)
+                .accessibilityHidden(profileFlow != nil)
                 .id(game.id)
                 .transition(overlayTransition)
                 .zIndex(2)
@@ -229,6 +231,7 @@ extension AppShellView {
         .animation(reduceMotion ? nil : SeleneTheme.quick,
                    value: router.isMenuPresented)
         .animation(reduceMotion ? nil : SeleneTheme.screen, value: router.isThemePickerOpen)
+        .animation(reduceMotion ? nil : SeleneTheme.quick, value: profileFlow != nil)
         .animation(SeleneTheme.quick, value: router.isSearchPresented)
         .animation(reduceMotion ? nil : SeleneTheme.screen, value: viewModel.showSetupCheck)
         .animation(reduceMotion ? nil : SeleneTheme.screen, value: viewModel.firstRunSetup.page)
@@ -391,6 +394,7 @@ extension AppShellView {
         }
         .onChange(of: settings.settings.appLanguage) { updateLocale() }
         .onReceive(NotificationCenter.default.publisher(for: .nxOpenLocalProfile)) { _ in openProfile(.detail) }
+        .onReceive(NotificationCenter.default.publisher(for: .nxToggleProfilePicker)) { _ in toggleProfilePicker() }
         .onChange(of: settings.settings.appRegion) { updateLocale() }
         .onReceive(NotificationCenter.default.publisher(for: .nxLibraryPlayFocused)) { _ in
             guard !router.isMenuPresented,

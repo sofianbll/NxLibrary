@@ -56,6 +56,40 @@ final class LocalProfileStoreTests: XCTestCase {
         }
     }
 
+    func testStartupPreferenceMigratesAndPersists() throws {
+        let decoder = JSONDecoder()
+        for (json, expected): (String, ProfileStartup) in [
+            ("{}", .ask), (#"{"showProfilePicker":true}"#, .ask), (#"{"showProfilePicker":false}"#, .last)
+        ] {
+            XCTAssertEqual(try decoder.decode(AppSettings.self, from: Data(json.utf8)).profileStartup, expected)
+        }
+        let settings = AppSettings(profileStartup: .profile(UUID()))
+        let encoded = try JSONEncoder().encode(settings)
+        XCTAssertEqual(try decoder.decode(AppSettings.self, from: encoded).profileStartup, settings.profileStartup)
+    }
+
+    func testStartupUsesPinnedProfileOrAsksWhenItIsDeleted() throws {
+        try withDirectory { url in
+            let settings = AppSettings()
+            let store = LocalProfileStore(directory: url, settings: settings, name: "Alex")
+            let alex = try XCTUnwrap(store.active)
+            let sam = LocalProfile(name: "Sam", look: .init(settings))
+            XCTAssertTrue(store.update(sam))
+            XCTAssertFalse(store.needsStartupPicker(.profile(sam.id)))
+            XCTAssertEqual(store.active?.id, sam.id)
+            XCTAssertTrue(store.choose(alex.id))
+            let reopened = LocalProfileStore(directory: url, settings: settings, name: "Unused")
+            XCTAssertFalse(reopened.needsStartupPicker(.last))
+            XCTAssertEqual(reopened.active?.id, alex.id)
+            XCTAssertFalse(reopened.needsStartupPicker(.profile(sam.id)))
+            XCTAssertEqual(reopened.active?.id, sam.id)
+            XCTAssertTrue(reopened.remove(sam.id))
+            XCTAssertTrue(reopened.needsStartupPicker(.profile(sam.id)))
+            XCTAssertEqual(ProfileStartup.profile(sam.id).available(in: reopened.profiles), .ask)
+            XCTAssertEqual(reopened.active?.id, alex.id)
+        }
+    }
+
     func testBackupIsCreatedOnceAndCanRestoreLegacyFiles() throws {
         try withDirectory { url in
             let settingsURL = url.appendingPathComponent("settings.json")

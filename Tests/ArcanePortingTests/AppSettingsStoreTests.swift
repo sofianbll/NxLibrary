@@ -357,7 +357,7 @@ private final class ObserveSettingsWrite: FileManager, @unchecked Sendable {
 final class SettingsSectionTests: XCTestCase {
     func testAllSectionsArePresent() {
         XCTAssertEqual(SettingsSection.allCases.map(\.title), [
-            "Search", "Changed", "Start-up", "Navigation", "Spotlight", "Sound & music", "Look", "Controllers",
+            "Search", "Changed", "Start-up", "Profiles", "Navigation", "Spotlight", "Sound & music", "Look", "Controllers",
             "Play together", "Online services", "Sources", "Games", "Storage", "Setup and engine", "Keys", "Library", "New games",
             "Cloud saves", "Cloud library", "Storage", "About", "Console"
         ])

@@ -209,7 +209,7 @@ public struct AppSettings: Codable, Equatable {
     /// The home screen last shown: `.spotlight` or `.collection`.
     public var lastHome: StartScreen
     public var introAnimation: Bool
-    public var showProfilePicker: Bool
+    public var profileStartup: ProfileStartup
     public var viewButtonSwitches: Bool
     public var interfaceSounds: Bool
     public var soundVolume: Double
@@ -264,7 +264,7 @@ public struct AppSettings: Codable, Equatable {
                 startOn: StartScreen = .spotlight,
                 lastHome: StartScreen = .spotlight,
                 introAnimation: Bool = true,
-                showProfilePicker: Bool = true,
+                profileStartup: ProfileStartup = .ask,
                 viewButtonSwitches: Bool = true,
                 interfaceSounds: Bool = true,
                 soundVolume: Double = 0.6,
@@ -299,7 +299,7 @@ public struct AppSettings: Codable, Equatable {
         self.startOn = startOn
         self.lastHome = lastHome
         self.introAnimation = introAnimation
-        self.showProfilePicker = showProfilePicker
+        self.profileStartup = profileStartup
         self.viewButtonSwitches = viewButtonSwitches
         self.interfaceSounds = interfaceSounds
         self.soundVolume = soundVolume
@@ -327,7 +327,7 @@ public struct AppSettings: Codable, Equatable {
         case showsCloudPlayIcon, showsCloudDetailsLink, cloudTileBadges
         case startOn, lastHome
         case introAnimation, viewButtonSwitches, interfaceSounds, soundVolume, quietLaunch
-        case showProfilePicker
+        case showProfilePicker, profileStartup
         case wallpaperID, backgroundSizing, animatedBackground, wallpaperBrightness, launchStyle, launchMotion, launchShade
         case notifyPortingEnds, checkAppUpdatesAtLaunch
         case settingsWallpaperID, keepWallpaperOnGames, showsSessionCard
@@ -371,7 +371,8 @@ public struct AppSettings: Codable, Equatable {
         self.startOn = try container.decodeIfPresent(StartScreen.self, forKey: .startOn) ?? .spotlight
         self.lastHome = try container.decodeIfPresent(StartScreen.self, forKey: .lastHome) ?? .spotlight
         self.introAnimation = try container.decodeIfPresent(Bool.self, forKey: .introAnimation) ?? true
-        self.showProfilePicker = try container.decodeIfPresent(Bool.self, forKey: .showProfilePicker) ?? true
+        self.profileStartup = try container.decodeIfPresent(ProfileStartup.self, forKey: .profileStartup)
+            ?? (container.decodeIfPresent(Bool.self, forKey: .showProfilePicker) == false ? .last : .ask)
         self.viewButtonSwitches = try container.decodeIfPresent(Bool.self, forKey: .viewButtonSwitches) ?? true
         self.interfaceSounds = try container.decodeIfPresent(Bool.self, forKey: .interfaceSounds) ?? true
         self.soundVolume = try container.decodeIfPresent(Double.self, forKey: .soundVolume) ?? 0.6
@@ -429,7 +430,9 @@ public struct AppSettings: Codable, Equatable {
         try c.encode(startOn, forKey: .startOn)
         try c.encode(lastHome, forKey: .lastHome)
         try c.encode(introAnimation, forKey: .introAnimation)
-        try c.encode(showProfilePicker, forKey: .showProfilePicker)
+        try c.encode(profileStartup, forKey: .profileStartup)
+        // Older Arcane copies can still respect the original on/off preference.
+        try c.encode(profileStartup != .last, forKey: .showProfilePicker)
         try c.encode(viewButtonSwitches, forKey: .viewButtonSwitches)
         try c.encode(interfaceSounds, forKey: .interfaceSounds)
         try c.encode(soundVolume, forKey: .soundVolume)

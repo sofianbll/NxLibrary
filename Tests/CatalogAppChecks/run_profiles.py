@@ -32,11 +32,13 @@ import ArcanePorting
         let alex = profiles.active!
         let sam = LocalProfile(name: "Sam", avatar: 3, look: alex.look)
         let vm = AppViewModel(settingsStore: settings, catalog: .init(), repository: .init(store: .init(directory: data)))
+        vm.localProfiles = profiles
         let game = PortedGame(name: "Lunar Observatory", url: data.appendingPathComponent("Fixture.app"),
                               platform: .macApp, sizeBytes: 0, modificationDate: .now, titleId: "0100000000001000")
         let slate = LocalProfile(name: "", look: alex.look)
         let avatarGames = (0..<7).map { index -> CatalogGame in
             var item = game
+            item.id = UUID()
             item.name = "Observatory \(index + 1)"
             item.titleId = String(format: "010%013X", index + 1)
             return .init(nxnative: item)
@@ -58,8 +60,8 @@ import ArcanePorting
         let cachedPortraits = ProfileEditorView.loadAvatars(avatarGames, artwork: art)
         precondition(cachedPortraits.count == avatarGames.count)
         try checkGIF(in: data)
-        func picker(selected: UUID?, removing: LocalProfile? = nil) -> some View {
-            ProfilePickerView(profiles: profiles, initialSelection: selected, initialEdit: false, canClose: false,
+        func picker(selected: UUID?, removing: LocalProfile? = nil, overlay: Bool = false) -> some View {
+            ProfilePickerView(profiles: profiles, initialSelection: selected, initialEdit: false, canClose: overlay, isOverlay: overlay,
                               games: [game], onChoose: { _ in }, onClose: {}, onActiveEdited: {},
                               selected: selected, removing: removing)
         }
@@ -109,7 +111,7 @@ import ArcanePorting
                     Spacer()
                 }
                 if showsSort {
-                    SeleneHintsBar(left: HintItem.homeGlobals(other: "Spotlight", onOther: {}, onMenu: {}, onSearch: {}),
+                    SeleneHintsBar(left: HintItem.homeGlobals(other: "Spotlight", onOther: {}, onMenu: {}, onSearch: {}, onProfiles: {}),
                                    right: [LibrarySortMenu.hint(current, action: {})])
                         .frame(maxHeight: .infinity, alignment: .bottom)
                 }
@@ -126,6 +128,20 @@ import ArcanePorting
         }, in: out, refs, "screenshots/menu.png")
         try render("10-online-tile", after, in: out, refs, "screenshots/library.png")
         precondition(profiles.update(sam))
+        L10n.setContext(french)
+        let profileSection = SettingsProfilesSection(settings: settings, profiles: profiles, onActions: { _ in })
+        for choice: ProfileStartup in [.last, .profile(alex.id), .profile(sam.id), .ask] {
+            profileSection.cycle(1)
+            precondition(settings.settings.profileStartup == choice)
+        }
+        profileSection.cycle(-1)
+        precondition(settings.settings.profileStartup == .profile(sam.id))
+        try render("19-profiles-at-startup", ZStack {
+            SeleneBackdrop().still(true)
+            SettingsView(initialSection: .profiles, viewModel: vm, settings: settings, router: AppRouter(), artwork: art)
+        }.environment(\.nxAppLocale, french), in: out, refs, "screenshots/game-options.png")
+        settings.settings.profileStartup = .ask
+        L10n.setContext(.init(language: .english, region: "US"))
         try render("11-remove", picker(selected: sam.id, removing: sam), in: out, refs, "web/182-15.png")
         try render("16-switch-profile", picker(selected: sam.id), in: out, refs, "web/reddit-showcase-who-05s.png", reduced: false)
         try render("17-second-profile-collection", stage(SpotlightTopBar(filter: .recentlyPlayed, sort: current), player: sam),
@@ -140,7 +156,19 @@ import ArcanePorting
         let native = CatalogGame(nxnative: game)
         var originalGame = native
         originalGame.setFavorite(true)
-        vm.localProfiles = profiles
+        vm.homeSeen = true
+        var fixture = originalGame
+        fixture.setFavorite(false)
+        vm.applyCatalog(.init(games: [fixture] + avatarGames))
+        vm.spotlight.selectedKey = SpotlightItem.game(game.id).key
+        vm.profileOwnsInput = true
+        try render("20-picker-over-spotlight", ZStack {
+            SeleneBackdrop().still(true)
+            SpotlightView(viewModel: vm, router: AppRouter(), settings: settings, playSessions: historyStore,
+                          runningGames: RunningGameMonitor(), artwork: art, storeHost: ModStoreHost())
+            picker(selected: profiles.active?.id, overlay: true)
+        }, in: out, refs, "web/reddit-showcase-who-05s.png")
+        vm.profileOwnsInput = false
         vm.applyCatalog(.init(games: [originalGame]))
         precondition(vm.catalogGames.first?.isFavorite == false)
         let revision = vm.catalogSnapshot.revision
@@ -229,7 +257,11 @@ import ArcanePorting
         guard let ref = NSImage(contentsOf: refs.appendingPathComponent(reference)) else { return }
         let comparison = HStack(spacing: 12) {
             panel(NSImage(cgImage: image, size: size), "Arcane")
-            if reference == "web/182-12.png" {
+            if name == "20-picker-over-spotlight",
+               let original = NSImage(contentsOf: out.appendingPathComponent("01-who.png")) {
+                panel(original, "Arcane · 01-who")
+            }
+            if name == "04-wizard-avatar", reference == "web/182-12.png" {
                 // The crop's adjacent portrait centres are 157px apart for Selene's 118-unit cells.
                 panel(ref, "Selene · \(reference) · same scale", cropScale: 800 / 1920 * 118 / 157)
             } else {
@@ -311,6 +343,12 @@ def main():
         replace(app / "Views/Theme/MoonlightRenderer.swift", r"                if let image \{\n                    Image\(decorative:",
                 "                if let image = engine.snapshot(width: max(w, 1), height: max(h, 1), colors: colors) {\n                    Image(decorative:")
         # ImageRenderer does not rasterize AppKit scroll views or fields. Render their real SwiftUI contents.
+        # Real Settings views, with only the AppKit-backed scroll containers flattened.
+        replace(app / "Views/Settings/SettingsView.swift",
+                r"        ScrollViewReader \{ proxy in\n            ScrollView \{(.*?)\n            }\n            \.scrollIndicators\(\.hidden\).*?\n        }\n    }\n\n    private var reduceMotion",
+                lambda m: "        Group {" + m[1] + "\n        }\n    }\n\n    private var reduceMotion")
+        replace(app / "Views/Settings/SettingsSidebar.swift", r"            ScrollViewReader \{ proxy in\n.*?\n            }",
+                "            GeometryReader { _ in groups }.clipped()")
         replace(app / "Views/Shell/ProfilePickerView.swift",
                 r"                ScrollViewReader .*?\n                        (HStack\(spacing: canvas.u\(56\)\).*?)\n                    }\n                    \.scrollIndicators.*?\n                }\n                if profiles.failed",
                 lambda m: "                " + m[1] + "\n                if profiles.failed")

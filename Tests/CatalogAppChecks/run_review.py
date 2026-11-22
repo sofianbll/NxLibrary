@@ -201,6 +201,7 @@ final class Router {
     var activityCenterFocus: ActivityCenterFocus?
     func openSettings(_ section: SettingsSection) { route = .settings(section) }
 }
+// ACTUAL_PROFILE_FLOW
 final class WindowState { var attachedSheet: Int?; var isSheet = false }
 final class ApplicationState {
     var modalWindow: Int?
@@ -296,7 +297,8 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
     let nativeMenus = NativeMenus()
     var isCloseGameOpen = false
     var showsWelcome = false
-    var profileFlow: Int?
+    var profileFlow: ProfileFlow?
+    var launcherIsFrontmost = true
     var showsSettingsNotice = false
     var showsInstallFailure = false
     var showsUpdateOffer = false
@@ -316,6 +318,11 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
     func cloudQuitInput(_ action: GamepadAction) { dialogActions.append(action) }
     func postProfileAction(_ action: GamepadAction) { dialogActions.append(action) }
     func menuInput(_ action: GamepadAction) { dialogActions.append(action) }
+    func openProfile(_ page: ProfileFlow.Page, fromMenu: Bool) {
+        profileFlow = ProfileFlow(page: page, returnsToMenu: fromMenu)
+        viewModel.profileOwnsInput = true
+    }
+    // ACTUAL_PROFILE_ACTIONS
     // ACTUAL_DIALOG
     // ACTUAL_MENU
 }
@@ -452,12 +459,17 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
         for button in ControllerButton.allCases {
             require(GamepadAction.onPress(button) == presses[button], "Unexpected binding for \(button)")
         }
-        let held: [ControllerButton: (GamepadAction, GamepadAction)] = [.menu: (.menu, .menuHold), .view: (.view, .search)]
+        let held: [ControllerButton: (GamepadAction, GamepadAction?)] = [
+            .menu: (.menu, .menuHold), .view: (.view, .search), .home: (.profiles, nil)
+        ]
         var actions = ControllerButton.allCases.compactMap(GamepadAction.onPress)
         for button in ControllerButton.allCases {
             require(GamepadAction.holdAction(button, .tap) == held[button]?.0
                     && GamepadAction.holdAction(button, .hold) == held[button]?.1, "Unexpected hold binding for \(button)")
-            if let (tap, long) = held[button] { actions += [tap, long] }
+            if let (tap, long) = held[button] {
+                actions.append(tap)
+                if let long { actions.append(long) }
+            }
         }
         var viewHold = HoldDetector()
         viewHold.press(at: 1)
@@ -478,7 +490,8 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
                 if let action = note.object as? GamepadAction { MainActor.assumeIsolated { routeInput.actions.append(action) } }
             }
             input.router.route = route
-            let local = route == .console ? actions.filter { $0 != .menu && $0 != .menuHold } : actions
+            let local = actions.filter { ($0 != .profiles || route == .library)
+                && (route != .console || ($0 != .menu && $0 != .menuHold)) }
             for action in local { GameControllerService.shared.onAction?(action) }
             require(routeInput.actions == local, "\(route) must receive each command exactly once")
             if route == .console {
@@ -490,6 +503,28 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
             }
             NotificationCenter.default.removeObserver(observer)
         }
+        input.router.route = .collection
+        let originalFocus = input.viewModel.spotlight
+        input.launcherIsFrontmost = false
+        GameControllerService.shared.onAction?(.profiles)
+        require(input.profileFlow == nil, "Home must ignore the launcher with a game in front")
+        input.launcherIsFrontmost = true
+        GameControllerService.shared.onAction?(.profiles)
+        require(input.profileFlow?.page == .picker && input.viewModel.profileOwnsInput,
+                "Home opens the profile picker")
+        input.launcherIsFrontmost = false
+        GameControllerService.shared.onAction?(.profiles)
+        require(input.profileFlow != nil, "Home must not close the picker from the game either")
+        input.launcherIsFrontmost = true
+        GameControllerService.shared.onAction?(.profiles)
+        require(input.profileFlow == nil && !input.viewModel.profileOwnsInput
+                && input.router.route == .collection && input.viewModel.spotlight == originalFocus,
+                "Home restores the original route and focus")
+        input.router.isMenuPresented = true
+        GameControllerService.shared.onAction?(.profiles)
+        GameControllerService.shared.onAction?(.profiles)
+        require(input.router.isMenuPresented, "Home restores the open control center")
+        input.router.isMenuPresented = false
         input.router.route = .library
         let received = InputRecorder()
         let watch = NotificationCenter.default.addObserver(forName: .nxSpotlightGamepadAction,
@@ -588,7 +623,7 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
         NotificationCenter.default.removeObserver(cloudWatch)
         input.viewModel.cloudLibraryGameID = nil
         input.viewModel.profileOwnsInput = true
-        input.profileFlow = 1
+        input.profileFlow = ProfileFlow(page: .picker)
         input.dialogActions = []
         GameControllerService.shared.onAction?(.confirm)
         require(input.dialogActions == [.confirm] && received.actions.isEmpty && !input.availability().general,
@@ -682,6 +717,11 @@ host = host.replace('// ACTUAL_MENU', declaration(
     'Sources/NXLibrary/Views/Shell/AppShellView.swift', '    var nativeMenuAvailability:'))
 host = host.replace('// ACTUAL_DIALOG', declaration(
     'Sources/NXLibrary/Views/Shell/AppShellView.swift', '    var nativeDialogOwnsInput:'))
+profiles = 'Sources/NXLibrary/Views/Shell/AppShellView+Profiles.swift'
+host = host.replace('// ACTUAL_PROFILE_FLOW', '\n'.join(
+    declaration(profiles, signature) for signature in ('struct ProfileFlow', 'extension Notification.Name')))
+host = host.replace('// ACTUAL_PROFILE_ACTIONS', '\n'.join(
+    declaration(profiles, signature) for signature in ('    func toggleProfilePicker()', '    func closeProfile()')))
 host = host.replace('// ACTUAL_GO_TO_WIZARD_STEP', '\n'.join(
     declaration('Sources/NXLibrary/ViewModels/PortingModel+AddGame.swift', signature)
     for signature in ('    func goToWizardStep(', '    static func wizardStepReachable(',

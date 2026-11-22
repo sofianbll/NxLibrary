@@ -92,6 +92,10 @@ final class InputState {
     var showSetupCheck = false
     var isWindowSettling = true
 }
+enum ProfileFlow {
+    nonisolated(unsafe) static var requests = 0
+    static func requestPicker() { requests += 1 }
+}
 final class InputHost {
     let viewModel = InputState()
     var entrance = SpotlightEntrance.Phase.covered
@@ -118,13 +122,17 @@ final class InputHost {
             let input = InputHost()
             input.entrance = phase
             input.receive(Notification(name: .init("fixture"), object: GamepadAction.confirm))
-            require(input.handled.isEmpty && input.entrance == phase,
+            input.receive(Notification(name: .init("fixture"), object: GamepadAction.profiles))
+            require(input.handled.isEmpty && input.entrance == phase && ProfileFlow.requests == 0,
                     "A press during the entrance must neither act nor skip it (phase \(phase))")
         }
         let landed = InputHost()
         landed.entrance = .landed
         landed.receive(Notification(name: .init("fixture"), object: GamepadAction.confirm))
         require(landed.handled == [.confirm], "Once landed, a press acts as usual")
+        landed.receive(Notification(name: .init("fixture"), object: GamepadAction.profiles))
+        require(ProfileFlow.requests == 1 && landed.handled == [.confirm],
+                "Home after landing asks the shell without moving Spotlight focus")
         for setup in [false, true] {
             let input = InputHost()
             input.viewModel.showSetupCheck = setup

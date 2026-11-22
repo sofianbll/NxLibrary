@@ -8,6 +8,7 @@ extension SpotlightView {
     func handle(_ action: GamepadAction) {
         // Settings stays available during the entrance (including via ⌘,).
         guard entrance.takesInput || action == .menuHold else { return }
+        if action == .profiles { return ProfileFlow.requestPicker() }
         if viewer != nil { return handleViewer(action) }
         if achievementsScreen != nil { return handleAchievements(action) }
         if viewModel.spotlight.isLifted { return handleLifted(action) }
@@ -108,6 +109,8 @@ extension SpotlightView {
             router.openSettings(.startUp)
         case .rightStickPress:
             openSort()
+        case .profiles:
+            break // The shell owns the picker; don't move the current focus.
         }
         if moved { SoundEffectService.shared.play(.focus) }
     }

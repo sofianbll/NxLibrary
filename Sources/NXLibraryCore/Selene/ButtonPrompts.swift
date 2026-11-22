@@ -8,7 +8,7 @@ public enum ButtonNameStyle: String, Codable, CaseIterable, Identifiable {
 }
 
 public enum PromptButton: String, CaseIterable {
-    case a, b, x, y, lb, rb, lt, rt, rs, view, menu, move, search
+    case a, b, x, y, lb, rb, lt, rt, rs, view, menu, home, move, search
 }
 
 public enum ConnectedPad {
@@ -43,6 +43,7 @@ public enum ButtonPrompts {
         case .rt: return .text(L10n.text("end"))
         case .view: return .text("V")
         case .menu: return .text("⌘K")
+        case .home: return .text("⇧⌘P")
         case .move: return .text("← →")
         case .search: return .text("⌘F")
         }
@@ -101,6 +102,7 @@ public enum ButtonPrompts {
         case .rs: return "r.joystick.press.down"
         case .view: return "minus.circle"
         case .menu: return "plus.circle"
+        case .home: return "house.circle"
         case .move: return "arrow.left.and.right"
         case .search: return nil
         }
@@ -119,6 +121,7 @@ public enum ButtonPrompts {
         case .rs: return "r.joystick.press.down"
         case .view: return "rectangle.on.rectangle.circle"
         case .menu: return "line.3.horizontal.circle"
+        case .home: return "xbox.logo"
         case .move: return "arrow.left.and.right"
         case .search: return nil
         }
@@ -135,6 +138,7 @@ public enum ButtonPrompts {
         case .lt: return "l2.rectangle.roundedtop"
         case .rt: return "r2.rectangle.roundedtop"
         case .rs: return "r.joystick.press.down"
+        case .home: return "playstation.logo"
         case .move: return "arrow.left.and.right"
         case .view, .menu, .search: return nil // Use the key's label when no glyph is defined.
         }
@@ -162,6 +166,7 @@ public enum ButtonPrompts {
         case .rs: return "RS"
         case .view: return "−"
         case .menu: return "+"
+        case .home: return "⌂"
         case .move: return "← →"
         case .search: return "⌘F"
         }
@@ -180,6 +185,7 @@ public enum ButtonPrompts {
         case .rs: return "RS"
         case .view: return "View"
         case .menu: return "Menu"
+        case .home: return "Xbox"
         case .move: return "← →"
         case .search: return "⌘F"
         }
@@ -198,6 +204,7 @@ public enum ButtonPrompts {
         case .rs: return "R3"
         case .view: return L10n.text("Touchpad")
         case .menu: return "Options"
+        case .home: return "PS"
         case .move: return "← →"
         case .search: return "⌘F"
         }
