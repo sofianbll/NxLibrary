@@ -20,7 +20,7 @@ extension AppViewModel {
         switch router?.route {
         case .detail(let value): id = value
         case .library: id = spotlight.selectedGameID
-        case .collection: id = librarySelection.selectedGameID
+        case .collection, .profileCollection: id = librarySelection.selectedGameID
         default: id = nil
         }
         guard let id else { return nil }

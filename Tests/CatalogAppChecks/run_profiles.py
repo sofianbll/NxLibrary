@@ -126,6 +126,86 @@ import ArcanePorting
         try render("08-profile-linked-real", LocalProfilePage(profile: alex, nextendo: linked, viewModel: vm,
                    settings: settings, history: localHistory, onClose: {}, onUpdate: { _ in true }, onSwitch: {}),
                    in: out, refs, "none")
+        var profileGames = avatarGames
+        var achievementGame = profileGames[1].nxnativeGame!
+        let profilePack = LocalAchievementPack.linksAwakening!
+        achievementGame.titleId = profilePack.titleID
+        achievementGame.versionString = profilePack.gameVersion
+        profileGames[1] = CatalogGame(nxnative: achievementGame)
+        let oldArt = art.cacheDirectory.appendingPathComponent(avatarGames[1].personalizationKey).appendingPathComponent("hero.png")
+        let newArt = art.cacheDirectory.appendingPathComponent(profileGames[1].personalizationKey).appendingPathComponent("hero.png")
+        try FileManager.default.createDirectory(at: newArt.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.copyItem(at: oldArt, to: newArt)
+        vm.applyCatalog(.init(sources: [.init(integration: .nxnative, isEnabled: true)], games: profileGames))
+        precondition(vm.visibleCatalogGames.count == profileGames.count)
+        _ = vm.localAchievementStore.record([.seashells: 10], in: profilePack, profile: alex.id, at: .now)
+        var date = Date.now.addingTimeInterval(-3 * 3600)
+        let pageHistory = PlaySessionStore(fileURL: data.appendingPathComponent("profile-page-sessions.json"), now: { date })
+        for (index, item) in profileGames.prefix(5).reversed().enumerated() {
+            precondition(pageHistory.start(gameID: item.id, sourceID: item.personalizationKey, announces: false))
+            date.addTimeInterval(index == 0 ? 5_400 : 900)
+            _ = pageHistory.end(gameID: item.id)
+        }
+        for item in profileGames {
+            _ = await GameArtLoader.shared.hero(for: item.nxnativeGame!, metadata: nil, artwork: art,
+                                                personalizations: vm.personalizations)
+        }
+        var pageProfile = alex
+        pageProfile.appearsOnline = true
+        linked.setScreenFixture(.connected)
+        linked.setPresenceFixture()
+        precondition(linked.account?.friends?.isEmpty == false)
+        let pageRouter = AppRouter()
+        let activityCard = SpotlightView(viewModel: vm, router: pageRouter, settings: settings, playSessions: pageHistory,
+                                         runningGames: RunningGameMonitor(), artwork: art, storeHost: ModStoreHost())
+        activityCard.activate(.card(.activity))
+        precondition(pageRouter.route == .profile)
+        pageRouter.back()
+        precondition(pageRouter.route == .library)
+        let query = LibraryQuery(filter: .favorites, searchText: "no matches", sort: .recent)
+        vm.librarySelection = .init(query: query)
+        pageRouter.navigate(to: .profile)
+        pageRouter.navigate(to: .profileCollection(.mostPlayed))
+        let card = CollectionView(viewModel: vm, router: pageRouter, settings: settings, playSessions: pageHistory, artwork: art)
+        precondition(card.games.count == 5 && card.games.first?.id == profileGames[4].id)
+        card.reconcile()
+        precondition(vm.librarySelection.selectedGameID == profileGames[4].id)
+        card.handle(.tabNext)
+        precondition(vm.librarySelection.selectedGameID == card.games[1].id)
+        card.handle(.jumpToEnd)
+        precondition(vm.librarySelection.selectedGameID == card.games.last?.id)
+        card.handle(.rightStickPress)
+        precondition(vm.librarySelection.query == query)
+        card.handle(.jumpToStart)
+        try render("profile-most-played", card.environment(\.nxAppLocale, french), in: out, refs, "none")
+        pageRouter.back()
+        precondition(pageRouter.route == .profile)
+        vm.librarySelection = .init()
+        L10n.setContext(french)
+        for (name, size, account) in [
+            ("16-9-linked", CGSize(width: 1440, height: 810), linked),
+            ("16-9-local", CGSize(width: 1440, height: 810), nil),
+            ("16-10", CGSize(width: 1280, height: 800), linked),
+            ("21-9", CGSize(width: 1890, height: 810), linked),
+            ("small", CGSize(width: 680, height: 470), linked)
+        ] {
+            let page = ProfilePage(profile: pageProfile, viewModel: vm, history: pageHistory, artwork: art,
+                                   nextendo: account, router: pageRouter, focus: .constant(.game(.recent, profileGames[1].id)),
+                                   onEdit: {}, onSwitch: {}, onAccount: {})
+            try render("profile-page-\(name)", page.environment(\.nxAppLocale, french), in: out, refs,
+                       "profile-page.png", size: size)
+        }
+        try render("profile-page-cards-settings", SettingsView(initialSection: .profiles, viewModel: vm, settings: settings,
+                   router: pageRouter, artwork: art).environment(\.nxAppLocale, french),
+                   in: out, refs, "none")
+        for choice in InGameHomeButton.allCases {
+            settings.settings.inGameHomeButton = choice
+            try render("settings-home-\(choice)", SettingsView(initialSection: .controllers, viewModel: vm, settings: settings,
+                       router: pageRouter, artwork: art).environment(\.nxAppLocale, french),
+                       in: out, refs, "none", size: .init(width: 1440, height: 810))
+        }
+        settings.settings.inGameHomeButton = .auto
+        L10n.setContext(.init(language: .english, region: "US"))
         let switchToSam = ProfileFlow.Change(target: sam, startsGuest: false, step: .confirm)
         precondition(switchToSam.requiresConfirmation(current: alex.id, running: true, endsGuest: false))
         precondition(!switchToSam.canCommit(current: alex.id, running: true))
@@ -183,13 +263,20 @@ import ArcanePorting
             try render(name, ZStack {
                 stage(SpotlightTopBar(filter: .all, sort: current, nextendo: online), showsSort: false)
                 MenuOverlayView(router: router, cloudLibrary: vm.cloudLibrary, activeProfile: alex,
-                                hasBuildActivity: true, onSelect: { _ in }, onSelectPower: { _ in })
+                                hasBuildActivity: true, onSelect: { _ in }, onSelectPower: { _ in }, onTab: { _ in })
             }.environment(\.nxAppLocale, lang ?? .init(language: .english, region: "US")),
                        in: out, refs, "screenshots/menu.png", names: names)
             L10n.setContext(.init(language: .english, region: "US"))
         }
         let fr = AppLocale(language: .french, region: "FR")
         try menu("09-menu", { $0.menuSelection.selected = .profile })
+        try menu("09-menu-fr", { $0.menuSelection.selected = .profile }, lang: fr)
+        L10n.setContext(fr)
+        try render("09-menu-open-activity-fr", ActivityCenterView(viewModel: vm, porting: vm.porting,
+                   cloudLibrary: vm.cloudLibrary, focus: .init(), onFocus: { _ in }, onOpen: { _ in },
+                   onCancel: { _ in }, onBack: {}, onOutside: {}, onTab: { _ in }).environment(\.nxAppLocale, fr),
+                   in: out, refs, "none")
+        L10n.setContext(.init(language: .english, region: "US"))
         try menu("09-menu-profile-card", { $0.menuSelection.selected = .profile; $0.openEntryMenu(); $0.moveEntryMenu(by: 1) })
         try menu("09-menu-library-card", { $0.menuSelection.selected = .library; $0.openEntryMenu() })
         try menu("09-menu-activity", { $0.menuSelection.selected = .activityCenter })
@@ -225,7 +312,8 @@ import ArcanePorting
                     try render("10-details-\(submenu)-\(tag)-\(downs + 1)", ZStack {
                         details(blur: AppShellView.profileOverlayBlur)
                         MenuOverlayView(router: router, cloudLibrary: vm.cloudLibrary, activeProfile: alex,
-                                        hasBuildActivity: false, onSelect: { _ in }, onSelectPower: { _ in })
+                                        hasBuildActivity: false, onSelect: { _ in }, onSelectPower: { _ in },
+                                        onTab: { _ in })
                     }.environment(\.nxAppLocale, locale), in: out, refs, "none")
                 }
             }
@@ -388,9 +476,9 @@ import ArcanePorting
         }
         L10n.setContext(fr)
         precondition(LibrarySortMenu.hint(.recent, action: {}).hold == "Récents")
-        try render("27-local-achievements", achievementScreen(), in: out, refs, "none")
+        try render("27-local-achievements", achievementScreen().environment(\.nxAppLocale, fr), in: out, refs, "none")
         _ = achievementModel.handle(.confirm, summary: achievements)
-        try render("28-local-achievement-detail", achievementScreen(), in: out, refs, "none")
+        try render("28-local-achievement-detail", achievementScreen().environment(\.nxAppLocale, fr), in: out, refs, "none")
         try render("29-local-achievement-toast", ZStack(alignment: .topTrailing) {
             SeleneBackdrop().still(true)
             AchievementUnlockToast(names: achievements.rows(.unlocked).map(\.name)).padding(24)
@@ -660,8 +748,7 @@ import ArcanePorting
     static let screenSize = CGSize(width: 1440, height: 810)
 
     @MainActor static func render<V: View>(_ name: String, _ view: V, in out: URL, _ refs: URL, _ reference: String,
-                                          reduced: Bool = true, names: ButtonNameStyle = .xbox) throws {
-        let size = screenSize
+                                          reduced: Bool = true, names: ButtonNameStyle = .xbox, size: CGSize = screenSize) throws {
         let image = try bitmap(view
             .environment(\.seleneCanvas, SeleneCanvas(size: size))
             .environment(\.seleneReduceMotion, reduced)
@@ -854,6 +941,9 @@ def main():
                 r'public static var preferences: UserDefaults \{ \.standard \}',
                 f'public static let preferences = UserDefaults(suiteName: "local.arcane.{package.name}")!')
         replace(app / "Views/Shell/MenuOverlayView.swift", r"var presented = false", "var presented = true")
+        activity = app / "Views/Shell/ActivityCenterView.swift"
+        replace(activity, r"                ScrollViewReader \{ scroll in\n                    ScrollView \{\n", "")
+        replace(activity, r"                    }\n                    \.padding\(EdgeInsets.*?\.onChange\(of: focused\)[^\n]*\n                }\n", "")
         replace(app / "Views/Theme/ThemeStore.swift", r"static let shared = ThemeStore\(\)",
                 f'static let shared = ThemeStore(palettesURL: URL(fileURLWithPath: "{ROOT}/Resources/Selene/palettes.json"))')
         replace(app / "Views/Search/FindGameView.swift",
@@ -879,11 +969,23 @@ def main():
         replace(app / "Views/Theme/SeleneBackdrop.swift",
                 r"tint: modsTint \? 1 : 0, moving: moving,\n",
                 "tint: modsTint ? 1 : 0, moving: false, asImage: true,\n")
+        # ImageRenderer does not draw the AppKit scroll host. Keep the real SwiftUI layout and clip it
+        # to the same viewport for screenshots; scroll/input are not verified by the PNGs.
+        replace(app / "Views/Shell/ProfilePage.swift",
+                r"                ScrollViewReader \{ proxy in\n                    ScrollView \{(.*?)"
+                r"                    \}\n                    \.onChange\(of: focus, initial: true\).*?"
+                r"\n                \}\n            \}\n            if ownsPage",
+                lambda m: "                Color.clear.overlay(alignment: .top) {" + m[1] +
+                "                        .fixedSize(horizontal: false, vertical: true)\n"
+                "                    }.clipped()\n            }\n            if ownsPage")
         # ImageRenderer paints any AppKit-backed view as a full-screen yellow "no entry" placeholder: the game-art
         # layer is one. Arcane itself shows the Selene backdrop there when a game has no art.
         replace(app / "Views/Spotlight/SeleneArtBackground.swift",
                 r"            SeleneArtLayer\(image: art,[^\n]*\n",
                 "            if let art { Image(nsImage: art).resizable().scaledToFill() }\n")
+        # ImageRenderer never runs the asynchronous cover lookup: use the synthetic game art already loaded by the probe.
+        replace(app / "Views/Components/SwitchBoxArtCover.swift", r"            if let cover \{",
+                r'            if let cover = cover ?? TileArtMemo.shared.object(forKey: "nxnative|\(game.id)" as NSString) {')
         replace(app / "Views/Theme/MoonlightRenderer.swift", r"                if let image \{\n                    Image\(decorative:",
                 "                if let image = engine.snapshot(width: max(w, 1), height: max(h, 1), colors: colors) {\n                    Image(decorative:")
         # ImageRenderer does not rasterize AppKit scroll views or fields. Render their real SwiftUI contents.
@@ -929,8 +1031,10 @@ extension NextendoAccountSnapshot {
     package static func screenFixture(second: Bool) -> Self {
         .init(name: second ? "Solar Pilot" : "Lunar Pilot", username: second ? "fixture2" : "fixture", countryCode: nil, friendCode: nil, avatar: nil,
               avatarPID: nil, friends: [
+                  .init(id: 2, name: "Nova", favorite: false, presence: .playing, game: "Observatory 1", gameID: "0100000000000001"),
                   .init(id: 1, name: "Sol", favorite: false, presence: .online, game: nil, gameID: nil),
-                  .init(id: 2, name: "Nova", favorite: false, presence: .playing, game: "Pokémon Legends: Z-A", gameID: nil)
+                  .init(id: 3, name: "Vega", favorite: false, presence: .playing, game: "Observatory 3", gameID: "0100000000000003"),
+                  .init(id: 4, name: "Lyra", favorite: false, presence: .online, game: nil, gameID: nil)
               ],
               requests: [], sent: [], recentPlayers: [], failure: nil)
     }

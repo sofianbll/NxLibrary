@@ -23,6 +23,8 @@ extension AppShellView {
 
     func activityCenterKey(_ keyCode: UInt16) -> GamepadAction? {
         switch keyCode {
+        case 12: return .tabPrevious
+        case 14: return .tabNext
         case 125: return .navigateDown
         case 126: return .navigateUp
         case 36, 76, 49: return .confirm
@@ -144,7 +146,9 @@ extension AppShellView {
                 if !event.isARepeat { GameControllerService.shared.onAction?(.profiles) }
                 return nil
             }
-            if viewModel.profileOwnsInput, !showsWelcome, !viewModel.showSetupCheck, !isCloseGameOpen {
+            if viewModel.profileOwnsInput || (router.route == .profile && !router.isMenuPresented
+                && !viewModel.isGameOptionsOpen && !nativeDialogOwnsInput),
+               !showsWelcome, !viewModel.showSetupCheck, !isCloseGameOpen {
                 return profileKey(event)
             }
             if router.isMenuPresented, router.activityCenterFocus != nil {
@@ -168,8 +172,8 @@ extension AppShellView {
                 case 36, 76, 49: menuAction = .confirm   // Return, keypad Enter, Space
                 case 53: menuAction = .cancel            // Esc
                 case 51: menuAction = router.isThemePickerOpen ? .contextAction : nil   // Delete: remove your own wallpaper
-                case 12: menuAction = router.isThemePickerOpen ? .tabPrevious : nil     // Q: Wallpapers / Live, as LB
-                case 14: menuAction = router.isThemePickerOpen ? .tabNext : nil         // E: as RB
+                case 12: menuAction = .tabPrevious                                    // Q: as LB
+                case 14: menuAction = .tabNext                                        // E: as RB
                 case 7: menuAction = router.isThemePickerOpen ? .secondaryAction : nil  // X: open the page
                 case 16: menuAction = router.isThemePickerOpen ? .contextAction : nil   // Y: remove
                 default: menuAction = nil
@@ -194,7 +198,7 @@ extension AppShellView {
                 if typing || !isHomeRoute { return event }
                 action = .view
             case (_, "f", [.command]):              // Cmd+F
-                if typing || !isHomeRoute { return event }
+                if typing || (router.route != .library && router.route != .collection) { return event }
                 action = .search
             case (_, ",", [.command]):              // Cmd+,
                 // Same as holding Menu. Consumed, so the menu-bar Settings command does not open Settings a second time.
@@ -218,10 +222,10 @@ extension AppShellView {
         gestureKeyMonitor = nil
     }
 
-    /// Input while the control center is open: arrows move, A selects, B (or Esc) closes the open panel
-    /// first and then the menu. Holding Menu opens Settings.
+    /// Arrows move within the current layer; the shoulders switch icons or panels.
+    /// A selects; B (or Esc) closes the open panel, then the menu. Hold Menu for Settings.
     func menuInput(_ action: GamepadAction) {
-        if router.activityCenterFocus != nil {
+        if router.activityCenterFocus != nil, action != .tabPrevious, action != .tabNext {
             activityCenterInput(action, router: router, viewModel: viewModel)
             return
         }
@@ -243,12 +247,18 @@ extension AppShellView {
         case .navigateRight: step = .right
         case .navigateUp: step = .up
         case .navigateDown: step = .down
+        case .tabPrevious: step = .previous
+        case .tabNext: step = .next
         case .confirm: step = .confirm
         case .cancel: step = .back
         default: return
         }
+        let previous = router.menuSelection.selected
         switch router.menuStep(step) {
-        case .none: break
+        case .none:
+            if (step == .previous || step == .next), router.menuSelection.selected != previous {
+                SoundEffectService.shared.play(.focus)
+            }
         case .action(let action): runMenuAction(action)
         case .entry(let entry): runMenuEntry(entry)
         case .power(let power): runPower(power)
@@ -278,7 +288,7 @@ extension AppShellView {
     func runMenuEntry(_ entry: MenuEntry) {
         router.closeEntryMenu()
         switch entry {
-        case .myProfile: openProfile(.detail, fromMenu: true)
+        case .myProfile: router.closeMenu(); openProfilePage()
         case .switchProfile: openProfile(.picker, fromMenu: true)
         case .editProfile: openProfile(.editor, fromMenu: true)
         case .theme:

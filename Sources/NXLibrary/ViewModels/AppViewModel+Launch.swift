@@ -271,7 +271,9 @@ extension AppViewModel {
     private func openGame(_ game: PortedGame, titleId: String, token saveLaunchToken: UUID,
                           environment: [String: String], overlay: GameOverlayLaunch, snapshot: GameOverlaySnapshot) {
         let evaluate = snapshot.profile.flatMap { localAchievementExit(for: game, profile: $0.id, environment: environment) }
-        launchService.launch(appURL: game.url, environment: environment, overlay: overlay, snapshot: snapshot,
+        launchService.launch(appURL: game.url, environment: environment,
+                             homeButton: settingsStore?.settings.inGameHomeButton ?? .auto,
+                             overlay: overlay, snapshot: snapshot,
                              onExit: evaluate) { [weak self] success, error in
             DispatchQueue.main.async {
                 guard let self else { return }

@@ -20,33 +20,32 @@ extension CollectionView {
             }
         }
         var moved = false
-        let all = viewModel.visibleCatalogGames
         switch action {
-        case .navigateLeft, .navigateRight:
+        case .navigateLeft, .navigateRight, .tabPrevious, .tabNext:
+            let step = action == .navigateLeft || action == .tabPrevious ? -1 : 1
+            if profileCard == nil, action == .tabPrevious || action == .tabNext {
+                setFilter(filter.shifted(by: step))
+                return
+            }
             let before = viewModel.librarySelection.selectedGameID
-            viewModel.librarySelection.moveCatalog(by: action == .navigateLeft ? -1 : 1,
-                                            in: all, history: playSessions)
-            moved = viewModel.librarySelection.selectedGameID != before
+            let ids = games.map(\.id)
+            moved = viewModel.librarySelection.moveIDs(ids, by: step) != before
         case .navigateUp:
-            if profile != nil {
+            if profile != nil, profileCard == nil {
                 profileFocused = true
                 SoundEffectService.shared.play(.focus)
             }
         case .navigateDown: break
         case .jumpToStart, .jumpToEnd:
             let before = viewModel.librarySelection.selectedGameID
-            viewModel.librarySelection.jumpCatalog(toEnd: action == .jumpToEnd, in: all, history: playSessions)
-            moved = viewModel.librarySelection.selectedGameID != before
-        case .tabPrevious:
-            setFilter(filter.shifted(by: -1))
-        case .tabNext:
-            setFilter(filter.shifted(by: 1))
+            let ids = games.map(\.id)
+            moved = viewModel.librarySelection.jumpIDs(ids, toEnd: action == .jumpToEnd) != before
         case .rightStickPress:
-            openSort()
+            if profileCard == nil { openSort() }
         case .confirm:
             if let record = selectedCatalogGame {
                 activateCatalog(record)
-            } else if !hasAnyGame, !viewModel.isScanningLibrary {
+            } else if profileCard == nil, !hasAnyGame, !viewModel.isScanningLibrary {
                 SoundEffectService.shared.play(.click)
                 router.openAddGame()
             }
@@ -65,9 +64,9 @@ extension CollectionView {
         case .cancel:
             router.back()
         case .view:
-            if settings.settings.viewButtonSwitches { router.setInitialRoute(.library) }
+            if profileCard == nil, settings.settings.viewButtonSwitches { router.setInitialRoute(.library) }
         case .search:
-            router.isSearchPresented = true
+            if profileCard == nil { router.isSearchPresented = true }
         case .menu:
             router.isMenuPresented = true
         case .menuHold:
@@ -106,7 +105,7 @@ extension CollectionView {
             guard !router.isMenuPresented,
                   !NativeMenuCommands.shared.isTracking,
                   !router.isSearchPresented,
-                  router.route == .collection,
+                  router.route.isCollection,
                   viewModel.cloudLibraryGameID == nil,
                   viewModel.alertMessage == nil, viewModel.settingsNotice == nil,
                   !viewModel.isGameOptionsOpen,

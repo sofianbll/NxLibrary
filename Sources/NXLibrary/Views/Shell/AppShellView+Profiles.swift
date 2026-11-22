@@ -5,7 +5,7 @@ import NXLibraryCore
 import ArcanePorting
 
 struct ProfileFlow {
-    enum Page { case picker, editor, detail }
+    enum Page { case picker, editor, account }
     var page: Page
     var selected: UUID?
     var atStartup = false
@@ -104,7 +104,7 @@ extension AppShellView {
                     }
                 }
                 .animation(Motion.overlay(reduceMotion), value: flow.change?.step)
-            case .detail:
+            case .account:
                 LocalProfilePage(profile: active, nextendo: viewModel.profileNextendo, viewModel: viewModel,
                                  settings: settings, history: playSessions, onClose: closeProfile,
                                  onUpdate: profiles.update, onSwitch: {
@@ -120,12 +120,19 @@ extension AppShellView {
         guard let active = profiles.active, profileFlow == nil, viewModel.launchOverlay == nil,
               !viewModel.showSetupCheck, !showsWelcome, !isCloseGameOpen else { return }
         viewModel.profileOwnsInput = true
-        profileFlow = ProfileFlow(page: page == .editor && profiles.guest != nil ? .detail : page,
+        profileFlow = ProfileFlow(page: page == .editor && profiles.guest != nil ? .account : page,
                                   selected: active.id, returnsToMenu: fromMenu)
     }
 
     var launcherIsFrontmost: Bool {
         NSApp.isActive && NSWorkspace.shared.frontmostApplication?.processIdentifier == ProcessInfo.processInfo.processIdentifier
+    }
+
+    func openProfilePage() {
+        guard profiles.active != nil, profileFlow == nil, viewModel.launchOverlay == nil,
+              !viewModel.showSetupCheck, !showsWelcome, !isCloseGameOpen, router.route != .profile else { return }
+        profilePageFocus = nil
+        router.navigate(to: .profile)
     }
 
     func toggleProfilePicker() {
@@ -141,7 +148,7 @@ extension AppShellView {
 
     func closeProfile() {
         if profileFlow?.returnsToPortrait == true {
-            profileFlow?.page = .detail
+            profileFlow?.page = .account
             profileFlow?.returnsToPortrait = false
             return
         }
@@ -269,7 +276,10 @@ extension AppShellView {
         case 51: action = .secondaryAction
         case 12: action = .tabPrevious
         case 14: action = .tabNext
-        case 48: action = event.modifierFlags.contains(.shift) ? .navigateLeft : .navigateRight
+        case 48:
+            let previous = event.modifierFlags.contains(.shift)
+            action = profileFlow == nil && router.route == .profile
+                ? (previous ? .tabPrevious : .tabNext) : (previous ? .navigateLeft : .navigateRight)
         default:
             if let key, key.utf8.count == 1, let digit = Int(key), !event.isARepeat {
                 NotificationCenter.default.post(name: .nxProfileInput, object: digit)

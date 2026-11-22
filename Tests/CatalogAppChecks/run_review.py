@@ -540,7 +540,10 @@ func withAnimation(_ animation: Int?, _ update: () -> Void) { update() }
         input.router.isMenuPresented = true
         input.router.activityCenterFocus = ActivityCenterFocus()
         GameControllerService.shared.onAction?(.navigateDown)
-        require(received.actions.isEmpty && input.dialogActions == [.navigateDown] && !input.availability().general,
+        GameControllerService.shared.onAction?(GamepadAction.onPress(.l)!)
+        GameControllerService.shared.onAction?(GamepadAction.onPress(.r)!)
+        require(received.actions.isEmpty && input.dialogActions == [.navigateDown, .tabPrevious, .tabNext]
+                    && !input.availability().general,
                 "The activity center must retain menu routing and suspend page commands")
         input.router.activityCenterFocus = nil
         input.router.isMenuPresented = false

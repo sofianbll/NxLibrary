@@ -23,12 +23,12 @@ final class AchievementsScreenModel: ObservableObject {
     enum Outcome { case ignored, moved, filtered, ordered, opened, closedDetail, close }
 
     /// The arrows move through the list, LB/RB switch the filter, Y the order, A opens the focused achievement, B closes;
-    /// with the detail open, the arrows step it through the list and A or B close it. The host swallows the rest.
+    /// with the detail open, arrows and shoulders step through the list and A or B closes it.
     func handle(_ action: GamepadAction, summary: AchievementSummary) -> Outcome {
         if state.isDetailOpen {
             switch action {
-            case .navigateUp, .navigateLeft: return move(.up) ? .moved : .ignored
-            case .navigateDown, .navigateRight: return move(.down) ? .moved : .ignored
+            case .navigateUp, .navigateLeft, .tabPrevious: return move(.up) ? .moved : .ignored
+            case .navigateDown, .navigateRight, .tabNext: return move(.down) ? .moved : .ignored
             case .confirm, .cancel:
                 closeDetail()
                 return .closedDetail

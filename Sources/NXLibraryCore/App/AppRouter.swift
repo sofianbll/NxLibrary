@@ -6,6 +6,8 @@ public enum AppRoute: Equatable {
     case library
     /// The whole library as one grid (Selene's Collection).
     case collection
+    case profile
+    case profileCollection(ProfilePageCard)
     case detail(UUID)
     case settings(SettingsSection)
     case addGame
@@ -14,6 +16,10 @@ public enum AppRoute: Equatable {
 
     /// Drawn over the screen it was opened from, which stays behind, blurred.
     public var isOverlay: Bool { self == .addGame || self == .console }
+    public var isCollection: Bool {
+        if case .profileCollection = self { return true }
+        return self == .collection
+    }
 }
 
 /// A full-screen page covers lower UI layers while their shared background stays mounted.
@@ -39,7 +45,7 @@ public enum ShellBackdropCover: Equatable {
 }
 
 /// A press on the control center, whatever device it came from.
-public enum MenuStep { case left, right, up, down, confirm, back }
+public enum MenuStep { case left, right, up, down, previous, next, confirm, back }
 
 /// What the shell runs after a `confirm`: the focused icon, card entry or Power pill.
 public enum MenuOutcome: Equatable {
@@ -67,6 +73,7 @@ public final class AppRouter: ObservableObject {
     @Published public var pendingSpotlightSelect: UUID?
 
     private var history: [AppRoute] = []
+    private var profileSpotlightKey: String?
 
     public init() {}
 
@@ -121,6 +128,17 @@ public final class AppRouter: ObservableObject {
         case .right: moveMenu(by: 1)
         case .up: movePowerMenu(by: -1); moveEntryMenu(by: -1)
         case .down: movePowerMenu(by: 1); moveEntryMenu(by: 1)
+        case .previous, .next:
+            let delta = step == .previous ? -1 : 1
+            guard menuSelection.isSubmenuOpen || activityCenterFocus != nil else {
+                moveMenu(by: delta)
+                return .none
+            }
+            // Settings leaves the control center; only an explicit confirm opens it.
+            let panels = MenuAction.allCases.filter { $0 != .settings }
+            if let index = panels.firstIndex(of: menuSelection.selected), panels.indices.contains(index + delta) {
+                return .action(panels[index + delta])
+            }
         case .confirm:
             if menuSelection.isPowerOpen { return .power(menuSelection.power) }
             if menuSelection.isEntryOpen { return .entry(menuSelection.entry) }
@@ -137,6 +155,7 @@ public final class AppRouter: ObservableObject {
     /// A press on a row icon, by pointer or by A: the focus lands on it, and its card or Power's pills open, or close
     /// when they were already open on it. The submenu of another icon closes first; the other icons hold none.
     public func pressMenuIcon(_ action: MenuAction) {
+        activityCenterFocus = nil
         let wasFocused = menuSelection.selected == action
         menuSelection.selected = action
         switch action {
@@ -178,6 +197,18 @@ public final class AppRouter: ObservableObject {
     public func openGameInbox() { navigate(to: .gameInbox) }
     public func openConsole() { navigate(to: .console) }
     public func openCollection() { navigate(to: .collection) }
+    public var previousRoute: AppRoute? { history.last }
+
+    public func openSpotlightDetails(_ id: UUID, returningTo selection: String?) {
+        profileSpotlightKey = selection
+        requestSpotlightSelect(id)
+        navigate(to: .library)
+    }
+
+    public func takeProfileSpotlightKey() -> String? {
+        defer { profileSpotlightKey = nil }
+        return profileSpotlightKey
+    }
 
     public func showLibrary() {
         isReturningFromBack = false

@@ -143,6 +143,8 @@ public enum SettingsCatalog {
         action("buttonLayout", .controllers, "Button layout", "View the library controls."),
         action("controllerDeadzone", .controllers, "Stick navigation deadzone",
                "Thumbstick threshold for library navigation; does not alter game input."),
+        row("inGameHomeButton", .controllers, "Home button in games",
+            "Auto uses the game's own setting.") { $0.inGameHomeButton },
 
         // Steam
         action("steamSource", .sources, "Steam", "Find installed native Mac games in your Steam libraries."),

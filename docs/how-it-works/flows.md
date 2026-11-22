@@ -94,7 +94,7 @@ flowchart TD
     E --> F["CloudSavesPreferences applica la scelta cloud"]
     F --> M["ModStore riconcilia le cartelle prima di Play"]
     M --> O["GameOverlayLaunch: palette e dati locali<br/>snapshot temporaneo del profilo se il dmhost lo dichiara"]
-    O --> G["LaunchService apre l'app (NSWorkspace)<br/>DM_MODS_OFF controlla il gruppo ExeFS già nel bundle"]
+    O --> G["LaunchService apre l'app (NSWorkspace)<br/>DM_MODS_OFF controlla ExeFS; DM_OVERLAY_HOME_SWAP si aggiunge solo per una scelta esplicita"]
     G --> H["LaunchCoverWindow + LaunchMotion<br/>finché LaunchReadinessProbe vede una finestra"]
     H --> I["RunningGameMonitor · PlaySessionStore (heartbeat)"]
     I -->|"Home → Back to console mode (build compatibile)"| PZ["Notifica del PID di dmhost → Arcane davanti nella schermata corrente"]
@@ -287,7 +287,7 @@ La rimozione non è disponibile per il profilo originale: conserva l'accesso a p
 
 Il carosello degli avatar usa artwork già nella cache, con ritaglio sul volto rilevato o al centro, e simboli neutri del sistema. L’ultima tessera apre la scelta di una foto, con assi e zoom per inquadrarla; B o Esc annulla. Per le GIF si conservano i fotogrammi e i tempi; con Riduci movimento si vede solo il primo.
 
-Home, Cambia profilo e un clic su Profili nella barra Spotlight aprono il selettore. Il ritratto a destra e Profilo → Il mio profilo aprono l’attività locale, anche senza conto, e offrono il codice del profilo. Un profilo bloccato chiede il PIN o Touch ID, se disponibile; Touch ID riconosce l’utente macOS, non distingue i profili Arcane. Senza codice né Touch ID si può scegliere un altro profilo; non c’è un ripristino dal servizio online.
+Home, Cambia profilo e un clic su Profili nella barra Spotlight aprono il selettore. La carta Attività di Spotlight, il ritratto a destra e Profilo → Il mio profilo aprono la pagina profilo anche senza conto. Settings → Profiles → Profile page cards attiva e riordina le schede del profilo corrente. Le anteprime dei giochi aprono i dettagli; i titoli aprono Collection nell'ordine proprio della scheda, senza toccare le preferenze globali. B torna al profilo. Il centro attività per trasferimenti e compilazioni resta distinto. Il pannello del conto offre anche il codice del profilo. Un profilo bloccato chiede il PIN o Touch ID, se disponibile; Touch ID riconosce l’utente macOS, non distingue i profili Arcane. Senza codice né Touch ID si può scegliere un altro profilo; non c’è un ripristino dal servizio online.
 
 Passare a un altro profilo con un gioco aperto chiede conferma. Arcane chiude i giochi Switch e aspetta che finiscano; i giochi Steam si chiudono manualmente. L’ospite gioca a Switch offline senza conto né cloud dei salvataggi. Entrare e uscire richiede conferma; i dati salvati rimangono separati sul Mac, senza ripresa dal selettore per il prossimo ospite. I giochi Steam non partono come ospite perché Arcane non può separarne le partite.
 
@@ -303,7 +303,7 @@ Sign in apre il browser predefinito e la riga offre Cancel finché attende la ca
 
 La shell controlla la presenza del token del profilo attivo all’apertura, al cambio di profilo e ogni 180 s: solo con un token legge i contatori pubblici. Per l’ospite non avvia la lettura.
 
-Nel profilo, Mostrati online pubblica la presenza senza titolo; Mostra il gioco in corso è un consenso separato, efficace al prossimo lancio e solo se la presenza è attiva. Un rifiuto del servizio mostra una nota discreta senza cambiare lo stato dell’account. La pagina profilo e il pannello Amici aperto aggiornano le liste ogni 60 s; Aggiorna anticipa la lettura e la riga mostra il tempo dall’ultimo aggiornamento riuscito. Gli amici in gioco mostrano il titolo quando disponibile.
+Nel profilo, Mostrati online pubblica la presenza senza titolo; Mostra il gioco in corso è un consenso separato, efficace al prossimo lancio e solo se la presenza è attiva. Un rifiuto del servizio mostra una nota discreta senza cambiare lo stato dell’account. La pagina profilo controlla il conto all’apertura; il pannello di gestione aperto aggiorna le liste ogni 60 s. Aggiorna anticipa la lettura e la riga mostra il tempo dall’ultimo aggiornamento riuscito. Gli amici in gioco mostrano il titolo quando disponibile.
 
 Play together mostra lo stato della VPN scelta e offre Scarica o Apri. Advanced raccoglie la scelta LAN o comunicazione locale e l'adattatore manuale. Reset group torna a Nessuna VPN, Offline e impostazioni avanzate automatiche.
 

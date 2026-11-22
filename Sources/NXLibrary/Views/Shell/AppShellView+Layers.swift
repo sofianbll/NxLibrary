@@ -39,7 +39,7 @@ extension AppShellView {
                     .transition(overlayTransition)
                     .zIndex(0.8)
             }
-            if router.isSearchPresented && isHomeRoute {
+            if router.isSearchPresented && (router.route == .library || router.route == .collection) {
                 FindGameView(router: router, viewModel: viewModel, playSessions: playSessions,
                              artwork: artwork)
                     .opacity(opacityBelowCover(0.5))
@@ -129,7 +129,8 @@ extension AppShellView {
                                            onOpen: { openActivityCenterRow($0, router: router, viewModel: viewModel) },
                                            onCancel: { cancelActivityCenterRow($0, viewModel: viewModel) },
                                            onBack: { router.menuStep(.back) },
-                                           onOutside: router.closeMenu)
+                                           onOutside: router.closeMenu,
+                                           onTab: { menuInput($0 < 0 ? .tabPrevious : .tabNext) })
                             .transition(.opacity)
                     } else if router.isThemePickerOpen {
                         ThemePickerView(viewModel: viewModel, router: router, settings: settings, games: viewModel.libraryGames)
@@ -144,7 +145,8 @@ extension AppShellView {
                                 || !viewModel.buildQueue.isEmpty || !viewModel.activityResults.entries.isEmpty,
                             onSelect: { runMenuAction($0) },
                             onSelectPower: { runPower($0) },
-                            onSelectEntry: { runMenuEntry($0) }
+                            onSelectEntry: { runMenuEntry($0) },
+                            onTab: { menuInput($0 < 0 ? .tabPrevious : .tabNext) }
                         )
                         .transition(.opacity)
                     }
@@ -363,6 +365,7 @@ extension AppShellView {
         .onChange(of: showsWelcome) { if $1 { viewModel.isWelcomeOpen = true } }
         .onChange(of: router.route) { _, route in
             viewModel.cloudLibraryGameID = nil
+            if route == .profile && !router.isReturningFromBack { profilePageFocus = nil }
             recordLastHome(route)
             switch route {
             case .addGame:
@@ -371,7 +374,7 @@ extension AppShellView {
                     returningFromBack: router.isReturningFromBack,
                     preservingSelection: setupSourceEntryID != nil
                 )
-            case .library, .collection, .detail, .gameInbox:
+            case .library, .collection, .detail, .gameInbox, .profile, .profileCollection:
                 setupSourceEntryID = nil
                 viewModel.porting.addGameDidLeave()
             default:
@@ -399,7 +402,11 @@ extension AppShellView {
             }
         }
         .onChange(of: settings.settings.appLanguage) { updateLocale() }
-        .onReceive(NotificationCenter.default.publisher(for: .nxOpenLocalProfile)) { _ in openProfile(.detail) }
+        .onReceive(NotificationCenter.default.publisher(for: .nxOpenLocalProfile)) { _ in openProfilePage() }
+        .onReceive(NotificationCenter.default.publisher(for: .nxProfileCardsSaveFailed)) { _ in
+            viewModel.showSettingsNotice(title: L10n.text("Settings not saved"),
+                                         message: L10n.text("Your changes could not be saved. Try again."))
+        }
         .onReceive(NotificationCenter.default.publisher(for: .nxToggleProfilePicker)) { _ in toggleProfilePicker() }
         .onChange(of: settings.settings.appRegion) { updateLocale() }
         .onReceive(NotificationCenter.default.publisher(for: .nxLibraryPlayFocused)) { _ in
@@ -425,7 +432,7 @@ extension AppShellView {
         .onReceive(NotificationCenter.default.publisher(for: .nxLibraryOpenGameOptions)) { _ in
             guard nativeMenuAvailability.options else { return }
             switch router.route {
-            case .library, .collection:
+            case .library, .collection, .profileCollection:
                 let origin: GameOptionsOrigin = router.route == .library ? .spotlight : .collection
                 if let steam = viewModel.currentFocusedCatalogGame, steam.integration == .steam {
                     viewModel.openSteamOptions(steam, from: origin)

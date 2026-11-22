@@ -17,6 +17,24 @@ final class LaunchServiceTests: XCTestCase {
         }
     }
 
+    func testInGameHomeButtonReachesTheGameEnvironmentOnlyWhenExplicit() throws {
+        let launcher = FakeLauncher()
+        let service = LaunchService(launcher: launcher)
+        let app = URL(fileURLWithPath: "/Fixture.app")
+        let key = "DM_OVERLAY_HOME_SWAP"
+        var settings = try JSONDecoder().decode(AppSettings.self, from: Data("{}".utf8))
+        XCTAssertEqual(settings.inGameHomeButton, .auto)
+        for (choice, expected): (InGameHomeButton, String?) in [(.auto, nil), (.fullOverlay, "0"), (.quickAccess, "1")] {
+            settings.inGameHomeButton = choice
+            let saved = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
+            service.launch(appURL: app, environment: [key: "stale"], homeButton: saved.inGameHomeButton) { ok, _ in
+                XCTAssertTrue(ok)
+            }
+            XCTAssertEqual(launcher.environment[key], expected)
+            XCTAssertEqual(SettingsReset.reset(.controllers, in: saved).inGameHomeButton, .auto)
+        }
+    }
+
     func testOverlaySnapshotWireFormatPermissionsAndLifetime() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("NXOverlay-\(UUID())")
         let app = root.appendingPathComponent("Fixture.app")

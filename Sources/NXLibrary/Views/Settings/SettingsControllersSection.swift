@@ -47,6 +47,10 @@ struct SettingsControllersSection: View {
                         .frame(width: 38, alignment: .trailing)
                 }
             }
+
+            SettingsSubheading(L10n.text("In game"))
+            SeleneCycleRow("Home button in games", subtitle: "Auto uses the game's own setting.",
+                           value: settings.settings.inGameHomeButton.title, cycle: stepHomeButton)
         }
         .onAppear(perform: publishActions)
         .onChange(of: controller.deadzone) { publishActions() }
@@ -62,7 +66,12 @@ struct SettingsControllersSection: View {
             },
             .value("deadzone", "Stick navigation deadzone") { step in
                 controller.deadzone = min(0.80, max(0.10, controller.deadzone + 0.05 * Float(step)))
-            }
+            },
+            .value("inGameHomeButton", "Home button in games", cycle: stepHomeButton)
         ])
+    }
+
+    private func stepHomeButton(_ step: Int) {
+        settings.settings.inGameHomeButton = settings.settings.inGameHomeButton.stepped(step)
     }
 }

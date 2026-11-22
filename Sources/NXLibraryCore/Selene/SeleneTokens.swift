@@ -20,6 +20,7 @@ public enum SeleneTokens {
         case menuCaption = 18
         case compactCaption = 15
         case heroTitle = 62
+        case profileHeroTitle = 82
         case inboxTitle = 48
         case emptyStateTitle = 25
     }
@@ -40,6 +41,7 @@ public enum SeleneTokens {
         public static let feature: CGFloat = 28
         public static let section: CGFloat = 32
         public static let group: CGFloat = 48
+        public static let actionPillHeight: CGFloat = 54
         public static let chromeGutter: CGFloat = 64
         public static let settingsHintsClearance: CGFloat = 100
         public static let settingsInfoClearance: CGFloat = 60

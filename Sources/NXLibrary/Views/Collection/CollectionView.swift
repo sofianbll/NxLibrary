@@ -20,6 +20,7 @@ struct CollectionView: View {
     @ObservedObject var cloud: CloudLibraryModel
 
     @Environment(\.seleneCanvas) var canvas
+    @Environment(\.nxAppLocale) private var localization
 
     @StateObject var art = SeleneHeroArt()
     /// Art the player picks redraws the hero and logo (their task keys carry its revision).
@@ -47,8 +48,22 @@ struct CollectionView: View {
     /// The filter is shared with Spotlight.
     var filter: LibraryFilter { viewModel.librarySelection.query.filter }
 
-    var games: [CatalogGame] {
-        viewModel.librarySelection.query.applyCatalog(to: viewModel.visibleCatalogGames, history: playSessions)
+    var profileCard: ProfilePageCard? {
+        if case .profileCollection(let card) = router.route { return card }
+        return nil
+    }
+
+    var games: [CatalogGame] { games(using: viewModel.librarySelection.query) }
+
+    private func games(using query: LibraryQuery) -> [CatalogGame] {
+        let games = viewModel.visibleCatalogGames
+        guard let card = profileCard else {
+            return query.applyCatalog(to: games, history: playSessions)
+        }
+        let now = Date.now
+        return card.games(in: games, activity: playSessions.profileActivity(at: now),
+                          week: Activity.summary(sessions: playSessions.sessions, now: now, calendar: .current,
+                                                 topLimit: games.count), now: now)
     }
 
     var hasAnyGame: Bool { !viewModel.visibleCatalogGames.isEmpty }
@@ -67,12 +82,14 @@ struct CollectionView: View {
         let games = self.games
         let game = selectedGame(in: games)
         SeleneHomeChrome(
-            leftHints: HintItem.homeGlobals(other: "Spotlight",
+            leftHints: profileCard != nil ? [HintItem(.b, "Back", action: router.back)] : HintItem.homeGlobals(other: "Spotlight",
                                              onOther: settings.settings.viewButtonSwitches ? { handle(.view) } : nil,
                                              onMenu: { router.isMenuPresented = true },
                                              onSearch: { handle(.search) },
                                              onProfiles: { ProfileFlow.requestPicker() }),
-            rightHints: contextHints(game) + [LibrarySortMenu.hint(settings.settings.librarySort, action: openSort)],
+            rightHints: contextHints(game) + (profileCard == nil
+                ? [LibrarySortMenu.hint(settings.settings.librarySort, action: openSort)]
+                : [HintItem(.lb, "Previous") { handle(.tabPrevious) }, HintItem(.rb, "Next") { handle(.tabNext) }]),
             hintsHidden: router.overlayHasHints(viewModel),
             backdrop: {
                 SeleneArtBackground(image: art.image, imageKey: art.key,
@@ -105,7 +122,7 @@ struct CollectionView: View {
             if let action = note.object as? GamepadAction { handle(action) }
         }
         .onReceive(NotificationCenter.default.publisher(for: .nxFindGameSelect)) { note in
-            guard let id = note.object as? UUID else { return }
+            guard profileCard == nil, let id = note.object as? UUID else { return }
             // Find a game lands on Collection; a tab without the game gives way to All games.
             if !games.contains(where: { $0.id == id }) { setFilter(.all) }
             select(id)
@@ -121,8 +138,17 @@ struct CollectionView: View {
 
     private func stage(games: [CatalogGame], game: PortedGame?) -> some View {
         ZStack(alignment: .topLeading) {
-            SpotlightTopBar(filter: filter, sort: settings.settings.librarySort, showClock: settings.settings.showClock,
-                            profileFocused: profileFocused, nextendo: viewModel.profileNextendo, onSelect: { setFilter($0) })
+            if let profileCard {
+                Text(L10n.text(profileCard.title, context: localization))
+                    .seleneFont(.screenTitle, .semibold)
+                    .foregroundStyle(SeleneTheme.ink)
+                    .accessibilityAddTraits(.isHeader)
+                    .padding(.horizontal, canvas.u(SeleneTokens.Space.chromeGutter))
+                    .frame(height: canvas.u(SeleneTokens.Space.stageHeader))
+            } else {
+                SpotlightTopBar(filter: filter, sort: settings.settings.librarySort, showClock: settings.settings.showClock,
+                                profileFocused: profileFocused, nextendo: viewModel.profileNextendo, onSelect: { setFilter($0) })
+            }
 
             if let game {
                 CollectionInfoView(game: game, logo: art.logo(for: game),
@@ -171,6 +197,10 @@ struct CollectionView: View {
     private var emptyState: some View {
         if viewModel.isScanningLibrary {
             EmptyView()
+        } else if profileCard != nil {
+            Text(L10n.text("No games in this view.", context: localization))
+                .seleneFont(.dialogTitle)
+                .foregroundColor(SeleneTheme.ink)
         } else if hasAnyGame {
             Text(L10n.format("No games in %@", [L10n.text(filter.rawValue)]))
                 .seleneFont(.dialogTitle)
@@ -203,7 +233,7 @@ struct CollectionView: View {
         }
         guard let game else {
             if viewModel.isScanningLibrary { return [] }
-            return hasAnyGame ? [] : [HintItem(.a, L10n.text("Add game"))]
+            return hasAnyGame || profileCard != nil ? [] : [HintItem(.a, L10n.text("Add game"))]
         }
         if cloud.downloadsCloudApp(game) {
             return [HintItem(.a, "Download"), HintItem(.x, "Details"), HintItem(.y, "Game options")]
@@ -221,7 +251,7 @@ struct CollectionView: View {
         router.isSearchPresented = false
         store.preloadCachedStoreMetadata()
         // The starting tab is applied once per session, on the first visit to either screen.
-        if !viewModel.spotlight.startingTabApplied {
+        if profileCard == nil, !viewModel.spotlight.startingTabApplied {
             viewModel.spotlight.startingTabApplied = true
             viewModel.librarySelection.query.filter = LibraryFilter(startingTab: settings.settings.startingTab)
         }
@@ -232,9 +262,9 @@ struct CollectionView: View {
     /// Keeps the selection inside the filtered list, in the same frame as any change to it.
     func reconcile() {
         var state = viewModel.librarySelection
-        state.query.sort = settings.settings.librarySort
-        state.reconcileCatalog(with: viewModel.visibleCatalogGames, history: playSessions,
-                        preferredGameID: settings.settings.restoreLastGame ? settings.lastSelectedGameID : nil)
+        if profileCard == nil { state.query.sort = settings.settings.librarySort }
+        state.reconcileIDs(games(using: state.query).map(\.id),
+                           preferred: profileCard == nil && settings.settings.restoreLastGame ? settings.lastSelectedGameID : nil)
         if state != viewModel.librarySelection { viewModel.librarySelection = state }
     }
 
@@ -260,7 +290,7 @@ struct CollectionView: View {
 
     private func selectionChanged() {
         let game = selectedGame
-        if let id = game?.id ?? selectedCatalogGame?.id { settings.rememberLastSelectedGame(id) }
+        if profileCard == nil, let id = game?.id ?? selectedCatalogGame?.id { settings.rememberLastSelectedGame(id) }
         if let game { store.loadStoreMetadata(for: game) }
     }
 

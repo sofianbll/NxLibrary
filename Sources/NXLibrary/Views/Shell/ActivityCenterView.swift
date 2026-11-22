@@ -12,6 +12,7 @@ struct ActivityCenterView: View {
     let onCancel: (ActivityCenterFocus.Row) -> Void
     let onBack: () -> Void
     let onOutside: () -> Void
+    var onTab: ((Int) -> Void)? = nil
 
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.nxAppLocale) private var localization
@@ -59,7 +60,9 @@ struct ActivityCenterView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             SeleneHintsBar(left: [HintItem(.b, "Close", action: onBack)],
-                           right: hints(focused))
+                           right: (onTab.map { tab in
+                               [HintItem(.lb, "Previous") { tab(-1) }, HintItem(.rb, "Next") { tab(1) }]
+                           } ?? []) + hints(focused))
         }
         .accessibilityAction(.escape, onBack)
     }

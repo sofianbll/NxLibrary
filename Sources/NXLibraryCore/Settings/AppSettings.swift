@@ -166,9 +166,22 @@ public enum MultiplayerLocalMode: String, Codable, CaseIterable, Sendable {
     }
 }
 
+public enum InGameHomeButton: String, Codable, CaseIterable, Sendable {
+    case auto, fullOverlay, quickAccess
+
+    public var title: String {
+        switch self {
+        case .auto: "Auto"
+        case .fullOverlay: "Short press = full overlay"
+        case .quickAccess: "Short press = quick access"
+        }
+    }
+}
+
 public struct AppSettings: Codable, Equatable {
     public var appLanguage: AppLanguage = .automatic
     public var appRegion: String? = nil
+    public var inGameHomeButton: InGameHomeButton = .auto
     public var multiplayerVPN: MultiplayerVPN = .none
     public var multiplayerDefault: MultiplayerMode = .offline
     public var multiplayerLocalMode: MultiplayerLocalMode = .auto
@@ -317,6 +330,7 @@ public struct AppSettings: Codable, Equatable {
 
     enum CodingKeys: String, CodingKey, CaseIterable {
         case appLanguage, appRegion, remotePlayMode
+        case inGameHomeButton
         case multiplayerVPN, multiplayerDefault, multiplayerLocalMode, multiplayerAdapter
         case backgroundShade, readableText, reduceMotion, showButtonHints, showClock
         case restoreLastGame, checkEngineAtLaunch, refreshLibraryAtLaunch, lastSelectedGameID
@@ -339,6 +353,7 @@ public struct AppSettings: Codable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         appLanguage = (try container.decodeIfPresent(String.self, forKey: .appLanguage)).flatMap(AppLanguage.init(rawValue:)) ?? .automatic
         appRegion = AppLocale.validRegion(try container.decodeIfPresent(String.self, forKey: .appRegion))
+        inGameHomeButton = (try? container.decode(InGameHomeButton.self, forKey: .inGameHomeButton)) ?? .auto
         multiplayerVPN = (try? container.decode(MultiplayerVPN.self, forKey: .multiplayerVPN))
             ?? ((try? container.decode(String.self, forKey: .remotePlayMode)) == "automatic" ? .zeroTier : .none)
         multiplayerDefault = (try? container.decode(MultiplayerMode.self, forKey: .multiplayerDefault)) ?? .offline
@@ -403,6 +418,7 @@ public struct AppSettings: Codable, Equatable {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(appLanguage, forKey: .appLanguage)
         try c.encodeIfPresent(appRegion, forKey: .appRegion)
+        try c.encode(inGameHomeButton, forKey: .inGameHomeButton)
         try c.encode(backgroundShade, forKey: .backgroundShade)
         try c.encode(readableText, forKey: .readableText)
         try c.encode(reduceMotion, forKey: .reduceMotion)

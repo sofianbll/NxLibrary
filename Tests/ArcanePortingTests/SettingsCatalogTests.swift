@@ -39,7 +39,7 @@ final class SettingsCatalogTests: XCTestCase {
         "cloudLibrarySetup", "cloudLibraryAdvanced", "cloudSourcesRoot", "cloudReferenceFolder", "cloudLibraryTest", "cloudLibraryTool", "cloudLibraryDisconnect",
         "hiddenGames", "gameDefaults.fullscreen", "gameDefaults.enable60FPS", "gameDefaults.isDockedMode",
         "gameDefaults.enableMetalFXUpscale", "gameDefaults.enableMetalHUD", "gameDefaults.language",
-        "gameDefaults.renderScale", "controllerStatus", "buttonLayout", "controllerDeadzone", "gameDefaults.rumble",
+        "gameDefaults.renderScale", "controllerStatus", "buttonLayout", "controllerDeadzone", "inGameHomeButton", "gameDefaults.rumble",
         "gameDefaults.rumbleGain", "gameFolder", "libraryFolder", "libraryRefresh", "notifyPortingEnds",
         "steamSource", "steamRefresh", "steamFolder", "steamInBackground", "storageUsage", "buildCaches", "logs",
         "metadataCache", "artworkCache", "saveBackups", "console", "engineFolder", "engineStatus",
@@ -66,6 +66,7 @@ final class SettingsCatalogTests: XCTestCase {
         XCTAssertEqual(groups["console"], .console)
         XCTAssertEqual(groups["logs"], .storage)
         XCTAssertEqual(groups["controllerDeadzone"], .controllers)
+        XCTAssertEqual(groups["inGameHomeButton"], .controllers)
     }
 
     func testSidebarGroupsInOrder() {
@@ -156,7 +157,7 @@ final class SettingsCatalogTests: XCTestCase {
         "spotlightOrder", "interfaceSounds", "soundVolume", "quietLaunch", "importSeleneSounds", "colorThemeID",
         "wallpaperID", "settingsWallpaperID", "backgroundSizing", "wallpaperBrightness", "animatedBackground",
         "keepWallpaperOnGames", "backgroundShade", "readableText", "showClock", "reduceMotion", "iconAppearance",
-        "controllerStatus", "buttonLayout", "controllerDeadzone", "multiplayerVPN", "multiplayerDefault",
+        "controllerStatus", "buttonLayout", "controllerDeadzone", "inGameHomeButton", "multiplayerVPN", "multiplayerDefault",
         "multiplayerLocalMode", "multiplayerAdapter", "igdb", "steamGridDB", "steamSource",
         "steamRefresh", "steamFolder", "steamInBackground", "librarySort", "launchStyle", "launchMotion", "launchShade",
         "surprisePool", "showsSessionCard", "hiddenGames", "storageUsage", "logs", "metadataCache", "artworkCache",

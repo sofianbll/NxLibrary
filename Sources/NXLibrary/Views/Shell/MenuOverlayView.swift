@@ -20,6 +20,7 @@ struct MenuOverlayView: View {
     let onSelectPower: (PowerAction) -> Void
     /// A click on a line of the Profile or Library card; the shell runs it.
     var onSelectEntry: (MenuEntry) -> Void = { _ in }
+    let onTab: (Int) -> Void
 
     @Environment(\.seleneCanvas) private var canvas
     @Environment(\.nxAppLocale) private var localization
@@ -65,7 +66,10 @@ struct MenuOverlayView: View {
             }
 
             // Where the screen underneath had its hints, which step aside while this is open.
-            SeleneHintsBar(left: [HintItem(.b, L10n.text("Close"))], right: [HintItem(.a, L10n.text("Select"))],
+            SeleneHintsBar(left: [HintItem(.b, L10n.text("Close"))],
+                           right: [HintItem(.lb, "Previous") { onTab(-1) },
+                                   HintItem(.rb, "Next") { onTab(1) },
+                                   HintItem(.a, L10n.text("Select"))],
                            bottom: SeleneBottomScrim.hintsBottom, leftInset: 18)
         }
         .animation(Motion.anchoredCard(reduceMotion), value: submenuOpen)

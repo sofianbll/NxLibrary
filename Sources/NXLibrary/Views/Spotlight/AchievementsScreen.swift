@@ -70,6 +70,8 @@ struct AchievementsScreen: View {
                     .padding(.top, canvas.u(28))
             }
             .padding(.leading, canvas.u(Self.side))
+            .allowsHitTesting(!state.isDetailOpen)
+            .accessibilityHidden(state.isDetailOpen)
             if state.isDetailOpen, let id = state.focusedID, let row = rows.first(where: { $0.id == id }) {
                 AchievementDetail(row: row, appID: game.steamGame?.appID ?? 0, onClose: onCloseDetail)
                     .transition(.opacity)
@@ -79,11 +81,14 @@ struct AchievementsScreen: View {
                 SeleneHintsBar(left: [HintItem(.b, L10n.text("Back")) {
                                    if state.isDetailOpen { onCloseDetail() } else { onClose() }
                                }],
-                               right: state.isDetailOpen ? [] : listHints(hasRows: !rows.isEmpty),
+                               right: state.isDetailOpen
+                               ? [HintItem(.lb, L10n.text("Previous")) { _ = model.handle(.tabPrevious, summary: summary) },
+                                  HintItem(.rb, L10n.text("Next")) { _ = model.handle(.tabNext, summary: summary) }]
+                               : listHints(hasRows: !rows.isEmpty),
                                bottom: SeleneBottomScrim.hintsBottom, leftInset: 18)
             }
         }
-        .animation(reduceMotion ? nil : SeleneTheme.quick, value: state.isDetailOpen)
+        .animation(reduceMotion ? nil : Motion.overlay(false), value: state.isDetailOpen)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(L10n.text("Achievements"))
@@ -318,6 +323,7 @@ struct AchievementsScreen: View {
     private var pills: some View {
         HStack(spacing: canvas.u(12)) {
             shoulder(.lb, L10n.text("Previous"), step: -1)
+                .opacity(state.isDetailOpen ? 0 : 1)
             ForEach(AchievementFilter.allCases, id: \.self) { filter in
                 let selected = filter == state.filter
                 let count = summary.rows(filter).count
@@ -336,6 +342,7 @@ struct AchievementsScreen: View {
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
             shoulder(.rb, L10n.text("Next"), step: 1)
+                .opacity(state.isDetailOpen ? 0 : 1)
         }
         .animation(reduceMotion ? nil : SeleneTheme.quick, value: state.filter)
     }

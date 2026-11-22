@@ -35,6 +35,8 @@ public enum SettingsReset {
             next.showButtonHints = defaults.showButtonHints
             next.buttonNames = defaults.buttonNames
             next.viewButtonSwitches = defaults.viewButtonSwitches
+        case .controllers:
+            next.inGameHomeButton = defaults.inGameHomeButton
         case .spotlight:
             next.visibleSpotlightCards = defaults.visibleSpotlightCards
             next.startingTab = defaults.startingTab
@@ -74,7 +76,7 @@ public enum SettingsReset {
             next.multiplayerDefault = defaults.multiplayerDefault
             next.multiplayerLocalMode = defaults.multiplayerLocalMode
             next.multiplayerAdapter = defaults.multiplayerAdapter
-        case .games, .controllers, .search, .changed, .sources, .storage, .engine, .keys, .cloudSaves,
+        case .games, .search, .changed, .sources, .storage, .engine, .keys, .cloudSaves,
              .portingStorage, .about, .console, .apiServices:
             break
         }
