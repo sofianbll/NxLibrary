@@ -3125,6 +3125,28 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "无法验证应用的身份或签名。"}}
       }
     },
+    "Damaged files or unknown version: download it from Arcane": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Beschädigte Dateien oder unbekannte Version: Lade die App über Arcane herunter"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Damaged files or unknown version: download it from Arcane"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Archivos dañados o versión desconocida: descárgala desde Arcane"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Fichiers abîmés ou version inconnue : télécharge-la depuis Arcane"}},
+        "it": {"stringUnit": {"state": "translated", "value": "File danneggiati o versione sconosciuta: scaricala da Arcane"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Arquivos danificados ou versão desconhecida: baixe o app pelo Arcane"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "文件已损坏或版本未知：请通过 Arcane 下载"}}
+      }
+    },
+    "Content not verified": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Inhalt nicht überprüft"}},
+        "en": {"stringUnit": {"state": "translated", "value": "Content not verified"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Contenido sin verificar"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Contenu non vérifié"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Contenuto non verificato"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Conteúdo não verificado"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "内容未经验证"}}
+      }
+    },
     "This folder contains files that must stay on this Mac.": {
       "localizations": {
         "de": {"stringUnit": {"state": "translated", "value": "Dieser Ordner enthält Dateien, die auf diesem Mac bleiben müssen."}},

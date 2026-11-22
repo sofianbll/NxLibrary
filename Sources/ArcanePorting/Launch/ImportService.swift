@@ -181,8 +181,6 @@ public final class ImportService {
         return info
     }
 
-    static func signatureArguments(for app: URL) -> [String] { ["--verify", "--deep", "--strict", app.path] }
-
     private static func observation(at url: URL, info: [String: Any], bytes: Int64) -> ImportedApp? {
         guard let titleID = titleID(in: info) else { return nil }
         return .init(name: (info["CFBundleDisplayName"] as? String) ?? (info["CFBundleName"] as? String)
@@ -207,6 +205,7 @@ public final class ImportService {
     public struct StagedAdoption {
         public let plan: Adoption
         public let app: ImportedApp
+        public let contentUnverified: Bool
         fileprivate let incoming: URL
     }
 
@@ -248,10 +247,10 @@ public final class ImportService {
                      previous: previous, volume: volume)
     }
 
-    public func stageAdoption(_ plan: Adoption, replacing: Bool,
+    public func stageAdoption(_ plan: Adoption, replacing: Bool, archive: CloudGameArchive? = nil,
                               capacity: (URL) -> Int64? = {
                                   (try? FileManager.default.attributesOfFileSystem(forPath: $0.path)[.systemFreeSize] as? NSNumber)?.int64Value
-                              }) throws -> StagedAdoption {
+                              }) async throws -> StagedAdoption {
         guard !plan.conflicts || replacing else { throw CloudArchiveError.confirmationRequired }
         let source = plan.app.appURL
         let initial = try CloudArchiveInventory.signature(source, kind: .app)
@@ -274,12 +273,33 @@ public final class ImportService {
             }
             try Self.repairAdoptionCopy(incoming, entries: copied.entries)
             let info = try Self.verifiedIdentity(of: incoming, titleID: plan.app.titleId)
-            try verifySignature(incoming)
+            var contentUnverified = false
+            if try BuildOutputInstaller.checkSignature(incoming).status != 0 {
+                guard let title = plan.app.titleId else { throw CloudArchiveError.invalidApp }
+                let manifests = try await archive?.adoptionManifests(titleID: title) ?? []
+                if manifests.isEmpty {
+                    contentUnverified = true
+                } else {
+                    let snapshot = try CloudArchiveInventory.signature(incoming, kind: .app)
+                    let actual = try CloudArtifactFiles.entries(at: incoming, snapshot: snapshot, excludingSignatures: true)
+                    let matches = manifests.contains { manifest in
+                        guard let files = manifest.artifacts.first(where: { $0.kind == .app })?.files else { return false }
+                        let expected = files.entries.filter { !CloudArtifactFiles.isSignaturePath($0.relative) }
+                        return actual == expected.sorted { $0.path.utf8.lexicographicallyPrecedes($1.path.utf8) }
+                    }
+                    guard matches else { throw CloudArchiveError.unknownAppContents }
+                    guard try CloudArchiveInventory.signature(incoming, kind: .app).sha256 == snapshot.sha256 else {
+                        throw CloudArchiveError.localChanged
+                    }
+                }
+                try Task.checkCancellation()
+                try BuildOutputInstaller.signAdHoc(incoming)
+            }
             let bytes = try CloudArchiveInventory.signature(incoming, kind: .app).bytes
             guard var app = Self.observation(at: incoming, info: info, bytes: bytes) else { throw CloudArchiveError.invalidApp }
             app.name = plan.app.name
             app.appURL = plan.destination
-            return .init(plan: plan, app: app, incoming: incoming)
+            return .init(plan: plan, app: app, contentUnverified: contentUnverified, incoming: incoming)
         } catch {
             try? fm.removeItem(at: stage)
             throw error
@@ -403,12 +423,6 @@ public final class ImportService {
             guard (try? fm.trashItem(at: staged.incoming, resultingItemURL: nil)) != nil else { return }
         }
         try? fm.removeItem(at: staged.incoming.deletingLastPathComponent())
-    }
-
-    private func verifySignature(_ app: URL) throws {
-        let result = try SystemCommandRunner().run(URL(fileURLWithPath: "/usr/bin/codesign"),
-            Self.signatureArguments(for: app), environment: nil, currentDirectory: nil)
-        guard result.status == 0 else { throw CloudArchiveError.invalidApp }
     }
 
     /// The remembered size while the app's date is unchanged, else measured. Each new size is saved at once,

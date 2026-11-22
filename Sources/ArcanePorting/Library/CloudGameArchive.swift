@@ -177,7 +177,7 @@ public enum CloudArchiveError: LocalizedError, Equatable {
 
     case busy, confirmationRequired, insufficientSpace, unsafePath, localMissing
     case noRemoteCopy, needsFullUpload, invalidManifest, invalidArchive, invalidApp, localChanged, excludedFiles, installFailed
-    case sourcesConflict
+    case sourcesConflict, unknownAppContents
     case uploadMismatch(CloudArtifactKind, path: String, reason: UploadDifference)
 
     public var diagnosticDetail: String? {
@@ -194,6 +194,8 @@ public enum CloudArchiveError: LocalizedError, Equatable {
             return L10n.text("Not enough free space on the destination drive.")
         case .invalidApp:
             return L10n.text("The app identity or signature could not be verified.")
+        case .unknownAppContents:
+            return L10n.text("Damaged files or unknown version: download it from Arcane")
         case .excludedFiles:
             return L10n.text("This folder contains files that must stay on this Mac.")
         case .localChanged:
@@ -462,6 +464,29 @@ public actor CloudGameArchive {
     }
 
     private func latest(titleID title: String, folders: [String], expectingArchive: Bool = false) async throws -> CloudGameManifest? {
+        let entries = try await manifestObjects(for: title, in: folders, expectingArchive: expectingArchive)
+        // The immutable filename starts with the publication timestamp. Named folders win exact ties.
+        guard let newest = entries.max(by: { $0.name < $1.name })?.object else { return nil }
+        guard entries.filter({ $0.object.key == newest.key }).count == 1 else { throw CloudArchiveError.invalidManifest }
+        return try await readManifest(newest, titleID: title)
+    }
+
+    func adoptionManifests(titleID title: String) async throws -> [CloudGameManifest] {
+        guard SaveLocation.validID(title) else { throw CloudArchiveError.unsafePath }
+        let folders = try await titleFolders(title)
+        let entries = try await manifestObjects(for: title, in: folders)
+        guard Set(entries.map(\.object.key)).count == entries.count else { throw CloudArchiveError.invalidManifest }
+        var manifests: [CloudGameManifest] = []
+        for entry in entries {
+            try Task.checkCancellation()
+            let manifest = try await readManifest(entry.object, titleID: title)
+            if manifest.version == 2 { manifests.append(manifest) }
+        }
+        return manifests
+    }
+
+    private func manifestObjects(for title: String, in folders: [String], expectingArchive: Bool = false)
+        async throws -> [(name: Substring, object: StorageObject)] {
         var entries: [(name: Substring, object: StorageObject)] = []
         var foundDirectory = false
         for folder in folders.filter({ $0 != title }).sorted() + folders.filter({ $0 == title }) {
@@ -477,10 +502,7 @@ public actor CloudGameArchive {
         }
         try Task.checkCancellation()
         if expectingArchive && !foundDirectory { throw CloudLibraryFailure.folderMissing }
-        // The immutable filename starts with the publication timestamp. Named folders win exact ties.
-        guard let newest = entries.max(by: { $0.name < $1.name })?.object else { return nil }
-        guard entries.filter({ $0.object.key == newest.key }).count == 1 else { throw CloudArchiveError.invalidManifest }
-        return try await readManifest(newest, titleID: title)
+        return entries
     }
 
     /// Fetch just the newest manifest; local availability uses a single stat per registered artifact.
@@ -938,7 +960,7 @@ public actor CloudGameArchive {
 
     func verifiedApp(_ app: URL, titleID: String) async throws -> [String: String] {
         let info = try ImportService.verifiedIdentity(of: app, titleID: titleID)
-        _ = try await command("codesign", ImportService.signatureArguments(for: app), failure: .invalidApp)
+        _ = try await command("codesign", BuildOutputInstaller.signatureArguments(for: app), failure: .invalidApp)
         return info.compactMapValues { $0 as? String }
     }
 

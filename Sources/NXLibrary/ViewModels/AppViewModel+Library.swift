@@ -100,6 +100,7 @@ extension AppViewModel {
         }
         game.url = plan.destination
         let destinationGame = game
+        let archive = cloudLibrary.archive
         isScanningLibrary = true
         Task { @MainActor in
             defer {
@@ -109,7 +110,7 @@ extension AppViewModel {
             }
             do {
                 let staged = try await Task.detached(priority: .userInitiated) {
-                    try ImportService().stageAdoption(plan, replacing: replacing)
+                    try await ImportService().stageAdoption(plan, replacing: replacing, archive: archive)
                 }.value
                 var published = false
                 var needsRecovery = false
@@ -121,7 +122,8 @@ extension AppViewModel {
                         }
                     }
                 }
-                guard folder == gameAppsFolder, !isBuilding, !isCheckingCloudBuild, !cloudLibrary.isWorking,
+                guard folder == gameAppsFolder, archive === cloudLibrary.archive,
+                      !isBuilding, !isCheckingCloudBuild, !cloudLibrary.isWorking,
                       RunningGameMonitor.runningApplication(for: destinationGame) == nil else { throw CloudArchiveError.busy }
                 do {
                     try importer.publishAdoption(staged) { imported in
@@ -141,6 +143,7 @@ extension AppViewModel {
                         router?.requestSpotlightSelect(installed.id)
                     }
                     logs.append(LogEntry(level: .success, message: L10n.format("Added %@ to the library.", [installed.name])))
+                    if staged.contentUnverified { logs.append(LogEntry(message: L10n.text("Content not verified"))) }
                     appIcon.reconcileAppIcons()
                     Task { await refreshCloudLibrary(installed) }
                 }
