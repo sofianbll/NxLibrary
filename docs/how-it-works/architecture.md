@@ -478,6 +478,8 @@ I percorsi completi sono in [flows.md](flows.md#3-play-di-un-gioco-switch-nxnati
 
 **Sessioni.** `PlaySessionStore` registra avvio, heartbeat, fine e riconciliazione delle sessioni; un avvio porta l'id del gioco, l'identità della fonte e, se c'è, il bundle ID dell'app. `ActivitySummary` aggrega la settimana; `LibraryPresentation` e `GameDetailPresentation` preparano i valori delle schermate. Le entrate per un gioco portato (`start(for:)`, `SessionSummary` e `LibraryPresentation` per `PortedGame`, l'entrata di `LibraryPresentation` per `CatalogGame` che riceve i fatti dello store Nintendo) sono estensioni in `ArcanePorting/Library/`.
 
+Se lo storico o i totali non si leggono, le sessioni continuano in memoria ma nessuno dei due file viene scritto. Per riprendere la persistenza occorre ripristinare il file leggibile e riaprire Arcane.
+
 ## Pagina del gioco
 
 **Pannello Details.**

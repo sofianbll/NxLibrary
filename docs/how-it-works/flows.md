@@ -106,6 +106,8 @@ flowchart TD
 
 Play applica la scelta per gioco o il default globale. In Local usa l'adattatore VPN scelto o, se l'utente conferma l'avviso, la rete locale; il lancio non modifica le scelte salvate. I parametri espliciti di `env.txt` mantengono la precedenza.
 
+Per Switch e Steam, un errore di lettura dello storico o dei suoi totali non impedisce di giocare. Le sessioni nuove restano in memoria, senza sostituire i file su disco.
+
 ## 4. Play di un gioco Steam
 
 ```mermaid

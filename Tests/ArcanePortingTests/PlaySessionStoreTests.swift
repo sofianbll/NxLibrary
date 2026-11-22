@@ -30,6 +30,37 @@ final class PlaySessionStoreTests: XCTestCase {
         PlaySessionStore(fileURL: url, now: { [unowned self] in self.now })
     }
 
+    func testUnreadableHistoryIsPreservedWhenPlayStarts() throws {
+        let corrupt = Data("[{\"gameID\":".utf8)
+        try corrupt.write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let store = store()
+        XCTAssertNotNil(store.loadError)
+        XCTAssertTrue(store.start(gameID: UUID(), sourceID: "synthetic"))
+        XCTAssertEqual(try Data(contentsOf: url), corrupt)
+        XCTAssertNotNil(store.loadError)
+    }
+
+    func testUnreadableTotalsBlockAllWritesEvenWhenSessionsAreTrimmed() throws {
+        let totals = store().totalsURL
+        let corrupt = Data("[{\"gameID\":".utf8)
+        try corrupt.write(to: totals)
+        defer {
+            try? FileManager.default.removeItem(at: url)
+            try? FileManager.default.removeItem(at: totals)
+        }
+        let store = store()
+        XCTAssertNotNil(store.loadError)
+        let game = UUID()
+        for _ in 0...PlaySessionStore.maxSessions {
+            store.start(gameID: game, sourceID: "synthetic")
+            store.end(gameID: game)
+        }
+        XCTAssertEqual(try Data(contentsOf: totals), corrupt)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+        XCTAssertNotNil(store.loadError)
+    }
+
     func testStartAndEnd() {
         let store = store()
         let game = game()
