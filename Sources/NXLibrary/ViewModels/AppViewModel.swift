@@ -345,6 +345,20 @@ final class AppViewModel: ObservableObject {
         // Assigning selectedGameFolder scans it; launch refresh only concerns installed apps.
 
         recoverSavesAtStartup()
+        if !AppData.profile.isDevelopment {
+            let games = libraryGames
+            DispatchQueue.global(qos: .utility).async { [weak self] in
+                let manager = StorageManager()
+                for game in games {
+                    guard let cache = try? manager.cacheURL(for: game, protecting: games) else { continue }
+                    do { try CloudGameArchive.recoverInterruptedFree(at: cache) }
+                    catch {
+                        let message = error.localizedDescription
+                        DispatchQueue.main.async { [weak self] in self?.logs.append(LogEntry(level: .error, message: message)) }
+                    }
+                }
+            }
+        }
         if !setupCompleted && firstRunSetup.page == .games { prepareInitialGameAppsFolder() }
         if startup.refreshLibraryAtLaunch || (!setupCompleted && firstRunSetup.page == .games) { scanLibrary(using: catalog) }
         updateDockIcon()

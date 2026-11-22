@@ -776,6 +776,7 @@ public actor CloudGameArchive {
         let lease = try begin(game.titleID)
         defer { leases.end(game.titleID, token: lease) }
         let target = try location(kind, for: game)
+        if kind == .cache { try Self.recoverInterruptedFree(at: target) }
         let parent = target.deletingLastPathComponent()
         let volume = try CloudArchiveInventory.node(at: parent)
         let before = try CloudArchiveInventory.node(at: target)
@@ -804,7 +805,9 @@ public actor CloudGameArchive {
             defer { if !keepStage { try? FileManager.default.removeItem(at: stage) } }
             try FileManager.default.createDirectory(at: bucket, withIntermediateDirectories: false)
             let roots = snapshot.entries.map(\.path).filter { !$0.isEmpty && !$0.contains("/") }
-            try moving(roots, from: target, to: bucket, keepStage: &keepStage) { try trash(bucket) }
+            try Self.withFreeRecovery(target: target, parent: parent, stage: stage, roots: roots) {
+                try moving(roots, from: target, to: bucket, keepStage: &keepStage) { try trash(bucket) }
+            }
         }
     }
 
@@ -836,6 +839,7 @@ public actor CloudGameArchive {
         defer { leases.end(game.titleID, token: lease) }
         progress?(.init(.verifying, kind: kind))
         let destination = try location(kind, for: game)
+        if kind == .cache { try Self.recoverInterruptedFree(at: destination) }
         let parent = destination.deletingLastPathComponent()
         let volume = try CloudArchiveInventory.node(at: parent)
         let previous = try existingNode(at: destination)
@@ -920,13 +924,28 @@ public actor CloudGameArchive {
             try Task.checkCancellation()
             break
         }
-        let flags = previous == nil ? RENAME_EXCL : RENAME_SWAP
-        try moving(existing?.skippedRoots ?? [], from: destination, to: incoming, keepStage: &keepStage) {
-            guard renamex_np(incoming.path, destination.path, UInt32(flags)) == 0 else { throw CloudArchiveError.installFailed }
+        // Never move the only local copy into staging. A crash during this loop
+        // leaves the original visible; the next launch sees either whole tree.
+        let kept = existing?.skippedRoots ?? []
+        if !kept.isEmpty {
+            let before = try CloudArchiveInventory.node(at: incoming)
+            let copy = SaveFileIO().copy
+            for name in kept {
+                try Task.checkCancellation()
+                try copy(destination.appendingPathComponent(name), incoming.appendingPathComponent(name))
+            }
+            var times = [before.st_atimespec, before.st_mtimespec]
+            guard utimensat(AT_FDCWD, incoming.path, &times, AT_SYMLINK_NOFOLLOW) == 0,
+                  try sameDirectory(volume, at: parent),
+                  try sameNode(previous, at: destination) else { throw CloudArchiveError.localChanged }
+            try beforeMutation()
         }
+        try Task.checkCancellation()
+        let flags = previous == nil ? RENAME_EXCL : RENAME_SWAP
+        guard renamex_np(incoming.path, destination.path, UInt32(flags)) == 0 else { throw CloudArchiveError.installFailed }
         if let resume { try? FileManager.default.removeItem(at: resume) }
         // An external writer may have added data while the old directory was still live.
-        if previous != nil, !skippedOnly || rmdir(incoming.path) != 0 {
+        if previous != nil {
             keepStage = true
             try? FileManager.default.removeItem(at: archive)
             return incoming
@@ -999,6 +1018,75 @@ public actor CloudGameArchive {
             try await backend.verify(object)
         } else {
             throw CloudArchiveError.invalidManifest
+        }
+    }
+
+    private struct FreeRecovery: Codable {
+        struct Identity: Codable, Equatable {
+            let device: dev_t
+            let inode: ino_t
+            init(_ node: stat) { device = node.st_dev; inode = node.st_ino }
+        }
+        let target: Identity
+        let name: String
+        let roots: [String: Identity]
+        static let fileName = "free-recovery.json"
+    }
+
+    private static let freeRecoveryLock = NSLock()
+
+    private static func withFreeRecovery(target: URL, parent: URL, stage: URL, roots: [String],
+                                         body: () throws -> Void) throws {
+        freeRecoveryLock.lock()
+        defer { freeRecoveryLock.unlock() }
+        let identities = try roots.reduce(into: [String: FreeRecovery.Identity]()) { result, name in
+            result[name] = .init(try CloudArchiveInventory.node(at: target.appendingPathComponent(name)))
+        }
+        let record = FreeRecovery(target: .init(try CloudArchiveInventory.node(at: target)),
+                                  name: target.lastPathComponent, roots: identities)
+        try SaveFiles.durableWrite(record, to: stage.appendingPathComponent(FreeRecovery.fileName))
+        try SaveFiles.syncDirectory(parent)
+        try body()
+    }
+
+    /// Resume a local, journalled Free up space without any remote access.
+    public nonisolated static func recoverInterruptedFree(at target: URL) throws {
+        freeRecoveryLock.lock()
+        defer { freeRecoveryLock.unlock() }
+        let parent = target.deletingLastPathComponent().resolvingSymlinksInPath()
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: parent.path) else { return }
+        func node(_ url: URL) throws -> stat? {
+            do { return try CloudArchiveInventory.node(at: url) }
+            catch CloudArchiveError.localMissing { return nil }
+        }
+        for stage in try fm.contentsOfDirectory(at: parent, includingPropertiesForKeys: nil) {
+            guard stage.lastPathComponent.hasPrefix(".arcane-cloud-"),
+                  UUID(uuidString: String(stage.lastPathComponent.dropFirst(".arcane-cloud-".count))) != nil,
+                  let stageNode = try node(stage), stageNode.st_mode & S_IFMT == S_IFDIR else { continue }
+            let file = stage.appendingPathComponent(FreeRecovery.fileName)
+            guard try node(file) != nil else { continue }
+            let record = try JSONDecoder().decode(FreeRecovery.self, from: SaveFiles.readRegular(file, limit: 16 * 1024 * 1024))
+            guard record.name == target.lastPathComponent else { continue }
+            let visible = parent.appendingPathComponent(record.name)
+            let bucket = stage.appendingPathComponent(record.name)
+            if let bucketNode = try node(bucket) {
+                guard bucketNode.st_mode & S_IFMT == S_IFDIR,
+                      let targetNode = try node(visible), targetNode.st_mode & S_IFMT == S_IFDIR,
+                      FreeRecovery.Identity(targetNode) == record.target else { throw CloudArchiveError.localChanged }
+                for item in try fm.contentsOfDirectory(at: bucket, includingPropertiesForKeys: nil) {
+                    let name = item.lastPathComponent
+                    guard let expected = record.roots[name], let found = try node(item), expected == .init(found),
+                          renamex_np(item.path, visible.appendingPathComponent(name).path, UInt32(RENAME_EXCL)) == 0 else {
+                        throw CloudArchiveError.localChanged
+                    }
+                }
+                try SaveFiles.syncDirectory(visible)
+                guard rmdir(bucket.path) == 0 else { throw CloudArchiveError.localChanged }
+            }
+            try fm.removeItem(at: file)
+            _ = rmdir(stage.path)
+            try SaveFiles.syncDirectory(parent)
         }
     }
 
