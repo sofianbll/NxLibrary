@@ -128,7 +128,7 @@ import ArcanePorting
         let after = stage(SpotlightTopBar(filter: .all, sort: current, nextendo: online))
         try render("07-top-bar", after, in: out, refs, "screenshots/library.png")
         try checkTopBar(in: out, profile: alex, accent: Color(hex: SelenePaletteCatalog.resolve(alex.look.theme, in: ThemeStore.shared.palettes).glyph))
-        func menu(_ name: String, _ prepare: (AppRouter) -> Void, lang: AppLocale? = nil) throws {
+        func menu(_ name: String, _ prepare: (AppRouter) -> Void, lang: AppLocale? = nil, names: ButtonNameStyle = .xbox) throws {
             let router = AppRouter()
             router.isMenuPresented = true
             prepare(router)
@@ -138,7 +138,7 @@ import ArcanePorting
                 MenuOverlayView(router: router, cloudLibrary: vm.cloudLibrary, activeProfile: alex,
                                 hasBuildActivity: true, onSelect: { _ in }, onSelectPower: { _ in })
             }.environment(\.nxAppLocale, lang ?? .init(language: .english, region: "US")),
-                       in: out, refs, "screenshots/menu.png")
+                       in: out, refs, "screenshots/menu.png", names: names)
             L10n.setContext(.init(language: .english, region: "US"))
         }
         let fr = AppLocale(language: .french, region: "FR")
@@ -150,6 +150,11 @@ import ArcanePorting
         try menu("09-menu-power", { $0.menuSelection.selected = .power; $0.openPowerMenu() })
         try menu("09-menu-profile-card-fr", { $0.menuSelection.selected = .profile; $0.openEntryMenu() }, lang: fr)
         try menu("09-menu-library-card-fr", { $0.menuSelection.selected = .library; $0.openEntryMenu(); $0.moveEntryMenu(by: 2) }, lang: fr)
+        // The same screens under each family's button names: Switch, PS5 and the keyboard (Automatic, no pad).
+        for (suffix, names) in [("switch", ButtonNameStyle.nintendo), ("ps5", .playstation), ("keyboard", .automatic)] {
+            try render("07-top-bar-\(suffix)", after, in: out, refs, "none", names: names)
+            try menu("09-menu-\(suffix)", { $0.menuSelection.selected = .profile }, names: names)
+        }
         try render("10-online-tile", after, in: out, refs, "screenshots/library.png")
         precondition(profiles.update(sam))
         L10n.setContext(french)
@@ -323,12 +328,12 @@ import ArcanePorting
     }
 
     @MainActor static func render<V: View>(_ name: String, _ view: V, in out: URL, _ refs: URL, _ reference: String,
-                                          reduced: Bool = true) throws {
+                                          reduced: Bool = true, names: ButtonNameStyle = .xbox) throws {
         let size = CGSize(width: 1440, height: 810)
         let image = try bitmap(view
             .environment(\.seleneCanvas, SeleneCanvas(size: size))
             .environment(\.seleneReduceMotion, reduced)
-            .environment(\.seleneButtonNames, .xbox)
+            .environment(\.seleneButtonNames, names)
             .frame(width: size.width, height: size.height))
         try save(image, to: out.appendingPathComponent(name + ".png"))
         guard let ref = NSImage(contentsOf: refs.appendingPathComponent(reference)) else { return }
