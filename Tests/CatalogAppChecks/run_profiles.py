@@ -55,8 +55,14 @@ import ArcanePorting
                                    "hare.fill", "bird.fill", "mountain.2.fill"][index])
                     .font(.system(size: 118)).foregroundStyle(.white.opacity(0.84))
             }.frame(width: 460, height: 300)
-            try save(bitmap(face), to: url)
+            let picture = try bitmap(face)
+            try save(picture, to: url)
+            // The tiles' own art cache: the row paints these illustrations (its async look-up never runs here).
+            TileArtMemo.store(NSImage(cgImage: picture, size: .init(width: 460, height: 300)),
+                              for: "nxnative|\(game.id)" as NSString)
         }
+        TileArtMemo.store(TileArtMemo.shared.object(forKey: "nxnative|\(avatarGames[0].id)" as NSString)!,
+                          for: "nxnative|\(game.id)" as NSString)
         let cachedPortraits = ProfileEditorView.loadAvatars(avatarGames, artwork: art)
         precondition(cachedPortraits.count == avatarGames.count)
         try checkGIF(in: data)
@@ -159,7 +165,8 @@ import ArcanePorting
         vm.homeSeen = true
         var fixture = originalGame
         fixture.setFavorite(false)
-        vm.applyCatalog(.init(games: [fixture] + avatarGames))
+        // Without an enabled source the library lists nothing: the screen would show an empty collection.
+        vm.applyCatalog(.init(sources: [.init(integration: .nxnative, isEnabled: true)], games: [fixture] + avatarGames))
         vm.spotlight.selectedKey = SpotlightItem.game(game.id).key
         vm.profileOwnsInput = true
         try render("20-picker-over-spotlight", ZStack {
@@ -340,6 +347,11 @@ def main():
         replace(app / "Views/Theme/SeleneBackdrop.swift",
                 r"tint: modsTint \? 1 : 0, moving: moving,\n",
                 "tint: modsTint ? 1 : 0, moving: false, asImage: true,\n")
+        # ImageRenderer paints any AppKit-backed view as a full-screen yellow "no entry" placeholder: the game-art
+        # layer is one. Arcane itself shows the Selene backdrop there when a game has no art.
+        replace(app / "Views/Spotlight/SeleneArtBackground.swift",
+                r"            SeleneArtLayer\(image: art,[^\n]*\n",
+                "            if let art { Image(nsImage: art).resizable().scaledToFill() }\n")
         replace(app / "Views/Theme/MoonlightRenderer.swift", r"                if let image \{\n                    Image\(decorative:",
                 "                if let image = engine.snapshot(width: max(w, 1), height: max(h, 1), colors: colors) {\n                    Image(decorative:")
         # ImageRenderer does not rasterize AppKit scroll views or fields. Render their real SwiftUI contents.
