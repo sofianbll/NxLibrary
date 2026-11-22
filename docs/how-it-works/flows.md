@@ -70,7 +70,7 @@ Punti fissi:
 - Una scansione aggiorna solo ciò che ha osservato; un'assenza non cancella nulla.
 - Un risultato superato da un cambio di cartella o di fonte non si applica.
 
-**My library** si apre dalla card Spotlight o da Menu → Library. LB/RB cambiano Apps e ROM, X cambia filtro, le frecce percorrono righe e tessere; B dalla scheda torna alla selezione. Prima di un trasferimento la scheda mostra origine, dimensione, spazio richiesto stimato e spazio libero; la conferma accoda in Attività. La scheda mostra lo stesso stato e riempimento della copertina della libreria; il pulsante con la nuvola apre il pannello condiviso per annullare o riprovare. Per i file locali, Prepare porting scansiona i file e apre Add Game; la build resta un'azione esplicita.
+I titoli importati dal cloud compaiono in Spotlight e Collection. **Download** accoda il ripristino e lo spazio viene verificato durante il trasferimento. Il pulsante tondo in Details apre il pannello Cloud library, da cui si può annullare o riprovare.
 
 ## 3. Play di un gioco Switch (nxnative)
 

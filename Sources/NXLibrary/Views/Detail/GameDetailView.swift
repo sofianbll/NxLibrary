@@ -228,7 +228,7 @@ struct GameDetailView: View {
 
     var showsCloudPill: Bool { cloudManagementPlacement == .primaryActions }
     var downloadsCloudApp: Bool {
-        cloud.archive != nil && cloud.states[game.id]?.appIsCloudOnly == true && !runningGames.isRunning(game)
+        cloud.downloadsCloudApp(game) && !runningGames.isRunning(game)
     }
     var pillSet: PortingPills { viewModel.portingPills(game).detailsPresentation(cloudOnly: downloadsCloudApp) }
     private var pillCount: Int { pillSet.count + (showsCloudPill ? 1 : 0) }

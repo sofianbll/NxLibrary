@@ -356,7 +356,8 @@ public struct AppSettings: Codable, Equatable {
         self.lastSelectedGameID = try container.decodeIfPresent(UUID.self, forKey: .lastSelectedGameID)
         self.colorThemeID = try container.decodeIfPresent(String.self, forKey: .colorThemeID) ?? "selene"
         self.buttonNames = try container.decodeIfPresent(ButtonNameStyle.self, forKey: .buttonNames) ?? .automatic
-        let cards = try container.decodeIfPresent([SpotlightCard].self, forKey: .spotlightCards) ?? [.surprise, .activity, .addGame]
+        let cards = try container.decodeIfPresent([String].self, forKey: .spotlightCards)?
+            .compactMap(SpotlightCard.init(rawValue:)) ?? [.surprise, .activity, .addGame]
         self.spotlightCards = cards.filter { $0 != .mods }
         self.showsModsCard = try container.decodeIfPresent(Bool.self, forKey: .showsModsCard) ?? true
         self.spotlightOrder = try container.decodeIfPresent([String].self, forKey: .spotlightOrder) ?? []

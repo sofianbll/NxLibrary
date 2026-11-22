@@ -150,17 +150,12 @@ final class SourceHost {
                 "Explicit files must request one scan limited to those files")
         require(filesModel.gameFilesFolder == folder, "File picks must preserve the remembered folder")
 
-        let store = SourceHost()
-        require(store.prepareAddGameFiles(files, defaults: GameRuntimeConfig()), "Store files must open a draft")
-        require(store.scans.count == 1 && store.scans.last?.files == files,
-                "Preparing the Store draft must only scan the selected files")
-        require(store.gameFilesFolder == folder, "Store review must preserve the remembered folder")
         let extracted = otherFolder.appendingPathComponent("Extracted fixture")
-        require(store.prepareAddGameFiles([extracted], defaults: GameRuntimeConfig()), "Extracted source must open a draft")
-        require(store.scans.last?.folder == extracted && store.scans.last?.files == nil,
-                "Store review must scan the extracted directory itself")
+        require(filesModel.prepareAddGameFiles([extracted], defaults: GameRuntimeConfig()), "Extracted source must open a draft")
+        require(filesModel.scans.last?.folder == extracted && filesModel.scans.last?.files == nil,
+                "Add Game must scan the extracted directory itself")
         if failures > 0 { exit(1) }
-        print("Source access checks passed: no launch scan, remembered picker, cancel, explicit files and Store draft.")
+        print("Source access checks passed: no launch scan, remembered picker, cancel, explicit files and extracted draft.")
     }
 }
 '''

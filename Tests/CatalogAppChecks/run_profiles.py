@@ -271,7 +271,6 @@ import ArcanePorting
         fixture.setFavorite(false)
         // Without an enabled source the library lists nothing: the screen would show an empty collection.
         vm.applyCatalog(.init(sources: [.init(integration: .nxnative, isEnabled: true)], games: [fixture] + avatarGames))
-        try storeScreens(vm: vm, games: avatarGames.compactMap(\.nxnativeGame), art: art, in: out, refs)
         vm.spotlight.selectedKey = SpotlightItem.game(game.id).key
         vm.profileOwnsInput = true
         try render("20-picker-over-spotlight", ZStack {
@@ -289,6 +288,10 @@ import ArcanePorting
             SpotlightView(viewModel: vm, router: AppRouter(), settings: settings, playSessions: historyStore,
                           runningGames: RunningGameMonitor(), artwork: art, storeHost: ModStoreHost())
         }.environment(\.profilePortrait, profiles.active), in: out, refs, "screenshots/library.png")
+        try save(bitmap(HStack(spacing: 12) {
+            panel(NSImage(contentsOf: out.appendingPathComponent("09-menu-library-card-fr.png"))!, "Bibliothèque")
+            panel(NSImage(contentsOf: out.appendingPathComponent("23-spotlight-not-played.png"))!, "Spotlight")
+        }), to: out.appendingPathComponent("bibliotheque-spotlight.png"))
         try render("24-collection", ZStack {
             SeleneBackdrop().still(true)
             CollectionView(viewModel: vm, router: AppRouter(), settings: settings, playSessions: historyStore,
@@ -435,86 +438,6 @@ import ArcanePorting
         let otherSnapshots = try otherStore.list(titleID: titleID)
         precondition(otherSnapshots.isEmpty, "A's queued backup must not publish into B's backups")
         precondition(profiles.choose(owner.id))
-    }
-
-    @MainActor static func storeScreens(vm: AppViewModel, games: [PortedGame], art: ArtworkStore,
-                                       in out: URL, _ refs: URL) throws {
-        let french = AppLocale(language: .french, region: "FR")
-        L10n.setContext(french)
-        defer { L10n.setContext(.init(language: .english, region: "US")) }
-        let router = AppRouter()
-        router.navigate(to: .personalStore)
-        precondition(MenuAction.library.entries.contains(.personalStore))
-        let view = PersonalStoreView(app: vm, cloud: vm.cloudLibrary, router: router, artwork: art,
-                                     showsHints: true, review: { _ in preconditionFailure("Render must not start porting") })
-        let actions: [PersonalStore.Action] = [.play, .update, .downloadApp, .downloadROM, .prepare]
-        let items = zip(games, actions).map { PersonalStoreView.Item(game: $0, action: $1) }
-        func show(_ name: String, tab: PersonalStore.Tab, filter: PersonalStore.Filter,
-                  rows: [[PersonalStoreView.Item]], detail: PersonalStoreView.Item? = nil) throws {
-            let item = detail ?? rows.first?.first
-            let image = item.flatMap { TileArtMemo.shared.object(forKey: "nxnative|\($0.id)" as NSString) }
-            let budget = detail.map {
-                PersonalStoreView.Budget(item: $0,
-                    offer: .app(reference: $0.action == .update, fingerprint: "fixture",
-                                bytes: 4_200_000_000, required: 6_800_000_000, update: $0.action == .update),
-                    bytes: 4_200_000_000, destination: URL(fileURLWithPath: "/Synthetic Library"),
-                    free: 54_000_000_000, storage: nil)
-            }
-            try render("store-\(name)", view.scene(rows: rows, activeRow: 0, item: item, image: image, tab: tab,
-                filter: filter, detailOpen: detail != nil, budget: budget, canvas: SeleneCanvas(size: screenSize))
-                .environment(\.nxAppLocale, french), in: out, refs, "screenshots/store.png")
-        }
-        try show("apps", tab: .apps, filter: .all, rows: [Array(items[0...1]), [items[2]]])
-        try show("rom", tab: .rom, filter: .all, rows: [[items[3]], [items[4]]])
-        try show("local", tab: .apps, filter: .local, rows: [Array(items[0...1])])
-        try show("downloads", tab: .apps, filter: .downloads, rows: [[items[2]]])
-        try show("updates", tab: .apps, filter: .updates, rows: [[items[1]]])
-        for (index, item) in items.enumerated() {
-            try show("detail-\(item.action)", tab: index < 3 ? .apps : .rom, filter: .all, rows: [], detail: item)
-        }
-        let download = items[2]
-        for (name, state) in [("queued", CloudTransferPresentation.queued), ("running", .running(0.42)),
-                              ("verifying", .verifying(1)), ("waiting", .waitingForGame),
-                              ("ready", .ready), ("failed", .failed)] {
-            vm.cloudLibrary.update(download.id) {
-                $0 = CloudLibraryState()
-                $0.action = state.canCancel ? .restore(.app) : nil
-                $0.queued = state == .queued
-                $0.progress = switch state {
-                case .running: .init(.downloading, kind: .app, transfer: .init(bytesTransferred: 42, totalBytes: 100))
-                case .verifying: .init(.verifying, kind: .app, downloadComplete: true)
-                case .waitingForGame: .init(.readyToInstall, kind: .app)
-                default: nil
-                }
-                $0.completedItem = state == .ready ? .app : nil
-                $0.issue = state == .failed ? (.app, L10n.text(state.titleKey), true) : nil
-                $0.failedTransferID = state == .failed ? UUID() : nil
-            }
-            precondition(vm.cloudLibrary.states[download.id]?.transfer() == state)
-            precondition(view.needsBudget(download) == !state.canCancel)
-            if state == .running(0.42) {
-                precondition(vm.cloudLibrary.states[download.id]?.coverLook(.normal) == .transfer(0.42))
-            }
-            var installed = download.game
-            installed.status = .builtSourcesMissing
-            let detail = state == .ready ? PersonalStoreView.Item(game: installed, action: .play) : download
-            try show("state-\(name)", tab: .apps, filter: .all, rows: [], detail: detail)
-        }
-        view.manage(download)
-        precondition(vm.cloudLibraryGameID == download.id)
-        vm.cloudLibraryGameID = nil
-        vm.cloudLibrary.update(download.id) { $0 = CloudLibraryState() }
-        let card = SpotlightItem.card(.personalStore)
-        try render("store-spotlight", VStack(alignment: .leading, spacing: 24) {
-            SpotlightRowView(items: [card, .card(.addGame)], gamesByID: [:], selectedKey: card.key,
-                isEmptyFilter: nil, artwork: art, cloud: vm.cloudLibrary, showsCloudBadges: false,
-                onSelect: { _ in }, onActivate: { _ in }).frame(height: 190)
-            SpotlightCardInfoView(card: .personalStore, gameCount: 0, installedCount: 0, poolLabel: "",
-                activity: ActivitySummary(), topGames: [], focusedTop: nil, artwork: art, onTopGame: { _ in })
-                .padding(.leading, 58)
-        }.padding(.top, 90).environment(\.nxAppLocale, french), in: out, refs, "screenshots/store.png")
-        router.back()
-        precondition(router.route == .library && router.isReturningFromBack)
     }
 
     @MainActor static func fakeAccount(_ directory: URL) -> NextendoSettings {

@@ -225,7 +225,7 @@ struct DetailsTopBlock: View {
     }
 
     private var downloadsApp: Bool {
-        cloud.archive != nil && cloud.states[game.id]?.appIsCloudOnly == true
+        cloud.downloadsCloudApp(game)
     }
 
     private var showsDownloadPill: Bool {

@@ -205,17 +205,13 @@ struct CollectionView: View {
             if viewModel.isScanningLibrary { return [] }
             return hasAnyGame ? [] : [HintItem(.a, L10n.text("Add game"))]
         }
-        if downloadsCloudApp(game) {
+        if cloud.downloadsCloudApp(game) {
             return [HintItem(.a, "Download"), HintItem(.x, "Details"), HintItem(.y, "Game options")]
         }
         if game.isPlayableLocally {
             return [HintItem(.a, L10n.text("Play")), HintItem(.x, L10n.text("Details")), HintItem(.y, L10n.text("Game options"))]
         }
         return [HintItem(.a, L10n.text("Details")), HintItem(.y, L10n.text("Game options"))]
-    }
-
-    func downloadsCloudApp(_ game: PortedGame) -> Bool {
-        cloud.archive != nil && cloud.states[game.id]?.appIsCloudOnly == true
     }
 
     // MARK: - Selection

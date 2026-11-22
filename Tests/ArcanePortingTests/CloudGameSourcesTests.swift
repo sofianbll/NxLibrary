@@ -4,23 +4,6 @@ import XCTest
 @testable import ArcanePorting
 
 final class CloudGameSourcesTests: XCTestCase {
-    func testPersonalStoreRejectsChangedROMBeforeWritingAnyLocalSource() async throws {
-        let f = try Fixture()
-        let urls = ["Base.nsp", "Update.nsz", "DLC.nup"].map { f.localFolder.appendingPathComponent($0) }
-        for url in urls { _ = try f.remote(url.lastPathComponent, "original") }
-        let offer = try await f.service.downloadOffer(folderName: f.folder, files: urls, reference: false)
-        guard case .rom(false, _, let files, let bytes, let required) = offer else { return XCTFail("ROM offer") }
-        XCTAssertEqual(bytes, 24)
-        XCTAssertGreaterThan(required, bytes)
-        _ = try f.remote("Update.nsz", "modified") // Same size, different digest.
-        await assertError(.localChanged) {
-            try await f.service.download(folderName: f.folder, files: urls,
-                                         replacingBefore: nil, replacing: [], expected: files, progress: nil)
-        }
-        XCTAssertTrue(try FileManager.default.contentsOfDirectory(atPath: f.localFolder.path).isEmpty)
-        XCTAssertEqual(try String(contentsOf: f.remoteFolder.appendingPathComponent("Update.nsz"), encoding: .utf8), "modified")
-    }
-
     func testExplicitSourceUpdateKeepsUnchangedAndPreviousPackages() async throws {
         let f = try Fixture()
         let base = try f.local("Base.nsp", "base")

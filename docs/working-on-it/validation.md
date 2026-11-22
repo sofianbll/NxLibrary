@@ -11,7 +11,7 @@ Come si aggiorna:
 
 | Parte | Stato | Prove ancora da fare |
 |---|---|---|
-| My library (Apps e ROM collegate) | in attesa | Da Spotlight e Library, provare mouse, tastiera, controller, VoiceOver, Riduci movimento e ritorno alla tessera. Su dati di prova, verificare filtri, conferma col budget, sei stati e riempimento condivisi, apertura di Cloud library e Retry, un'offerta cambiata mentre è in coda, Attività e revisione Add Game senza build automatica. |
+| Menu Library e Spotlight dopo la rimozione di My library | in attesa | Con un profilo di prova, verificare che non ci siano voci o tessere residue e che il focus torni al punto di partenza. Da Collection scaricare un titolo cloud; in Details aprire il pannello dal pulsante tondo e provare Retry. Verificare anche Inbox e Add Game. |
 | Inbox per i file Switch | in attesa | Con un profilo separato, aprire da Libreria e Spotlight, navigare con la tastiera e il controller, provare deposito e rilascio, correzione esplicita, conferma singola e in gruppo, duplicato e file ambiguo. Con copie autorizzate, controllare riconoscimento nxnative, percorso, Cestino e visibilità da Add Game. |
 | Presenza e aggiornamento degli amici Nextendo | in attesa | Con due conti di prova verificare online, passaggio a In gioco, cambio profilo, Mostrati online disattivato, Aggiorna e orario relativo. Le verifiche automatiche usano un trasporto finto. |
 | Contatori online Nextendo | in attesa | Su un profilo senza conto, verificare che non ci siano badge né richieste a `online-counts`. Passare a un profilo collegato, poi a un ospite: i badge disponibili compaiono solo sul profilo collegato. |
