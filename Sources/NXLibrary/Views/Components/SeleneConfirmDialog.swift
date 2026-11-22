@@ -167,10 +167,10 @@ struct SeleneSuccessNotice: View {
     }
 }
 
-/// Selene's dialog card: 640u, glass, a hairline and a deep shadow.
+/// Selene's dialog card: glass, a hairline and a deep shadow; nil lets a wide choice row size the card.
 struct SeleneDialogCard: ViewModifier {
     @Environment(\.seleneCanvas) private var canvas
-    var width: CGFloat = 640
+    var width: CGFloat? = 640
 
     func body(content: Content) -> some View {
         content
@@ -179,7 +179,7 @@ struct SeleneDialogCard: ViewModifier {
             .padding(.top, canvas.u(40))
             .padding(.trailing, canvas.u(40))
             .padding(.bottom, canvas.u(36))
-            .frame(width: canvas.u(width))
+            .frame(width: width.map(canvas.u))
             .background(
                 RoundedRectangle(cornerRadius: canvas.u(28), style: .continuous)
                     .fill(SeleneTheme.glassCard)
@@ -203,7 +203,7 @@ struct SeleneChoiceDialog: View {
     let message: String
     let choices: [String]
     @Binding var focus: Int
-    var vertical = false
+    var cancelIndex: Int? = nil
     var details: [String: String] = [:]
     let onChoose: (Int) -> Void
 
@@ -212,19 +212,19 @@ struct SeleneChoiceDialog: View {
             Text(L10n.text(title))
                 .seleneFont(34, .semibold)
                 .foregroundColor(SeleneTheme.ink)
+                .frame(maxWidth: canvas.u(560))
                 .fixedSize(horizontal: false, vertical: true)
             Text(message)
                 .seleneFont(19)
                 .foregroundColor(SeleneTheme.ink75)
+                .frame(maxWidth: canvas.u(560))
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, canvas.u(14))
-            let layout = vertical
-                ? AnyLayout(VStackLayout(spacing: canvas.u(10)))
-                : AnyLayout(HStackLayout(spacing: canvas.u(18)))
-            layout {
+            HStack(alignment: .top, spacing: canvas.u(18)) {
                 ForEach(Array(choices.enumerated()), id: \.offset) { index, choice in
-                    VStack(spacing: canvas.u(4)) {
-                        SelenePillButton(title: choice, focused: focus == index) { onChoose(index) }
+                    VStack(spacing: canvas.u(8)) {
+                        SelenePillButton(title: choice, minWidth: 0, horizontalPadding: 24, focused: focus == index,
+                                         fillsOnFocus: index != cancelIndex, scalesOnFocus: false) { onChoose(index) }
                             .onHover { if $0 { focus = index } }
                             .accessibilityLabel(L10n.text(choice))
                             .accessibilityHint(details[choice] ?? "")
@@ -232,14 +232,18 @@ struct SeleneChoiceDialog: View {
                             Text(detail)
                                 .seleneFont(15)
                                 .foregroundColor(SeleneTheme.ink60)
+                                .frame(idealWidth: canvas.u(186), maxWidth: canvas.u(220))
                                 .fixedSize(horizontal: false, vertical: true)
                                 .accessibilityHidden(true)
                         }
                     }
                 }
             }
+            .fixedSize(horizontal: true, vertical: false)
             .padding(.top, canvas.u(34))
         }
-        .modifier(SeleneDialogCard())
+        .frame(minWidth: canvas.u(560))
+        .fixedSize(horizontal: true, vertical: false)
+        .modifier(SeleneDialogCard(width: nil))
     }
 }

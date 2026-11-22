@@ -64,6 +64,7 @@ Esempi: `AchievementsScreen` con `AchievementsScreenModel` (schermata intera), `
   - `SeleneHintsBar`, `GamePrimaryActions`, `DetailsPanel`.
 
   Un componente nuovo nasce solo se nessuno di questi va bene.
+- **Conferme (regola di Sofian):** disponi tutti i pulsanti affiancati su una sola riga, mai in colonna. L'azione principale sta a sinistra e riceve il focus iniziale; Annulla sta a destra e resta secondario. Stessa altezza, larghezze dettate dal testo. Allarga la scheda se le traduzioni lo richiedono.
 - **Focus nel Core, input in un file `+Input`.** Lo stato del focus è un tipo del Core con i suoi test. La vista ha un'estensione `…+Input.swift` che traduce tastiera, mouse e controller in azioni sul modello.
 - **Priorità dell'input:** menu e dialoghi nativi vengono prima delle schermate dell'app. La shell (`AppShellView`, `nativeDialogOwnsInput`) sospende il controller prima del routing e condivide il controllo con tastiera e menu. Nell'app dà l'input al livello più alto: un pannello sopra la pagina sospende l'input della pagina sotto.
 - **Suggerimenti dei tasti:** `SeleneHintsBar` alla posizione condivisa `SeleneBottomScrim.hintsBottom` (32 unità dal fondo). I simboli vengono da `ButtonPrompts`.

@@ -34,16 +34,15 @@ import ArcanePorting
         }
         // CONNECTION_FIXTURE
         try render("panel", output, CloudLibraryPanel(viewModel: vm, model: model, game: game))
-        L10n.setContext(.init(language: .french, region: "FR"))
-        vm.screenRebuildNotice()
-        let notice = vm.settingsNotice!
-        precondition(notice.choices == ["Download the cloud cache", "Rebuild with this Mac’s cache", "Rebuild without cache", "Cancel"])
-        precondition(vm.settingsNoticeFocus == 0 && notice.cancelIndex == 3 && notice.vertical)
-        try render("rebuild", output, SeleneChoiceDialog(title: notice.title, message: notice.message,
-            choices: notice.choices, focus: .constant(vm.settingsNoticeFocus), vertical: notice.vertical,
-            details: notice.choiceDetails, onChoose: { _ in })
-            .environment(\.nxAppLocale, L10n.context),
-            size: .init(width: 900, height: 620))
+        for (name, locale) in [("rebuild", AppLocale(language: .french, region: "FR")),
+                               ("rebuild-de", AppLocale(language: .german, region: "DE"))] {
+            L10n.setContext(locale)
+            vm.screenRebuildNotice()
+            let notice = vm.settingsNotice!
+            precondition(notice.choices == ["Download the cloud cache", "Rebuild with this Mac’s cache", "Rebuild without cache", "Cancel"])
+            precondition(vm.settingsNoticeFocus == 0 && notice.cancelIndex == 3)
+            try renderNotice(name, output, notice, width: 1440)
+        }
         L10n.setContext(.init(language: .english, region: "US"))
         vm.settingsNotice = nil
         try render("settings", output, SettingsCloudLibrarySection(
@@ -98,6 +97,13 @@ import ArcanePorting
         // MULTIPLAYER_CHECK
     }
 
+    @MainActor static func renderNotice(_ name: String, _ output: URL, _ notice: SettingsNotice, width: CGFloat) throws {
+        try render(name, output, SeleneChoiceDialog(title: notice.title, message: notice.message,
+            choices: notice.choices, focus: .constant(notice.initialFocus), /* NOTICE_LAYOUT */
+            details: notice.choiceDetails, onChoose: { _ in }).environment(\.nxAppLocale, L10n.context),
+            size: .init(width: width, height: 620))
+    }
+
     @MainActor static func render<V: View>(_ name: String, _ output: URL, _ view: V,
                                           size: CGSize = .init(width: 1280, height: 1000)) throws {
         let canvas = SeleneCanvas(size: .init(width: 1920, height: 1080))
@@ -143,14 +149,16 @@ MULTIPLAYER_STATES = r'''
         try render("multiplayer-settings", output, settingsPage(), size: .init(width: 1920, height: 1080))
         ScreenVPN.connected = false
         try render("multiplayer-vpn-disconnected", output, settingsPage(), size: .init(width: 1920, height: 1080))
-        vm.showMultiplayerVPNFallback {}
-        let warning = vm.settingsNotice!
-        precondition(warning.choices == ["Play on the local network", "Cancel"])
-        precondition(vm.settingsNoticeFocus == 0 && warning.cancelIndex == 1 && warning.vertical)
-        try render("multiplayer-vpn-warning", output,
-                   SeleneChoiceDialog(title: warning.title, message: warning.message, choices: warning.choices,
-                                      focus: .constant(warning.initialFocus), vertical: warning.vertical, onChoose: { _ in })
-                       .environment(\.nxAppLocale, frLocale), size: .init(width: 1100, height: 630))
+        for (name, locale) in [("multiplayer-vpn-warning", frLocale),
+                               ("multiplayer-vpn-warning-de", AppLocale(language: .german, region: "DE"))] {
+            L10n.setContext(locale)
+            vm.showMultiplayerVPNFallback {}
+            let warning = vm.settingsNotice!
+            precondition(warning.choices == ["Play on the local network", "Cancel"])
+            precondition(vm.settingsNoticeFocus == 0 && warning.cancelIndex == 1)
+            try renderNotice(name, output, warning, width: 1100)
+        }
+        L10n.setContext(frLocale)
         func gameOptions() -> some View {
             var installed = game
             installed.status = .built
@@ -327,7 +335,7 @@ extension CloudDriveFolders.Listing {
         change(activity, r'                ScrollViewReader \{ scroll in\n                    ScrollView \{\n', "")
         change(activity, r'                    }\n                    \.padding\(EdgeInsets.*?\.onChange\(of: focused\)[^\n]*\n                }\n', "")
         change(activity, r'        LazyVStack\(', '        VStack(')
-        host = HOST
+        host = HOST.replace("/* NOTICE_LAYOUT */", "vertical: notice.vertical," if before else "cancelIndex: notice.cancelIndex,")
         if "onEditLibrary:" in section.read_text():
             host = host.replace("onEdit: {}, onEditSources:", "onEdit: {}, onEditLibrary: {}, onEditSources:")
             host = host.replace("/* ENTRY */", ", entry: .sources")

@@ -17,6 +17,8 @@ struct SelenePillButton: View {
     /// Selene's Padding="36,0"; the round Favorite pill uses 0.
     var horizontalPadding: CGFloat = 36
     let focused: Bool
+    var fillsOnFocus = true
+    var scalesOnFocus = true
     /// False draws the pill dim: it still takes focus (a ring), but never the solid focus fill.
     var enabled: Bool = true
     /// Three dots after the title rising and falling like a wave ("Porting…").
@@ -58,7 +60,7 @@ struct SelenePillButton: View {
         let tint = !queuedBuild || cancelling ? self.tint : nil
         let title = cancelling ? "Cancel" : self.title
         let icon = cancelling ? MaterialIcon.close : self.icon
-        let solid = focused && enabled && tint == nil
+        let solid = focused && enabled && tint == nil && fillsOnFocus
         return Button(action: action) {
             HStack(spacing: canvas.u(10)) {
                 accessory
@@ -91,7 +93,7 @@ struct SelenePillButton: View {
             .overlay(Capsule().strokeBorder(focused && !solid ? tint ?? SeleneTheme.focus : SeleneTheme.ink15,
                                             lineWidth: solid ? 0 : max(1, canvas.u(focused && !solid ? 2 : 1))))
             .shadow(color: solid ? SeleneTheme.focus.opacity(0.4) : .clear, radius: canvas.u(22))
-            .scaleEffect(focused && !reduceMotion ? 1.06 : 1)
+            .scaleEffect(scalesOnFocus && focused && !reduceMotion ? 1.06 : 1)
             // Focus eases across pills; the colour change is a fade, so it stays under reduce motion.
             .animation(SeleneTheme.cubicOut(0.26), value: focused)
             .contentShape(Capsule())
