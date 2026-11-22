@@ -30,7 +30,7 @@ import ArcanePorting
     private var operation: Task<Void, Never>?
     private var ticket = UUID()
     @Published private(set) var isSigningOut = false
-    private let store: NextendoTokenStore
+    let store: NextendoTokenStore
     let accountService: NextendoAccountService
 
     init(store: NextendoTokenStore = .init(), service: NextendoAccountService? = nil) {

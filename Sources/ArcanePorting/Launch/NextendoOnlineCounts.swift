@@ -5,14 +5,16 @@ import NXLibraryCore
 public actor NextendoOnlineCounts {
     private struct Response: Decodable { let counts: [String: Int] }
     private static let endpoint = URL(string: "https://nextendo.network/api/online-counts")!
-    private let session = URLSession(configuration: .ephemeral)
+    private let session: URLSession
     private var cached: [String: Int] = [:]
     private var expires = Date.distantPast
     private var isLoading = false
 
-    public init() {}
+    public init() { session = URLSession(configuration: .ephemeral) }
+    package init(session: URLSession) { self.session = session }
 
-    public func read() async throws -> [String: Int] {
+    public func read(tokenStore: NextendoTokenStore) async throws -> [String: Int] {
+        guard try tokenStore.hasToken() else { return [:] }
         guard Date() >= expires, !isLoading else { return cached }
         isLoading = true
         defer { isLoading = false }

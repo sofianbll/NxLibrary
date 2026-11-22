@@ -386,9 +386,12 @@ extension AppShellView {
         .environment(\.catalogPersonalizations, viewModel.personalizations)
         .environment(\.profilePortrait, router.isMenuPresented ? nil : profiles.active)
         .environment(\.onlinePlayersByTitle, onlinePlayers)
-        .task {
+        .task(id: profiles.active?.id) {
+            guard !Task.isCancelled else { return }
+            onlinePlayers = [:]
+            guard let store = viewModel.profileNextendo?.store else { return }
             while !Task.isCancelled {
-                let counts = (try? await Self.onlineCounts.read()) ?? [:]
+                let counts = (try? await Self.onlineCounts.read(tokenStore: store)) ?? [:]
                 guard !Task.isCancelled else { return }
                 if counts != onlinePlayers { onlinePlayers = counts }
                 try? await Task.sleep(for: .seconds(180))
