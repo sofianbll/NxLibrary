@@ -1240,7 +1240,8 @@ def main():
         options = app / "Views/GameOptions/GameOptionsView+Rows.swift"
         replace(options, r'            ScrollViewReader \{ proxy in\n                ScrollView \{\n', '')
         replace(options, r'                }\n                \.scrollIndicators\(\.hidden\).*?\n            }\n            \.id\(level\)\n', '')
-        replace(options, r'let entries = p\.entries\(level: level, origin: origin\)', r'let entries = p.entries(level: level, origin: origin).prefix(8)')
+        replace(options, r'let entries = p\.entries\(level: level, origin: origin, context: localization\)',
+                lambda match: match[0] + '.prefix(8)')
         saves = app / "Views/GameOptions/SavesPanel.swift"
         replace(saves, r"onClose: @escaping \(\) -> Void\) \{",
                 "onClose: @escaping () -> Void, copyingFrom: [LocalProfile] = []) {\n"

@@ -196,7 +196,10 @@ struct CloudLibraryPanel: View {
                     SeleneProgressBar(progress: CloudTransferPresentation.fraction(state.progress), color: indicator.status.color)
                 }
             } else if let issue = state.issue, issue.item == item {
-                if issue.failed { failureLine(issue.message, failure: state.transferFailure, item: item) }
+                if issue.failed {
+                    let reason = state.transferFailure?.message(context: localization) ?? issue.message
+                    failureLine(reason == statusText ? nil : reason, failure: state.transferFailure, item: item)
+                }
                 else {
                     Text(issue.message).seleneFont(15).foregroundColor(SeleneTheme.ink60)
                         .multilineTextAlignment(.leading)
@@ -311,10 +314,12 @@ struct CloudLibraryPanel: View {
         }
     }
 
-    private func failureLine(_ message: String, failure: CloudLibraryFailure?, item: CloudLibraryItem?) -> some View {
+    private func failureLine(_ message: String?, failure: CloudLibraryFailure?, item: CloudLibraryItem?) -> some View {
         HStack {
-            Text(message).seleneFont(15).foregroundColor(CloudLibraryStatus.failed.color)
-                .fixedSize(horizontal: false, vertical: true)
+            if let message {
+                Text(message).seleneFont(15).foregroundColor(CloudLibraryStatus.failed.color)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             if let failure, controls.contains(.recover(failure, item)) {
                 button(.recover(failure, item), failure.action == .retry ? "Refresh" : failure.action.titleKey)
             } else if let item, let retry = retryResult(for: item), controls.contains(.retry(retry)) {

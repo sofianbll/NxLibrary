@@ -6,7 +6,7 @@ import ArcanePorting
 /// The column and its rows: entries, hints, the info line, accessibility values and each row's trailing value.
 extension GameOptionsView {
     func column(_ p: GameOptionsPresentation) -> some View {
-        let entries = p.entries(level: level, origin: origin)
+        let entries = p.entries(level: level, origin: origin, context: localization)
         let focused = focusedRow
         return VStack(alignment: .leading, spacing: 0) {
             Text(L10n.text("GAME OPTIONS"))

@@ -138,6 +138,17 @@ final class GameOptionsPresentationTests: XCTestCase {
             .note(title: "Internal resolution", text: unsupported.resolutionNote)))
     }
 
+    func testNextLaunchHeadingUsesEachSupportedLanguage() {
+        let expected: [AppLanguage: String] = [.english: "Next launch", .italian: "Prossimo avvio",
+            .french: "Prochain lancement", .german: "Nächster Start", .spanish: "Próximo inicio",
+            .portugueseBrazil: "Próxima abertura", .chineseSimplified: "下次启动"]
+        for (language, heading) in expected {
+            let entries = presentation().entries(level: .main, origin: .details,
+                                                 context: .init(language: language, region: "US"))
+            XCTAssertTrue(entries.contains(.heading(heading)), "\(language): expected \(heading)")
+        }
+    }
+
     func testNextLaunchHeadingSitsBetweenHiddenAndTheRuntimeRows() {
         let entries = presentation().entries(level: .main, origin: .spotlight)
         guard let heading = entries.firstIndex(of: .heading("Next launch")),

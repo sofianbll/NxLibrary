@@ -348,7 +348,7 @@ public struct GameOptionsPresentation: Equatable {
     }
 
     /// The rows of one level, in display order, with headings and notes between them.
-    public func entries(level: GameOptionsLevel, origin: GameOptionsOrigin) -> [GameOptionsEntry] {
+    public func entries(level: GameOptionsLevel, origin: GameOptionsOrigin, context: AppLocale? = nil) -> [GameOptionsEntry] {
         switch level {
         case .main:
             var entries: [GameOptionsEntry] = [.row(.play)]
@@ -357,7 +357,8 @@ public struct GameOptionsPresentation: Equatable {
             if onlineRiskMods { entries.append(.row(.disableOnlineRiskMods)) }
             entries.append(.row(.openSaves))
             if origin == .spotlight { entries.append(.row(.move)) }
-            entries += [.row(.favorite), .row(.hidden), .heading("Next launch")]
+            let nextLaunch = GameOptionsEntry.heading(L10n.text("Next launch", context: context))
+            entries += [.row(.favorite), .row(.hidden), nextLaunch]
             if let buildSettings {
                 entries += GameOptionsRow.settingRows
                     .filter { $0.settingKey.map(buildSettings.visible.contains) ?? false }
@@ -376,7 +377,7 @@ public struct GameOptionsPresentation: Equatable {
                 }
             }
             if supportsGameDisplay,
-               let anchor = entries.firstIndex(of: .row(.fullscreen)) ?? entries.firstIndex(of: .heading("Next launch")) {
+               let anchor = entries.firstIndex(of: .row(.fullscreen)) ?? entries.firstIndex(of: nextLaunch) {
                 entries.insert(.row(.gameDisplay), at: anchor + 1)
             }
             entries += [.row(.restoreDefaults), .row(.rebuild), .row(.showInFinder),

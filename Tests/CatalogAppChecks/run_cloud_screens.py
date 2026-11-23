@@ -694,8 +694,9 @@ enum ScreenVPN {
     rows = app / "Views/GameOptions/GameOptionsView+Rows.swift"
     change(rows, r'            ScrollViewReader \{ proxy in\n                ScrollView \{\n', '')
     change(rows, r'                }\n                \.scrollIndicators\(\.hidden\).*?\n            }\n            \.id\(level\)\n', '')
-    change(rows, r'let entries = p\.entries\(level: level, origin: origin\)',
-           'let entries = p.entries(level: level, origin: origin).prefix(DisplayScreenProbe.expanded ? 13 : (ScreenVPN.mods ? 8 : 7))')
+    change(rows, r'(let entries = p\.entries\(level: level, origin: origin(?:, context: localization)?\))',
+           re.search(r'let entries = p\.entries\([^\n]+', rows.read_text())[0]
+           + '.prefix(DisplayScreenProbe.expanded ? 13 : (ScreenVPN.mods ? 8 : 7))')
     return host.replace("// MULTIPLAYER_CHECK", MULTIPLAYER.replace("// MULTIPLAYER_STATES", MULTIPLAYER_STATES))
 
 

@@ -109,6 +109,7 @@ struct GameOptionsView: View {
     @State var scrollBox = OptionsScrollBox()
 
     @Environment(\.seleneCanvas) var canvas
+    @Environment(\.nxAppLocale) var localization
     @Environment(\.seleneReduceMotion) var reduceMotion
 
     enum ConfirmTarget: Equatable {

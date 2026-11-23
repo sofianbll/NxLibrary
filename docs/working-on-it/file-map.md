@@ -296,7 +296,7 @@ Cartella `Sources/NXLibraryCore/Details/`.
 | [Sources/NXLibraryCore/Details/MoreLikeThis.swift](../../Sources/NXLibraryCore/Details/MoreLikeThis.swift) | Ordina i giochi correlati per generi, sviluppatore ed editore, con precedenza alla stessa fonte e ripiego facoltativo. |
 | [Sources/NXLibraryCore/Details/DetailsFacts.swift](../../Sources/NXLibraryCore/Details/DetailsFacts.swift) | Sceglie le righe del pannello Details (Steam qui, Switch in `ArcanePorting/Details/DetailsFacts+Porting.swift`): solo i valori presenti, niente di tecnico. |
 | [Sources/NXLibraryCore/Details/DetailsFocus.swift](../../Sources/NXLibraryCore/Details/DetailsFocus.swift) | Gestisce zone e spostamenti del focus nei link e nelle bande di Details. |
-| [Sources/NXLibraryCore/Details/GameOptionsPresentation.swift](../../Sources/NXLibraryCore/Details/GameOptionsPresentation.swift) | Righe, livelli e focus: Play, rete, azione RomFS in Online e schermo solo per gli host compatibili. |
+| [Sources/NXLibraryCore/Details/GameOptionsPresentation.swift](../../Sources/NXLibraryCore/Details/GameOptionsPresentation.swift) | Righe, livelli, focus e titolo Next launch localizzato: Play, rete, azione RomFS in Online e schermo solo per gli host compatibili. |
 | [Sources/NXLibraryCore/Details/GameDetailPresentation+Steam.swift](../../Sources/NXLibraryCore/Details/GameDetailPresentation+Steam.swift) | Dati della pagina Steam e generi della testata Spotlight; ignora i dati di altri AppID e dà precedenza ai campi personali. |
 
 ## Core · artwork e metadati
