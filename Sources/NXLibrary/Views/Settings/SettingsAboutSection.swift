@@ -44,9 +44,18 @@ struct SettingsAboutSection: View {
                 Text(L10n.format("Version %@ · Build %@ · Engine %@", [String(describing: version), String(describing: buildDate), String(describing: seleneShort(viewModel.pinnedEngineCommit))]))
                     .seleneFont(13, .regular, design: .monospaced)
                     .foregroundColor(SeleneTheme.ink60)
-                Text(L10n.format("Based on %@ %@", [AppIdentity.name, "0.2.1"]))
-                    .seleneFont(.metadata)
-                    .foregroundColor(SeleneTheme.ink60)
+                Button(action: openProjectDocs) {
+                    HStack(spacing: canvas.u(SeleneTokens.Space.hairline)) {
+                        Text(L10n.format("Based on %@ %@, by %@", [AppIdentity.name, "0.2.1", "Bium23"], context: localization))
+                        Image(systemName: "arrow.up.right").accessibilityHidden(true)
+                    }
+                    .seleneFont(.metadata, .semibold)
+                    .foregroundColor(SeleneTheme.glyph)
+                }
+                .buttonStyle(.plain)
+                .padding(canvas.u(SeleneTokens.Space.tight))
+                .seleneRowFocus(focusedRowTitle == "Open project docs")
+                .id("selene-row-Open project docs")
                 Text(L10n.text("Play time is tracked only for launches from Arcane. Not affiliated with Nintendo."))
                     .seleneFont(13)
                     .foregroundColor(SeleneTheme.ink60)
@@ -145,21 +154,6 @@ struct SettingsAboutSection: View {
                     .foregroundColor(SeleneTheme.ink90)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Button {
-                    openProjectDocs()
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(L10n.text("Open project docs"))
-                        Image(systemName: "arrow.up.right")
-                    }
-                    .seleneFont(14, .semibold)
-                    .foregroundColor(SeleneTheme.glyph)
-                }
-                .buttonStyle(.plain)
-                .padding(6)
-                .seleneRowFocus(focusedRowTitle == "Open project docs")
-                .id("selene-row-Open project docs")
-
                 Text(L10n.text("This app is not affiliated with Nintendo."))
                     .seleneFont(13, .semibold)
                     .foregroundColor(SeleneTheme.ink60)
@@ -196,7 +190,7 @@ struct SettingsAboutSection: View {
                             .accessibilityHidden(true)
                     }
                     VStack(alignment: .leading, spacing: canvas.u(4)) {
-                        Text(L10n.text(Self.supportTitle, context: localization))
+                        Text(L10n.format("Support the author of %@", [AppIdentity.name], context: localization))
                             .seleneFont(19, .semibold)
                             .foregroundColor(SeleneTheme.ink)
                         Text(L10n.text("Optional contributions support development and maintenance.", context: localization))
@@ -225,7 +219,8 @@ struct SettingsAboutSection: View {
     }
 
     private func publishActions() {
-        var actions = updateActions.map { action in
+        var actions: [SettingsRowAction] = [.init(id: "docs", title: "Open project docs", activate: openProjectDocs)]
+        actions += updateActions.map { action in
             SettingsRowAction(id: "update-\(action.title)", title: action.title,
                               isEnabled: action.enabled, activate: action.perform)
         }
@@ -239,7 +234,6 @@ struct SettingsAboutSection: View {
         actions.append(.init(id: "selene", title: "Selene") {
             NSWorkspace.shared.open(URL(string: "https://github.com/mattxslv/Selene")!)
         })
-        actions.append(.init(id: "docs", title: "Open project docs", activate: openProjectDocs))
         onActions(actions)
     }
 

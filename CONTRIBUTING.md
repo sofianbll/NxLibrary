@@ -1,9 +1,9 @@
 # Reporting issues and suggestions
 
-Arcane is a macOS game library and launcher. Use [GitHub Issues](https://github.com/Bium23/NxLibrary/issues)
-for bug reports, feature suggestions and translation feedback. The maintainer
-implements and integrates code changes. Repository collaborators can open
-pull requests for maintainer work.
+Oort NX is an independent fork of [Arcane by Bium23](https://github.com/Bium23/NxLibrary).
+Send fork bugs, suggestions and translation feedback to the Oort NX maintainer.
+The fork's GitHub Issues tracker is currently disabled. Do not use Arcane's Issues
+unless the bug also reproduces in unmodified Arcane.
 
 Describe what you expected, what happened, and how to reproduce it. For translation
 feedback, include the language, the current wording and a suggested correction.

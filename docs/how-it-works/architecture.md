@@ -953,8 +953,8 @@ Nel repository, `.build/` contiene gli output SwiftPM, `work/Runtime` il runtime
 - Il gate si verifica prima del download e prima dell'installazione, insieme ai controlli e ai lease esistenti. Un trasferimento cloud blocca l'aggiornamento. Il motivo dell'attesa arriva al dialogo come valore, così la chiusura di un gioco aggiorna il pulsante Update.
 
 **Download e verifica.**
-- `AppUpdater` coordina gli aggiornamenti da `sofianbll/NxLibrary`, senza autenticazione. Le regole di versione, requisiti, digest, identità del bundle e installazione sono in `AppUpdate`.
-- La release si accetta solo se lo zip `NXLibrary-<versione>.zip` sta nel percorso di download del repository configurato. Il fork non accetta un secondo percorso: `AppUpdate.successorRepository` non è impostato.
+- `AppUpdater` interroga `sofianbll/NxLibrary` senza autenticazione, seguendo il normale reindirizzamento GitHub. Le regole di versione, requisiti, digest, identità del bundle e installazione sono in `AppUpdate`.
+- Lo zip resta `NXLibrary-<versione>.zip`. Il suo percorso accetta il nome esatto `sofianbll/NxLibrary` o il successore esplicito `sofianbll/oort-nx`; non accetta altri proprietari né varianti di maiuscole. La vecchia 0.2.1.20261129 non conosce il successore.
 - `AppUpdateDownload` limita il trasferimento alla dimensione dichiarata e agli host HTTPS di GitHub.
 - `validate_update.py` verifica struttura e percorsi, poi estrae contando i dati davvero decompressi tramite il Python incluso. Prima della sostituzione si controllano versione, marker, identificativo e firma del bundle.
 - La firma ad hoc protegge il contenuto sigillato ma non identifica da sola il maintainer.

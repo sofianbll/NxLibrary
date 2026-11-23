@@ -20,9 +20,8 @@ public enum AppUpdate {
     public static let defaultRepository: String? = "sofianbll/NxLibrary"
     /// A UserDefaults override of `defaultRepository`, for testing before publishing.
     public static let repositoryOverrideKey = "NXLibrary_UpdateRepository"
-    /// After a rename GitHub answers the old release API with links under the new name.
-    /// The fork has no alternate name.
-    public static let successorRepository: String? = nil
+    /// GitHub keeps answering the old release API but returns asset URLs under the new name.
+    public static let successorRepository: String? = "sofianbll/oort-nx"
     /// The Info.plist key that marks a release copy.
     public static let releaseMarker = "NXLibraryRelease"
     static let interval: TimeInterval = 24 * 3600

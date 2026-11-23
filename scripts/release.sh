@@ -34,6 +34,18 @@ done
 
 fail() { echo "error: $*" >&2; exit 1; }
 
+resolve_release_repository() {
+  local source="$1" default successor canonical
+  default="$(sed -n 's/.*defaultRepository: String? = "\([^"]*\)".*/\1/p' "$source")"
+  successor="$(sed -n 's/.*successorRepository: String? = "\([^"]*\)".*/\1/p' "$source")"
+  [ -n "$default" ] || fail "no public update repository is configured"
+  canonical="$(gh api "repos/$default" --jq 'select(.private == false) | .full_name')" \
+    || fail "could not look up the public update repository"
+  [[ -n "$canonical" && ( "$canonical" == "$default" || "$canonical" == "$successor" ) ]] \
+    || fail "the update repository must be public and match the configured fork or its successor"
+  printf '%s\n' "$canonical"
+}
+
 [[ "$VERSION" =~ ^(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*)){2}$ ]] || fail "use MAJOR.MINOR.PATCH, like 0.3.0"
 TAG="v$VERSION"
 
@@ -50,10 +62,7 @@ if [[ "$GOOGLE_CLIENT_ID" =~ [^[:space:]] && "$GOOGLE_CLIENT_SECRET" =~ [^[:spac
 if [ "$PUBLISH" = "1" ]; then
   [ -n "$NOTES" ] && [ -f "$NOTES" ] || fail "--publish needs --notes <file> with the release notes"
   command -v gh >/dev/null || fail "--publish needs the GitHub CLI (gh)"
-  REPOSITORY="$(sed -n 's/.*defaultRepository: String? = "\([^"]*\)".*/\1/p' "$ROOT/Sources/NXLibraryCore/App/AppUpdate.swift")"
-  [ -n "$REPOSITORY" ] || fail "no public update repository is configured"
-  [ "$(gh api "repos/$REPOSITORY" --jq .private)" = "false" ] \
-    || fail "the update repository must be publicly accessible before publishing"
+  REPOSITORY="$(resolve_release_repository "$ROOT/Sources/NXLibraryCore/App/AppUpdate.swift")"
 fi
 [ -z "$(git status --porcelain)" ] || fail "the working tree has changes; commit or stash them first"
 if [ "$PRIVATE" = "0" ] && git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then

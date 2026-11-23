@@ -39,6 +39,27 @@ class AppBundleInfo(unittest.TestCase):
                     original, ArcaneGoogleClientID=values[0], ArcaneGoogleClientSecret=values[1])
                 self.assertEqual(plistlib.loads(path.read_bytes()), expected)
 
+    def test_release_uses_only_the_public_canonical_fork_name(self):
+        script = BUILD_APP.with_name("release.sh").read_text()
+        start = script.index("fail() {")
+        end = script.index('[[ "$VERSION"', start)
+        source = BUILD_APP.parents[1] / "Sources/NXLibraryCore/App/AppUpdate.swift"
+        probe = script[start:end] + """
+        gh() {
+            [[ "$*" == "api repos/sofianbll/NxLibrary --jq select(.private == false) | .full_name" ]] || return 2
+            printf '%s' "$CANONICAL"
+        }
+        resolve_release_repository "$1"
+        """
+        for canonical, accepted in [("sofianbll/NxLibrary", True), ("sofianbll/oort-nx", True),
+                                    ("someone/oort-nx", False), ("sofianbll/Oort-NX", False), ("", False)]:
+            with self.subTest(canonical=canonical):
+                result = subprocess.run(["/bin/bash", "-c", probe, "probe", str(source)],
+                                        env=os.environ | {"CANONICAL": canonical}, capture_output=True, text=True)
+                self.assertEqual(result.returncode == 0, accepted, result.stderr)
+                if accepted:
+                    self.assertEqual(result.stdout.strip(), canonical)
+
     def test_launcher_opts_out_of_game_mode(self):
         # Arcane declares the games category, so macOS would put the launcher
         # itself in Game Mode; the engine opts each game out for the same reason.

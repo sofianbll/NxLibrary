@@ -972,16 +972,28 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "游戏显示器"}}
       }
     },
-    "Based on %@ %@": {
-      "comment": "The upstream project name and its version in the About panel.",
+    "Based on %@ %@, by %@": {
+      "comment": "Upstream project, version, and author. Links to the upstream project.",
       "localizations": {
-        "en": {"stringUnit": {"state": "translated", "value": "Based on %1$@ %2$@"}},
-        "it": {"stringUnit": {"state": "translated", "value": "Basato su %1$@ %2$@"}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Basé sur %1$@ %2$@"}},
-        "de": {"stringUnit": {"state": "translated", "value": "Basiert auf %1$@ %2$@"}},
-        "es": {"stringUnit": {"state": "translated", "value": "Basado en %1$@ %2$@"}},
-        "pt-BR": {"stringUnit": {"state": "translated", "value": "Baseado em %1$@ %2$@"}},
-        "zh-Hans": {"stringUnit": {"state": "translated", "value": "基于 %1$@ %2$@"}}
+        "en": {"stringUnit": {"state": "translated", "value": "Based on %1$@ %2$@, by %3$@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Basato su %1$@ %2$@, di %3$@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Basé sur %1$@ %2$@, par %3$@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Basiert auf %1$@ %2$@ von %3$@"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Basado en %1$@ %2$@, de %3$@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Baseado em %1$@ %2$@, por %3$@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "基于 %3$@ 开发的 %1$@ %2$@"}}
+      }
+    },
+    "Support the author of %@": {
+      "comment": "A donation goes to the author of the upstream project.",
+      "localizations": {
+        "en": {"stringUnit": {"state": "translated", "value": "Support the author of %@"}},
+        "it": {"stringUnit": {"state": "translated", "value": "Sostieni l’autore di %@"}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Soutenir l’auteur d’%@"}},
+        "de": {"stringUnit": {"state": "translated", "value": "Den Autor von %@ unterstützen"}},
+        "es": {"stringUnit": {"state": "translated", "value": "Apoyar al autor de %@"}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Apoiar o autor de %@"}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "支持 %@ 的作者"}}
       }
     },
     "Screen used to open ported games.": {

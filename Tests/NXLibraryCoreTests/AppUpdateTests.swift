@@ -154,19 +154,32 @@ final class AppUpdateTests: XCTestCase {
 
     func testForkDoesNotAcceptUpstreamReleaseAssets() throws {
         let fork = try XCTUnwrap(AppUpdate.defaultRepository)
-        XCTAssertNil(AppUpdate.successorRepository)
         let renamed = try changingAsset { $0["browser_download_url"] = successorURL }
         XCTAssertNil(AppUpdate.parseRelease(renamed, repository: fork))
         XCTAssertNil(AppUpdate.parseRelease(Data(releaseJSON.utf8), repository: fork))
-        let forkRelease = try changingAsset {
-            $0["browser_download_url"] = "https://github.com/\(fork)/releases/download/v0.3.0/NXLibrary-0.3.0.zip"
-        }
-        XCTAssertNotNil(AppUpdate.parseRelease(forkRelease, repository: fork))
         let wrongCase = try changingAsset {
             $0["browser_download_url"] = "https://github.com/Bium23/arcane/releases/download/v0.3.0/NXLibrary-0.3.0.zip"
         }
         XCTAssertNil(AppUpdate.parseRelease(wrongCase, successor: "Bium23/Arcane"),
                      "the path must match GitHub's spelling exactly")
+    }
+
+    func testForkReleaseAcceptsOnlyTheTwoExactRepositorySpellings() throws {
+        let fork = try XCTUnwrap(AppUpdate.defaultRepository)
+        let successor = try XCTUnwrap(AppUpdate.successorRepository)
+        XCTAssertEqual(successor, "sofianbll/oort-nx")
+        for (assetRepository, accepted) in [(fork, true), (successor, true),
+                                            ("SomeoneElse/oort-nx", false), ("sofianbll/Oort-NX", false),
+                                            ("Sofianbll/oort-nx", false), ("sofianbll/nxlibrary", false)] {
+            let data = try changingAsset {
+                $0["browser_download_url"] = "https://github.com/\(assetRepository)/releases/download/v0.3.0/NXLibrary-0.3.0.zip"
+            }
+            XCTAssertEqual(AppUpdate.parseRelease(data, repository: fork) != nil, accepted, assetRepository)
+            if assetRepository == successor {
+                // The 0.2.1.20261129 updater has no successor fallback.
+                XCTAssertNil(AppUpdate.parseRelease(data, repository: fork, successor: nil))
+            }
+        }
     }
 
     func testDownloadBudgetAndGitHubRedirectBoundary() {

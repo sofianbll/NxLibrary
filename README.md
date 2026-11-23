@@ -4,6 +4,8 @@
 
 <h1 align="center">Oort NX</h1>
 
+**Oort NX is a fork of [Arcane by Bium23](https://github.com/Bium23/NxLibrary).** Bium23 wrote most of the launcher. Oort NX is maintained separately, without Bium23's involvement or endorsement.
+
 <p align="center"><strong>A home for your games on Mac.</strong></p>
 
 <p align="center">
@@ -19,7 +21,8 @@
 </p>
 
 <p align="center">
-  <a href="https://buymeacoffee.com/bium"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" height="40"></a>
+  <a href="https://buymeacoffee.com/bium"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee — support Bium23, the author of Arcane" height="40"></a>
+  <br>Support Bium23, the author of Arcane.
 </p>
 
 <p align="center">
@@ -40,20 +43,23 @@
 <p align="center"><strong>Your library, together.</strong><br>Games, artwork and activity in Spotlight.</p>
 <!-- NX-SCREENSHOTS:END -->
 
-### <img src="https://img.shields.io/badge/new-E8833A?style=flat" alt="New" height="20" align="absmiddle"> Latest highlights
+### What Oort NX adds
+
+- **Oort NX identity.** The Oort palette is the default for profiles without a saved theme. Existing settings and libraries carry over from the fork.
+- **Game display.** Set a default screen for ported games and override it per game when the installed build supports it.
+- **Fork integrations.** The fork includes optional cloud library and Nextendo features, local profiles, and the PowerA HID fallback.
+
+### What comes from Arcane
 
 - **One library for your Mac games.** Add installed Steam games for Mac alongside games ported with nxnative. Browse in Spotlight or Collection and launch from either view.
 - **Steam achievements.** See playtime, achievement rarity and crystal tiers when available. Complete every achievement in a game to reveal the animated Arcane.
 - **An interface built for browsing.** Navigate with a controller, keyboard or mouse, and personalise your library with artwork, themes and live backgrounds.
-- **Arcane is now Oort NX in this fork.** Your library, preferences and save backups carry over.
 
 Every release is in the [changelog](CHANGELOG.md).
 
 ## Overview
 
 Arcane is an independent game library and launcher for Apple silicon Macs. It brings installed Steam games for Mac and games ported with nxnative into the same interface, inspired by [Selene](https://github.com/mattxslv/Selene). The integrated porting workflow uses [nxnative](https://github.com/seedds/nxnative) to build compatible Mac apps from your own Switch game files.
-
-This fork displays **Oort NX** and keeps Arcane as its upstream project identity.
 
 | Area | What you can do |
 |---|---|
@@ -71,7 +77,9 @@ Game files, keys and firmware are not provided. See [Legal and third-party notic
 
 Oort NX is in alpha. Get the latest published fork build from [Releases](https://github.com/sofianbll/NxLibrary/releases/latest), or [build this version from source](#building-from-source).
 
-Automated checks cover the application code, publication inputs, compilation and development-app packaging. They do not certify game compatibility. Changes are recorded in the [changelog](CHANGELOG.md), and the current checks are available under [Actions](https://github.com/Bium23/NxLibrary/actions/workflows/ci.yml).
+Send Oort NX bugs to this fork's maintainer, not to Bium23. GitHub Issues is currently disabled on the fork; if you already have a way to reach the fork maintainer, use it. Report a bug upstream only if you can reproduce it in unmodified Arcane.
+
+Automated checks cover the application code, publication inputs, compilation and development-app packaging. They do not certify game compatibility. Changes are recorded in the [changelog](CHANGELOG.md).
 
 Porting uses nxnative commit `99224562` with Xcode 27.2 and Metal 32023.922. Porting Setup retrieves that commit. Installed game apps use the engine they were built with. See the [engine upgrade notes](docs/history/engine-upgrades/README.md).
 
@@ -95,7 +103,7 @@ A packaged app includes Python and its required packages, `zstd` and `glslangVal
 With the [development prerequisites](docs/working-on-it/development.md#development-prerequisites) installed:
 
 ~~~bash
-git clone https://github.com/Bium23/NxLibrary.git
+git clone https://github.com/sofianbll/NxLibrary.git
 cd NxLibrary
 
 bash scripts/bundle_runtime.sh
@@ -109,7 +117,7 @@ Build options, runtime dependencies, debug builds and release packaging are docu
 
 ### Installing a packaged release
 
-1. Download the DMG from [Releases](https://github.com/Bium23/NxLibrary/releases/latest).
+1. Download the DMG from the fork's [Releases](https://github.com/sofianbll/NxLibrary/releases/latest).
 2. Open it and drag **Oort NX** to Applications.
 3. Open Oort NX, choose which detected sources to use, and select **Open library**.
 
@@ -378,7 +386,7 @@ App data lives in `~/Library/Application Support/NXLibrary/`. Local game data us
 | [Steam](docs/how-it-works/steam.md) | Steam integration: files read, game states, launch, playtime, achievements, limits; in Italian. |
 | [Engine upgrade notes](docs/history/engine-upgrades/README.md) | Pin changes and their evidence. |
 
-Arcane is free and open source. If you like the project and want to support it, you can [buy me a coffee](https://buymeacoffee.com/bium).
+If you would like to support **Bium23, the original author of Arcane**, you can [buy Bium23 a coffee](https://buymeacoffee.com/bium). This supports Bium23, not the Oort NX fork.
 
 ## Credits and licences
 

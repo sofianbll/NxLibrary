@@ -135,7 +135,7 @@ Oort NX utilise son propre `MAJOR.MINOR.PATCH` : **PATCH** pour les correctifs s
 1. Choisir un commit **testé** du fork moteur, accessible depuis une branche publique. Après accord, poser le tag moteur `oort-vX.Y.Z` sur ce SHA exact ; Oort NX épingle le SHA, pas le tag. Pour `0.3.0` :
 
    ~~~sh
-   git -C ~/Games/Switch/Engine tag oort-v0.3.0 6b7af7934ae2916a0e8e31baed5f47fa283f09f4
+   git -C ~/Games/Switch/Engine tag oort-v0.3.0 a94ce2f6d5950b87c3a3ca672e2433bec6a57b3b
    git -C ~/Games/Switch/Engine push https://github.com/sofianbll/nxnative refs/tags/oort-v0.3.0
    ~~~
 
@@ -144,17 +144,17 @@ Oort NX utilise son propre `MAJOR.MINOR.PATCH` : **PATCH** pour les correctifs s
    ~~~sh
    DM_NEXTENDO_CLIENT_ID=nxc_G33XSxgJwhk9 bash scripts/release.sh 0.3.0 \
      --engine-repo https://github.com/sofianbll/nxnative \
-     --engine-commit 6b7af7934ae2916a0e8e31baed5f47fa283f09f4
+     --engine-commit a94ce2f6d5950b87c3a3ca672e2433bec6a57b3b
    ~~~
 
    Pour la publication perso, passer `DM_NEXTENDO_CLIENT_ID=nxc_G33XSxgJwhk9` aux deux commandes : le build inscrit cet identifiant public dans `DMNextendoClientID` dans le plist de l’app. Ne pas fournir de secret Nextendo. Le script refuse un SHA qui n'est pas accessible depuis une branche du dépôt. Sans les deux options moteur, la build conserve le dépôt et le pin amont.
 
-3. Après validation et accord de publication, placer le commit de release sur `origin/main` et refaire la même build avec les notes approuvées. Le script publie le tag app `vX.Y.Z`. Vérifier que `origin` pointe bien vers `sofianbll/NxLibrary`. Les notes peuvent rester hors du dépôt ; le script y ajoute le dépôt et le SHA embarqués et les métadonnées Xcode/moteur.
+3. Après validation et accord de publication, placer le commit de release sur `origin/main` et refaire la même build avec les notes approuvées. Le script publie le tag app `vX.Y.Z`. Il résout le nom public depuis `sofianbll/NxLibrary` et accepte uniquement ce nom ou `sofianbll/oort-nx`. Publier le pont en conservant le nom actuel : la 0.2.1.20261129 ne saura pas mettre à jour depuis le nouveau nom. Les notes peuvent rester hors du dépôt ; le script y ajoute le dépôt et le SHA embarqués et les métadonnées Xcode/moteur.
 
    ~~~sh
    DM_NEXTENDO_CLIENT_ID=nxc_G33XSxgJwhk9 bash scripts/release.sh 0.3.0 \
      --engine-repo https://github.com/sofianbll/nxnative \
-     --engine-commit 6b7af7934ae2916a0e8e31baed5f47fa283f09f4 \
+     --engine-commit a94ce2f6d5950b87c3a3ca672e2433bec6a57b3b \
      --publish --notes "$HOME/oort-nx-0.3.0.md"
    ~~~
 
