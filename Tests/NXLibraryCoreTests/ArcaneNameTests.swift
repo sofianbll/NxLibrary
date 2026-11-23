@@ -1,7 +1,7 @@
 import XCTest
 @testable import NXLibraryCore
 
-/// The app shows itself as Arcane everywhere a person or a web service can see a name.
+/// The user-facing brand is separate from the upstream network identity.
 final class ArcaneNameTests: XCTestCase {
     private var repository: URL {
         URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()

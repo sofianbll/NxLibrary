@@ -5,11 +5,11 @@ import Foundation
 /// so it happens only at quit, and only when nothing else is about to use that path.
 public enum AppBundleRename {
     public static let oldName = "NX Library.app"
-    public static var newName: String { "\(AppIdentity.name).app" }
+    public static var newName: String { "\(AppIdentity.displayName).app" }
 
     /// Where the bundle should go, or nil when it stays as it is: a development or translocated
     /// copy, an app busy updating, saving or relaunching itself, any other name, a read-only
-    /// folder, or an "Arcane.app" already beside it.
+    /// folder, or the destination already beside it.
     public static func target(bundleURL: URL, isRelease: Bool, isTranslocated: Bool, isBusy: Bool,
                               fileManager: FileManager = .default) -> URL? {
         guard isRelease, !isTranslocated, !isBusy else { return nil }

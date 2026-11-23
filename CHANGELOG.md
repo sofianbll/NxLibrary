@@ -14,6 +14,7 @@ User-visible changes to Arcane (formerly NX Library) are recorded here. Entries 
 
 ### Changed
 
+- The fork displays **Oort NX**, with new particle and halftone icons and the **Oort** palette as the default. Saved themes and launcher data stay in place.
 - **Cloud library** puts the last real connection check and its recovery action first, opens both folder choices in one assistant, and uses the same Selene badges and progress across the library and Activity center. Cloud-only apps offer **Download**; R3 changes the sort in both Spotlight and Collection.
 - **Rebuild** checks the original sources and verifies any cloud-backed cache before preparing the workspace. Download the cache or explicitly confirm rebuilding without it.
 - **Game Options → Mods** separates file mods from code mods, with separate ordering and notes on when each takes effect.

@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="Resources/AppIcon-Light.png" alt="Arcane app icon" width="96" height="96">
+  <img src="Resources/AppIcon-Light.png" alt="Oort NX halftone app icon" width="96" height="96">
 </p>
 
-<h1 align="center">Arcane</h1>
+<h1 align="center">Oort NX</h1>
 
 <p align="center"><strong>A home for your games on Mac.</strong></p>
 
@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Bium23/NxLibrary/releases/latest">Download</a> ·
+  <a href="https://github.com/sofianbll/NxLibrary/releases/latest">Download</a> ·
   <a href="#getting-started">Get started</a> ·
   <a href="#using-arcane">User guide</a> ·
   <a href="#troubleshooting">Troubleshooting</a> ·
@@ -45,13 +45,15 @@
 - **One library for your Mac games.** Add installed Steam games for Mac alongside games ported with nxnative. Browse in Spotlight or Collection and launch from either view.
 - **Steam achievements.** See playtime, achievement rarity and crystal tiers when available. Complete every achievement in a game to reveal the animated Arcane.
 - **An interface built for browsing.** Navigate with a controller, keyboard or mouse, and personalise your library with artwork, themes and live backgrounds.
-- **NX Library is now Arcane.** Your library, preferences and save backups carry over. Settings are grouped into General, Library, Porting and System.
+- **Arcane is now Oort NX in this fork.** Your library, preferences and save backups carry over.
 
 Every release is in the [changelog](CHANGELOG.md).
 
 ## Overview
 
 Arcane is an independent game library and launcher for Apple silicon Macs. It brings installed Steam games for Mac and games ported with nxnative into the same interface, inspired by [Selene](https://github.com/mattxslv/Selene). The integrated porting workflow uses [nxnative](https://github.com/seedds/nxnative) to build compatible Mac apps from your own Switch game files.
+
+This fork displays **Oort NX** and keeps Arcane as its upstream project identity.
 
 | Area | What you can do |
 |---|---|
@@ -67,7 +69,7 @@ Game files, keys and firmware are not provided. See [Legal and third-party notic
 
 ### Project status
 
-Arcane is in alpha. Get the latest published build from [Releases](https://github.com/Bium23/NxLibrary/releases/latest), or [build this version from source](#building-from-source).
+Oort NX is in alpha. Get the latest published fork build from [Releases](https://github.com/sofianbll/NxLibrary/releases/latest), or [build this version from source](#building-from-source).
 
 Automated checks cover the application code, publication inputs, compilation and development-app packaging. They do not certify game compatibility. Changes are recorded in the [changelog](CHANGELOG.md), and the current checks are available under [Actions](https://github.com/Bium23/NxLibrary/actions/workflows/ci.yml).
 
@@ -98,7 +100,7 @@ cd NxLibrary
 
 bash scripts/bundle_runtime.sh
 bash scripts/build_app.sh
-open "$HOME/Applications/Arcane Dev.app"
+open "$HOME/Applications/Oort NX Dev.app"
 ~~~
 
 Run `bundle_runtime.sh` once, and again when `runtime.lock` changes. `build_app.sh` prepares, signs and verifies the app before installing it atomically in `~/Applications`.
@@ -108,12 +110,12 @@ Build options, runtime dependencies, debug builds and release packaging are docu
 ### Installing a packaged release
 
 1. Download the DMG from [Releases](https://github.com/Bium23/NxLibrary/releases/latest).
-2. Open it and drag **Arcane** to Applications.
-3. Open Arcane, choose which detected sources to use, and select **Open library**.
+2. Open it and drag **Oort NX** to Applications.
+3. Open Oort NX, choose which detected sources to use, and select **Open library**.
 
 The current alpha is ad-hoc signed and not notarised. If macOS blocks first opening, use **System Settings → Privacy & Security → Open Anyway** only for a copy you built or obtained from a source you trust.
 
-Packaged releases check this repository for app updates; no GitHub account is needed. Choose **Update** to download, verify, install and reopen Arcane while keeping your library and preferences. Automatic checks run at most once every 24 hours; **Arcane → Check for Updates…** in the macOS menu bar and **Settings → About → Check now** check immediately. Both open the same app-style dialog, with scrollable release notes and a visible result even when no update is available. Updates wait while a build, a running game or a save operation requires the app. Development builds can check public releases manually but never replace themselves.
+Packaged fork releases check this repository for app updates; no GitHub account is needed. Choose **Update** to download, verify, install and reopen Oort NX while keeping your library and preferences. An existing `Arcane.app` is updated in place and keeps its filename. Automatic checks run at most once every 24 hours; **Oort NX → Check for Updates…** in the macOS menu bar and **Settings → About → Check now** check immediately. Both open the same app-style dialog, with scrollable release notes and a visible result even when no update is available. Updates wait while a build, a running game or a save operation requires the app. Development builds can check public releases manually but never replace themselves.
 
 ### First-run setup
 
@@ -283,7 +285,7 @@ GameBanana archives can contain RomFS, ExeFS, or both side by side under one roo
 ### Artwork, themes and sound
 
 - **Game Options → Edit details** changes one game's artwork or metadata. Manual artwork choices take priority over automatic images. After choosing an Icon in **Change artwork**, choose **Only here** to keep it inside Arcane or **Use on the Mac** to show it in Finder and the Dock too. This choice is available for every game, including apps with no original icon, and survives restarts and rebuilds. **Only here** restores the original app icon (or its absence) if a custom one was already applied. **Automatic** removes the personal image and uses the game's own icon, then available online artwork, while keeping your location choice. On the Icon tab, **Icon location** changes **Only here** / **Use on the Mac** at any time, including with Automatic selected. If no image is found, the app keeps the standard macOS icon and remains playable; Change artwork explains that no icon is available. The finished build log records the separate icon result.
-- **Menu → Theme** opens colors first, then backgrounds. **Arcane** keeps the original blue moonlight as the default. Optional **Arcane Crystal** and **Arcane Flow** offer fine moving light threads, with barely visible ambient light. Background choices include local images, muted looping videos and optional online sources; source credits appear in the picker.
+- **Menu → Theme** opens colors first, then backgrounds. **Oort** is the default; **Arcane** keeps the original blue moonlight. Optional **Arcane Crystal** and **Arcane Flow** offer fine moving light threads, with barely visible ambient light. Background choices include local images, muted looping videos and optional online sources; source credits appear in the picker.
 - **Settings → Look** controls wallpaper placement, sizing, brightness, game backgrounds, Reduce Motion and the Halftone/Particles app icon.
 - **Settings → Sound & music** controls interface cues and volume. Four interface sounds are bundled; additional sounds and wallpapers can be imported from a Selene theme folder you own.
 
@@ -384,7 +386,7 @@ Arcane is MIT licensed. It uses upstream [nxnative](https://github.com/seedds/nx
 
 The interface draws from the MIT [Selene](https://github.com/mattxslv/Selene) theme. Bundled fonts, sounds, palettes and runtime components retain their own licences; see [NOTICE](NOTICE), [media notices](Resources/Selene/NOTICE.txt) and [palette notices](Resources/Selene/NOTICE-palettes.txt).
 
-The app icon uses original artwork. The [master and generation notes](Resources/IconArtwork.md) are included.
+The app icon uses original artwork. See the [generation notes](Resources/IconArtwork.md).
 
 ## Legal and third-party notices
 

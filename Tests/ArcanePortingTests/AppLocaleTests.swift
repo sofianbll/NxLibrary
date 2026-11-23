@@ -3,6 +3,34 @@ import XCTest
 @testable import ArcanePorting
 
 final class AppLocaleTests: XCTestCase {
+    func testDisplayBrandReplacesLocalizedCopyButNotTheAchievementOrUserAgent() {
+        let english = AppLocale(language: .english, region: "US")
+        let french = AppLocale(language: .french, region: "FR")
+        XCTAssertEqual(L10n.text("Welcome to Arcane", context: english), "Welcome to Oort NX")
+        XCTAssertEqual(L10n.text("Welcome to Arcane", context: french), "Bienvenue dans Oort NX")
+        XCTAssertEqual(L10n.text("Arcane checks the cloud for missing game files.", context: english),
+                       "Oort NX checks the cloud for missing game files.")
+        XCTAssertEqual(L10n.format("Arcane %@", ["Arcane"], context: english), "Oort NX Arcane")
+        XCTAssertEqual(L10n.text("Arcane", context: english), "Arcane")
+        XCTAssertEqual(AppIdentity.userAgent(version: "0.2"), "Arcane/0.2 (macOS; +https://github.com/Bium23/NxLibrary)")
+    }
+
+    func testCloudSaveErrorBrandsTheSettingsOrigin() {
+        let reason = SaveFailure.cloudEnabled("Arcane → Settings → Cloud saves")
+        XCTAssertTrue(reason.localizedDescription.contains("Oort NX → Settings → Cloud saves"))
+    }
+
+    func testProfileBrandInEveryLanguageWithoutChangingUserNames() {
+        for language in AppLanguage.allCases {
+            let locale = AppLocale(language: language, region: "FR")
+            let profile = L10n.format("Arcane works without an account. These settings only apply to %@.",
+                                      ["Arcane Player"], context: locale)
+            XCTAssertTrue(profile.contains("Oort NX"), "\(language): \(profile)")
+            XCTAssertTrue(profile.contains("Arcane Player"), "\(language): \(profile)")
+            XCTAssertTrue(L10n.text("One of Arcane’s 28 illustrations.", context: locale).contains("Oort NX"))
+        }
+    }
+
     func testSettingsTitlesUseTheirExplicitContextWithoutChangingSectionIdentity() {
         let original = L10n.context
         defer { L10n.setContext(original) }

@@ -24,7 +24,7 @@ python3 scripts/check_publication.py
 python3 -m unittest discover -s Tests/PublicationChecks
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 bash scripts/build_app.sh
-codesign --verify --deep --strict "$HOME/Applications/Arcane Dev.app"
+codesign --verify --deep --strict "$HOME/Applications/Oort NX Dev.app"
 ~~~
 
 Interactive app and game checks are performed manually. Describe which checks

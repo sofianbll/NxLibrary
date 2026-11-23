@@ -349,7 +349,7 @@ final class AppUpdateTests: XCTestCase {
     }
 
     func testUpdatePreservesUserCopiesBesideTheCurrentApp() throws {
-        for name in ["Arcane", "NX Library"] {
+        for name in ["Oort NX", "Arcane", "NX Library"] {
             let installed = dir.appendingPathComponent(UUID().uuidString)
             let current = try makeApp(name + ".app", in: installed, marker: "current")
             let keptNew = try makeApp(name + " (new).app", in: installed, marker: "user-new")

@@ -90,10 +90,10 @@ The user performs interactive app and game checks. Never use computer-use tools 
 ```bash
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 bash scripts/build_app.sh
-codesign --verify --deep --strict "$HOME/Applications/Arcane Dev.app"
+codesign --verify --deep --strict "$HOME/Applications/Oort NX Dev.app"
 ```
 
-Development builds install as **Arcane Dev** (`~/Applications/Arcane Dev.app`), the maintainer's only test copy. Never build over, replace or test in the released copy (`~/Applications/NX Library.app`, which becomes `Arcane.app` when a release that carries the new name quits); it is the copy installed from GitHub and updates itself.
+Development builds install as **Oort NX Dev** (`~/Applications/Oort NX Dev.app`), the maintainer's only test copy. Never build over, replace or test in the released copy. New release installs use `Oort NX.app`; old copies may retain their existing path and update in place.
 
 Then verify the gate in **Settings → Setup and engine**, build one real game, and launch it to a visible screen. Do not claim a build or game is working from compilation alone.
 

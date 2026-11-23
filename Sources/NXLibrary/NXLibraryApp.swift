@@ -31,7 +31,7 @@ struct NXLibraryApp: App {
     @FocusedValue(\.nxMenuAvailability) private var availability
     @ObservedObject private var localization = AppLocalization.shared
     var body: some Scene {
-        Window(AppIdentity.name, id: "main") {
+        Window(AppIdentity.displayName, id: "main") {
             DevelopmentStartupView()
         }
         .windowStyle(.hiddenTitleBar)

@@ -111,14 +111,14 @@ final class SetupCheckTests: XCTestCase {
             XCTAssertEqual(update.state, .warning, "still reopens Setup and runs with Install all")
             XCTAssertEqual(update.chip, "UPDATE READY")
             XCTAssertEqual(update.actionTitle, "Update")
-            XCTAssertEqual(update.detail, "This version of Arcane uses nxnative af616f5; the engine here is at ee369f0. Update downloads it and switches to it. Games you built keep playing.")
+            XCTAssertEqual(update.detail, "This version of Oort NX uses nxnative af616f5; the engine here is at ee369f0. Update downloads it and switches to it. Games you built keep playing.")
         }
         // A checkout ahead of the pin (or on another branch) is moved back, said as such.
         let ahead = item(.engine) { $0.engine = .checkout(head: "ee369f0", dirty: false); $0.engineBehind = false }
         XCTAssertEqual(ahead.state, .warning)
         XCTAssertEqual(ahead.chip, "OTHER VERSION")
         XCTAssertEqual(ahead.actionTitle, "Switch")
-        XCTAssertEqual(ahead.detail, "The engine here is at ee369f0, not the af616f5 this version of Arcane is tested with. Switch moves it to af616f5. Games you built keep playing.")
+        XCTAssertEqual(ahead.detail, "The engine here is at ee369f0, not the af616f5 this version of Oort NX is tested with. Switch moves it to af616f5. Games you built keep playing.")
 
         let dirty = item(.engine) { $0.engine = .checkout(head: "ee369f0", dirty: true) }
         XCTAssertEqual(dirty.state, .warning)

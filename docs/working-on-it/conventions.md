@@ -128,6 +128,8 @@ Esempi: `BoundedDownload`, `GameBananaClient`, `IGDBClient`, `SteamMetadataServi
 
 ## 7. Testi e lingue
 
+- Il solo nome dell’app viene da `AppIdentity.displayName`. I testi del catalogo mantengono le chiavi upstream: `L10n` applica la marca alla copia resa.
+
 - Ogni testo dell'interfaccia passa da `L10n.text` / `L10n.format` e sta in `Localizable.xcstrings` con en, it, fr, de, es, pt-BR e zh-Hans.
 - Le identità restano in inglese e non si traducono: rawValue salvati, rowID, variabili `DM_*`, eventi dell'engine.
 - I nomi dei simboli SF (`systemImage`, `systemName`, `systemSymbolName`) sono letterali e non passano da `L10n`: tradotti non trovano il simbolo. `check_localizations.py` lo verifica sui sorgenti.

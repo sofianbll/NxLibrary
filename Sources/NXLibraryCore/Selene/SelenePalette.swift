@@ -36,22 +36,23 @@ public struct SelenePalette: Codable, Equatable, Identifiable {
     public var surface: MoonlightSurface { MoonlightSurface(rawValue: moonlight ?? "") ?? .classic }
     public var base: BaseGradient
 
-    /// Built-in Selene palette, used when palettes.json is unavailable.
+    /// Built-in Oort palette, used when palettes.json is unavailable.
     public static let fallback = SelenePalette(
-        id: "selene", name: AppIdentity.name, mode: .dark,
+        id: SelenePaletteCatalog.defaultID, name: "Oort", mode: .dark,
         focus: 0xFFFFFF, onFocus: 0x111111, ink: 0xFFFFFF, scrim: 0x000000,
-        glass: 0x14181F, glyph: 0x9CCBFF, success: 0x3DDC84,
-        base: .init(kind: .linear, stops: [
-            .init(color: 0x17244A, location: 0),
-            .init(color: 0x0C142C, location: 0.45),
-            .init(color: 0x05080F, location: 1)
+        glass: 0x14181F, glyph: 0xAFC3E6, success: 0x3DDC84,
+        base: .init(kind: .radial, stops: [
+            .init(color: 0x141A24, location: 0),
+            .init(color: 0x05070B, location: 1)
         ])
     )
 }
 
 public enum SelenePaletteCatalog {
-    /// The theme Arcane starts in, first in the picker.
-    public static let defaultID = "selene"
+    /// The theme used without a preference, first in the picker.
+    public static let defaultID = "oort"
+    /// The classic blue palette keeps its softer row icons and headings.
+    public static let classicBlueID = "selene"
 
     /// The picker's order: the default first, then the rest by name.
     public static func pickerOrder(_ palettes: [SelenePalette]) -> [SelenePalette] {

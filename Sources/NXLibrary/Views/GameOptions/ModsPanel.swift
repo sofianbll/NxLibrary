@@ -207,7 +207,7 @@ struct ModsPanel: View {
         VStack(alignment: .leading, spacing: canvas.u(3)) {
             Text(L10n.text(title, context: locale))
                 .seleneFont(17, .semibold)
-                .foregroundColor(ThemeStore.shared.palette.id == SelenePaletteCatalog.defaultID ? SeleneTheme.ink75 : SeleneTheme.glyph)
+                .foregroundColor(ThemeStore.shared.palette.id == SelenePaletteCatalog.classicBlueID ? SeleneTheme.ink75 : SeleneTheme.glyph)
                 .accessibilityAddTraits(.isHeader)
             Text(L10n.text(subtitle, context: locale))
                 .seleneFont(15)

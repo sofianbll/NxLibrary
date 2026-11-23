@@ -112,7 +112,7 @@ extension AppShellView {
     func presentLegacyNotice() {
         guard viewModel.settingsNotice == nil, let message = viewModel.alertMessage else { return }
         viewModel.alertMessage = nil
-        viewModel.showSettingsNotice(title: AppIdentity.name, message: message)
+        viewModel.showSettingsNotice(title: AppIdentity.displayName, message: message)
     }
 
     func presentCloudNotice() {

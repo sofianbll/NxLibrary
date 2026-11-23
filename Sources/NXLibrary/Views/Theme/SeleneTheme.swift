@@ -25,7 +25,7 @@ enum SeleneTheme {
     static var moonlightSurface: MoonlightSurface { palette.surface }
     /// Every list icon in one colour: on Selene a soft ink (its blue accent read poorly
     /// on the glass), elsewhere the palette's glyph.
-    static var rowIcon: Color { palette.id == SelenePaletteCatalog.defaultID ? ink82 : glyph }
+    static var rowIcon: Color { palette.id == SelenePaletteCatalog.classicBlueID ? ink82 : glyph }
     static var success: Color { Color(hex: palette.success) }
     static let danger = Color(hex: SeleneTokens.Color.danger)
     /// Monochrome themes still use semantic colors for status dots.

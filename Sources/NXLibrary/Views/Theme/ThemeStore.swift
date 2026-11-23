@@ -2,7 +2,7 @@ import Foundation
 import NXLibraryCore
 
 /// Holds the active Selene palette. Palettes ship in the app bundle at Resources/Selene/palettes.json;
-/// when absent (e.g. `swift run`) the built-in Selene palette is used.
+/// when absent (e.g. `swift run`) the built-in Oort palette is used.
 final class ThemeStore: ObservableObject {
     static let shared = ThemeStore()
 
@@ -10,7 +10,7 @@ final class ThemeStore: ObservableObject {
     private(set) var palettes: [SelenePalette]
 
     init(palettesURL: URL? = Bundle.main.resourceURL?.appendingPathComponent("Selene/palettes.json"),
-                activeID: String = "selene") {
+                activeID: String = SelenePaletteCatalog.defaultID) {
         let loaded = palettesURL.flatMap { try? SelenePaletteCatalog.load(from: $0) } ?? []
         palettes = SelenePaletteCatalog.pickerOrder(loaded)
         palette = SelenePaletteCatalog.resolve(activeID, in: loaded)

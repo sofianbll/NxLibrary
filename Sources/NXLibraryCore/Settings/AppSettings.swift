@@ -268,7 +268,7 @@ public struct AppSettings: Codable, Equatable {
                 checkEngineAtLaunch: Bool = true,
                 refreshLibraryAtLaunch: Bool = true,
                 lastSelectedGameID: UUID? = nil,
-                colorThemeID: String = "selene",
+                colorThemeID: String = SelenePaletteCatalog.defaultID,
                 buttonNames: ButtonNameStyle = .automatic,
                 spotlightCards: [SpotlightCard] = [.surprise, .activity, .addGame],
                 showsModsCard: Bool = true,
@@ -373,7 +373,7 @@ public struct AppSettings: Codable, Equatable {
         self.refreshLibraryAtLaunch = try container.decodeIfPresent(Bool.self, forKey: .refreshLibraryAtLaunch) ?? true
         self.gameInboxEnabled = try container.decodeIfPresent(Bool.self, forKey: .gameInboxEnabled) ?? true
         self.lastSelectedGameID = try container.decodeIfPresent(UUID.self, forKey: .lastSelectedGameID)
-        self.colorThemeID = try container.decodeIfPresent(String.self, forKey: .colorThemeID) ?? "selene"
+        self.colorThemeID = try container.decodeIfPresent(String.self, forKey: .colorThemeID) ?? SelenePaletteCatalog.defaultID
         self.buttonNames = try container.decodeIfPresent(ButtonNameStyle.self, forKey: .buttonNames) ?? .automatic
         let cards = try container.decodeIfPresent([String].self, forKey: .spotlightCards)?
             .compactMap(SpotlightCard.init(rawValue:)) ?? [.surprise, .activity, .addGame]

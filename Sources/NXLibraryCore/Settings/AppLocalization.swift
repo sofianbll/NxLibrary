@@ -56,8 +56,14 @@ public enum L10n {
         let localized: Bundle?
         if let bundle { localized = languageBundle(context.language, in: bundle) }
         else { localized = defaultLanguageBundles[context.language] }
-        guard let localized else { return key }
-        return localized.localizedString(forKey: key, value: key, table: "Localizable")
+        let value = localized?.localizedString(forKey: key, value: key, table: "Localizable") ?? key
+        return displayCopy(value, key: key)
+    }
+
+    private static func displayCopy(_ value: String, key: String) -> String {
+        // The standalone key names the achievement tier, not the app.
+        guard key != "Arcane", value.contains(AppIdentity.name) else { return value }
+        return value.replacingOccurrences(of: AppIdentity.name, with: AppIdentity.displayName)
     }
 
     public static func format(_ key: String, _ arguments: [CVarArg], context: AppLocale? = nil) -> String {
@@ -67,6 +73,8 @@ public enum L10n {
 
     public static func count(_ key: String, _ count: Int, arguments: [CVarArg] = [], context: AppLocale? = nil) -> String {
         let context = context ?? Self.context
-        return String(format: text(key, context: context), locale: context.formatLocale, arguments: [count] + arguments)
+        let value = String(format: text(key, context: context), locale: context.formatLocale, arguments: [count] + arguments)
+        // shortcut: branded plurals only interpolate the count; if one needs other arguments, brand the variant before interpolation.
+        return arguments.isEmpty ? displayCopy(value, key: key) : value
     }
 }

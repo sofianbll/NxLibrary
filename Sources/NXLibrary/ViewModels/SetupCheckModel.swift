@@ -276,7 +276,7 @@ final class SetupCheckModel: ObservableObject {
                     .flatMap { MetalVersion.parse($0.stdout) }
                 if let now, now != certified {
                     final = CommandResult(status: 1, stdout: final.stdout,
-                                          stderr: "This Xcode uses Metal \(now); builds wait for an Arcane update tested with it.")
+                                          stderr: "This Xcode uses Metal \(now); builds wait for an update to \(AppIdentity.displayName) tested with it.")
                 }
             }
             DispatchQueue.main.async {

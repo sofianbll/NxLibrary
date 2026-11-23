@@ -263,10 +263,10 @@ final class AppUpdater: ObservableObject {
                         AppDelegate.relaunchScheduled = true
                         NSApp.terminate(nil)
                     } else {
-                        self.state = .failed("Arcane \(release.version) is installed; open it again to finish.")
+                        self.state = .failed("\(AppIdentity.displayName) \(release.version) is installed; open it again to finish.")
                     }
                 case .failure:
-                    self.fail("Arcane could not be replaced; the current version is unchanged.")
+                    self.fail("\(AppIdentity.displayName) could not be replaced; the current version is unchanged.")
                 }
             }
         }

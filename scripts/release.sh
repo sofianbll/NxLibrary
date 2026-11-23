@@ -113,6 +113,7 @@ echo "Requires: Xcode $MIN_XCODE, nxnative ${ENGINE:0:7}"
 
 OUT="$ROOT/work/release"
 if [ "$PRIVATE" = "1" ]; then OUT="$ROOT/work/release-private"; fi
+# Keep the legacy archive root for installed updaters; the DMG has the display name.
 APP="$OUT/NXLibrary.app"
 ZIP="$OUT/NXLibrary-$VERSION.zip"
 rm -rf "$OUT"
@@ -173,7 +174,7 @@ if [ "$PUBLISH" = "1" ]; then
     printf '\n\n%s\n' "$REQUIRES"
   } > "$OUT/notes.md"
   gh release create "$TAG" "$ZIP" "$DMG" --repo "$REPOSITORY" \
-    --title "Arcane $VERSION" --notes-file "$OUT/notes.md"
+    --title "Oort NX $VERSION" --notes-file "$OUT/notes.md"
   echo "Published $TAG"
 else
   echo "Not published (add --publish --notes <file> to create the GitHub release)."

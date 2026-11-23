@@ -1,9 +1,10 @@
 import Foundation
 
-/// The app's visible name and the one User-Agent every web request sends. The public project page
+/// The display brand and upstream identity. The public project page
 /// is the contact Wikidata asks clients for; no personal data goes in it.
 public enum AppIdentity {
     public static let name = "Arcane"
+    public static let displayName = "Oort NX"
     /// The name players knew before Arcane; only the one-time welcome says it.
     public static let formerName = "NX Library"
     /// The module that ports games to the Mac. A name, like the app's, so it is never translated.

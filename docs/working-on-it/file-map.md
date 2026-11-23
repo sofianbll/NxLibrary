@@ -73,8 +73,8 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 
 | File | Responsabilità |
 |---|---|
-| [Sources/NXLibrary/NXLibraryApp.swift](../../Sources/NXLibrary/NXLibraryApp.swift) | Punto @main, finestra SwiftUI, notifiche interne e comandi della barra menu. |
-| [Sources/NXLibrary/AppDelegate.swift](../../Sources/NXLibrary/AppDelegate.swift) | Gestisce finestra e chiusura: code ed esiti, conferma dell’ospite e nome `Arcane.app` per la release. |
+| [Sources/NXLibrary/NXLibraryApp.swift](../../Sources/NXLibrary/NXLibraryApp.swift) | Punto @main, finestra SwiftUI con il nome visibile, notifiche interne e comandi della barra menu. |
+| [Sources/NXLibrary/AppDelegate.swift](../../Sources/NXLibrary/AppDelegate.swift) | Gestisce finestra e chiusura: code, esiti, conferma dell’ospite e rinomina di una copia release storica. |
 | [Sources/NXLibrary/Views/MainView.swift](../../Sources/NXLibrary/Views/MainView.swift) | Presenta AppShellView come contenuto della finestra principale. |
 | [Sources/NXLibrary/Views/Shell/AppShellView.swift](../../Sources/NXLibrary/Views/Shell/AppShellView.swift) | Possiede il backdrop persistente e lo stato condiviso, passa a Spotlight il modello Mods, compone schermate e overlay e instrada input e avvisi (compresi i guasti cloud e l'annullamento da tastiera). `nativeDialogOwnsInput` sospende controller e tastiera sotto dialoghi nativi. Il file tiene stato, init e `body`; il resto sta nelle estensioni qui sotto. |
 | [Sources/NXLibrary/Views/Components/SeleneOverlay.swift](../../Sources/NXLibrary/Views/Components/SeleneOverlay.swift) | Velo, stile del blur, clic all'esterno, isolamento di puntatore e VoiceOver, suggerimenti, filtro del focus al passaggio del puntatore e scossa per l'input rifiutato. |
@@ -153,7 +153,7 @@ La pubblicazione comprende anche [CONTRIBUTING.md](../../CONTRIBUTING.md), [SECU
 
 | File | Responsabilità |
 |---|---|
-| [Sources/NXLibrary/Services/AppUpdater.swift](../../Sources/NXLibrary/Services/AppUpdater.swift) | Coordina controllo release, download, verifica, installazione e riavvio di Arcane. |
+| [Sources/NXLibrary/Services/AppUpdater.swift](../../Sources/NXLibrary/Services/AppUpdater.swift) | Coordina aggiornamento e riavvio di Oort NX a partire dal bundle `NXLibrary.app` nello ZIP. |
 | [Sources/NXLibrary/Services/NativeMenuCommands.swift](../../Sources/NXLibrary/Services/NativeMenuCommands.swift) | Coordina tracking, disponibilità nella scena e passaggio differito dai menu macOS alle azioni del launcher. |
 | [Sources/NXLibrary/Services/NextendoBrowserSignIn.swift](../../Sources/NXLibrary/Services/NextendoBrowserSignIn.swift) | Apre il browser predefinito e riceve una callback HTTP su loopback, con annullamento e scadenza. |
 | [Sources/NXLibrary/Services/ControllerSource.swift](../../Sources/NXLibrary/Services/ControllerSource.swift) | Contratto di connessione, identità e transizioni normalizzate per le sorgenti di input. |
@@ -183,13 +183,13 @@ Cartella `Sources/NXLibraryCore/App/`.
 | [Sources/NXLibraryCore/App/CommandRunner.swift](../../Sources/NXLibraryCore/App/CommandRunner.swift) | Comandi sincroni o streaming, con letture parallele e input facoltativo per i comandi annullabili. Aspetta il processo senza far girare il run loop. |
 | [Sources/NXLibraryCore/App/DiagnosticsReport.swift](../../Sources/NXLibraryCore/App/DiagnosticsReport.swift) | Genera il rapporto diagnostico e rimuove percorso home e valori riconosciuti come chiavi. |
 | [Sources/NXLibraryCore/App/AppUpdate.swift](../../Sources/NXLibraryCore/App/AppUpdate.swift) | Definisce repository, versioni, verifica del download e sostituzione atomica dell’app in staging esclusivo, con conservazione della vecchia copia se il Cestino fallisce; riconosce la copia temporanea di App Translocation. |
-| [Sources/NXLibraryCore/App/AppBundleRename.swift](../../Sources/NXLibraryCore/App/AppBundleRename.swift) | Decide se una copia release che si chiama ancora `NX Library.app` diventa `Arcane.app` alla chiusura, e fa lo spostamento nella stessa cartella. |
+| [Sources/NXLibraryCore/App/AppBundleRename.swift](../../Sources/NXLibraryCore/App/AppBundleRename.swift) | Decide se una copia release che si chiama ancora `NX Library.app` diventa `Oort NX.app` alla chiusura, e fa lo spostamento nella stessa cartella. |
 | [Sources/NXLibraryCore/App/AppUpdatePresentation.swift](../../Sources/NXLibraryCore/App/AppUpdatePresentation.swift) | Definisce gli stati dell’updater e il gate di installazione per versione e tipo di copia. |
 | [Sources/NXLibraryCore/App/AppUpdateDownload.swift](../../Sources/NXLibraryCore/App/AppUpdateDownload.swift) | Scarica gli aggiornamenti con limiti di dimensione, redirect HTTPS vincolati a GitHub e gestione del file temporaneo. |
 | [Sources/NXLibraryCore/App/BoundedDownload.swift](../../Sources/NXLibraryCore/App/BoundedDownload.swift) | Lettura HTTP limitata a blocchi e senza redirect, condivisa fra base e modulo per i provider, Steam e Nextendo. |
 | [Sources/NXLibraryCore/App/ConnectivityWatcher.swift](../../Sources/NXLibraryCore/App/ConnectivityWatcher.swift) | Avvisa sul main thread quando il Mac torna online, perché il giro delle descrizioni riprenda da solo; la prima lettura non conta. |
 | [Sources/NXLibraryCore/App/DisplayNameCache.swift](../../Sources/NXLibraryCore/App/DisplayNameCache.swift) | Nomi visualizzati di cartelle e volumi letti una volta per URL: la pagina si ricostruisce a ogni disegno e un disco esterno in stop bloccherebbe ogni volta. |
-| [Sources/NXLibraryCore/App/AppIdentity.swift](../../Sources/NXLibraryCore/App/AppIdentity.swift) | Nome visibile dell'app ("Arcane", non tradotto), il vecchio nome detto solo dal benvenuto, il nome del modulo Porting, pagina del progetto, guida online aperta da About e User-Agent unico delle richieste di rete. |
+| [Sources/NXLibraryCore/App/AppIdentity.swift](../../Sources/NXLibraryCore/App/AppIdentity.swift) | Distingue Oort NX (nome visibile) da Arcane (identità e User-Agent), con vecchio nome, modulo Porting e pagina del progetto. |
 | [Sources/NXLibraryCore/App/AppDataProfile.swift](../../Sources/NXLibraryCore/App/AppDataProfile.swift) | Policy di percorsi, cache e preferenze del profilo; prepara il profilo di sviluppo con i controlli che riceve. |
 | [Sources/NXLibraryCore/App/DevelopmentProfileImporter.swift](../../Sources/NXLibraryCore/App/DevelopmentProfileImporter.swift) | Copia iniziale selettiva (compresa la scelta Steam del Setup), hash, validazione e ripresa senza modificare la sorgente; i file che solo un modulo sa leggere si controllano con i `checks` ricevuti. |
 | [Sources/NXLibraryCore/App/DevelopmentOperationStore.swift](../../Sources/NXLibraryCore/App/DevelopmentOperationStore.swift) | Autorizzazioni persistenti per le operazioni richieste nella Dev, distinte da quelle importate. |
@@ -274,7 +274,7 @@ Cartella `Sources/NXLibraryCore/Selene/`.
 | [Sources/NXLibraryCore/Selene/MoonlightAppearance.swift](../../Sources/NXLibraryCore/Selene/MoonlightAppearance.swift) | Identità delle superfici classica/Arcane/Flow e campionamento dei colori locali condiviso fra shader e fallback. |
 | [Sources/NXLibraryCore/Selene/ScreenshotViewerState.swift](../../Sources/NXLibraryCore/Selene/ScreenshotViewerState.swift) | Mantiene indice e limiti della navigazione nel visualizzatore screenshot. |
 | [Sources/NXLibraryCore/Selene/SeleneCanvas.swift](../../Sources/NXLibraryCore/Selene/SeleneCanvas.swift) | Calcola scala uniforme, stage centrato e conversione delle unità del canvas 1920×1080. |
-| [Sources/NXLibraryCore/Selene/SelenePalette.swift](../../Sources/NXLibraryCore/Selene/SelenePalette.swift) | Decodifica palette e metadato opzionale moonlight, ordine del selettore e fallback Arcane con ID selene. |
+| [Sources/NXLibraryCore/Selene/SelenePalette.swift](../../Sources/NXLibraryCore/Selene/SelenePalette.swift) | Decodifica palette e metadato moonlight; ordina Oort per prima, la usa come fallback e distingue l’ID del blu classico. |
 | [Sources/NXLibraryCore/Selene/SpotlightPage.swift](../../Sources/NXLibraryCore/Selene/SpotlightPage.swift) | Calcola estratti delle descrizioni e stati dello scorrimento della pagina Spotlight. |
 | [Sources/NXLibraryCore/Selene/SpotlightRow.swift](../../Sources/NXLibraryCore/Selene/SpotlightRow.swift) | Costruisce la sequenza per UUID e salva riordini conservando giochi/fonti/card temporaneamente nascosti; Surprise sceglie fra i giochi visibili di un pool (installati, mai giocati, tutti). |
 | [Sources/NXLibraryCore/Selene/SpotlightRowGeometry.swift](../../Sources/NXLibraryCore/Selene/SpotlightRowGeometry.swift) | Posti delle tessere nella riga, camera unica che la fa scorrere e finestra delle tessere create; posto, scala e camera lungo lo scorrimento dalla posizione continua della selezione. |
@@ -364,7 +364,7 @@ Cartella `Sources/NXLibraryCore/Settings/`. Il catalogo dei testi sta in `Resour
 | [Sources/NXLibraryCore/Settings/SettingsSection.swift](../../Sources/NXLibraryCore/Settings/SettingsSection.swift) | Titoli e icone della barra: General, Library, Porting (con Game folders e Porting storage) e System. |
 | [Sources/NXLibraryCore/Settings/SettingsReset.swift](../../Sources/NXLibraryCore/Settings/SettingsReset.swift) | Reset group per sezione, anche Inbox con Game folders, Compilati di recente con Spotlight, Home in gioco e scelte Play together, non l'ID Nextendo né i percorsi delle cartelle di gioco. |
 | [Sources/NXLibraryCore/Settings/AppLocale.swift](../../Sources/NXLibraryCore/Settings/AppLocale.swift) | Sette lingue, risoluzione delle preferenze e regione indipendente; nomi e ricerca delle regioni. |
-| [Sources/NXLibraryCore/Settings/AppLocalization.swift](../../Sources/NXLibraryCore/Settings/AppLocalization.swift) | Contesto osservabile, lookup portabile delle risorse e interpolazioni/plurali. |
+| [Sources/NXLibraryCore/Settings/AppLocalization.swift](../../Sources/NXLibraryCore/Settings/AppLocalization.swift) | Contesto osservabile, lookup delle risorse, interpolazioni/plurali e nome Oort NX nei testi resi. |
 | [Sources/NXLibraryCore/Resources/Localizable.xcstrings](../../Sources/NXLibraryCore/Resources/Localizable.xcstrings) | Testi in sette lingue: Setup, Inbox, profilo, PIN e Vedi tutto, carta Attività, Play together, stati VPN, copie cloud, scelta della cache e contenuto non verificato. |
 
 ## Core · Steam
@@ -609,7 +609,7 @@ Cartella `Sources/ArcanePorting/Saves/`.
 | [Sources/ArcanePorting/Saves/SaveRestorePreview.swift](../../Sources/ArcanePorting/Saves/SaveRestorePreview.swift) | Staging e validazione dei pezzi registrati nel backup, compreso il file utenti, con rilevamento dei cambiamenti concorrenti. |
 | [Sources/ArcanePorting/Saves/SaveTransaction.swift](../../Sources/ArcanePorting/Saves/SaveTransaction.swift) | Sostituzioni e copia fra profili con backup e journal 1/2; staging di rollback ricreabile dopo una copia parziale. |
 | [Sources/ArcanePorting/Saves/SaveOperationGate.swift](../../Sources/ArcanePorting/Saves/SaveOperationGate.swift) | Assegna lease per titolo e un’esclusione globale per l’updater; coordina salvataggi, Play, installazioni e recuperi. |
-| [Sources/ArcanePorting/Saves/SaveFailure.swift](../../Sources/ArcanePorting/Saves/SaveFailure.swift) | Errori delle operazioni sui salvataggi, con i testi per il giocatore. |
+| [Sources/ArcanePorting/Saves/SaveFailure.swift](../../Sources/ArcanePorting/Saves/SaveFailure.swift) | Errori delle operazioni sui salvataggi; localizza anche l’origine della configurazione cloud prima di inserirla nel messaggio. |
 | [Sources/ArcanePorting/Saves/SaveFiles.swift](../../Sources/ArcanePorting/Saves/SaveFiles.swift) | Controlli dei percorsi dei salvataggi con lstat: nessun link sostituito e solo cartelle e file normali. |
 
 ## Porting · mod RomFS e GameBanana
@@ -813,7 +813,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | File | Responsabilità |
 |---|---|
 | [Sources/NXLibrary/Views/Theme/ThemeStore.swift](../../Sources/NXLibrary/Views/Theme/ThemeStore.swift) | Mantiene palette attiva, wallpaper inclusi e importati e operazioni sulle scelte dell’utente. |
-| [Sources/NXLibrary/Views/Theme/SeleneTheme.swift](../../Sources/NXLibrary/Views/Theme/SeleneTheme.swift) | Espone colori, stili, curve di animazione, focus e chiavi dell’ambiente Selene. |
+| [Sources/NXLibrary/Views/Theme/SeleneTheme.swift](../../Sources/NXLibrary/Views/Theme/SeleneTheme.swift) | Espone colori, stili, curve di animazione, focus e ambiente Selene; solo il blu classico usa inchiostro tenue per i glifi delle righe. |
 | [Sources/NXLibrary/Views/Theme/SeleneFonts.swift](../../Sources/NXLibrary/Views/Theme/SeleneFonts.swift) | Registra il font incluso e definisce MaterialIconView. |
 | [Sources/NXLibrary/Views/Theme/SeleneCanvasEnvironment.swift](../../Sources/NXLibrary/Views/Theme/SeleneCanvasEnvironment.swift) | Pubblica il canvas della finestra e applica unità e font scalati. |
 | [Sources/NXLibrary/Views/Theme/SeleneBackdrop.swift](../../Sources/NXLibrary/Views/Theme/SeleneBackdrop.swift) | Nella shell dichiara la richiesta di sfondo condiviso, fuori dalla shell disegna; consuma lo snapshot completo della palette e compone gradiente, wallpaper e Moonlight a particelle morbide; conserva le immagini decodificate e il fallback statico. |
@@ -877,7 +877,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 |---|---|
 | [Tests/NXLibraryCoreTests/ActivitySummaryTests.swift](../../Tests/NXLibraryCoreTests/ActivitySummaryTests.swift) | Totali settimanali, distribuzione giornaliera, sessioni aperte e passaggi di mezzanotte. |
 | [Tests/NXLibraryCoreTests/ProfilePageCardsTests.swift](../../Tests/NXLibraryCoreTests/ProfilePageCardsTests.swift) | Ordine persistente, visibilità senza conto, geometria adattiva e isolamento delle sessioni. |
-| [Tests/NXLibraryCoreTests/AppBundleRenameTests.swift](../../Tests/NXLibraryCoreTests/AppBundleRenameTests.swift) | Rinomina alla chiusura: nome vecchio, `Arcane.app` già presente, cartella in sola lettura, copia Dev, traslocata o occupata, altri nomi, spostamento fallito. |
+| [Tests/NXLibraryCoreTests/AppBundleRenameTests.swift](../../Tests/NXLibraryCoreTests/AppBundleRenameTests.swift) | Rinomina alla chiusura: solo `NX Library.app`, verso `Oort NX.app` se libero e scrivibile; `Arcane.app` resta al suo posto. |
 | [Tests/NXLibraryCoreTests/AppRouterTests.swift](../../Tests/NXLibraryCoreTests/AppRouterTests.swift) | Route, overlay, precedenza fullscreen, tasti di ogni sottomenu e navigazione LB/RB del control center, focus senza Inbox, navigazione del centro attività e ritorno distinto dal clic fuori. |
 | [Tests/ArcanePortingTests/AppSettingsStoreTests.swift](../../Tests/ArcanePortingTests/AppSettingsStoreTests.swift) | Default e reset di Inbox, errori, recupero, nomi e ordine delle sezioni, chiavi correnti e del modulo, card Spotlight rimosse, ultima selezione in background e alla chiusura. |
 | [Tests/ArcanePortingTests/AppSizeCacheTests.swift](../../Tests/ArcanePortingTests/AppSizeCacheTests.swift) | Riuso delle dimensioni, invalidazione sui bundle modificati e scansione senza falso stato vuoto. |
@@ -1001,7 +1001,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/NXLibraryCoreTests/ScreenshotViewerStateTests.swift](../../Tests/NXLibraryCoreTests/ScreenshotViewerStateTests.swift) | Indice, avanzamento e limiti del visualizzatore screenshot. |
 | [Tests/NXLibraryCoreTests/SeleneCanvasTests.swift](../../Tests/NXLibraryCoreTests/SeleneCanvasTests.swift) | Scala, centratura e conversione delle unità del canvas. |
 | [Tests/NXLibraryCoreTests/SeleneImporterTests.swift](../../Tests/NXLibraryCoreTests/SeleneImporterTests.swift) | Copia delle risorse Selene e risoluzione dei cue sonori. |
-| [Tests/NXLibraryCoreTests/SelenePaletteTests.swift](../../Tests/NXLibraryCoreTests/SelenePaletteTests.swift) | Lettura delle 25 palette, valori RGB e fallback storici del blu, alternative Crystal/Flow, persistenza ID, ordine e fallback. |
+| [Tests/NXLibraryCoreTests/SelenePaletteTests.swift](../../Tests/NXLibraryCoreTests/SelenePaletteTests.swift) | Lettura delle 26 palette, valori RGB di Oort e blu, alternative Crystal/Flow, persistenza ID, ordine e fallback. |
 | [Tests/ArcanePortingTests/SettingsCatalogTests.swift](../../Tests/ArcanePortingTests/SettingsCatalogTests.swift) | Ordine, ricerca (anche Hidden game apps, Home in gioco e Inbox), Advanced, Changed e reset, compresa la migrazione della preferenza ZeroTier. |
 | [Tests/ArcanePortingTests/SetupActionsTests.swift](../../Tests/ArcanePortingTests/SetupActionsTests.swift) | Pin facoltativo nel plist, comandi Git del Setup upstream e del fork, rispetto delle modifiche locali. |
 | [Tests/ArcanePortingTests/SetupCheckTests.swift](../../Tests/ArcanePortingTests/SetupCheckTests.swift) | Stati delle schede, errore di importazione con chiavi presenti o facoltative, requisiti, override e condizioni di riapertura del Setup. |
@@ -1043,7 +1043,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Tests/NXLibraryCoreTests/SettingsRowButtonsTests.swift](../../Tests/NXLibraryCoreTests/SettingsRowButtonsTests.swift) | Riga con due pulsanti: Sinistra/Destra fra i pulsanti, uscita dalla riga, riga con un solo pulsante, A preme quello in focus. |
 | [Tests/NXLibraryCoreTests/SpotlightRowGeometryTests.swift](../../Tests/NXLibraryCoreTests/SpotlightRowGeometryTests.swift) | Posto a schermo = camera più posto nella riga, tessere che restano ferme durante lo scorrimento, distanze costanti e quattro tessere di riserva ai bordi. |
 | [Tests/NXLibraryCoreTests/TileMotionTests.swift](../../Tests/NXLibraryCoreTests/TileMotionTests.swift) | Periodi e curve di bagliore, ring e riflesso, campioni che chiudono il loop senza salti, fase nel periodo e simbolo del download. |
-| [Tests/ArcanePortingTests/AppLocaleTests.swift](../../Tests/ArcanePortingTests/AppLocaleTests.swift) | Preferenze, migrazione, formati (anche Go/Mo), ricerca, identità e traduzioni native (anche il plurale degli obiettivi); avvisi pipeline localizzati senza output tecnico grezzo. |
+| [Tests/ArcanePortingTests/AppLocaleTests.swift](../../Tests/ArcanePortingTests/AppLocaleTests.swift) | Preferenze, formati, traduzioni e nome Oort NX senza cambiare trofeo, argomenti o User-Agent. |
 | [Tests/PublicationChecks/test_localizations.py](../../Tests/PublicationChecks/test_localizations.py) | Rifiuto di cataloghi incompleti e bundle senza risorse. |
 | [DevelopmentProfileTests.swift](../../Tests/ArcanePortingTests/DevelopmentProfileTests.swift) | Copia, conservazione della sorgente, errori, controllo Porting di una libreria malformata, sessioni, symlink e ripetizione. |
 | [DevelopmentProfileEffectTests.swift](../../Tests/ArcanePortingTests/DevelopmentProfileEffectTests.swift) | Isolamento Dev, staging e richieste esplicite. Verifica anche che la riconciliazione delle mod conservi record e overlay dopo un errore di lettura. |
@@ -1083,7 +1083,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [run_keymap_screens.py](../../Tests/CatalogAppChecks/run_keymap_screens.py) | Verifica tutti i glifi e rende la barra Selene per Xbox, Switch, DualSense e tastiera senza aprire finestre. |
 | [run_inbox_screens.py](../../Tests/CatalogAppChecks/run_inbox_screens.py) | Verifica il rifiuto delle chiavi e l'Inbox senza chiavi; controlla anche route, menu, card e assenza di lettura con Inbox disattivata; rende questi stati, altre schermate Inbox , senza finestre. |
 | [run_cloud_screens.py](../../Tests/CatalogAppChecks/run_cloud_screens.py) | Verifica pulsante Cloud e glifi; `--compare-with-5047557` esige zero pixel diversi sulla scheda con Riduci movimento. Rende copertina, pannello, attività, riferimento e Play together; verifica azioni e trasferimento durante Play con fixture locali. |
-| [run_profiles.py](../../Tests/CatalogAppChecks/run_profiles.py) | Rende profili, raccolte, impostazioni e PIN (sblocco, errore, definizione, cambio e rimozione). Verifica ritaglio, focus, PIN e moto ridotto, editor, avvio, salvataggi, backup e reset della card di fine sessione, senza finestre né dati reali. |
+| [run_profiles.py](../../Tests/CatalogAppChecks/run_profiles.py) | Rende profili, raccolte, impostazioni (anche About, Look e menu) e PIN. Verifica ritaglio, focus, PIN e moto ridotto, editor, avvio, salvataggi, backup e reset della card di fine sessione senza finestre né dati reali. |
 | [run_startup_recovery.py](../../Tests/CatalogAppChecks/run_startup_recovery.py) | Coordinatore di avvio reale su profili sintetici: conflitto, scelta esplicita, offerta obsoleta, Retry e fallimento della preparazione; nessuna finestra. |
 | [run_source_access.py](../../Tests/CatalogAppChecks/run_source_access.py) | Esegue avvio, observer, selettori e preparazione dei file in Add Game: scansione limitata, cartella ricordata e riconoscimento del percorso estratto. |
 | [run_onboarding.py](../../Tests/CatalogAppChecks/run_onboarding.py) | Esegue observer e ripristino del Setup, uscita durante lettura pendente con annullamento, input sotto modali, scelte acceso/spento/nil, radice della fonte, focus dopo Retry e richiesta notifiche su dati sintetici; nessuna finestra. |
@@ -1118,9 +1118,9 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [scripts/inject_google_client.py](../../scripts/inject_google_client.py) | Scrive la coppia OAuth Google nel plist della build privata solo se completa, senza argomenti con credenziali. |
 | [scripts/install_built_app.swift](../../scripts/install_built_app.swift) | Ingresso CLI che riusa BuildOutputInstaller per firmare, verificare e installare Arcane dopo il packaging. |
 | [scripts/check_publication.py](../../scripts/check_publication.py) | Rifiuta contenuti personali o di gioco versionati e formati di segreto riconoscibili; verifica il runtime rispetto al lock prima del packaging. |
-| [scripts/build_dmg.sh](../../scripts/build_dmg.sh) | Confeziona un bundle già costruito in un’immagine DMG di sviluppo. |
+| [scripts/build_dmg.sh](../../scripts/build_dmg.sh) | Confeziona un bundle già costruito come `Oort NX.app` nel volume DMG Oort NX. |
 | [scripts/bundle_runtime.sh](../../scripts/bundle_runtime.sh) | Prepara Python e strumenti dalle versioni bloccate, verifica gli hash e firma il runtime incluso. |
-| [scripts/release.sh](../../scripts/release.sh) | Controlla prerequisiti, pin remoto facoltativo, suite Swift e regressioni headless; produce ZIP e DMG. In pubblicazione aggiunge il pin alle note e rifiuta variabili e chiavi plist del client Google privato. |
+| [scripts/release.sh](../../scripts/release.sh) | Esegue le verifiche di release; produce ZIP con radice `NXLibrary.app` e DMG Oort NX, con pubblicazione esplicita opzionale. |
 | [scripts/validate_update.py](../../scripts/validate_update.py) | Verifica struttura, percorsi e limiti degli archivi prima dell'estrazione, sia nel bundle sia durante il packaging delle release. |
 | [scripts/relink_macho.py](../../scripts/relink_macho.py) | Riscrive riferimenti Mach-O dei binari e delle librerie affinché il runtime incluso sia rilocabile. |
 | [scripts/make_icons.swift](../../scripts/make_icons.swift) | Rigenera il cristallo dell’icona originale. |
@@ -1158,7 +1158,7 @@ Cartelle `Sources/ArcanePorting/Mods/` e `ArcanePorting/Mods/GameBanana/`.
 | [Resources/AppIcon-Light.png](../../Resources/AppIcon-Light.png) | Anteprima chiara della trama nel README. |
 | [Resources/AppIcon-Particles-Dark.png](../../Resources/AppIcon-Particles-Dark.png) | Icona Dock a particelle scura. |
 | [Resources/AppIcon-Particles-Light.png](../../Resources/AppIcon-Particles-Light.png) | Icona Dock a particelle chiara. |
-| [Resources/Selene/palettes.json](../../Resources/Selene/palettes.json) | Catalogo delle 25 palette: blu classico predefinito, Arcane Crystal e Arcane Flow come superfici opzionali. |
+| [Resources/Selene/palettes.json](../../Resources/Selene/palettes.json) | Catalogo delle 26 palette: Oort predefinito, blu classico Arcane e superfici opzionali Crystal e Flow. |
 | [Resources/Selene/Fonts/MaterialIcons-Regular.ttf](../../Resources/Selene/Fonts/MaterialIcons-Regular.ttf) | Font dei glifi Material Icons disegnati dalla UI. |
 | [Resources/Selene/Fonts/MaterialIcons-LICENSE.txt](../../Resources/Selene/Fonts/MaterialIcons-LICENSE.txt) | Licenza del font Material Icons incluso. |
 | [Resources/Selene/NOTICE.txt](../../Resources/Selene/NOTICE.txt) | Attribuzioni delle risorse Selene incluse. |

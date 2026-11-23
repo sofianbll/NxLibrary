@@ -27,7 +27,7 @@ flowchart TD
     E --> F["AppShellView: AppViewModel, store, monitor, updater"]
     F --> G{"Primo avvio completato?<br/>(FirstRunSetup)"}
     G -->|"no"| H["Setup: found (Steam, app portate) → Open library<br/>oppure Porting → Get ready → Your games"]
-    G -->|"sì"| I["Benvenuto in Arcane una volta, per chi aggiorna<br/>altrimenti home scelta"]
+    G -->|"sì"| I["Benvenuto in Oort NX una volta, per chi aggiorna<br/>altrimenti home scelta"]
     H --> K["Prima home Spotlight: moonlight condiviso → entrata<br/>Entrance animation; niente volo con Riduci movimento"]
     I --> K
     F --> J["In background: recuperi dei salvataggi, installazioni in attesa,<br/>scansione Steam se attivo, controllo engine se attivo, aggiornamenti;<br/>avviso se la copia è temporanea (App Translocation)"]
@@ -277,7 +277,7 @@ flowchart TD
 
 In Porting → Game folders, X ripristina le preferenze della sezione, senza cambiare le cartelle. Il pulsante Reset nella riga Game apps ripristina solo quella cartella.
 
-Nel menu rapido, Theme apre prima i colori con anteprima viva; A applica la palette e passa alla selezione dello sfondo. Il tema Arcane conserva il blu classico e l’identità predefinita `selene`; le alternative Arcane Crystal e Arcane Flow salvano `arcane-crystal` e `arcane-flow` nello stesso `colorThemeID`. La shell conserva un backdrop persistente; le pagine ne dichiarano stile, pausa e Mods con `SeleneBackdropRequest`, mantenendo artwork e maschere locali. La shell passa la palette completa in `SeleneBackdropStyle`: cambia il valore dell’ambiente e aggiorna sfondo e maschere anche senza spostare la selezione. La superficie usa lo stesso renderer, con orologio e regole di pausa condivisi. Le particelle sono sempre morbide, senza una scelta aggiuntiva. La scelta dello sfondo mantiene il dialogo di destinazione esistente.
+Nel menu rapido, Theme apre prima i colori con anteprima viva; A applica la palette e passa alla selezione dello sfondo. Oort (`oort`) è il default senza preferenza; Arcane (`selene`) conserva il blu classico; le alternative Arcane Crystal e Arcane Flow salvano `arcane-crystal` e `arcane-flow` nello stesso `colorThemeID`. La shell conserva un backdrop persistente; le pagine ne dichiarano stile, pausa e Mods con `SeleneBackdropRequest`, mantenendo artwork e maschere locali. La shell passa la palette completa in `SeleneBackdropStyle`: cambia il valore dell’ambiente e aggiorna sfondo e maschere anche senza spostare la selezione. La superficie usa lo stesso renderer, con orologio e regole di pausa condivisi. Le particelle sono sempre morbide, senza una scelta aggiuntiva. La scelta dello sfondo mantiene il dialogo di destinazione esistente.
 
 Settings → Start-up → At startup passa da «Chi gioca?» a «Ultimo profilo» e poi ai nomi dei singoli profili. Il vecchio interruttore acceso equivale a «Chi gioca?», spento a «Ultimo profilo». Un profilo fisso rimosso riporta a «Chi gioca?». Un profilo bloccato apre il selettore con il suo ritratto a fuoco, anziché entrare automaticamente. Nel selettore `+` aggiunge, Y apre Identity per il profilo attivo fuori dall’avvio e X apre una conferma con Keep a fuoco, quando l’azione è disponibile. Il selettore di avvio non è annullabile.
 
@@ -311,7 +311,7 @@ Nel profilo, Mostrati online pubblica la presenza senza titolo; Mostra il gioco 
 
 Play together mostra lo stato della VPN scelta e offre Scarica o Apri. Advanced raccoglie la scelta LAN o comunicazione locale e l'adattatore manuale. Reset group torna a Nessuna VPN, Offline e impostazioni avanzate automatiche.
 
-In System → About, il pulsante Support Arcane compare tra il riepilogo dell’app e i crediti. `SettingsAboutSection` apre la pagina Buy Me a Coffee nel browser predefinito tramite clic, Invio o conferma del controller.
+In System → About, il pulsante Support Oort NX compare tra il riepilogo dell’app e i crediti. `SettingsAboutSection` apre la pagina Buy Me a Coffee nel browser predefinito tramite clic, Invio o conferma del controller.
 
 Tornando alla home, le viste delle tessere ricreate leggono subito le immagini decodificate in `TileArtMemo`; i task caricano quelle mancanti e rivalidano i file Steam. La cover della card Mods resta nel `ModStoreHost` posseduto dalla shell ed è rivalidata in background rispetto agli abbinamenti correnti.
 
@@ -331,6 +331,6 @@ flowchart TD
     I --> J["Riavvio allo stesso percorso"]
 ```
 
-Alla chiusura successiva, una copia release che si chiama ancora `NX Library.app` diventa `Arcane.app` (`AppBundleRename`, chiamato da `AppDelegate.applicationWillTerminate`). Non succede se un riavvio è in programma, perché l'aiuto che riapre l'app usa il percorso attuale.
+Alla chiusura successiva, una copia release che si chiama ancora `NX Library.app` diventa `Oort NX.app` se la destinazione è libera; una copia `Arcane.app` resta al suo percorso (`AppBundleRename`, chiamato da `AppDelegate.applicationWillTerminate`). Non succede se un riavvio è in programma, perché l'aiuto che riapre l'app usa il percorso attuale.
 
 Dopo il riavvio, Setup confronta l'engine locale con il pin della nuova app. Se la release specifica un repository, Clone, Update e Switch usano quello; un checkout modificato resta intatto. I giochi già compilati non vengono ricompilati dalla procedura.

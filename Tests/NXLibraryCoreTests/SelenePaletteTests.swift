@@ -8,22 +8,40 @@ final class SelenePaletteTests: XCTestCase {
             .appendingPathComponent("Resources/Selene/palettes.json")
     }
 
-    func testLoadsAll25Palettes() throws {
+    func testLoadsAll26Palettes() throws {
         let all = try SelenePaletteCatalog.load(from: paletteURL)
-        XCTAssertEqual(all.count, 25)
+        XCTAssertEqual(all.count, 26)
         let ids = Set(all.map(\.id))
-        XCTAssertTrue(ids.isSuperset(of: ["selene", "white", "catppuccin-latte"]))
+        XCTAssertTrue(ids.isSuperset(of: ["oort", "selene", "white", "catppuccin-latte"]))
     }
 
-    /// The picker: Selene, the default, first; then the rest by name.
+    /// The picker: Oort, the default, first; then the rest by name.
     func testPickerOrderPutsTheDefaultFirstThenAlphabetical() throws {
         let ordered = SelenePaletteCatalog.pickerOrder(try SelenePaletteCatalog.load(from: paletteURL))
         XCTAssertEqual(ordered.first?.id, SelenePaletteCatalog.defaultID)
-        XCTAssertEqual(SelenePaletteCatalog.defaultID, "selene")
+        XCTAssertEqual(SelenePaletteCatalog.defaultID, "oort")
         let rest = ordered.dropFirst().map(\.name)
         XCTAssertEqual(rest, rest.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending })
-        XCTAssertEqual(Array(rest.prefix(3)), ["Arcane Crystal", "Arcane Flow", "Catppuccin"])
-        XCTAssertEqual(ordered.count, 25)
+        XCTAssertEqual(Array(rest.prefix(4)), ["Arcane", "Arcane Crystal", "Arcane Flow", "Catppuccin"])
+        XCTAssertEqual(ordered.count, 26)
+    }
+
+    func testOortPaletteValuesMatchTheBuiltInFallback() throws {
+        let all = try SelenePaletteCatalog.load(from: paletteURL)
+        let p = try XCTUnwrap(all.first { $0.id == "oort" })
+        XCTAssertEqual(p, SelenePalette.fallback)
+        XCTAssertEqual(p.name, "Oort")
+        XCTAssertEqual(p.mode, .dark)
+        XCTAssertEqual(p.focus, 0xFFFFFF)
+        XCTAssertEqual(p.onFocus, 0x111111)
+        XCTAssertEqual(p.ink, 0xFFFFFF)
+        XCTAssertEqual(p.scrim, 0x000000)
+        XCTAssertEqual(p.glass, 0x14181F)
+        XCTAssertEqual(p.glyph, 0xAFC3E6)
+        XCTAssertEqual(p.success, SelenePaletteCatalog.resolve("selene", in: all).success)
+        XCTAssertEqual(p.surface, .classic)
+        XCTAssertEqual(p.base.kind, .radial)
+        XCTAssertEqual(p.base.stops, [.init(color: 0x141A24, location: 0), .init(color: 0x05070B, location: 1)])
     }
 
     func testSelenePaletteValues() throws {
@@ -50,25 +68,22 @@ final class SelenePaletteTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings)).colorThemeID, "arcane-flow")
     }
 
-    func testUnknownIdFallsBackToSelene() throws {
+    func testUnknownIdFallsBackToOort() throws {
         let all = try SelenePaletteCatalog.load(from: paletteURL)
-        XCTAssertEqual(SelenePaletteCatalog.resolve("nope", in: all).id, "selene")
+        XCTAssertEqual(SelenePaletteCatalog.resolve("nope", in: all).id, "oort")
     }
 
     func testMissingFileUsesFallback() {
         XCTAssertThrowsError(try SelenePaletteCatalog.load(from: URL(fileURLWithPath: "/nonexistent/palettes.json")))
-        XCTAssertEqual(SelenePaletteCatalog.resolve("selene", in: []), .fallback)
-        XCTAssertEqual(SelenePalette.fallback.surface, .classic)
-        XCTAssertEqual(SelenePalette.fallback.base.kind, .linear)
-        XCTAssertEqual(SelenePalette.fallback.base.stops, [
-            .init(color: 0x17244A, location: 0), .init(color: 0x0C142C, location: 0.45),
-            .init(color: 0x05080F, location: 1)
-        ])
+        XCTAssertEqual(SelenePaletteCatalog.resolve("oort", in: []), .fallback)
     }
 
-    func testSettingsDecodeWithoutColorTheme() throws {
+    func testSettingsDefaultToOortButKeepASavedClassicBlueSelection() throws {
+        XCTAssertEqual(AppSettings().colorThemeID, "oort")
         let settings = try JSONDecoder().decode(AppSettings.self, from: Data("{}".utf8))
-        XCTAssertEqual(settings.colorThemeID, "selene")
-        XCTAssertEqual(SelenePaletteCatalog.resolve(settings.colorThemeID, in: []).surface, .classic)
+        XCTAssertEqual(settings.colorThemeID, "oort")
+        let saved = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"colorThemeID":"selene"}"#.utf8))
+        XCTAssertEqual(saved.colorThemeID, "selene")
+        XCTAssertEqual(SelenePaletteCatalog.resolve(saved.colorThemeID, in: try SelenePaletteCatalog.load(from: paletteURL)).id, "selene")
     }
 }

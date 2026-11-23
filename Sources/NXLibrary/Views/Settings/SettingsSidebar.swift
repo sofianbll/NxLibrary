@@ -57,7 +57,7 @@ struct SettingsSidebar: View {
                 .frame(width: canvas.u(48), height: canvas.u(48))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: canvas.u(2)) {
-                Text(AppIdentity.name)
+                Text(AppIdentity.displayName)
                     .seleneFont(.title, .semibold)
                     .foregroundColor(SeleneTheme.ink)
                 Text(version)

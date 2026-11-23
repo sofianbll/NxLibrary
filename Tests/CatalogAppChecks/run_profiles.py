@@ -357,6 +357,7 @@ import ArcanePorting
         try menu("09-menu-activity", { $0.menuSelection.selected = .activityCenter })
         try menu("09-menu-settings", { $0.menuSelection.selected = .settings })
         try menu("09-menu-power", { $0.menuSelection.selected = .power; $0.openPowerMenu() })
+        try menu("09-menu-power-fr", { $0.menuSelection.selected = .power; $0.openPowerMenu() }, lang: fr)
         try menu("09-menu-profile-card-fr", { $0.menuSelection.selected = .profile; $0.openEntryMenu() }, lang: fr)
         try menu("09-menu-library-card-fr", { $0.menuSelection.selected = .library; $0.openEntryMenu(); $0.moveEntryMenu(by: 2) }, lang: fr)
         try checkMenuCards()
@@ -449,6 +450,22 @@ import ArcanePorting
                 SettingsView(initialSection: section, viewModel: vm, settings: settings, router: AppRouter(), artwork: art)
             }.environment(\.nxAppLocale, french), in: out, refs, "screenshots/game-options.png")
         }
+        L10n.setContext(french)
+        // The flattened Settings scroll views need more height than the viewport to show their full contents.
+        let settingsCaptureSize = CGSize(width: 1440, height: 1500)
+        try render("oort-about-fr", ZStack {
+            SeleneBackdrop().still(true)
+            SettingsView(initialSection: .about, viewModel: vm, settings: settings, router: AppRouter(), artwork: art)
+        }.environmentObject(AppUpdater()).environment(\.nxAppLocale, french), in: out, refs, "none", size: settingsCaptureSize)
+        for (name, icon, label) in [("halftone", AppIconAppearanceMode.auto, "Trame"), ("particles", .mono, "Particules")] {
+            if vm.iconAppearanceMode != icon { vm.iconAppearanceMode = icon }
+            precondition(vm.iconAppearanceMode.label == label)
+            try render("oort-look-\(name)-fr", ZStack {
+                SeleneBackdrop().still(true)
+                SettingsView(initialSection: .look, viewModel: vm, settings: settings, router: AppRouter(), artwork: art)
+            }.environment(\.nxAppLocale, french), in: out, refs, "none", size: settingsCaptureSize)
+        }
+        L10n.setContext(.init(language: .english, region: "US"))
         var storageActions: [SettingsRowAction] = []
         SettingsPortingStorageSection(viewModel: vm) { storageActions = $0 }.publishScreenFixtureActions()
         precondition(storageActions.count == 2)
@@ -1196,6 +1213,7 @@ def main():
         app = package / "Sources/NXLibrary"
         replace(app / "NXLibraryApp.swift", r"@main\nstruct", "struct")
         replace(app / "ViewModels/AppViewModel.swift", r"SteamGridDBKey\(\)\.load\(\) != nil", "false")
+        replace(app / "ViewModels/AppViewModel.swift", r"            updateDockIcon\(\)", "")
         replace(app / "ViewModels/AppViewModel.swift", r"        applyCatalog\(catalog\).*?\n    }\n\n    // MARK: - Dynamic",
                 "    }\n\n    // MARK: - Dynamic")
         replace(package / "Sources/NXLibraryCore/App/AppDataProfile.swift",

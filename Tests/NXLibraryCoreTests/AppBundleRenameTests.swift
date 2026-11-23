@@ -25,10 +25,10 @@ final class AppBundleRenameTests: XCTestCase {
         AppBundleRename.target(bundleURL: bundle, isRelease: isRelease, isTranslocated: isTranslocated, isBusy: isBusy)
     }
 
-    func testOldNameInWritableFolderBecomesArcane() throws {
+    func testOldNameInWritableFolderBecomesOortNX() throws {
         let bundle = try makeBundle("NX Library.app")
         let renamed = try XCTUnwrap(target(bundle))
-        XCTAssertEqual(renamed.lastPathComponent, "Arcane.app")
+        XCTAssertEqual(renamed.lastPathComponent, "Oort NX.app")
         XCTAssertEqual(renamed.deletingLastPathComponent().standardizedFileURL, dir.standardizedFileURL)
 
         try AppBundleRename.perform(bundleURL: bundle, to: renamed)
@@ -36,9 +36,9 @@ final class AppBundleRenameTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: renamed.appendingPathComponent("Contents").path))
     }
 
-    func testExistingArcaneBlocksRename() throws {
+    func testExistingOortNXBlocksRename() throws {
         let bundle = try makeBundle("NX Library.app")
-        _ = try makeBundle("Arcane.app")
+        _ = try makeBundle("Oort NX.app")
         XCTAssertNil(target(bundle))
     }
 
@@ -63,12 +63,13 @@ final class AppBundleRenameTests: XCTestCase {
     func testAnyOtherNameIsLeftAlone() throws {
         XCTAssertNil(target(try makeBundle("My Games.app")))
         XCTAssertNil(target(try makeBundle("Arcane.app")))
+        XCTAssertNil(target(try makeBundle("Oort NX.app")))
     }
 
     func testFailedMoveLeavesTheOldBundle() throws {
         let bundle = try makeBundle("NX Library.app")
         let renamed = try XCTUnwrap(target(bundle))
-        _ = try makeBundle("Arcane.app")
+        _ = try makeBundle("Oort NX.app")
         XCTAssertThrowsError(try AppBundleRename.perform(bundleURL: bundle, to: renamed))
         XCTAssertTrue(FileManager.default.fileExists(atPath: bundle.appendingPathComponent("Contents").path))
     }

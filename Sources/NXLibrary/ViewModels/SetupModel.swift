@@ -153,7 +153,7 @@ final class SetupModel: ObservableObject {
                 keySummary = summary
                 isProdKeysValid = summary.hasHeaderKey
                 prodKeysPath = keyStore.keyURL.path
-                prodKeysSource = AppIdentity.name
+                prodKeysSource = AppIdentity.displayName
             } catch {
                 keySummary = nil
                 isProdKeysValid = false

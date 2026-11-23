@@ -92,7 +92,7 @@ extension GameOptionsView {
     }
 
     /// Selene's headings are a soft ink, not its blue accent.
-    private var isSelene: Bool { ThemeStore.shared.palette.id == SelenePaletteCatalog.defaultID }
+    private var isSelene: Bool { ThemeStore.shared.palette.id == SelenePaletteCatalog.classicBlueID }
 
     private func rowView(_ row: GameOptionsRow, _ p: GameOptionsPresentation,
                          focused: GameOptionsRow?) -> some View {
