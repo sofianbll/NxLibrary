@@ -45,7 +45,7 @@ struct SettingsAboutSection: View {
                     .seleneFont(13, .regular, design: .monospaced)
                     .foregroundColor(SeleneTheme.ink60)
                 Text(L10n.format("Based on %@ %@", [AppIdentity.name, "0.2.1"]))
-                    .seleneFont(13)
+                    .seleneFont(.metadata)
                     .foregroundColor(SeleneTheme.ink60)
                 Text(L10n.text("Play time is tracked only for launches from Arcane. Not affiliated with Nintendo."))
                     .seleneFont(13)

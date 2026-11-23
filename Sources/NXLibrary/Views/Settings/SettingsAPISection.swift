@@ -717,7 +717,7 @@ private struct NextendoValue: View {
     let text: String
 
     var body: some View {
-        Text(text).seleneFont(15).foregroundColor(SeleneTheme.ink60).lineLimit(1)
+        Text(text).seleneFont(.compactCaption).foregroundColor(SeleneTheme.ink60).lineLimit(1)
     }
 }
 
@@ -733,7 +733,7 @@ private struct NextendoFriendLine<Trailing: View>: View {
     var body: some View {
         HStack(spacing: canvas.u(8)) {
             NextendoAvatar(service: service, pid: friend.id, initial: String(friend.name.prefix(1)), revision: revision)
-            Text(friend.name).seleneFont(15).foregroundColor(SeleneTheme.ink90).lineLimit(1)
+            Text(friend.name).seleneFont(.compactCaption).foregroundColor(SeleneTheme.ink90).lineLimit(1)
             if friend.favorite {
                 MaterialIconView(.favorite, size: 16).foregroundColor(SeleneTheme.glyph)
                     .accessibilityLabel(L10n.text("Favorite", context: locale))
