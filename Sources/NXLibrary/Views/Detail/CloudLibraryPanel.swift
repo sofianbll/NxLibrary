@@ -27,7 +27,7 @@ struct CloudLibraryPanel: View {
 
     private enum Control: Hashable {
         case upload(CloudArtifactKind?), download(CloudArtifactKind), uploadSources, downloadSources
-        case free, cancel, refresh, settings, close, advanced
+        case free, cancel, refresh, settings, close, advanced, resume
         case recover(CloudLibraryFailure, CloudLibraryItem?)
         case retry(UUID)
     }
@@ -35,6 +35,10 @@ struct CloudLibraryPanel: View {
     private enum FreeControl: Equatable { case item(CloudLibraryItem), cancel, confirm }
 
     private var state: CloudLibraryState { model.states[game.id] ?? CloudLibraryState() }
+    private var interrupted: CloudLibraryModel.Request? {
+        guard let head = model.queue.first, head.id == game.id, model.interruption(of: head.token) != nil else { return nil }
+        return head
+    }
     private func canChange(_ action: CloudLibraryAction) -> Bool {
         state.action == nil && !state.refreshing && viewModel.canChangeCloudLibrary(action, for: game)
     }
@@ -85,8 +89,8 @@ struct CloudLibraryPanel: View {
             }
             if let message = state.message {
                 failureLine(message, failure: state.failure, item: nil)
-            } else if let failure = model.checkFailure, state.issue == nil, state.sourcesMessage == nil {
-                failureLine(text(failure.messageKey), failure: failure, item: nil)
+            } else if let failure = model.checkFailure, interrupted == nil, state.issue == nil, state.sourcesMessage == nil {
+                failureLine(failure.message(context: localization), failure: failure, item: nil)
             }
             if controls.contains(where: { [.close, .settings, .refresh, .free, .upload(nil), .advanced].contains($0) }) {
                 HStack(spacing: canvas.u(10)) {
@@ -118,6 +122,7 @@ struct CloudLibraryPanel: View {
                         context: localization)
         }
         let control = artifactControl(item)
+        let interruption = state.activeItem == item ? interrupted.flatMap { model.interruption(of: $0.token) } : nil
         let personalCopyIsOlder = !live && !state.queued && !indicator.appPublished
             && item.artifact.map(state.personalCopyIsOlder) == true
         let downloadFill = CloudLibraryProgressView.downloadFill(state, item: item)
@@ -157,6 +162,7 @@ struct CloudLibraryPanel: View {
                     .multilineTextAlignment(.trailing)
                 }
                 HStack(spacing: canvas.u(10)) {
+                    if interruption != nil { button(.resume, "Resume") }
                     if downloading, control == .cancel {
                         downloadButton(nil, fill: downloadFill ?? 0, ready: ready)
                     }
@@ -182,7 +188,10 @@ struct CloudLibraryPanel: View {
                     .textSelection(.enabled)
                     .help(path)
             }
-            if live {
+            if let interruption {
+                Text(interruption.message(context: localization)).seleneFont(.compactCaption)
+                    .foregroundColor(SeleneTheme.ink75).fixedSize(horizontal: false, vertical: true)
+            } else if live {
                 if state.transfer(for: item)?.gauge(hasCover: false, hasDownloadPill: downloading) == .bar {
                     SeleneProgressBar(progress: CloudTransferPresentation.fraction(state.progress), color: indicator.status.color)
                 }
@@ -263,7 +272,9 @@ struct CloudLibraryPanel: View {
         if model.archive == nil { return close + [.settings] }
         if unavailable != nil { return close }
         let artifacts = visibleItems.compactMap(artifactControl)
-        if state.action != nil || state.refreshing { return artifacts + close + [.advanced] }
+        if state.action != nil || state.refreshing {
+            return (interrupted == nil ? [] : [.resume]) + artifacts + close + [.advanced]
+        }
         var buttons = artifacts + close + [.advanced]
         if let failure = state.failure ?? (state.message == nil && state.issue == nil && state.sourcesMessage == nil
                                            ? model.checkFailure : nil), canRecover(failure) {
@@ -371,6 +382,8 @@ struct CloudLibraryPanel: View {
             freeSelection = CloudFreeSelection(state: state)
         case .download(let kind): viewModel.performCloudLibrary(.restore(kind), for: game)
         case .cancel: viewModel.cancelCloudLibrary(game)
+        case .resume:
+            if let interrupted { viewModel.resumeCloudTransfer(interrupted.token) }
         case .refresh:
             refreshRevision += 1
         case .advanced:

@@ -88,6 +88,9 @@ struct ActivityCenterView: View {
             ].compactMap { $0 }
         case .clearAll:
             return [HintItem(.a, "Clear all", action: { onOpen(row) })]
+        case .queuedCloud(let token) where cloudLibrary.interruption(of: token) != nil:
+            return [HintItem(.a, "Resume", action: { onOpen(row) }),
+                    HintItem(.x, "Cancel", action: { onCancel(row) })]
         default: break
         }
         return [
@@ -135,6 +138,9 @@ struct ActivityCenterView: View {
                         let job = liveJob(row)
                         let indicator = transferIndicator(row)
                         let cloud = !row.opensPorting
+                        let interrupted: Bool = if case .queuedCloud(let token) = row {
+                            cloudLibrary.interruption(of: token) != nil
+                        } else { false }
                         let color = cloud ? (indicator?.status ?? .pending).color
                             : (job.active ? SeleneTheme.ink : SeleneTheme.ink60)
                         let moving: Bool = if case .move = row { cloudLibrary.libraryMove?.isCancelling == false } else { false }
@@ -144,7 +150,8 @@ struct ActivityCenterView: View {
                                     status: indicator?.label(context: localization) ?? text(job.active ? "In progress" : "Queued"),
                                     color: color, progressColor: cloud ? color : SeleneTheme.focus,
                                     focused: focused == row, open: row.opensPorting ? { onOpen(row) } : nil,
-                                    cancel: canCancel(row) ? { onCancel(row) } : nil, retry: nil, clear: nil)
+                                    cancel: canCancel(row) ? { onCancel(row) } : nil,
+                                    retry: interrupted ? { onOpen(row) } : nil, retryTitle: "Resume", clear: nil)
                     }
                 }
                 .id(row)
@@ -187,7 +194,8 @@ struct ActivityCenterView: View {
             guard let request = cloudLibrary.queue.first(where: { $0.token == token }) else {
                 return (text("Cloud"), nil, nil, false)
             }
-            return (title(.cloud(request.entry), name: request.name), nil, nil, false)
+            return (title(.cloud(request.entry), name: request.name),
+                    cloudLibrary.interruption(of: token)?.message(context: localization), nil, false)
         case .move:
             guard let move = cloudLibrary.libraryMove else { return (text("Move library"), nil, nil, true) }
             return (title(.move(move.request), name: move.request.destination),
@@ -284,6 +292,7 @@ private struct ActivityRow: View {
     let open: (() -> Void)?
     let cancel: (() -> Void)?
     let retry: (() -> Void)?
+    var retryTitle = "Retry"
     let clear: (() -> Void)?
 
     var body: some View {
@@ -301,7 +310,7 @@ private struct ActivityRow: View {
                 SeleneStatusDot(text: status, color: color, pulses: pulses)
                     .fixedSize(horizontal: false, vertical: true)
                 if let retry {
-                    SelenePillButton(title: "Retry", minWidth: 0, height: 44, horizontalPadding: 16,
+                    SelenePillButton(title: retryTitle, minWidth: 0, height: 44, horizontalPadding: 16,
                                      focused: focused, action: retry)
                         .accessibilityHint(title)
                 }

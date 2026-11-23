@@ -257,7 +257,7 @@ final class CloudLibraryModel: ObservableObject {
     private var backend: RcloneStorageBackend?
     var reads: [UUID: (token: UUID, task: Task<Void, Never>)] = [:]
     var queue: [Request] = []
-    var queuePaused = false
+    @Published var queuePause: CloudLibraryFailure?
     var active: (request: Request, task: Task<Void, Never>)?
     var appInstallWake: AsyncStream<Void>.Continuation?
     var appInstall: (title: String, release: () -> Void)?
@@ -270,6 +270,10 @@ final class CloudLibraryModel: ObservableObject {
     private(set) var isQuitting = false
     private(set) var hasQueueWrites = false
     var isWorking: Bool { active != nil || !queue.isEmpty || libraryMove != nil }
+
+    func interruption(of token: UUID) -> CloudLibraryFailure? {
+        queue.first?.token == token ? queuePause : nil
+    }
 
     func storageScope(for action: CloudLibraryAction) -> String? {
         let storage: String?
@@ -547,7 +551,7 @@ extension AppViewModel {
     }
 
     @MainActor func retryCloudCheck() {
-        cloudLibrary.queuePaused = false
+        cloudLibrary.queuePause = nil
         startNextCloudOperation()
         if cloudLibrary.checkFailedDuringImport {
             importCloudGames(manually: true)
@@ -556,6 +560,12 @@ extension AppViewModel {
             cloudLibrary.startupFailure = nil
             checkCloudCatalog()
         }
+    }
+
+    @MainActor func resumeCloudTransfer(_ token: UUID) {
+        guard cloudLibrary.interruption(of: token) != nil else { return }
+        cloudLibrary.queuePause = nil
+        startNextCloudOperation()
     }
 
     @MainActor private func checkCloudCatalog() {
@@ -1138,7 +1148,7 @@ extension AppViewModel {
     }
 
     @MainActor func startNextCloudOperation() {
-        guard cloudLibrary.hasRestoredQueue, !cloudLibrary.isQuitting, !cloudLibrary.queuePaused,
+        guard cloudLibrary.hasRestoredQueue, !cloudLibrary.isQuitting, cloudLibrary.queuePause == nil,
               let archive = cloudLibrary.archive else { return }
         defer { cloudLibrary.persistQueue() }
         guard cloudLibrary.active == nil else { return }
@@ -1347,8 +1357,9 @@ extension AppViewModel {
                 let reason = failure?.message() ?? self.cloudMessage(for: error)
                 if !Task.isCancelled, CloudTransferQueue.waitsForConnection(after: failure.map { $0 as Error } ?? error) {
                     deferred = true
-                    self.cloudLibrary.queuePaused = true
-                    self.showCloudFailure(self.cloudFailure(for: error) ?? .offline, title: L10n.text("Cloud library")) { [weak self] in
+                    let pause = failure ?? .offline
+                    self.cloudLibrary.queuePause = pause
+                    self.showCloudFailure(pause, title: L10n.text("Cloud library")) { [weak self] in
                         self?.retryCloudCheck()
                     }
                     return
@@ -1519,7 +1530,7 @@ extension AppViewModel {
         recordActivity(request.token, job: .cloud(request.entry), name: request.name, outcome: .cancelled)
         cloudLibrary.persistQueue()
         appIcon.syncPendingAppIcons()
-        if index == 0 { cloudLibrary.queuePaused = false; startNextCloudOperation() }
+        if index == 0 { cloudLibrary.queuePause = nil; startNextCloudOperation() }
         porting.scheduleNextBuild()
     }
 

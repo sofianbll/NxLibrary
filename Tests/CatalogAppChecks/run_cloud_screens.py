@@ -351,7 +351,7 @@ CLOUD_BUTTON = r'''
 
 PLAY_TRANSFER = r'''
 extension CloudScreenProbe {
-    @MainActor static func checkPlayDuringTransfer(in root: URL) async throws {
+    @MainActor static func checkPlayDuringTransfer(in root: URL, output: URL) async throws {
         let fm = FileManager.default
         let folder = root.appendingPathComponent("transfer-fixture")
         let app = folder.appendingPathComponent("Running.app")
@@ -442,9 +442,34 @@ extension CloudScreenProbe {
 
         // Personal download: the running process can be a Finder copy elsewhere, while this path is absent.
         try fm.removeItem(at: app)
+        let rclone = RcloneStorageBackend.findExecutable()!
+        let offline = RcloneStorageBackend(remote: ":local:", root: remote.path) { _, args, _ in
+            if args.first == "copy" { return .init(status: 1, stdout: "", stderr: "connection reset") }
+            return try await SystemCommandRunner().runCancellable(rclone, args + ["--config", config.path], environment: nil)
+        }
+        vm.cloudLibrary.installScreenArchives(offline)
         vm.cloudLibrary.update(game.id) { $0.copies[.app] = .screenFixture(.cloudOnly) }
         vm.performCloudLibrary(.restore(.app), for: game)
+        let interrupted = vm.cloudLibrary.active!.request.token
+        await vm.cloudLibrary.active?.task.value
+        precondition(vm.cloudLibrary.queue.first?.token == interrupted && vm.settingsNotice != nil)
+        vm.settingsNotice = nil
+        let row = ActivityCenterFocus.Row.queuedCloud(interrupted)
+        var focus = ActivityCenterFocus()
+        focus.selected = row
+        let fr = AppLocale(language: .french, region: "FR")
+        let activity = ActivityCenterView(viewModel: vm, porting: vm.porting, cloudLibrary: vm.cloudLibrary,
+            focus: focus, onFocus: { _ in }, onOpen: { _ in }, onCancel: { _ in },
+            onBack: {}, onOutside: {})
+        try render("transfer-interrupted-activity", output, activity.environment(\.nxAppLocale, fr))
+        let panel = CloudLibraryPanel(viewModel: vm, model: vm.cloudLibrary, game: game)
+        try render("transfer-interrupted-panel", output, panel.environment(\.nxAppLocale, fr))
+        precondition(activity.resumeHintForProbe(row), "The dismissed alert must leave Resume in the Activity center")
+        precondition(panel.resumeForProbe(), "The dismissed alert must leave Resume in the cloud panel")
+        vm.cloudLibrary.installScreenArchives(backend)
+        panel.resumeFromProbe()
         try await until { vm.cloudLibrary.states[game.id]?.progress?.phase == .readyToInstall }
+        precondition(vm.cloudLibrary.active?.request.token == interrupted)
         precondition(!fm.fileExists(atPath: app.path))
         let quitting = vm.cloudLibrary.stopForQuit()
         await quitting?.value
@@ -768,6 +793,14 @@ extension CloudDriveFolders.Listing {
         change(activity, r'                ScrollViewReader \{ scroll in\n                    ScrollView \{\n', "")
         change(activity, r'                    }\n                    \.padding\(EdgeInsets.*?\.onChange\(of: focused\)[^\n]*\n                }\n', "")
         change(activity, r'        LazyVStack\(', '        VStack(')
+        with activity.open("a") as swift:
+            swift.write("""
+extension ActivityCenterView {
+    func resumeHintForProbe(_ row: ActivityCenterFocus.Row) -> Bool {
+        hints(row).contains { $0.label == "Resume" }
+    }
+}
+""")
         host = HOST.replace("/* NOTICE_LAYOUT */", "vertical: notice.vertical," if before else "cancelIndex: notice.cancelIndex,")
         has_display = (package / "Sources/ArcanePorting/Launch/GameDisplay.swift").is_file()
         if not before:
@@ -820,6 +853,9 @@ extension CloudDriveFolders.Listing {
                 with (app / "Views/Detail/CloudLibraryPanel.swift").open("a") as file:
                     file.write('''
 extension CloudLibraryPanel {
+    func resumeForProbe() -> Bool { controls.contains(.resume) }
+    func resumeFromProbe() { choose(.resume) }
+
     func advancedForProbe() -> Self {
         var copy = self
         copy._advanced = State(initialValue: true)
@@ -861,7 +897,7 @@ extension CloudLibraryPanel {
                              if baseline == "5047557" else "Mise à jour prête · appliquée à la fermeture du jeu")
             host = host.replace("// DOWNLOAD_FILL_CHECK",
                                 "do {\n" + DOWNLOAD_FILL.replace("WAITING_LABEL_FR", waiting_label) + "\n        }")
-            host = host.replace("// PLAY_TRANSFER_CHECK", "try await checkPlayDuringTransfer(in: data)") + PLAY_TRANSFER
+            host = host.replace("// PLAY_TRANSFER_CHECK", "try await checkPlayDuringTransfer(in: data, output: output)") + PLAY_TRANSFER
             monitor = app / "Services/RunningGameMonitor.swift"
             change(monitor, r'import AppKit', "import AppKit\nimport os")
             change(monitor, r'    nonisolated static func runningApplication\(bundleID: String\).*?\n    }', '''

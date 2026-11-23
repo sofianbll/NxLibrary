@@ -38,6 +38,7 @@ extension AppShellView {
         guard ActivityCenterView.rows(viewModel).contains(row) else { return }
         switch row {
         case .result(let id): viewModel.retryActivity(id)
+        case .queuedCloud(let token): viewModel.resumeCloudTransfer(token)
         case .clearAll: viewModel.clearActivity()
         default:
             guard row.opensPorting else { return }
