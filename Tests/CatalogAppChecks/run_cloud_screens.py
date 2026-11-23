@@ -510,13 +510,16 @@ DISPLAY_FIXTURE = r'''
         try render("game-display-default", output, displaySettings(), size: .init(width: 960, height: 200))
         var displayGame = game
         displayGame.status = .built
+        DisplayScreenProbe.expanded = true // Show Next launch below the fold without opening a window.
+        let optionsSize = CGSize(width: 1920, height: 1580)
         func displayOptions() -> some View {
             GameOptionsView(viewModel: vm, game: displayGame, origin: .details,
                             onClose: {}, onShowBuild: {}, onMove: {})
                 .environment(\.nxAppLocale, displayLocale)
         }
-        try render("game-display-old-host", output, displayOptions(), size: .init(width: 1920, height: 1080))
+        try render("game-display-old-host", output, displayOptions(), size: optionsSize)
         // DISPLAY_CAPABLE
+        DisplayScreenProbe.expanded = false
 '''
 
 DISPLAY_CAPABLE = r'''
@@ -526,7 +529,7 @@ DISPLAY_CAPABLE = r'''
         let capable = await InstalledEngineCapabilities.shared.supportsGameDisplay(in: displayGame.url)
         precondition(capable)
         DisplayScreenProbe.capable = capable // ImageRenderer doesn't run .task.
-        try render("game-display-options", output, displayOptions(), size: .init(width: 1920, height: 1080))
+        try render("game-display-options", output, displayOptions(), size: optionsSize)
         settings.settings.gameDisplay = "00000000-0000-0000-0000-000000000000"
         try render("game-display-disconnected", output, displaySettings(), size: .init(width: 960, height: 200))
         settings.settings.gameDisplay = ""
@@ -769,12 +772,14 @@ extension CloudDriveFolders.Listing {
         has_display = (package / "Sources/ArcanePorting/Launch/GameDisplay.swift").is_file()
         if not before:
             host = host.replace("// DISPLAY_FIXTURE", DISPLAY_FIXTURE)
+            change(app / "Views/GameOptions/GameOptionsView+Rows.swift",
+                   r"canvas\.u\(680\)", "canvas.u(DisplayScreenProbe.expanded ? 1320 : 680)")
+            host += "\n@MainActor enum DisplayScreenProbe { static var capable = false; static var expanded = false }\n"
         if has_display:
             change(app / "Views/GameOptions/GameOptionsView.swift",
                    r"@State private var supportsGameDisplay = false",
                    "@State private var supportsGameDisplay = DisplayScreenProbe.capable")
             host = host.replace("// DISPLAY_CAPABLE", DISPLAY_CAPABLE)
-            host += "\n@MainActor enum DisplayScreenProbe { static var capable = false }\n"
         host = host.replace("/* ACTIVITY_DISMISS */",
                             "onBack: {}, onOutside: {}" if "let onBack:" in view
                             else "onClose: {}")

@@ -187,7 +187,7 @@ final class GameOptionsPresentationTests: XCTestCase {
         var seen = Set<GameOptionsRow>()
         let multiplayer = GameOptionsPresentation(supportsRenderScale: true, isPlayable: true, sourcesDetached: false,
             buildSettings: .init(fixed: [], visible: ["DM_NETWORK"], offersRenderScale: true, hasMoreSettings: false),
-            onlineRiskMods: true)
+            onlineRiskMods: true, supportsGameDisplay: true)
         seen.formUnion(multiplayer.focusableRows(level: .main, origin: .details))
         for origin in [GameOptionsOrigin.spotlight, .collection, .details] {
             for store in [false, true] {

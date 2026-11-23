@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Render the real profile and sort views without windows, live data or sign-in."""
+import json
 import os
 from pathlib import Path
 import re
@@ -457,6 +458,10 @@ import ArcanePorting
             SeleneBackdrop().still(true)
             SettingsView(initialSection: .about, viewModel: vm, settings: settings, router: AppRouter(), artwork: art)
         }.environmentObject(AppUpdater()).environment(\.nxAppLocale, french), in: out, refs, "none", size: settingsCaptureSize)
+        try render("oort-theme-fr", ZStack {
+            SeleneBackdrop().still(true)
+            SettingsView(initialSection: .profileLook, viewModel: vm, settings: settings, router: AppRouter(), artwork: art)
+        }.environment(\.nxAppLocale, french), in: out, refs, "none", size: settingsCaptureSize)
         for (name, icon, label) in [("halftone", AppIconAppearanceMode.auto, "Trame"), ("particles", .mono, "Particules")] {
             if vm.iconAppearanceMode != icon { vm.iconAppearanceMode = icon }
             precondition(vm.iconAppearanceMode.label == label)
@@ -1212,6 +1217,9 @@ def main():
             (stub / "Empty.swift").touch()
         app = package / "Sources/NXLibrary"
         replace(app / "NXLibraryApp.swift", r"@main\nstruct", "struct")
+        palette_file = ROOT / "Resources/Selene/palettes.json"
+        replace(app / "Views/Theme/ThemeStore.swift", r"static let shared = ThemeStore\(\)",
+                f"static let shared = ThemeStore(palettesURL: URL(fileURLWithPath: {json.dumps(str(palette_file))}))")
         replace(app / "ViewModels/AppViewModel.swift", r"SteamGridDBKey\(\)\.load\(\) != nil", "false")
         replace(app / "ViewModels/AppViewModel.swift", r"            updateDockIcon\(\)", "")
         replace(app / "ViewModels/AppViewModel.swift", r"        applyCatalog\(catalog\).*?\n    }\n\n    // MARK: - Dynamic",
