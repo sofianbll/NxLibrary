@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Render the real profile and sort views without windows, live data or sign-in."""
-import json
 import os
 from pathlib import Path
 import re
@@ -1217,9 +1216,6 @@ def main():
             (stub / "Empty.swift").touch()
         app = package / "Sources/NXLibrary"
         replace(app / "NXLibraryApp.swift", r"@main\nstruct", "struct")
-        palette_file = ROOT / "Resources/Selene/palettes.json"
-        replace(app / "Views/Theme/ThemeStore.swift", r"static let shared = ThemeStore\(\)",
-                f"static let shared = ThemeStore(palettesURL: URL(fileURLWithPath: {json.dumps(str(palette_file))}))")
         replace(app / "ViewModels/AppViewModel.swift", r"SteamGridDBKey\(\)\.load\(\) != nil", "false")
         replace(app / "ViewModels/AppViewModel.swift", r"            updateDockIcon\(\)", "")
         replace(app / "ViewModels/AppViewModel.swift", r"        applyCatalog\(catalog\).*?\n    }\n\n    // MARK: - Dynamic",
