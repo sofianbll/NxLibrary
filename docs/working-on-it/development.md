@@ -135,7 +135,7 @@ Oort NX utilise son propre `MAJOR.MINOR.PATCH` : **PATCH** pour les correctifs s
 1. Choisir un commit **testé** du fork moteur, accessible depuis une branche publique. Après accord, poser le tag moteur `oort-vX.Y.Z` sur ce SHA exact ; Oort NX épingle le SHA, pas le tag. Pour `0.3.0` :
 
    ~~~sh
-   git -C ~/Games/Switch/Engine tag oort-v0.3.0 a94ce2f6d5950b87c3a3ca672e2433bec6a57b3b
+   git -C ~/Games/Switch/Engine tag oort-v0.3.0 46612553ee409a7f42549d0533cb76655e72cd77
    git -C ~/Games/Switch/Engine push https://github.com/sofianbll/nxnative refs/tags/oort-v0.3.0
    ~~~
 
@@ -144,7 +144,7 @@ Oort NX utilise son propre `MAJOR.MINOR.PATCH` : **PATCH** pour les correctifs s
    ~~~sh
    DM_NEXTENDO_CLIENT_ID=nxc_G33XSxgJwhk9 bash scripts/release.sh 0.3.0 \
      --engine-repo https://github.com/sofianbll/nxnative \
-     --engine-commit a94ce2f6d5950b87c3a3ca672e2433bec6a57b3b
+     --engine-commit 46612553ee409a7f42549d0533cb76655e72cd77
    ~~~
 
    Pour la publication perso, passer `DM_NEXTENDO_CLIENT_ID=nxc_G33XSxgJwhk9` aux deux commandes : le build inscrit cet identifiant public dans `DMNextendoClientID` dans le plist de l’app. Ne pas fournir de secret Nextendo. Le script refuse un SHA qui n'est pas accessible depuis une branche du dépôt. Sans les deux options moteur, la build conserve le dépôt et le pin amont.
@@ -154,7 +154,7 @@ Oort NX utilise son propre `MAJOR.MINOR.PATCH` : **PATCH** pour les correctifs s
    ~~~sh
    DM_NEXTENDO_CLIENT_ID=nxc_G33XSxgJwhk9 bash scripts/release.sh 0.3.0 \
      --engine-repo https://github.com/sofianbll/nxnative \
-     --engine-commit a94ce2f6d5950b87c3a3ca672e2433bec6a57b3b \
+     --engine-commit 46612553ee409a7f42549d0533cb76655e72cd77 \
      --publish --notes "$HOME/oort-nx-0.3.0.md"
    ~~~
 
