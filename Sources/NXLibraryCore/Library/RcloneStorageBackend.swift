@@ -189,14 +189,21 @@ public struct RcloneStorageBackend: StorageBackend {
             throw StorageBackendError.invalidKey
         }
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("arcane-rclone-\(UUID())")
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
-                                                attributes: [.posixPermissions: 0o700])
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
+                                                    attributes: [.posixPermissions: 0o700])
+        } catch { throw CloudLibraryFailure.localWriteFailure(error, at: directory) as Error? ?? error }
         defer { try? FileManager.default.removeItem(at: directory) }
         let file = directory.appendingPathComponent("paths")
-        try Data((paths.joined(separator: "\n") + "\n").utf8).write(to: file)
+        do {
+            try Data((paths.joined(separator: "\n") + "\n").utf8).write(to: file)
+        } catch { throw CloudLibraryFailure.localWriteFailure(error, at: directory) as Error? ?? error }
+        let local = [":local,links=true:", ":local:"].first(where: to.hasPrefix)
+            .map { String(to.dropFirst($0.count)) } ?? to
         _ = try await run(["copy", from, to, "--files-from-raw", file.path, "--checksum", "--immutable",
                            "--no-update-modtime", "--transfers", "4", "--checkers", "4",
-                           "--buffer-size", "4M"] + flags, progress: progress)
+                           "--buffer-size", "4M"] + flags, progress: progress,
+                          localDestination: local.hasPrefix("/") ? URL(fileURLWithPath: local) : nil)
     }
 
     private func checkDirectory(_ base: String, prefix: String = "") async throws {
@@ -292,7 +299,7 @@ public struct RcloneStorageBackend: StorageBackend {
         do {
             try fm.createDirectory(at: staging, withIntermediateDirectories: false,
                                    attributes: [.posixPermissions: 0o700])
-        } catch { throw StorageBackendError.invalidLocalFile }
+        } catch { throw CloudLibraryFailure.localWriteFailure(error, at: staging) as Error? ?? StorageBackendError.invalidLocalFile }
         defer { try? fm.removeItem(at: staging) }
         let temporary: URL
         if progress == nil, (1...Self.smallDownloadLimit).contains(item.size),
@@ -303,13 +310,13 @@ public struct RcloneStorageBackend: StorageBackend {
         } else {
             // A lost RC response can leave a partial download; the CLI uses a separate staging file.
             temporary = staging.appendingPathComponent("file")
-            _ = try await run(["copyto", source, temporary.path], progress: progress)
+            _ = try await run(["copyto", source, temporary.path], progress: progress, localDestination: staging)
         }
         try Task.checkCancellation()
         guard isRegularFile(temporary) else { throw StorageBackendError.invalidResponse }
         do { try fm.moveItem(at: temporary, to: destination) }
         catch let error as CocoaError where error.code == .fileWriteFileExists { throw StorageBackendError.alreadyExists }
-        catch { throw StorageBackendError.invalidLocalFile }
+        catch { throw CloudLibraryFailure.localWriteFailure(error, at: destination) as Error? ?? StorageBackendError.invalidLocalFile }
     }
 
     public func delete(_ key: StorageObjectKey) async throws {
@@ -423,7 +430,7 @@ public struct RcloneStorageBackend: StorageBackend {
     }
 
     private func run(_ arguments: [String], progress: (@Sendable (StorageProgress) -> Void)? = nil,
-                     listingFolder: Bool = false) async throws -> String {
+                     listingFolder: Bool = false, localDestination: URL? = nil) async throws -> String {
         try Task.checkCancellation()
         let flags = ["--use-json-log", "--stats", "1s", "--stats-log-level", "NOTICE"] + Self.flags
         let environment = RcloneConfiguration.environment()
@@ -457,10 +464,14 @@ public struct RcloneStorageBackend: StorageBackend {
         } catch is CancellationError {
             throw CancellationError()
         } catch {
-            throw StorageBackendError.backendUnavailable
+            throw CloudLibraryFailure.localWriteFailure(error, at: localDestination ?? FileManager.default.temporaryDirectory)
+                as Error? ?? StorageBackendError.backendUnavailable
         }
         if result.status != 0, let failure = CloudLibraryFailure.rclone(result.stderr, status: result.status,
-                                                                       listingFolder: listingFolder) { throw failure }
+                                                                       listingFolder: listingFolder) {
+            throw failure == .macFull ? CloudLibraryFailure.diskFull(at: localDestination ?? FileManager.default.temporaryDirectory)
+                : failure
+        }
         if isReference && result.status != 0,
            result.stderr.lowercased().contains("error 403") || result.stderr.lowercased().contains("error 404") {
             throw CloudLibraryFailure.folderMissing

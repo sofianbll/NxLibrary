@@ -3,6 +3,32 @@ import XCTest
 @testable import NXLibraryCore
 
 final class RcloneStorageBackendTests: XCTestCase {
+    func testLocalDiskFullIsNotOfflineOrDriveQuota() async throws {
+        let destination = FileManager.default.temporaryDirectory
+        let volume = try XCTUnwrap(destination.resourceValues(forKeys: [.volumeLocalizedNameKey]).volumeLocalizedName)
+        for failure in [
+            NSError(domain: NSCocoaErrorDomain, code: CocoaError.fileWriteOutOfSpace.rawValue),
+            POSIXError(.ENOSPC) as NSError,
+            NSError(domain: NSCocoaErrorDomain, code: CocoaError.fileWriteUnknown.rawValue,
+                    userInfo: [NSUnderlyingErrorKey: POSIXError(.ENOSPC)]),
+            nil
+        ] {
+            let backend = RcloneStorageBackend(remote: "fixture", root: "Games") { _, _, _ in
+                if let failure { throw failure }
+                return .init(status: 1, stdout: "", stderr: "write fixture: no space left on device")
+            }
+            do {
+                try await backend.downloadFiles(["one"], from: .init("Title"), to: destination, progress: nil)
+                XCTFail("A full local disk cannot complete the download")
+            } catch {
+                XCTAssertEqual((error as? CloudLibraryFailure)?.action, .freeMacStorage)
+                XCTAssertTrue(error.localizedDescription.contains(volume), error.localizedDescription)
+            }
+        }
+        XCTAssertEqual(CloudLibraryFailure.rclone("403 storageQuotaExceeded", status: 1), .quotaFull)
+        XCTAssertEqual(CloudLibraryFailure.rclone("connection reset", status: 1), .offline)
+    }
+
     func testDriveReferenceValidatesLinksAndRejectsRemoteWrites() async throws {
         let id = "1Reference_0123-456"
         XCTAssertEqual(CloudLibraryPreference.referenceFolderID(" \(id)\n"), id)

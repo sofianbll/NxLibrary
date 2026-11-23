@@ -943,7 +943,10 @@ public actor CloudGameArchive {
         }
         try Task.checkCancellation()
         let flags = previous == nil ? RENAME_EXCL : RENAME_SWAP
-        guard renamex_np(incoming.path, destination.path, UInt32(flags)) == 0 else { throw CloudArchiveError.installFailed }
+        guard renamex_np(incoming.path, destination.path, UInt32(flags)) == 0 else {
+            if errno == ENOSPC { throw CloudLibraryFailure.diskFull(at: parent) }
+            throw CloudArchiveError.installFailed
+        }
         if let resume { try? FileManager.default.removeItem(at: resume) }
         // An external writer may have added data while the old directory was still live.
         if previous != nil {

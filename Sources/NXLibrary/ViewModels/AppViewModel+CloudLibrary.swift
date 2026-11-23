@@ -1340,8 +1340,12 @@ extension AppViewModel {
                 if let detail = (error as? CloudArchiveError)?.diagnosticDetail {
                     self.logs.append(LogEntry(level: .error, message: detail))
                 }
-                let reason = self.cloudMessage(for: error)
-                if !Task.isCancelled, CloudTransferQueue.waitsForConnection(after: error) {
+                let item = action.item(during: self.cloudLibrary.states[id]?.progress)
+                let destination = item.artifact.flatMap { target.locations[$0] }
+                    ?? request.sourceFiles?.files.first ?? CloudGameSources.importedFolder(for: id)
+                let failure = self.cloudFailure(for: error, destination: destination)
+                let reason = failure?.message() ?? self.cloudMessage(for: error)
+                if !Task.isCancelled, CloudTransferQueue.waitsForConnection(after: failure.map { $0 as Error } ?? error) {
                     deferred = true
                     self.cloudLibrary.queuePaused = true
                     self.showCloudFailure(self.cloudFailure(for: error) ?? .offline, title: L10n.text("Cloud library")) { [weak self] in
@@ -1354,7 +1358,7 @@ extension AppViewModel {
                     if (error as? CloudArchiveError) == .needsFullUpload { $0.mustResendBoth = true }
                     $0.issue = (action.item(during: $0.progress), reason, outcome != .cancelled)
                     if outcome != .cancelled {
-                        $0.transferFailure = self.cloudFailure(for: error)
+                        $0.transferFailure = failure
                         $0.failedTransferID = request.token
                     }
                 }
@@ -1581,7 +1585,7 @@ extension AppViewModel {
     }
 
     private func cloudMessage(for error: Error) -> String {
-        if let failure = cloudFailure(for: error) { return L10n.text(failure.messageKey) }
+        if let failure = cloudFailure(for: error) { return failure.message() }
         if let error = error as? CacheVerificationError { return error.localizedDescription }
         if let error = error as? CloudArchiveError { return error.localizedDescription }
         if let error = error as? NXLibraryError { return error.localizedDescription }
@@ -1592,9 +1596,10 @@ extension AppViewModel {
         return L10n.text("Cloud storage is unavailable. Check rclone and try again.")
     }
 
-    private func cloudFailure(for error: Error) -> CloudLibraryFailure? {
+    private func cloudFailure(for error: Error, destination: URL? = nil) -> CloudLibraryFailure? {
         if let failure = error as? CloudLibraryFailure { return failure }
-        if error as? CloudArchiveError == .insufficientSpace { return .macFull }
+        if error as? CloudArchiveError == .insufficientSpace { return .diskFull(at: destination) }
+        if let disk = CloudLibraryFailure.localWriteFailure(error, at: destination) { return disk }
         if let storage = error as? StorageBackendError {
             switch storage {
             case .backendUnavailable, .processFailed: return .unavailable
@@ -1621,9 +1626,9 @@ extension AppViewModel {
     @MainActor func showCloudFailure(_ failure: CloudLibraryFailure, title: String, sourceFolder: Bool = false,
                                      retry: @escaping () -> Void) {
         let action = failure.action
-        if action == .dismiss { showSettingsNotice(title: title, message: L10n.text(failure.messageKey), cancelTitle: action.titleKey) }
+        if action == .dismiss { showSettingsNotice(title: title, message: failure.message(), cancelTitle: action.titleKey) }
         else {
-            showSettingsNotice(title: title, message: L10n.text(failure.messageKey),
+            showSettingsNotice(title: title, message: failure.message(),
                                actionTitle: action.titleKey, cancelTitle: "Cancel") { [weak self] in
                 self?.recoverCloud(action, sourceFolder: sourceFolder, retry: retry)
             }

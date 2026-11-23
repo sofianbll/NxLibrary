@@ -229,7 +229,7 @@ public final class CloudGameSources: @unchecked Sendable {
             let parent = destination.deletingLastPathComponent()
             let (device, _) = try Stamp.directory(parent)
             let (reserved, overflow) = (reservations[device] ?? 1_048_576).addingReportingOverflow(item.size)
-            guard !overflow, let available = capacity(parent), available >= reserved else { throw CloudLibraryFailure.macFull }
+            guard !overflow, let available = capacity(parent), available >= reserved else { throw CloudLibraryFailure.diskFull(at: parent) }
             reservations[device] = reserved
         }
         var received: Int64 = 0
@@ -257,6 +257,7 @@ public final class CloudGameSources: @unchecked Sendable {
             try Task.checkCancellation()
             if renamex_np(candidate.path, destination.path, UInt32(previous == nil ? RENAME_EXCL : RENAME_SWAP)) != 0 {
                 if errno == EEXIST { throw CloudArchiveError.localChanged }
+                if errno == ENOSPC { throw CloudLibraryFailure.diskFull(at: parent) }
                 throw CloudArchiveError.installFailed
             }
             keepPrevious = previous != nil

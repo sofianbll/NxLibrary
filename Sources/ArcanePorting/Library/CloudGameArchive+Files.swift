@@ -70,7 +70,10 @@ extension CloudGameArchive {
                         let file = destination.appendingPathComponent(entry.path)
                         try SaveFiles.makeDirectory(file.deletingLastPathComponent())
                         guard renamex_np(resume.appendingPathComponent(entry.path).path, file.path, UInt32(RENAME_EXCL)) == 0
-                            || errno == EEXIST else { throw CloudArchiveError.installFailed }
+                            || errno == EEXIST else {
+                            if errno == ENOSPC { throw CloudLibraryFailure.diskFull(at: parent) }
+                            throw CloudArchiveError.installFailed
+                        }
                     }
                 }
             }
@@ -95,15 +98,22 @@ extension CloudGameArchive {
                 } else {
                     try SaveFiles.safePath(old)
                     guard clonefile(old.path, target.path, UInt32(CLONE_NOFOLLOW)) == 0 ||
-                            copyfile(old.path, target.path, nil, copyfile_flags_t(COPYFILE_DATA | COPYFILE_EXCL | COPYFILE_NOFOLLOW)) == 0,
-                          try entry.matches(target) else { throw StorageBackendError.hashMismatch }
+                            copyfile(old.path, target.path, nil, copyfile_flags_t(COPYFILE_DATA | COPYFILE_EXCL | COPYFILE_NOFOLLOW)) == 0
+                    else {
+                        if errno == ENOSPC { throw CloudLibraryFailure.diskFull(at: parent) }
+                        throw StorageBackendError.hashMismatch
+                    }
+                    guard try entry.matches(target) else { throw StorageBackendError.hashMismatch }
                 }
             } else {
                 guard try entry.matches(raw) else { throw StorageBackendError.hashMismatch }
                 if entry.isLink {
                     try CloudArtifactFiles.restoreLink(raw, to: target, relative: entry.relative, kind: kind)
                 } else {
-                    guard link(raw.path, target.path) == 0 else { throw CloudArchiveError.installFailed }
+                    guard link(raw.path, target.path) == 0 else {
+                        if errno == ENOSPC { throw CloudLibraryFailure.diskFull(at: parent) }
+                        throw CloudArchiveError.installFailed
+                    }
                 }
             }
         }

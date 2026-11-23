@@ -4186,6 +4186,17 @@
         "zh-Hans": {"stringUnit": {"state": "translated", "value": "此 Mac 的可用空间不足。"}}
       }
     },
+    "Not enough space on %@.": {
+      "localizations": {
+        "de": {"stringUnit": {"state": "translated", "value": "Nicht genug Speicherplatz auf %@."}},
+        "en": {"stringUnit": {"state": "translated", "value": "Not enough space on %@."}},
+        "es": {"stringUnit": {"state": "translated", "value": "No hay espacio suficiente en %@."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Espace insuffisant sur %@."}},
+        "it": {"stringUnit": {"state": "translated", "value": "Spazio insufficiente su %@."}},
+        "pt-BR": {"stringUnit": {"state": "translated", "value": "Não há espaço suficiente em %@."}},
+        "zh-Hans": {"stringUnit": {"state": "translated", "value": "%@ 的可用空间不足。"}}
+      }
+    },
     "The cloud queue could not be saved. Transfers continue, but may not resume after quitting.": {
       "localizations": {
         "de": {"stringUnit": {"state": "translated", "value": "Die Cloud-Warteschlange konnte nicht gespeichert werden. Übertragungen laufen weiter, werden nach dem Beenden aber möglicherweise nicht fortgesetzt."}},

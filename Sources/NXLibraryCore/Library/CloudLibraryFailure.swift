@@ -3,6 +3,7 @@ import Foundation
 /// Safe cloud recovery information. Never retain rclone output: OAuth errors can contain secrets.
 public enum CloudLibraryFailure: LocalizedError, Hashable, Sendable {
     case offline, authentication, folderMissing, quotaFull, macFull, queueNotSaved, unavailable
+    case volumeFull(String)
 
     public enum Action: Equatable, Sendable {
         case retry, reconnect, chooseFolder, manageDriveStorage, freeMacStorage, dismiss
@@ -25,7 +26,7 @@ public enum CloudLibraryFailure: LocalizedError, Hashable, Sendable {
         case .authentication: return .reconnect
         case .folderMissing: return .chooseFolder
         case .quotaFull: return .manageDriveStorage
-        case .macFull: return .freeMacStorage
+        case .macFull, .volumeFull: return .freeMacStorage
         case .queueNotSaved: return .dismiss
         }
     }
@@ -36,13 +37,43 @@ public enum CloudLibraryFailure: LocalizedError, Hashable, Sendable {
         case .authentication: return "Google Drive sign-in expired or was revoked."
         case .folderMissing: return "Cloud folder not found."
         case .quotaFull: return "Google Drive is full."
-        case .macFull: return "Not enough space on this Mac."
+        case .macFull, .volumeFull: return "Not enough space on this Mac."
         case .queueNotSaved: return "The cloud queue could not be saved. Transfers continue, but may not resume after quitting."
         case .unavailable: return "Cloud storage is unavailable. Check rclone and try again."
         }
     }
 
-    public var errorDescription: String? { L10n.text(messageKey) }
+    public func message(context: AppLocale = L10n.context) -> String {
+        if case .volumeFull(let name) = self {
+            return L10n.format("Not enough space on %@.", [name], context: context)
+        }
+        return L10n.text(messageKey, context: context)
+    }
+
+    public var errorDescription: String? { message() }
+
+    package static func diskFull(at destination: URL?) -> Self {
+        guard var url = destination, url.isFileURL else { return .macFull }
+        while true {
+            if let name = (try? url.resourceValues(forKeys: [.volumeLocalizedNameKey]))?.volumeLocalizedName,
+               !name.isEmpty { return .volumeFull(name) }
+            let parent = url.deletingLastPathComponent()
+            guard parent.path != url.path, !parent.path.isEmpty else { return .macFull }
+            url = parent
+        }
+    }
+
+    package static func localWriteFailure(_ error: Error, at destination: URL?) -> Self? {
+        let ns = error as NSError
+        let location = (ns.userInfo[NSFilePathErrorKey] as? String).flatMap {
+            $0.hasPrefix("/") ? URL(fileURLWithPath: $0) : nil
+        } ?? destination
+        if ns.domain == NSPOSIXErrorDomain && ns.code == Int(POSIXErrorCode.ENOSPC.rawValue)
+            || ns.domain == NSCocoaErrorDomain && ns.code == CocoaError.fileWriteOutOfSpace.rawValue {
+            return diskFull(at: location)
+        }
+        return (ns.userInfo[NSUnderlyingErrorKey] as? Error).flatMap { localWriteFailure($0, at: location) }
+    }
 
     package static func rclone(_ stderr: String, status: Int32, listingFolder: Bool = false) -> Self? {
         let text = stderr.lowercased()
@@ -56,6 +87,7 @@ public enum CloudLibraryFailure: LocalizedError, Hashable, Sendable {
                 && !contains("rate limit", "ratelimit", "downloadquota", "daily limit", "dailyquota")) {
             return .quotaFull
         }
+        if contains("no space left on device", "no space left", "enospc") { return .macFull }
         if contains("no such host", "network is unreachable", "network is down", "no route to host", "host is down",
                     "not connected to the internet", "connection refused", "connection reset",
                     "i/o timeout", "context deadline exceeded", "tls handshake timeout",

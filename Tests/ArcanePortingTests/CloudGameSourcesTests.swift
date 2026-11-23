@@ -47,8 +47,7 @@ final class CloudGameSourcesTests: XCTestCase {
                                        files: ["Game.nup", "Update.nup"].map { root.appendingPathComponent($0) }, progress: nil)
             XCTFail("Enough space for one file, but not both")
         } catch {
-            XCTAssertEqual(error as? CloudLibraryFailure, .macFull)
-            XCTAssertEqual(CloudLibraryFailure.macFull.action, .freeMacStorage)
+            XCTAssertEqual((error as? CloudLibraryFailure)?.action, .freeMacStorage)
         }
         XCTAssertTrue(try FileManager.default.contentsOfDirectory(atPath: root.path).isEmpty)
     }

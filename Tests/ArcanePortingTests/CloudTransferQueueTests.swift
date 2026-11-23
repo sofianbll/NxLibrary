@@ -29,6 +29,8 @@ final class CloudTransferQueueTests: XCTestCase {
         XCTAssertTrue(CloudTransferQueue.waitsForConnection(after: StorageBackendError.backendUnavailable))
         XCTAssertFalse(CloudTransferQueue.waitsForConnection(after: StorageBackendError.hashMismatch))
         XCTAssertFalse(CloudTransferQueue.waitsForConnection(after: CancellationError()))
+        XCTAssertFalse(CloudTransferQueue.waitsForConnection(after: CloudLibraryFailure.volumeFull("Fixture")))
+        XCTAssertFalse(CloudTransferQueue.waitsForConnection(after: CloudLibraryFailure.quotaFull))
     }
     func testQueueSaveFailureReportsOnceAndLaterSnapshotsStillWrite() async throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
