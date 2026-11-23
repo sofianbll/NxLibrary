@@ -1000,7 +1000,7 @@
       "localizations": {
         "en": {"stringUnit": {"state": "translated", "value": "Screen used to open ported games."}},
         "it": {"stringUnit": {"state": "translated", "value": "Schermo su cui si aprono i giochi convertiti."}},
-        "fr": {"stringUnit": {"state": "translated", "value": "Écran sur lequel s’ouvrent les jeux portés."}},
+        "fr": {"stringUnit": {"state": "translated", "value": "Écran sur lequel lancer les jeux portés."}},
         "de": {"stringUnit": {"state": "translated", "value": "Bildschirm, auf dem portierte Spiele geöffnet werden."}},
         "es": {"stringUnit": {"state": "translated", "value": "Pantalla en la que se abren los juegos portados."}},
         "pt-BR": {"stringUnit": {"state": "translated", "value": "Tela em que os jogos portados são abertos."}},

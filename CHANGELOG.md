@@ -2,16 +2,6 @@
 
 User-visible changes to Oort NX and its Arcane base (formerly NX Library) are recorded here. Entries are grouped by release, with the newest first. Engine changes also have their own [upgrade notes](docs/history/engine-upgrades/README.md).
 
-## 0.3.1
-
-### Fixed
-
-- With Cloud library turned on, Spotlight and Details keep the existing Cloud library link when the round button is hidden.
-- After a connection interruption, the Activity center and the game's Cloud panel keep the reason and the **Resume** action after the alert closes.
-- Running out of local disk space during a cloud transfer names the affected volume without pausing the queue as if it were offline.
-- Replacing a different installed app from the reference library asks for confirmation and shows where the previous app was kept. An unreachable reference no longer blocks a verified personal copy.
-- **Next launch** in Game Options follows the app language, and the Cloud panel no longer repeats an error already shown in its status.
-
 ## 0.3.0
 
 Based on Arcane 0.2.1. This is the first release in the fork's own `MAJOR.MINOR.PATCH` series.
@@ -36,6 +26,11 @@ Based on Arcane 0.2.1. This is the first release in the fork's own `MAJOR.MINOR.
 
 ### Fixed
 
+- With Cloud library turned on, Spotlight and Details keep the existing Cloud library link when the round button is hidden.
+- After a connection interruption, the Activity center and the game's Cloud panel keep the reason and the **Resume** action after the alert closes.
+- Running out of local disk space during a cloud transfer names the affected volume without pausing the queue as if it were offline.
+- Replacing a different installed app from the reference library asks for confirmation and shows where the previous app was kept. An unreachable reference no longer blocks a verified personal copy.
+- **Next launch** in Game Options follows the app language, and the Cloud panel no longer repeats an error already shown in its status.
 - The control center's **Profile**, **Library** and **Power** submenus: their buttons all take the width of the widest, the pointer reaches them above the icon, a click on another icon opens its submenu in place of the open one, and the page behind blurs under a heavier veil.
 - Automatic **Remote play via ZeroTier** can select a single ZeroTier adapter for LDN or LAN even when Tailscale is also connected. Explicit game and environment choices still take precedence.
 - Opening **Game Options** right after launch no longer crashes while checking cheat support in a custom engine checkout.
