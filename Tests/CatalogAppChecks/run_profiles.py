@@ -1400,7 +1400,7 @@ extension NextendoSettings {
         (app / "ProfileScreenProbe.swift").write_text(host)
         subprocess.run(["swift", "run", "--package-path", str(package), "ProfileScreenProbe", str(out),
                         str(ROOT / "Resources/Selene/Fonts/MaterialIcons-Regular.ttf"), str(refs)],
-                       check=True, env=dict(os.environ, HOME=temp))
+                       check=True, env=dict(os.environ, HOME=temp, CFFIXED_USER_HOME=temp))
 
 
 if __name__ == "__main__":

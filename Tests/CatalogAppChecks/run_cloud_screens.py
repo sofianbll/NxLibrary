@@ -1038,7 +1038,7 @@ extension CloudArtifactStatus {
         icon = ROOT / "Resources/AppIcon-Light.png"
         subprocess.run(["swift", "run", "--package-path", str(package), "NXLibrary", str(output), str(font), str(icon)]
                        + ([str(pixel_reference)] if compare else []),
-                       check=True, env=dict(os.environ, HOME=temp))
+                       check=True, env=dict(os.environ, HOME=temp, CFFIXED_USER_HOME=temp))
 
 
 if __name__ == "__main__":
