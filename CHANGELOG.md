@@ -9,6 +9,7 @@ User-visible changes to Oort NX and its Arcane base (formerly NX Library) are re
 - With Cloud library turned on, Spotlight and Details keep the existing Cloud library link when the round button is hidden.
 - After a connection interruption, the Activity center and the game's Cloud panel keep the reason and the **Resume** action after the alert closes.
 - Running out of local disk space during a cloud transfer names the affected volume without pausing the queue as if it were offline.
+- Replacing a different installed app from the reference library asks for confirmation and shows where the previous app was kept. An unreachable reference no longer blocks a verified personal copy.
 - **Next launch** in Game Options follows the app language, and the Cloud panel no longer repeats an error already shown in its status.
 
 ## 0.3.0

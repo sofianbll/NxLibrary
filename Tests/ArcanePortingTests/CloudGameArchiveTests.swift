@@ -310,6 +310,48 @@ final class CloudGameArchiveTests: XCTestCase {
         XCTAssertEqual(final?.artifacts.first, visible.first?.artifacts.first)
     }
 
+    func testReferenceAppDoesNotReplaceWithoutExplicitConsent() async throws {
+        let f = try fixture(useSyntheticBackend: true)
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        let manifest = try await f.service.upload(f.game)
+        let relative = "Contents/Resources/msl/b-1234567890ab.img"
+        let different = Data([4, 5, 6])
+        try different.write(to: f.app.appendingPathComponent(relative))
+        try command("/usr/bin/codesign", ["--force", "--sign", "-", f.app.path])
+        let remote = RcloneStorageBackend(remote: "fixture", root: "Games", executable: f.root.appendingPathComponent("fake-rclone"),
+                                          config: f.root.appendingPathComponent("rclone.conf"))
+        let service = CloudGameArchive(backend: try XCTUnwrap(remote.reference(folderID: "1Reference")))
+
+        do {
+            try await service.restore(.app, for: f.game, from: manifest, onlyIfMissing: false,
+                                      progress: nil, beforeMutation: {})
+            XCTFail("A plain restore replaced a different app")
+        } catch { XCTAssertEqual(error as? CloudArchiveError, .confirmationRequired) }
+        XCTAssertEqual(try Data(contentsOf: f.app.appendingPathComponent(relative)), different)
+
+        func confirm() async throws -> CloudGameArchive.ReferenceAppReplacement {
+            let statuses = try await service.copyStatuses(f.game, manifest: .success(manifest))
+            let expected = try await service.referenceCopy(.app, for: f.game, manifest: manifest, status: statuses[.app])
+            return try XCTUnwrap(expected?.appReplacement)
+        }
+        let stale = try await confirm()
+        let revised = Data([7, 8, 9])
+        try revised.write(to: f.app.appendingPathComponent(relative))
+        try command("/usr/bin/codesign", ["--force", "--sign", "-", f.app.path])
+        do {
+            try await service.restore(.app, for: f.game, from: manifest, appReplacement: stale,
+                                      onlyIfMissing: false, progress: nil, beforeMutation: {})
+            XCTFail("Consent did not cover the newer local copy")
+        } catch { XCTAssertEqual(error as? CloudArchiveError, .localChanged) }
+        XCTAssertEqual(try Data(contentsOf: f.app.appendingPathComponent(relative)), revised)
+
+        let accepted = try await confirm()
+        let previous = try await service.restore(.app, for: f.game, from: manifest, appReplacement: accepted,
+                                                 onlyIfMissing: false, progress: nil, beforeMutation: {})
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(previous).appendingPathComponent(relative)), revised)
+        XCTAssertEqual(try Data(contentsOf: f.app.appendingPathComponent(relative)), Data([1, 2, 3]))
+    }
+
     func testNewestReferenceDiffAndLegacyRestore() async throws {
         let f = try fixture(useSyntheticBackend: true)
         defer { try? FileManager.default.removeItem(at: f.root) }

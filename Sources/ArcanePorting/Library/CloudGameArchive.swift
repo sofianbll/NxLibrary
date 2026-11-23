@@ -834,6 +834,7 @@ public actor CloudGameArchive {
     @discardableResult
     package func restore(_ kind: CloudArtifactKind, for game: CloudArchiveGame, from manifest: CloudGameManifest?,
                          replacingCopyFrom older: CloudGameManifest? = nil,
+                         appReplacement: ReferenceAppReplacement? = nil,
                          onlyIfMissing: Bool, progress: Progress?, beforeMutation: @Sendable () throws -> Void,
                          beforeAppInstall: (@MainActor @Sendable () async throws -> Void)? = nil) async throws -> URL? {
         let lease = try begin(game.titleID)
@@ -858,6 +859,12 @@ public actor CloudGameArchive {
             else { throw CloudArchiveError.noRemoteCopy }
             artifact = item
         } else { artifact = try await remoteArtifact(kind, game) }
+        if kind == .app, replacingReference, previous != nil || appReplacement != nil {
+            guard let appReplacement else { throw CloudArchiveError.confirmationRequired }
+            guard appReplacement.destination == destination,
+                  appReplacement.localSignature == existing?.sha256,
+                  appReplacement.remoteFingerprint == artifact.inventorySHA256 else { throw CloudArchiveError.localChanged }
+        }
         if replacingReference, let existing, !existing.isSkippedOnly, let manifest,
            existing.latestFileWrite.map({ $0 >= (artifact.publishedAt ?? manifest.createdAt) }) == true {
             guard let older, older.prefersReference(manifest, for: kind),
@@ -957,17 +964,26 @@ public actor CloudGameArchive {
         return nil
     }
 
+    package struct ReferenceAppReplacement: Equatable, Sendable {
+        package let destination: URL
+        fileprivate let localSignature: String
+        fileprivate let remoteFingerprint: String
+    }
+
     package struct ReferenceCopy: Equatable, Sendable {
         package let downloadBytes: Int64
         package let totalBytes: Int64
         package let legacy: Bool
         package let updatesLocal: Bool
+        package let appReplacement: ReferenceAppReplacement?
 
-        package init(downloadBytes: Int64, totalBytes: Int64, legacy: Bool, updatesLocal: Bool) {
+        package init(downloadBytes: Int64, totalBytes: Int64, legacy: Bool, updatesLocal: Bool,
+                     appReplacement: ReferenceAppReplacement? = nil) {
             self.downloadBytes = downloadBytes
             self.totalBytes = totalBytes
             self.legacy = legacy
             self.updatesLocal = updatesLocal
+            self.appReplacement = appReplacement
         }
     }
 
@@ -984,14 +1000,20 @@ public actor CloudGameArchive {
             if let (_, snapshot) = local, snapshot.hasExcludedFiles ||
                 (updatesLocal && !matchesOlderCopy && status?.state != .cloudOnly &&
                  snapshot.latestFileWrite.map { $0 >= (artifact.publishedAt ?? manifest.createdAt) } == true) { return nil }
+            let replacement = kind == .app && updatesLocal ? local.map {
+                ReferenceAppReplacement(destination: $0.0, localSignature: $0.1.sha256,
+                                        remoteFingerprint: artifact.inventorySHA256)
+            } : nil
             if let tree = artifact.files {
                 let entries = try local.flatMap { try self.localFiles(at: $0.0, kind: kind, snapshot: $0.1) } ?? []
                 let changed = Self.changedFiles(in: tree, comparedWith: entries)
                 return .init(downloadBytes: changed.reduce(0) { $0 + $1.size },
-                             totalBytes: artifact.unpackedSize, legacy: false, updatesLocal: updatesLocal)
+                             totalBytes: artifact.unpackedSize, legacy: false, updatesLocal: updatesLocal,
+                             appReplacement: replacement)
             }
             guard let archivedBytes = artifact.size else { throw CloudArchiveError.invalidManifest }
-            return .init(downloadBytes: archivedBytes, totalBytes: archivedBytes, legacy: true, updatesLocal: updatesLocal)
+            return .init(downloadBytes: archivedBytes, totalBytes: archivedBytes, legacy: true,
+                         updatesLocal: updatesLocal, appReplacement: replacement)
         }
         return try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
     }

@@ -467,6 +467,10 @@ extension CloudScreenProbe {
         precondition(activity.resumeHintForProbe(row), "The dismissed alert must leave Resume in the Activity center")
         precondition(panel.resumeForProbe(), "The dismissed alert must leave Resume in the cloud panel")
         vm.cloudLibrary.installScreenArchives(backend)
+        let unreachable = RcloneStorageBackend(remote: "fixture", root: "Games") { _, _, _ in
+            .init(status: 1, stdout: "", stderr: "connection reset")
+        }.reference(folderID: "1-fixture")!
+        vm.cloudLibrary.installScreenReference(unreachable)
         panel.resumeFromProbe()
         try await until { vm.cloudLibrary.states[game.id]?.progress?.phase == .readyToInstall }
         precondition(vm.cloudLibrary.active?.request.token == interrupted)
@@ -479,6 +483,7 @@ extension CloudScreenProbe {
 
         // Startup resumes the same queue request without publishing while the game is still running.
         vm = try makeModel()
+        vm.cloudLibrary.installScreenReference(unreachable)
         vm.restoreCloudQueue()
         try await until { vm.cloudLibrary.states[game.id]?.progress?.phase == .readyToInstall }
         precondition(!fm.fileExists(atPath: app.path))
@@ -509,7 +514,20 @@ extension CloudScreenProbe {
         let selected = vm.libraryGames.first { $0.id == game.id }!
         RunningGameMonitor.screenRunning.withLock { $0 = bundleID }
         monitor.refresh()
+        await vm.refreshCloudLibrary(selected)
+        L10n.setContext(fr)
         vm.performCloudLibrary(.restore(.app), for: selected)
+        guard let refusal = vm.settingsNotice else { preconditionFailure("Download must ask before replacing") }
+        precondition(refusal.choices == ["Replace", "Cancel"] && vm.settingsNoticeFocus == refusal.cancelIndex)
+        try renderNotice("reference-replacement-confirmation", output, refusal, width: 1280)
+        vm.settingsNotice = nil
+        refusal.runChoice(refusal.cancelIndex)
+        let unchanged = try version()
+        precondition(unchanged == "1.0" && vm.cloudLibrary.active == nil)
+        vm.performCloudLibrary(.restore(.app), for: selected)
+        let approved = vm.settingsNotice!
+        vm.settingsNotice = nil
+        approved.runChoice(0)
         try await until { vm.cloudLibrary.states[game.id]?.progress?.phase == .readyToInstall }
         let versionDuringPlay = try version()
         precondition(versionDuringPlay == "1.0")
@@ -518,6 +536,13 @@ extension CloudScreenProbe {
         await vm.cloudLibrary.active?.task.value
         let applied = try version()
         precondition(applied == "2.0")
+        let backup = vm.cloudLibrary.states[game.id]!.previousApp!
+        let backupPlist = try Data(contentsOf: backup.appendingPathComponent("Contents/Info.plist"))
+        let backupInfo = try PropertyListSerialization.propertyList(from: backupPlist, format: nil) as! [String: String]
+        precondition(backupInfo["CFBundleShortVersionString"] == "1.0")
+        let recoveryPanel = CloudLibraryPanel(viewModel: vm, model: vm.cloudLibrary, game: selected)
+        try render("reference-replacement-panel", output, recoveryPanel.environment(\.nxAppLocale, fr))
+        L10n.setContext(.init(language: .english, region: "US"))
         print("Play during app upload, personal restart and reference swap verified with local fixtures.")
     }
 }
@@ -840,6 +865,7 @@ extension ActivityCenterView {
                 '''    func clearActivityForProbe(_ id: UUID) { activityResults.clear(id) }
     func clearActivity(''')
             gallery = TRANSFER_STATES
+            has_replacement = "var previousApp:" in (app / "ViewModels/AppViewModel+CloudLibrary.swift").read_text()
             host = host.replace("// ADVANCED_SETTINGS", '''
         try render("settings-advanced", output, SettingsCloudLibrarySection(
             viewModel: vm, model: model, settings: settings, advanced: .constant(true),
@@ -852,11 +878,15 @@ extension ActivityCenterView {
                 gallery = gallery.replace("// CHECK_TRANSFER_CONTROLS",
                     '''panel.checkTransferControls(canCancel: live || phase == "queued", canRetry: phase == "failed")''')
                 with (app / "Views/Detail/CloudLibraryPanel.swift").open("a") as file:
-                    file.write('''
+                    if has_replacement:
+                        file.write('''
 extension CloudLibraryPanel {
     func resumeForProbe() -> Bool { controls.contains(.resume) }
     func resumeFromProbe() { choose(.resume) }
-
+}
+''')
+                    file.write('''
+extension CloudLibraryPanel {
     func advancedForProbe() -> Self {
         var copy = self
         copy._advanced = State(initialValue: true)
@@ -898,7 +928,8 @@ extension CloudLibraryPanel {
                              if baseline == "5047557" else "Mise à jour prête · appliquée à la fermeture du jeu")
             host = host.replace("// DOWNLOAD_FILL_CHECK",
                                 "do {\n" + DOWNLOAD_FILL.replace("WAITING_LABEL_FR", waiting_label) + "\n        }")
-            host = host.replace("// PLAY_TRANSFER_CHECK", "try await checkPlayDuringTransfer(in: data, output: output)") + PLAY_TRANSFER
+            if has_replacement:
+                host = host.replace("// PLAY_TRANSFER_CHECK", "try await checkPlayDuringTransfer(in: data, output: output)") + PLAY_TRANSFER
             monitor = app / "Services/RunningGameMonitor.swift"
             change(monitor, r'import AppKit', "import AppKit\nimport os")
             change(monitor, r'    nonisolated static func runningApplication\(bundleID: String\).*?\n    }', '''

@@ -27,7 +27,7 @@ struct CloudLibraryPanel: View {
 
     private enum Control: Hashable {
         case upload(CloudArtifactKind?), download(CloudArtifactKind), uploadSources, downloadSources
-        case free, cancel, refresh, settings, close, advanced, resume
+        case free, cancel, refresh, settings, close, advanced, resume, previousApp
         case recover(CloudLibraryFailure, CloudLibraryItem?)
         case retry(UUID)
     }
@@ -209,6 +209,16 @@ struct CloudLibraryPanel: View {
                 failureLine(message, failure: state.sourceFailure, item: item)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            if item == .app, let previous = state.previousApp {
+                HStack {
+                    Text(L10n.format("Previous app: %@", [previous.path], context: localization))
+                        .seleneFont(.compactCaption).foregroundColor(SeleneTheme.ink75)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(3).truncationMode(.middle).textSelection(.enabled).help(previous.path)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    button(.previousApp, "Reveal in Finder")
+                }
+            }
         }
         .modifier(SeleneOptionRowSurface(focused: control != nil && (focus ?? controls.first) == control))
     }
@@ -274,7 +284,7 @@ struct CloudLibraryPanel: View {
         let close: [Control] = showHints ? [] : [.close]
         if model.archive == nil { return close + [.settings] }
         if unavailable != nil { return close }
-        let artifacts = visibleItems.compactMap(artifactControl)
+        let artifacts = visibleItems.compactMap(artifactControl) + (state.previousApp == nil ? [] : [.previousApp])
         if state.action != nil || state.refreshing {
             return (interrupted == nil ? [] : [.resume]) + artifacts + close + [.advanced]
         }
@@ -389,6 +399,8 @@ struct CloudLibraryPanel: View {
         case .cancel: viewModel.cancelCloudLibrary(game)
         case .resume:
             if let interrupted { viewModel.resumeCloudTransfer(interrupted.token) }
+        case .previousApp:
+            if let previous = state.previousApp { viewModel.revealInFinder(url: previous) }
         case .refresh:
             refreshRevision += 1
         case .advanced:

@@ -89,6 +89,7 @@ struct CloudLibraryState {
     var issue: (item: CloudLibraryItem, message: String, failed: Bool)?
     var completedItem: CloudLibraryItem?
     var failedTransferID: UUID?
+    var previousApp: URL?
     var refreshing = false
     var mustResendBoth = false
 
@@ -203,6 +204,7 @@ final class CloudLibraryModel: ObservableObject {
         let sourceFiles: CloudSourceFiles?
         let onSuccess: (() -> Void)?
         var resumed = false
+        var appReplacement: CloudGameArchive.ReferenceAppReplacement?
 
         var entry: CloudTransferQueue.Entry { .init(id: id, action: action, token: token, storage: storage) }
     }
@@ -458,6 +460,18 @@ extension AppViewModel {
         guard let referenceArchive = cloudLibrary.referenceArchive,
               cloudLibrary.referenceCheck == nil || cloudLibrary.referenceManifests[titleID.uppercased()] != nil else { return nil }
         return try await referenceArchive.latest(titleID: titleID)
+    }
+
+    @MainActor private func restoreReferenceManifest(titleID: String, kind: CloudArtifactKind,
+                                                      personal: CloudGameManifest?) async throws -> CloudGameManifest? {
+        do { return try await referenceManifest(titleID: titleID) }
+        catch {
+            try Task.checkCancellation()
+            guard !(error is CancellationError), personal?.artifacts.contains(where: { $0.kind == kind }) == true
+            else { throw error }
+            // The personal artifact still goes through normal restore verification.
+            return nil
+        }
     }
 
     @MainActor func importCloudGames(manually: Bool = false) {
@@ -1087,6 +1101,15 @@ extension AppViewModel {
     }
 
     @MainActor func performCloudLibrary(_ action: CloudLibraryAction, for selected: PortedGame) {
+        if action == .restore(.app), let replacement = cloudLibrary.states[selected.id]?.referenceCopies[.app]?.appReplacement {
+            showSettingsNotice(title: L10n.text("Replace"),
+                message: L10n.format("Replace %@ on this Mac with the app from the reference library? The previous app will be kept.",
+                                     [replacement.destination.lastPathComponent]),
+                actionTitle: "Replace", cancelTitle: "Cancel") { [weak self] in
+                self?.enqueueCloudLibrary(action, for: selected, appReplacement: replacement)
+            }
+            return
+        }
         enqueueCloudLibrary(action, for: selected)
     }
 
@@ -1099,6 +1122,7 @@ extension AppViewModel {
     @MainActor @discardableResult
     private func enqueueCloudLibrary(_ action: CloudLibraryAction, for selected: PortedGame,
                                      retryToken: UUID? = nil,
+                                     appReplacement: CloudGameArchive.ReferenceAppReplacement? = nil,
                                      onSuccess: (() -> Void)? = nil) -> Bool {
         guard cloudLibrary.archive != nil, !cloudLibrary.isQuitting,
               cloudLibrary.hasRestoredQueue,
@@ -1138,7 +1162,8 @@ extension AppViewModel {
             action: action, storage: cloudLibrary.storageScope(for: action), scope: destination.map {
             CloudWorkScope(title: game.titleId ?? "", urls: [$0])
         } ?? CloudWorkScope(game), importDestination: destination,
-                                        sourceFiles: files, onSuccess: onSuccess, resumed: retryToken != nil))
+                                        sourceFiles: files, onSuccess: onSuccess, resumed: retryToken != nil,
+                                        appReplacement: appReplacement))
         cloudLibrary.update(game.id) {
             $0.action = action; $0.queued = true; $0.progress = nil; $0.message = nil; $0.issue = nil; $0.refreshing = false
             $0.transferFailure = nil; $0.completedItem = nil; $0.failedTransferID = nil
@@ -1290,7 +1315,7 @@ extension AppViewModel {
                         try await self.waitToInstallCloudApp(game)
                     }
                     let own = try await archive.latest(titleID: target.titleID)
-                    let reference = try await self.referenceManifest(titleID: target.titleID)
+                    let reference = try await self.restoreReferenceManifest(titleID: target.titleID, kind: kind, personal: own)
                     if kind == .app && game.cloudImportPending == true {
                         guard let destination = target.locations[.app] else { throw CloudArchiveError.unsafePath }
                         let folder = destination.deletingLastPathComponent()
@@ -1316,12 +1341,21 @@ extension AppViewModel {
                         guard let copy = try await referenceArchive.referenceCopy(kind, for: target,
                             manifest: reference, status: statuses[kind], matchesOlderCopy: personal[kind]?.state == .synchronized)
                         else { throw CloudArchiveError.localChanged }
-                        try await referenceArchive.restore(kind, for: target, from: reference,
-                                                           replacingCopyFrom: own,
-                                                           onlyIfMissing: !copy.updatesLocal || statuses[kind]?.state == .cloudOnly,
-                                                           progress: progress, beforeMutation: gameClosed,
-                                                           beforeAppInstall: beforeAppInstall)
+                        if kind == .app, let approval = request.appReplacement, copy.appReplacement != approval {
+                            throw CloudArchiveError.localChanged
+                        }
+                        let previous = try await referenceArchive.restore(kind, for: target, from: reference,
+                            replacingCopyFrom: own, appReplacement: request.appReplacement,
+                            onlyIfMissing: !copy.updatesLocal || statuses[kind]?.state == .cloudOnly,
+                            progress: progress, beforeMutation: gameClosed, beforeAppInstall: beforeAppInstall)
+                        if kind == .app, let previous {
+                            self.cloudLibrary.update(id) {
+                                $0.previousApp = previous
+                                $0.referenceCopies[.app] = nil
+                            }
+                        }
                     } else {
+                        guard request.appReplacement == nil else { throw CloudArchiveError.localChanged }
                         try await archive.restore(kind, for: target, from: own, onlyIfMissing: action != .restoreBuildCache,
                                                   progress: progress, beforeMutation: gameClosed,
                                                   beforeAppInstall: beforeAppInstall)
@@ -1354,7 +1388,10 @@ extension AppViewModel {
                 let destination = item.artifact.flatMap { target.locations[$0] }
                     ?? request.sourceFiles?.files.first ?? CloudGameSources.importedFolder(for: id)
                 let failure = self.cloudFailure(for: error, destination: destination)
-                let reason = failure?.message() ?? self.cloudMessage(for: error)
+                let needsConsent = action == .restore(.app) && ((error as? CloudArchiveError) == .confirmationRequired
+                    || request.appReplacement != nil && (error as? CloudArchiveError) == .localChanged)
+                let reason = needsConsent ? L10n.text("Open Cloud library to confirm replacing the app on this Mac.")
+                    : failure?.message() ?? self.cloudMessage(for: error)
                 if !Task.isCancelled, CloudTransferQueue.waitsForConnection(after: failure.map { $0 as Error } ?? error) {
                     deferred = true
                     let pause = failure ?? .offline
@@ -1370,7 +1407,7 @@ extension AppViewModel {
                     $0.issue = (action.item(during: $0.progress), reason, outcome != .cancelled)
                     if outcome != .cancelled {
                         $0.transferFailure = failure
-                        $0.failedTransferID = request.token
+                        $0.failedTransferID = needsConsent ? nil : request.token
                     }
                 }
             }
@@ -1426,7 +1463,7 @@ extension AppViewModel {
             return (kind.map { CloudArtifactStatus.canUploadAlone($0, statuses: copies) }
                     ?? CloudArtifactStatus.needsUpload(copies)) ? action : nil
         case .restore(let kind):
-            if let reference = try await referenceManifest(titleID: target.titleID),
+            if let reference = try await restoreReferenceManifest(titleID: target.titleID, kind: kind, personal: manifest),
                let referenceArchive = cloudLibrary.referenceArchive, referenceWins(reference, over: manifest, kind: kind) {
                 let status = try await referenceArchive.copyStatuses(target, manifest: .success(reference))
                 return try await referenceArchive.referenceCopy(kind, for: target, manifest: reference,
@@ -1437,7 +1474,7 @@ extension AppViewModel {
             }
             return copies[kind]?.state == .cloudOnly ? action : nil
         case .restoreBuildCache:
-            if let reference = try await referenceManifest(titleID: target.titleID),
+            if let reference = try await restoreReferenceManifest(titleID: target.titleID, kind: .cache, personal: manifest),
                referenceWins(reference, over: manifest, kind: .cache), target.locations[.cache] != nil { return action }
             return target.locations[.cache] != nil && manifest?.artifacts.contains(where: { $0.kind == .cache }) == true
                 && copies[.cache]?.state != .synchronized ? action : nil

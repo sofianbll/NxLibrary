@@ -184,7 +184,7 @@ Con solo una copia cloud dell'app, Download sostituisce il pulsante principale e
 
 Durante i trasferimenti dell'app, della cache e dei file del gioco, il colore risale nella copertina. Senza copertina c'è una barra sottile, o il riempimento di Download dove presente e con totale noto; il totale ignoto non produce una percentuale. Fase e byte compaiono in una sola riga. Cancel resta separato dalla misura; la coda e la verifica non sono una pausa. Reduce motion ferma le interpolazioni di avanzamento.
 
-Per un aggiornamento dal riferimento, la riga Cloud mostra i byte da scaricare sul totale. Dopo il download di app o cache, se la copia personale è precedente, la riga lo indica e propone Send come azione manuale.
+Per un aggiornamento dal riferimento, la riga Cloud mostra i byte da scaricare sul totale. Se un'app è già installata, Download mostra quale bundle Replace sostituisce e dà il focus ad Annulla. Il pannello mostra il percorso dell'app mantenuta e offre Reveal in Finder. Se il manifest di riferimento è irraggiungibile, una copia personale disponibile si scarica con le verifiche normali. Dopo il download di app o cache, se la copia personale è precedente, la riga lo indica e propone Send come azione manuale.
 
 Durante una partita si può inviare la sola app, se le normali regole di invio singolo lo consentono, e scaricarla dalla libreria personale o dal riferimento. Download resta pieno con «Pronta» dopo la verifica e il pannello Cloud e il centro attività mostrano «Aggiornamento pronto · si applica quando chiudi il gioco». Arcane applica la copia alla chiusura del gioco, anche se aperto dal Finder. Play aspetta se lo scambio è già in corso. Cache, Rebuild e Free up space richiedono il gioco chiuso.
 
