@@ -2,6 +2,12 @@
 
 User-visible changes to Oort NX and its Arcane base (formerly NX Library) are recorded here. Entries are grouped by release, with the newest first. Engine changes also have their own [upgrade notes](docs/history/engine-upgrades/README.md).
 
+## 0.3.1
+
+### Fixed
+
+- With Cloud library turned on, Spotlight and Details keep the existing Cloud library link when the round button is hidden.
+
 ## 0.3.0
 
 Based on Arcane 0.2.1. This is the first release in the fork's own `MAJOR.MINOR.PATCH` series.

@@ -204,7 +204,8 @@ struct SpotlightView: View {
 
     func cloudManagementPlacement(_ game: PortedGame) -> CloudGameManagementPlacement? {
         guard viewModel.showsCloudLibrary(game) else { return nil }
-        return .init(nextToPlay: settings.settings.showsCloudPlayIcon, detailsLink: settings.settings.showsCloudDetailsLink)
+        return .init(nextToPlay: settings.settings.showsCloudPlayIcon, detailsLink: settings.settings.showsCloudDetailsLink,
+                     cloudEnabled: cloud.archive != nil)
     }
 
     func spotlightPills(_ game: PortedGame) -> PortingPills {

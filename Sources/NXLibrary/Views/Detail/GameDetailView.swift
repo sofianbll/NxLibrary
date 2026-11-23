@@ -223,7 +223,8 @@ struct GameDetailView: View {
 
     private var cloudManagementPlacement: CloudGameManagementPlacement? {
         guard viewModel.showsCloudLibrary(game) else { return nil }
-        return .init(nextToPlay: settings.settings.showsCloudPlayIcon, detailsLink: settings.settings.showsCloudDetailsLink)
+        return .init(nextToPlay: settings.settings.showsCloudPlayIcon, detailsLink: settings.settings.showsCloudDetailsLink,
+                     cloudEnabled: cloud.archive != nil)
     }
 
     var showsCloudPill: Bool { cloudManagementPlacement == .primaryActions }

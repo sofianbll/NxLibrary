@@ -48,6 +48,7 @@ final class CloudTransferPresentationTests: XCTestCase {
         XCTAssertEqual(CloudGameManagementPlacement(nextToPlay: true, detailsLink: true), .primaryActions)
         XCTAssertEqual(CloudGameManagementPlacement(nextToPlay: true, detailsLink: false), .primaryActions)
         XCTAssertEqual(CloudGameManagementPlacement(nextToPlay: false, detailsLink: true), .detailsLink)
-        XCTAssertNil(CloudGameManagementPlacement(nextToPlay: false, detailsLink: false))
+        XCTAssertEqual(CloudGameManagementPlacement(nextToPlay: false, detailsLink: false), .detailsLink)
+        XCTAssertNil(CloudGameManagementPlacement(nextToPlay: false, detailsLink: false, cloudEnabled: false))
     }
 }

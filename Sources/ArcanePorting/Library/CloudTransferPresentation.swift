@@ -65,9 +65,9 @@ public enum CloudTransferPresentation: Equatable {
 public enum CloudGameManagementPlacement: Equatable {
     case primaryActions, detailsLink
 
-    public init?(nextToPlay: Bool, detailsLink: Bool) {
+    public init?(nextToPlay: Bool, detailsLink: Bool, cloudEnabled: Bool = true) {
         if nextToPlay { self = .primaryActions }
-        else if detailsLink { self = .detailsLink }
+        else if detailsLink || cloudEnabled { self = .detailsLink }
         else { return nil }
     }
 }
