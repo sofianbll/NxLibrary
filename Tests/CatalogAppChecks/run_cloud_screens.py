@@ -670,7 +670,7 @@ enum ScreenVPN {
     change(rows, r'            ScrollViewReader \{ proxy in\n                ScrollView \{\n', '')
     change(rows, r'                }\n                \.scrollIndicators\(\.hidden\).*?\n            }\n            \.id\(level\)\n', '')
     change(rows, r'let entries = p\.entries\(level: level, origin: origin\)',
-           'let entries = p.entries(level: level, origin: origin).prefix(ScreenVPN.mods ? 8 : 7)')
+           'let entries = p.entries(level: level, origin: origin).prefix(DisplayScreenProbe.expanded ? 13 : (ScreenVPN.mods ? 8 : 7))')
     return host.replace("// MULTIPLAYER_CHECK", MULTIPLAYER.replace("// MULTIPLAYER_STATES", MULTIPLAYER_STATES))
 
 
@@ -772,8 +772,6 @@ extension CloudDriveFolders.Listing {
         has_display = (package / "Sources/ArcanePorting/Launch/GameDisplay.swift").is_file()
         if not before:
             host = host.replace("// DISPLAY_FIXTURE", DISPLAY_FIXTURE)
-            change(app / "Views/GameOptions/GameOptionsView+Rows.swift",
-                   r"canvas\.u\(680\)", "canvas.u(DisplayScreenProbe.expanded ? 1320 : 680)")
             host += "\n@MainActor enum DisplayScreenProbe { static var capable = false; static var expanded = false }\n"
         if has_display:
             change(app / "Views/GameOptions/GameOptionsView.swift",
